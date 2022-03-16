@@ -1,0 +1,17 @@
+apiVersion: v2
+name: fluent-bit-http
+description: Fluent-Bit Chart with HTTP output plugin
+version: 0.0.4
+appVersion: 1.8.10
+keywords:
+  - Fluent-Bit
+  - HTTP output plugin
+dependencies:
+  - name: fluent-bit
+    version: "0.19.20"
+    repository: https://fluent.github.io/helm-charts
+sources:
+  - https://github.com/fluent/fluent-bit/
+maintainers:
+  - name: Coralogix
+    email: support@coralogix.com

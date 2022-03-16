@@ -1,0 +1,190 @@
+fluentd:
+  fullnameOverride: "fluentd-http"
+
+  image:
+    repository: coralogixrepo/coralogix-fluentd-multiarch
+    tag: v0.0.1
+
+  resources:
+    requests:
+      cpu: 800m
+      memory: 900Mi
+    limits:
+      cpu: 800m
+      memory: 900Mi
+
+  configMapConfigs:
+    - fluentd-prometheus-conf
+    - fluentd-systemd-conf
+
+  tolerations:
+    - operator: Exists
+
+  dashboards:
+    enabled: false
+
+  env:
+  - name: APP_NAME
+    value: namespace_name
+  - name: SUB_SYSTEM
+    value: $kubernetes.container_name
+  - name: APP_NAME_SYSTEMD
+    value: systemd
+  - name: SUB_SYSTEM_SYSTEMD
+    value: kubelet.service
+  - name: ENDPOINT   
+    value: api.eu2.coralogix.com
+  - name: "FLUENTD_CONF"
+    value: "../../etc/fluent/fluent.conf"
+  - name: LOG_LEVEL
+    value: info
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+
+  envFrom:
+    - secretRef:
+        name: integrations-privatekey
+
+  metrics:
+    serviceMonitor:
+      enabled: true
+  #  prometheusRule:
+  #    enabled: true
+  #    additionalLabels:
+  #      prometheus: platform-data
+  #      CX_PRODUCT: platform
+  #    rules:
+  #    - alert: FluentdErrors
+  #      expr: sum(rate(fluentd_output_status_num_errors{}[5m])) by (plugin_id) > 0 
+  #      for: 1m
+  #      labels:
+  #        severity: critical
+  #      annotations:
+  #        summary: "Fluentd Failed to send data to Coralogix"
+  #        description: "Fluentd is failing to send data to Coralogix"
+  #    - alert: FluentdRetriesHigh
+  #      expr: sum(rate(fluentd_output_status_retry_count{}[5m])) by (plugin_id) > 0
+  #      for: 4m
+  #      labels:
+  #        severity: warning
+  #      annotations:
+  #        summary: "Fluentd is performing many retries to Coralogix"
+  #        description: "Fluentd have retries to Coralogix"
+  #    - alert: FluentdNoOutPut
+  #      expr: sum(rate(fluentd_output_status_emit_records{}[5m])) == 0
+  #      for: 4m
+  #      labels:
+  #        severity: warning
+  #      annotations:
+  #        summary: "Fluentd is not sending data to Coralogix"
+  #        description: "No data on Coralogix"
+  #    - alert: FluentdNoInput
+  #      expr: sum by (pod) (rate(fluentd_input_status_num_records_total{}[5m])) == 0
+  #      for: 2m
+  #      labels:
+  #        severity: warning
+  #      annotations:
+  #        summary: "Fluentd is not getting any data"
+  #        description: "No data on Coralogix"
+
+  fileConfigs:
+    coralogix.conf: |-
+      <system>
+        log_level "#{ENV['LOG_LEVEL']}"
+      </system>
+    
+      <source>
+        @type tail
+        @id in_tail_container_logs
+        path /var/log/containers/*.log
+        pos_file /var/log/fluentd-containers.log.pos
+        tag kubernetes.*
+        read_from_head false
+        <parse>
+          @type cri
+        </parse>
+      </source>
+    
+      <filter kubernetes.**>
+        @type kubernetes_metadata
+        @id filter_kube_metadata
+        skip_labels false
+        skip_container_metadata false
+        skip_namespace_metadata true
+        skip_master_url true
+      </filter>
+    
+      <filter kubernetes.**>
+        @type record_transformer
+        remove_keys "$['message']"
+        <record>
+          log_obj ${record["message"]}
+        </record>
+      </filter>
+    
+      <filter kubernetes.**>
+        @type record_transformer
+        enable_ruby true
+        auto_typecast true
+        renew_record true
+        <record>
+          privateKey "#{ENV['PRIVATE_KEY']}"
+          applicationName ${record.dig("kubernetes", "#{ENV['APP_NAME']}")}
+          subsystemName ${record.dig("kubernetes", "container_name")}
+          computerName ${record.dig("kubernetes", "host")}
+          timestamp ${time.strftime('%s%L')}
+          text ${record.to_json}
+        </record>
+      </filter>
+
+      <match **>
+        @type relabel
+        @label @DISPATCH
+      </match>
+    
+      <label @DISPATCH>
+        <filter internal-kubernetes.systemd>
+          @type record_transformer
+          enable_ruby true
+          auto_typecast true
+          renew_record true
+          <record>
+            privateKey "#{ENV['PRIVATE_KEY']}"
+            applicationName "#{ENV['APP_NAME_SYSTEMD']}"
+            subsystemName "#{ENV['SUB_SYSTEM_SYSTEMD']}"
+            text ${record.to_json}
+          </record>
+        </filter>
+       
+        <filter **>
+          @type prometheus
+          <metric>
+            name fluentd_input_status_num_records_total
+            type counter
+            desc The total number of incoming records
+          </metric>
+        </filter>
+       
+        <match **>
+          @type http
+          endpoint "https://#{ENV['ENDPOINT']}/logs/rest/singles"
+          headers_from_placeholders {"private_key":"${$.privateKey}"}
+          error_response_as_unrecoverable false
+          <buffer $.privateKey>
+            @type memory
+            chunk_limit_size 10MB
+            flush_interval 1s
+            overflow_action block
+            retry_max_times 10
+            retry_type periodic
+            retry_wait 8
+          </buffer>
+        </match>
+      </label>
+    
+    02_filters.conf: |-
+    01_sources.conf: |-
+    03_dispatch.conf: |-
+    04_outputs.conf: |-

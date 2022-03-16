@@ -1,0 +1,45 @@
+
+name: Fluentd-Image
+
+on:
+  push:
+    branches: master
+    paths:
+    - 'fluentd/image/**'
+
+env:
+  DOCKERHUB_REGISTRY: coralogixrepo/coralogix-fluentd-multiarch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2.4.0
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Read Fluentd VERSION file
+        id: get-fluentd-version
+        run: echo "::set-output name=version::$(cat ./fluentd/image/VERSION)"
+      -
+        name: Build And Push Fluentd Image To Dockerhub
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./fluentd/image
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}:latest
