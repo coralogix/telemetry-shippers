@@ -5,7 +5,7 @@ on:
   push:
     branches: master
     paths:
-    - 'fluentd/image/**'
+    - 'fluentd/**'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/coralogix-fluentd-multiarch
