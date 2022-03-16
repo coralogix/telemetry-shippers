@@ -43,7 +43,7 @@ jobs:
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          repository: eng-integrations
+          repository: coralogix/eng-integrations
           retain_days: 2
           keep_minimum_runs: 2
           
