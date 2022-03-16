@@ -38,3 +38,19 @@ jobs:
         run: |
           cd fluent-bit/coralogix
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
+          
+      -
+        name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: eng-integrations
+          retain_days: 2
+          keep_minimum_runs: 20
+          
+          
+          
+          
+          
+          
+          
