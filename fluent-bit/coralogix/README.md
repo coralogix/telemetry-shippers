@@ -1,4 +1,6 @@
 # Fluent-Bit-Coralogix Chart
+#### Please read the [main README](https://github.com/coralogix/eng-integrations/blob/master/README.md) before following this chart installation.
+
 Fluent-Bit is a lightweight data shipper, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluent-Bit shipper, together with the Coralogix output plugin to ship the logs to the Coralogix platform.
 The default values we provide can be overriden according to your needs, the default values can be showed by running:
@@ -54,6 +56,13 @@ fluent-bit:
             Read_From_Tail On
             Mem_Buf_Limit 5MB
 ```
+
+```
+helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix --install --namespace=<your-namespace> --create-namespace --set "fluent-bit.logLevel=<level>"
+--set "fluent-bit.app_name=<app_name>" --set "fluent-bit.sub_system=<sub_system>" --set "fluent-bit.endpoint=<Coralogix-endpoint>" -f "override.yaml"
+```
+
+* For override.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.

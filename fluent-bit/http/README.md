@@ -1,8 +1,10 @@
 # Fluent-Bit-HTTP Chart
+#### Please read the [main README](https://github.com/coralogix/eng-integrations/blob/master/README.md) before following this chart installation.
+
 Fluent-Bit is a lightweight data shipper, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluent-Bit shipper, together with the http output plugin to ship the logs to the Coralogix platform.
 The default values we provide can be overriden according to your needs, the default values can be showed by running:
-```
+```bash
 helm show values coralogix-charts-virtual/fluent-bit-http
 ```
 
@@ -14,14 +16,20 @@ The following environment variables can be overriden via the 'set' flag in the u
 * logLevel
 
 for example:
-```
-helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http --install --namespace=<your-namespace> --create-namespace --set "fluent-bit.logLevel=<level>"
---set "fluent-bit.app_name=<app_name>" --set "fluent-bit.sub_system=<sub_system>" --set "fluent-bit.endpoint=<Coralogix-endpoint>"
+```bash
+helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
+  --install \
+  --namespace=<your-namespace> \
+  --create-namespace \
+  --set "fluent-bit.logLevel=<level>" \
+  --set "fluent-bit.app_name=<app_name>" \
+  --set "fluent-bit.sub_system=<sub_system>" \
+  --set "fluent-bit.endpoint=<Coralogix-endpoint>"
 ```
 
 ## Configuration Override: 
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
-``` 
+```yaml
 ---
 #override.yaml
 fluent-bit: 
@@ -40,7 +48,7 @@ fluent-bit:
 ```
 
 Another example, in order to update some values related to the systemd log shipping conf, the following section needs to be edited:
-```
+```yaml
 ---
 #override.yaml
 fluent-bit:
@@ -54,6 +62,8 @@ fluent-bit:
             Read_From_Tail On
             Mem_Buf_Limit 5MB
 ```
+
+* For override.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.

@@ -1,0 +1,24 @@
+---
+fluentd:
+  env:
+  - name: APP_NAME
+    value: example-appName
+  - name: SUB_SYSTEM
+    value: example-subsystmeName
+  - name: SUB_SYSTEM_SYSTEMD
+    value: kubelet.service
+  - name: ENDPOINT
+    value: api.eu2.coralogix.com
+  - name: "FLUENTD_CONF"
+    value: "../../etc/fluent/fluent.conf"
+  - name: LOG_LEVEL
+    value: info
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+
+  # Disable Systemd Logs
+  configMapConfigs:
+    - fluentd-prometheus-conf
+    # - fluentd-systemd-conf
