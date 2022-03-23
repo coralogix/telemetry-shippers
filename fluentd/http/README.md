@@ -10,7 +10,7 @@ helm show values coralogix-charts-virtual/fluentd-http
 
 ## Installation 
 In order to update the environment variables, please create a new yaml file and include all the envs inside, including the overrides, for example:
-```
+```yaml
 ---
 #override.yaml:
 fluentd:
@@ -33,13 +33,16 @@ fluentd:
         fieldPath: spec.nodeName
 ```
 
-```
-helm upgrade fluentd-http coralogix-charts-virtual/fluentd-http --install --namespace=<your-namespace> --create-namespace -f override.yaml
+```bash
+helm upgrade fluentd-http coralogix-charts-virtual/fluentd-http \
+  --install --namespace=<your-namespace> \
+  --create-namespace \
+  -f override.yaml
 ```
 
 ## Disable Systemd Logs
 In order to disable the systemd logs, please create a new yaml file or edit your existing override.yaml that includes the environment varibales, and comment out the fluentd-system-conf line:
-```
+```yaml
 ---
 #override.yaml
 fluentd:
