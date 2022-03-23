@@ -13,7 +13,7 @@ We recommend using the `http` chart, since it's an open source plugin, and there
 Under each integration there is an 'image' directory which our GitHub Actions workflows use in order to build the image and publish it to DockerHub. 
 
 
-## installation
+## Installation
 Our Helm charts repository can be added to the local repos list with the following command:
 it will create a repository name `coralogix-charts-virtual` if you wish to change it to anything else.
 be sure to adapt you commands in the other segments reffering to this repository.
