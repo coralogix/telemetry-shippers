@@ -34,10 +34,15 @@ For installation of each integration, please go inside each intergation's direct
 **NOTE**
 
 All integrations require a `secret` called `integrations-privatekey` with the relevant `send your logs` key under a secrey key called `PRIVATE_KEY`,
-inside the same namespace that the chart is installed in.
+inside the `same namespace` that the chart is installed in.
 
 * The `send-your-logs` key appears under 'Data Flow' --> 'API Keys' in Coralogix UI. 
 
+```
+kubectl create secret generic integrations-privatekey -n <the-namespace-of-the-release> --from-literal=PRIVATE_KEY=<send-your-logs-private-key>
+```
+
+The created secret should look like this:
 ```
 apiVersion: v1
 data:
