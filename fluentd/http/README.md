@@ -15,22 +15,22 @@ In order to update the environment variables, please create a new yaml file and 
 #override.yaml:
 fluentd:
   env:
-    - name: APP_NAME
-      value: <app_name>
-    - name: SUB_SYSTEM
-      value: <sub_system>
-    - name: SUB_SYSTEM_SYSTEMD
-      value: kubelet.service
-    - name: ENDPOINT
-      value: <coralogix_endpoint>
-    - name: "FLUENTD_CONF"
-      value: "../../etc/fluent/fluent.conf"
-    - name: LOG_LEVEL
-      value: <level>
-    - name: K8S_NODE_NAME
-      valueFrom:
-        fieldRef:
-          fieldPath: spec.nodeName
+  - name: APP_NAME
+    value: <app_name>
+  - name: SUB_SYSTEM
+    value: <sub_system>
+  - name: SUB_SYSTEM_SYSTEMD
+    value: kubelet.service
+  - name: ENDPOINT
+    value: <coralogix_endpoint>
+  - name: "FLUENTD_CONF"
+    value: "../../etc/fluent/fluent.conf"
+  - name: LOG_LEVEL
+    value: <level>
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
 ```
 
 ```
@@ -38,7 +38,7 @@ helm upgrade fluentd-http coralogix-charts-virtual/fluentd-http --install --name
 ```
 
 ## Disable Systemd Logs
-In order to disable the systemd logs, please create a new yaml file/edit your existing override file, and comment out the fluentd-system-conf line:
+In order to disable the systemd logs, please create a new yaml file or edit your existing override.yaml that includes the environment varibales, and comment out the fluentd-system-conf line:
 ```
 ---
 #override.yaml
@@ -47,6 +47,8 @@ fluentd:
     - fluentd-prometheus-conf
     # - fluentd-systemd-conf
 ```
+
+* For override.yaml examples, please see: [fluentd override examples](https://github.com/coralogix/eng-integrations/blob/master/fluentd/examples)
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluentd Grafana dashboard that Coralogix supplies.

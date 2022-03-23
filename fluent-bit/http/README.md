@@ -57,6 +57,8 @@ fluent-bit:
             Mem_Buf_Limit 5MB
 ```
 
+* For override.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
+
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.
 In order to import the dashboard into Grafana, firstly copy the json file content.
