@@ -15,12 +15,14 @@ Under each integration there is an 'image' directory which our GitHub Actions wo
 
 ## installation
 Our Helm charts repository can be added to the local repos list with the following command:
-```
+it will create a repository name `coralogix-charts-virtual` if you wish to change it to anything else.
+be sure to adapt you commands in the other segments reffering to this repository.
+```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
 
 In order to get the updated helm charts from the added repository, please run: 
-```
+```bash
 helm repo update
 ```
 
@@ -38,14 +40,14 @@ inside the `same namespace` that the chart is installed in.
 
 * The `send-your-logs` key appears under 'Data Flow' --> 'API Keys' in Coralogix UI. 
 
-```
+```bash
 kubectl create secret generic integrations-privatekey \
   -n <the-namespace-of-the-release> \
   --from-literal=PRIVATE_KEY=<send-your-logs-private-key>
 ```
 
 The created secret should look like this:
-```
+```yaml
 apiVersion: v1
 data:
   PRIVATE_KEY: <encrypted-send-your-logs-key>
