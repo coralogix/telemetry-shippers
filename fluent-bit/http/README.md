@@ -44,7 +44,7 @@ Add     subsystemName ${SUB_SYSTEM}
 
 or both if needed.
 
-If you change one the values, to 'container_name', 'pod_name', 'namespace_name', then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
+* If you change one the values, to 'container_name', 'pod_name', 'namespace_name', then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
 
 ```yaml
 ---

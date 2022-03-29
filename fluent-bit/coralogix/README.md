@@ -40,8 +40,24 @@ Sub_Name      ${SUB_SYSTEM}
 
 or both if needed.
 
-If you change one the values, to 'container_name', 'pod_name', 'namespace_name', then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
+* If you change one the values, to 'container_name', 'pod_name', 'namespace_name', then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
 
+```yaml
+---
+#override.yaml
+fluent-bit: 
+  config:
+    outputs: |-
+      [OUTPUT]
+          Name          coralogix
+          Endpoint      ${ENDPOINT}
+          Match         kube.*
+          Private_Key   ${PRIVATE_KEY}
+          App_Name      ${APP_NAME}
+          Sub_Name      ${SUB_SYSTEM}
+
+      @INCLUDE output-systemd.conf
+```
 
 ## Configuration Override: 
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
