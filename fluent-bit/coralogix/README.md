@@ -24,7 +24,8 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
 ## Update APP_NAME and SUB_SYSTEM
 The default configuration for the `APP_NAME` is namespace, which means the apps will be separated by namespaces.
 The deafult configuration for the `SUB_SYSTEM` is container_name, which means the the sub_system will be separated by container names.
-If you want to change the value of one of these, to a static value - meaning it's hardcoded like 'production', 'test', you will need `in addition` to the --set you add to the install command, to create the following override file [which exists under the `examples` directory], in order to change the `OUTPUTS` section. 
+If you want to change the value of one of these, to a static value - meaning it's hardcoded like 'production', 'test', you will need instead of adding '--set' to the install command, 
+to create the following override file [which exists under the `examples` directory], in order to change the `OUTPUTS` section. 
 
 If the value you set is hardcoded in app_name, then you need to write:
 ```
@@ -40,7 +41,11 @@ Sub_Name      ${SUB_SYSTEM}
 
 or both if needed.
 
-* If you change one the values, to 'container_name', 'pod_name', 'namespace_name', then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
+* If you change the values to another dynamic value, for example 'container_name', 'pod_name', 'namespace_name', 
+then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
+
+* If you also need to update the endpoint, and anyways creating the 'override.yaml' file, then you can add the updated endpoint value inside like shown in the example,
+instead of using 'set' in the installation command.
 
 ```yaml
 ---

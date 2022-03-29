@@ -1,6 +1,7 @@
 ---
 #override.yaml
-fluent-bit: 
+fluent-bit:
+  endpoint: <Coralogix_endpoint> # Only if different from the defaults
   config:
     filters: |-
       [FILTER]
@@ -26,7 +27,7 @@ fluent-bit:
       [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName ${APP_NAME}
+          Add     applicationName <new_app_name>
           Copy    ${SUB_SYSTEM} subsystemName 
 
       [FILTER]
