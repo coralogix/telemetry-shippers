@@ -8,7 +8,9 @@ The default values we provide can be overriden according to your needs, the defa
 helm show values coralogix-charts-virtual/fluent-bit-http
 ```
 
-## Installation
+## Installation with default/dynamic app_name and sub_system
+Dynamic App_Name and Sub_System means taking the value from the running containers, so it can be 'namespace', 'pod_name', 'container_name'.
+If you need to override the default values, but still use dynamic app_name and sub_name, please follow these installation instructions: 
 The following environment variables can be overriden via the 'set' flag in the upgrade command:
 * app_name
 * sub_system
@@ -27,29 +29,9 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --set "fluent-bit.endpoint=<Coralogix-endpoint>"
 ```
 
-## Update APP_NAME and SUB_SYSTEM
-The default configuration for the `APP_NAME` is namespace, which means the apps will be separated by namespaces.
-The deafult configuration for the `SUB_SYSTEM` is container_name, which means the the sub_system will be separated by container names.
-If you want to change the value of one of these, to a static value - meaning it's hardcoded like 'production', 'test', you will need instead of adding '--set' to the install command, 
-to create the following override file [which exists under the `examples` directory], in order to change the `FILTER` section. 
-
-If the value you set is hardcoded in app_name, then you need to write:
-```
-Add     applicationName ${APP_NAME}
-```
-
-If the value you set is hardcoded in sub_name, then you need to write:
-```
-Add     subsystemName ${SUB_SYSTEM} 
-```
-
-or both if needed.
-
-* If you change the values to another dynamic value, for example 'container_name', 'pod_name', 'namespace_name', 
-then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
-
-* If you also need to update the `endpoint`, and anyways creating the 'override.yaml' file, then you can add the updated endpoint value inside like shown in the [example](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples/override-fluentbit-http.yaml),
-instead of using 'set' in the installation command.
+## Installation with static app_name and sub_system
+Static App_Name and Sub_System means using hardcoded values, like 'production', 'test'. 
+If you need to override the default values, and use hardcoded values, then you need to create the following 'override.yaml' file instead of using '--set'.
 
 ```yaml
 ---
