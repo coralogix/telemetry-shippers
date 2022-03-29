@@ -40,7 +40,7 @@ Add     applicationName ${APP_NAME}
 
 If the value you set is hardcoded in sub_name, then you need to write:
 ```
-Add     subsystemName ${SUB_SYSTEM}
+Add     subsystemName ${SUB_SYSTEM} 
 ```
 
 or both if needed.
@@ -48,7 +48,7 @@ or both if needed.
 * If you change the values to another dynamic value, for example 'container_name', 'pod_name', 'namespace_name', 
 then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
 
-* If you also need to update the endpoint, and anyways creating the 'override.yaml' file, then you can add the updated endpoint value inside like shown in the example,
+* If you also need to update the `endpoint`, and anyways creating the 'override.yaml' file, then you can add the updated endpoint value inside like shown in the [example](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples/override-fluentbit-http.yaml),
 instead of using 'set' in the installation command.
 
 ```yaml

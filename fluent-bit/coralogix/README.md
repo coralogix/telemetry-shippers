@@ -44,8 +44,7 @@ or both if needed.
 * If you change the values to another dynamic value, for example 'container_name', 'pod_name', 'namespace_name', 
 then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
 
-* If you also need to update the endpoint, and anyways creating the 'override.yaml' file, then you can add the updated endpoint value inside like shown in the example,
-instead of using 'set' in the installation command.
+* If you also need to update the `endpoint`, and anyways creating the 'override.yaml' file, then you can add the updated endpoint value inside like shown in the [example](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples/override-fluentbit-coralogix.yaml), instead of using 'set' in the installation command.
 
 ```yaml
 ---
