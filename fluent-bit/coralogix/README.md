@@ -18,9 +18,15 @@ The following environment variables can be overriden via the 'set' flag in the u
 * logLevel
 
 for example:
-```
-helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix --install --namespace=<your-namespace> --create-namespace --set "fluent-bit.logLevel=<level>"
---set "fluent-bit.app_name=<app_name>" --set "fluent-bit.sub_system=<sub_system>" --set "fluent-bit.endpoint=<Coralogix-endpoint>"
+```bash
+helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix \
+  --install \
+  --namespace=<your-namespace> \
+  --create-namespace \
+  --set "fluent-bit.logLevel=<level>" \
+  --set "fluent-bit.app_name=<app_name>" \
+  --set "fluent-bit.sub_system=<sub_system>" \
+  --set "fluent-bit.endpoint=<Coralogix-endpoint>"
 ```
 
 ## Installation with static app_name and sub_system
