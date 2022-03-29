@@ -27,8 +27,8 @@ fluent-bit:
       [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName <new_app_name>
-          Copy    ${SUB_SYSTEM} subsystemName 
+          Add     applicationName <hard_coded_app_name>
+          Add     subsystemName <hard_coded_subsystem_name>  
 
       [FILTER]
           Name            nest

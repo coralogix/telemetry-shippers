@@ -1,12 +1,11 @@
 ---
 #override.yaml
 fluent-bit: 
-  endpoint: <Coralogix_endpoint> # Only if different from the defaults
   config:
     outputs: |-
       [OUTPUT]
           Name          coralogix
-          Endpoint      ${ENDPOINT}
+          Endpoint      <Coralogix_endpoint>
           Match         kube.*
           Private_Key   ${PRIVATE_KEY}
           App_Name      <new_app_name>

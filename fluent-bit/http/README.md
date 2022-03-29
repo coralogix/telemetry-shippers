@@ -37,6 +37,7 @@ If you need to override the default values, and use hardcoded values, then you n
 ---
 #override.yaml
 fluent-bit: 
+  endpoint: <Coralogix_endpoint> # Only if different from the defaults
   config:
     filters: |-
       [FILTER]
@@ -62,8 +63,8 @@ fluent-bit:
       [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName ${APP_NAME}
-          Copy    ${SUB_SYSTEM} subsystemName 
+          Add     applicationName <hard_coded_app_name>
+          Add     subsystemName <hard_coded_subsystem_name>  
 
       [FILTER]
           Name            nest
@@ -85,6 +86,14 @@ fluent-bit:
           Nest_under  json
 
       @INCLUDE filters-systemd.conf
+```
+
+** Please notice that under the `FILTER` section I changed the word `copy` to `add`. If you want to override only the ApplicationName or only the SubSytemName, 
+change the `copy` to `add` only where you need, for example, if you want to keep the sub_system default value,
+and override only the app_name, then you need to update only the first line:
+```
+Add     applicationName <hard_coded_app_name>
+Copy    ${SUB_SYSTEM} subsystemName
 ```
 
 ## Configuration Override: 

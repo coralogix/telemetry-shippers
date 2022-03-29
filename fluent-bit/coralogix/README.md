@@ -37,19 +37,20 @@ If you need to override the default values, and use hardcoded values, then you n
 ---
 #override.yaml
 fluent-bit:
-  endpoint: <Coralogix_endpoint> # Only if different from the defaults
   config:
     outputs: |-
       [OUTPUT]
           Name          coralogix
-          Endpoint      ${ENDPOINT}
+          Endpoint      <Coralogix_endpoint>
           Match         kube.*
           Private_Key   ${PRIVATE_KEY}
-          App_Name      ${APP_NAME}
-          Sub_Name      ${SUB_SYSTEM}
+          App_Name      <new_app_name>
+          Sub_Name      <new_sub_system_name>
 
       @INCLUDE output-systemd.conf
 ```
+** If you don't need to override both endpoint, app_name and sub_name, then keep the default configuration wherever you want to keep the default, for example, 
+put `${ENDPOINT}` instead of <Coralogix_endpoint> in order to keep the default value.
 
 ## Configuration Override: 
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
