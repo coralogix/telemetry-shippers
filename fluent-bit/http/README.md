@@ -27,6 +27,79 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --set "fluent-bit.endpoint=<Coralogix-endpoint>"
 ```
 
+## Update APP_NAME and SUB_SYSTEM
+The default configuration for the `APP_NAME` is namespace, which means the apps will be separated by namespaces.
+The deafult configuration for the `SUB_SYSTEM` is container_name, which means the the sub_system will be separated by container names.
+If you want to change the value of one of these, to a static value - meaning it's hardcoded like 'production', 'test', you will need `in addition` to the --set you add to the install command, to create the following override file [which exists under the `examples` directory], in order to change the `FILTER` section. 
+
+If the value you set is hardcoded in app_name, then you need to write:
+```
+Add     applicationName ${APP_NAME}
+```
+
+If the value you set is hardcoded in sub_name, then you need to write:
+```
+Add     subsystemName ${SUB_SYSTEM}
+```
+
+or both if needed.
+
+If you change one the values, to 'container_name', 'pod_name', 'namespace_name', then the `set` command is enough, and no need to edit the config in the 'override.yaml'.
+
+```yaml
+---
+#override.yaml
+fluent-bit: 
+  config:
+    filters: |-
+      [FILTER]
+          Name kubernetes
+          Match kube.*
+          K8S-Logging.Parser On
+          K8S-Logging.Exclude On
+          Use_Kubelet On
+          Annotations Off
+          Labels On
+          Buffer_Size 0
+          Keep_Log Off
+          Merge_Log_Key log_obj
+          Merge_Log On
+
+      [FILTER]
+          Name            nest
+          Match           kube.*
+          Operation       lift
+          Nested_under    kubernetes
+          Add_prefix      kubernetes.
+
+      [FILTER]
+          Name    modify
+          Match   kube.*
+          Add     applicationName ${APP_NAME}
+          Copy    ${SUB_SYSTEM} subsystemName 
+
+      [FILTER]
+          Name            nest
+          Match           kube.*
+          Operation       nest
+          Wildcard        kubernetes.*
+          Nest_under      kubernetes
+          Remove_prefix   kubernetes.
+
+      [FILTER]
+          Name        nest
+          Match       kube.*
+          Operation   nest
+          Wildcard    kubernetes
+          Wildcard    log
+          Wildcard    log_obj
+          Wildcard    stream
+          Wildcard    time
+          Nest_under  json
+
+      @INCLUDE filters-systemd.conf
+```
+
 ## Configuration Override: 
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
 ```yaml
