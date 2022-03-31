@@ -9,8 +9,9 @@ helm show values coralogix-charts-virtual/fluent-bit-coralogix
 ```
 
 ## Installation with default/dynamic app_name and sub_system
-Dynamic App_Name and Sub_System means taking the value from the running containers, so it can be 'namespace', 'pod_name', 'container_name'.
-If you need to override the default values, but still use dynamic app_name and sub_name, please follow these installation instructions: 
+Dynamic App_Name and Sub_System can be any Kubernetes accessible environment variable [namespace, container_name, etc...], 
+or any other supplied environment variable that is coming from the running containers. please see (dynamic examples)[(https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/)]
+If you need to override the default values [which are dynamic labels], and use other dynamic app_name and sub_name, please follow these installation instructions: 
 The following environment variables can be overriden via the 'set' flag in the upgrade command:
 * app_name
 * sub_system
@@ -24,18 +25,21 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
   --namespace=<your-namespace> \
   --create-namespace \
   --set "fluent-bit.logLevel=<level>" \
-  --set "fluent-bit.app_name=<app_name>" \
-  --set "fluent-bit.sub_system=<sub_system>" \
+  --set "fluent-bit.app_name=<app_name>" \ # Dynamic label, such as: kubernetes.namespace_name
+  --set "fluent-bit.sub_system=<sub_system>" \ # Dynamic label, such as: kubernetes.containers_name
   --set "fluent-bit.endpoint=<Coralogix-endpoint>"
 ```
 
 ## Installation with static app_name and sub_system
+
+### We suggest using dynamic app_name and sub_system, since it's more agile than using statiic values.
+
 Static App_Name and Sub_System means using hardcoded values, like 'production', 'test'. 
-If you need to override the default values, and use hardcoded values, then you need to create the following 'override.yaml' file instead of using '--set'.
+If you need to override the default values, and use hardcoded values, then you need to create the following 'override-fluentbit-coralogix.yaml' file instead of using '--set'.
 
 ```yaml
 ---
-#override.yaml
+#override-fluentbit-coralogix.yaml
 fluent-bit:
   config:
     outputs: |-
@@ -44,19 +48,17 @@ fluent-bit:
           Endpoint      <Coralogix_endpoint>
           Match         kube.*
           Private_Key   ${PRIVATE_KEY}
-          App_Name      <new_app_name>
-          Sub_Name      <new_sub_system_name>
+          App_Name      <static_app_name>
+          Sub_Name      <static_sub_system_name>
 
       @INCLUDE output-systemd.conf
 ```
-** If you don't need to override both endpoint, app_name and sub_name, then keep the default configuration wherever you want to keep the default, for example, 
-put `${ENDPOINT}` instead of <Coralogix_endpoint> in order to keep the default value.
 
 ## Configuration Override: 
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
 ``` 
 ---
-#override.yaml
+#override-fluentbit-coralogix.yaml
 fluent-bit: 
   config:
     inputs: |-
@@ -75,7 +77,7 @@ fluent-bit:
 Another example, in order to update some values related to the systemd log shipping conf, the following section needs to be edited:
 ```
 ---
-#override.yaml
+#override-fluentbit-coralogix.yaml
 fluent-bit:
   config:
     extraFiles:
@@ -90,10 +92,10 @@ fluent-bit:
 
 ```
 helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix --install --namespace=<your-namespace> --create-namespace --set "fluent-bit.logLevel=<level>"
---set "fluent-bit.app_name=<app_name>" --set "fluent-bit.sub_system=<sub_system>" --set "fluent-bit.endpoint=<Coralogix-endpoint>" -f "override.yaml"
+--set "fluent-bit.app_name=<app_name>" --set "fluent-bit.sub_system=<sub_system>" --set "fluent-bit.endpoint=<Coralogix-endpoint>" -f "override-fluentbit-coralogix.yaml"
 ```
 
-* For override.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
+* For override-fluentbit-coralogix.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.

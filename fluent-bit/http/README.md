@@ -30,14 +30,17 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
 ```
 
 ## Installation with static app_name and sub_system
+
+### We suggest using dynamic app_name and sub_system, since it's more agile than using statiic values.
+
 Static App_Name and Sub_System means using hardcoded values, like 'production', 'test'. 
-If you need to override the default values, and use hardcoded values, then you need to create the following 'override.yaml' file instead of using '--set'.
+If you need to override the default values, and use hardcoded values, then you need to create the following 'override-fluentbit-http.yaml' file instead of using '--set'.
 
 ```yaml
 ---
-#override.yaml
+#override-fluentbit-http.yaml
 fluent-bit: 
-  endpoint: <Coralogix_endpoint> # Only if different from the defaults
+  #endpoint: <Coralogix_endpoint> --> Only if different from the defaults
   config:
     filters: |-
       [FILTER]
@@ -100,7 +103,7 @@ Copy    ${SUB_SYSTEM} subsystemName
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
 ```yaml
 ---
-#override.yaml
+#override-fluentbit-http.yaml
 fluent-bit: 
   config:
     inputs: |-
@@ -119,7 +122,7 @@ fluent-bit:
 Another example, in order to update some values related to the systemd log shipping conf, the following section needs to be edited:
 ```yaml
 ---
-#override.yaml
+#override-fluentbit-http.yaml
 fluent-bit:
   config:
     extraFiles:
@@ -132,7 +135,7 @@ fluent-bit:
             Mem_Buf_Limit 5MB
 ```
 
-* For override.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
+* For override-fluentbit-http.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.

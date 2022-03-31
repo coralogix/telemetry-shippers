@@ -1,5 +1,5 @@
 ---
-#override.yaml
+#override-fluentbit-coralogix.yaml
 fluent-bit: 
   config:
     outputs: |-
@@ -8,8 +8,8 @@ fluent-bit:
           Endpoint      <Coralogix_endpoint>
           Match         kube.*
           Private_Key   ${PRIVATE_KEY}
-          App_Name      <new_app_name>
-          Sub_Name      <new_sub_system_name>
+          App_Name      <static_app_name>
+          Sub_Name      <static_sub_system_name>
 
       @INCLUDE output-systemd.conf
     

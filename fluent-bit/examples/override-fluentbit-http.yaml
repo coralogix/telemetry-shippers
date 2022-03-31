@@ -1,7 +1,7 @@
 ---
-#override.yaml
+#override-fluentbit-http.yaml
 fluent-bit:
-  endpoint: <Coralogix_endpoint> # Only if different from the defaults
+  #endpoint: <Coralogix_endpoint> --> Only if different from the defaults
   config:
     filters: |-
       [FILTER]
