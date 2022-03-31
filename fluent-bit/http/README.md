@@ -31,7 +31,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
 
 ## Installation with static app_name and sub_system
 
-### We suggest using dynamic app_name and sub_system, since it's more agile than using statiic values.
+### We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
 
 Static App_Name and Sub_System means using hardcoded values, like 'production', 'test'. 
 If you need to override the default values, and use hardcoded values, then you need to create the following 'override-fluentbit-http.yaml' file instead of using '--set'.
