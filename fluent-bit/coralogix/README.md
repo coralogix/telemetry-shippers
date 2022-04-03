@@ -11,7 +11,7 @@ helm show values coralogix-charts-virtual/fluent-bit-coralogix
 ## Installation with default/dynamic app_name and sub_system
 Dynamic `App_Name` and `Sub_System` can be any accessible environment variable that exists in your running pods [for example: spec.serviceAccountName], 
 or any other kubernetes field that is coming from the running containers [namespace, container_name, etc...].
-please see [dynamic examples](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/)]
+please see [dynamic examples](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/)
 If you need to override the default values [which are dynamic labels], and use other dynamic app_name and sub_name, please follow these installation instructions: 
 The following environment variables can be overriden via the 'set' flag in the upgrade command:
 * app_name
