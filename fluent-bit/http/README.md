@@ -9,8 +9,10 @@ helm show values coralogix-charts-virtual/fluent-bit-http
 ```
 
 ## Installation with default/dynamic app_name and sub_system
-Dynamic App_Name and Sub_System means taking the value from the running containers, so it can be 'namespace', 'pod_name', 'container_name'.
-If you need to override the default values, but still use dynamic app_name and sub_name, please follow these installation instructions: 
+Dynamic `App_Name` and `Sub_System` can be any accessible environment variable that exists in your running pods [for example: spec.serviceAccountName], 
+or any other kubernetes field that is coming from the running containers [namespace, container_name, etc...].
+please see [dynamic examples](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/)]
+If you need to override the default values [which are dynamic labels], and use other dynamic app_name and sub_name, please follow these installation instructions: 
 The following environment variables can be overriden via the 'set' flag in the upgrade command:
 * app_name
 * sub_system
@@ -26,14 +28,11 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --set "fluent-bit.logLevel=<level>" \
   --set "fluent-bit.app_name=<app_name>" \
   --set "fluent-bit.sub_system=<sub_system>" \
-  --set "fluent-bit.endpoint=<Coralogix-endpoint>"
+  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Can be changed
 ```
 
 ## Installation with static app_name and sub_system
-
-### We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
-
-Static App_Name and Sub_System means using hardcoded values, like 'production', 'test'. 
+Static `App_Name` and `Sub_System` means using hardcoded values, like 'production', 'test'. 
 If you need to override the default values, and use hardcoded values, then you need to create the following 'override-fluentbit-http.yaml' file instead of using '--set'.
 
 ```yaml
@@ -98,6 +97,10 @@ and override only the app_name, then you need to update only the first line:
 Add     applicationName <hard_coded_app_name>
 Copy    ${SUB_SYSTEM} subsystemName
 ```
+
+**NOTE**
+We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
+
 
 ## Configuration Override: 
 The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
