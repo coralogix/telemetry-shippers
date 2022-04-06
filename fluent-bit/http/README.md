@@ -98,6 +98,14 @@ Add     applicationName <hard_coded_app_name>
 Copy    ${SUB_SYSTEM} subsystemName
 ```
 
+### Install:
+```bash
+helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
+  --install \
+  --namespace=<your-namespace> \
+  -f override-fluentbit-http.yaml
+```
+
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
 

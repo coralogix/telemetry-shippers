@@ -52,6 +52,14 @@ fluent-bit:
       @INCLUDE output-systemd.conf
 ```
 
+### Install:
+```bash
+helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix \
+  --install \
+  --namespace=<your-namespace> \
+  -f override-fluentbit-coralogix.yaml
+```
+
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
 
