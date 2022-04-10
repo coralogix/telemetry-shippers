@@ -8,38 +8,29 @@ The default values we provide can be overriden according to your needs, the defa
 helm show values coralogix-charts-virtual/fluent-bit-http
 ```
 
-## Installation with default/dynamic app_name and sub_system
-Dynamic `App_Name` and `Sub_System` can be any accessible environment variable that exists in your running pods [for example: spec.serviceAccountName], 
-or any other kubernetes field that is coming from the running containers [namespace, container_name, etc...].
-please see [dynamic examples](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/)
-If you need to override the default values [which are dynamic labels], and use other dynamic app_name and sub_name, please follow these installation instructions: 
-The following environment variables can be overriden via the 'set' flag in the upgrade command:
-* app_name
-* sub_system
-* endpoint
-* logLevel
+## Installation with dynamic app_name and sub_system
+By default we set the `app_name` and `subsystem` dynamically.  
+Dynamic `App_Name` and `Sub_System` means that the value is coming from any desired field from your logs' structure.
 
-for example:
+For example:
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --install \
   --namespace=<your-namespace> \
   --create-namespace \
-  --set "fluent-bit.logLevel=<level>" \
-  --set "fluent-bit.app_name=<app_name>" \
-  --set "fluent-bit.sub_system=<sub_system>" \
-  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Can be changed
+  --set "fluent-bit.app_name=kubernetes.namespace_name" \ # Each log's app_name will be fetched from the fluentbit record's 'kubernetes.namespace_name' value.
+  --set "fluent-bit.sub_system=kubernetes.container_name" \ # Each log's subsystem will be fetched from the fluentbit record's 'kubernetes.container_name' value.
+  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
 ```
 
 ## Installation with static app_name and sub_system
-Static `App_Name` and `Sub_System` means using hardcoded values, like 'production', 'test'. 
-If you need to override the default values, and use hardcoded values, then you need to create the following 'override-fluentbit-http.yaml' file instead of using '--set'.
+Static `App_Name` and `Sub_System` means using hardcoded values.
+For setting static values for app_name / subsystem, see the following example:s
 
 ```yaml
 ---
-#override-fluentbit-http.yaml
-fluent-bit: 
-  #endpoint: <Coralogix_endpoint> --> Only if different from the defaults
+#override-fluentbit-http.yaml - configuring both app_name and subsystem as static values
+fluent-bit:  
   config:
     filters: |-
       [FILTER]
@@ -56,25 +47,10 @@ fluent-bit:
           Merge_Log On
 
       [FILTER]
-          Name            nest
-          Match           kube.*
-          Operation       lift
-          Nested_under    kubernetes
-          Add_prefix      kubernetes.
-
-      [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName <hard_coded_app_name>
-          Add     subsystemName <hard_coded_subsystem_name>  
-
-      [FILTER]
-          Name            nest
-          Match           kube.*
-          Operation       nest
-          Wildcard        kubernetes.*
-          Nest_under      kubernetes
-          Remove_prefix   kubernetes.
+          Add     applicationName production # Each log will be under 'production' application name 
+          Add     subsystemName infra-services # Each log will be under 'infra-services' subsystem  
 
       [FILTER]
           Name        nest
@@ -90,15 +66,6 @@ fluent-bit:
       @INCLUDE filters-systemd.conf
 ```
 
-** Please notice that under the `FILTER` section I changed the word `copy` to `add`. If you want to override only the ApplicationName or only the SubSytemName, 
-change the `copy` to `add` only where you need, for example, if you want to keep the sub_system default value,
-and override only the app_name, then you need to update only the first line:
-```
-Add     applicationName <hard_coded_app_name>
-Copy    ${SUB_SYSTEM} subsystemName
-```
-
-### Install:
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --install \
@@ -109,50 +76,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
 
-
-## Configuration Override: 
-The fluent-bit configuration can be overriden seperately per each section (input, filter, output), there is no need to copy the whole config section to your values.yaml file in order to override one section. For example, in order to update some values in the input section, only the `inputs` section under the `config` needs to appear in the override file. 
-```yaml
----
-#override-fluentbit-http.yaml
-fluent-bit: 
-  config:
-    inputs: |-
-      [INPUT]
-          Name tail
-          Path <your-logs-path>
-          multiline.parser docker, cri
-          Tag <your-tag>
-          Refresh_Interval <interval>
-          Skip_Long_Lines <on/off>
-          Mem_Buf_Limit <the size in MB>
-
-      @INCLUDE input-systemd.conf
-```
-
-Another example, in order to update some values related to the systemd log shipping conf, the following section needs to be edited:
-```yaml
----
-#override-fluentbit-http.yaml
-fluent-bit:
-  config:
-    extraFiles:
-      input-systemd.conf: |-
-        [INPUT]
-            Name systemd
-            Tag <your-tag>
-            Systemd_Filter _SYSTEMD_UNIT=kubelet.service
-            Read_From_Tail On
-            Mem_Buf_Limit 5MB
-```
-
-* For override-fluentbit-http.yaml examples, please see: [fluent-bit override examples](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/examples)
-
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.
 In order to import the dashboard into Grafana, firstly copy the json file content.
 Afterwards go to Grafana press the `Create` tab, then press `import`, and paste the copied json file.
-
-## Dependencies
-By default this chart installs additional dependent chart:
-(https://github.com/fluent/helm-charts/tree/main/charts/fluent-bit)
