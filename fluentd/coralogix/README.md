@@ -35,8 +35,11 @@ fluentd:
         fieldPath: spec.nodeName
 ```
 
-```
-helm upgrade fluentd-coralogix coralogix-charts-virtual/fluentd-coralogix --install --namespace=<your-namespace> --create-namespace -f override.yaml
+```bash
+helm upgrade fluentd-coralogix coralogix-charts-virtual/fluentd-coralogix \
+  --install --namespace=<your-namespace> \
+  --create-namespace \
+  -f override.yaml
 ```
 
 ## Disable Systemd Logs
