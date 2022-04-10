@@ -18,7 +18,6 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
   --install \
   --namespace=<your-namespace> \
   --create-namespace \
-  --set "fluent-bit.logLevel=<level>" \
   --set "fluent-bit.app_name=<app_name>" \ # Dynamic label, such as: kubernetes.namespace_name
   --set "fluent-bit.sub_system=<sub_system>" \ # Dynamic label, such as: kubernetes.containers_name
   --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Can be changed
