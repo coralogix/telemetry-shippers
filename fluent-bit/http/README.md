@@ -78,5 +78,4 @@ We suggest using dynamic app_name and sub_system, since it's more agile than usi
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.
-In order to import the dashboard into Grafana, firstly copy the json file content.
-Afterwards go to Grafana press the `Create` tab, then press `import`, and paste the copied json file.
+Please see [the dashboard README](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/dashboard) for installation instructions.
