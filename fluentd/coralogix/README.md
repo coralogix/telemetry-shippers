@@ -10,7 +10,7 @@ helm show values coralogix-charts-virtual/fluentd-coralogix
 
 ## Installation 
 In order to update the environment variables, please create a new yaml file and include all the envs inside, including the overrides, for example:
-```
+```yaml
 ---
 #override.yaml:
 fluentd:
