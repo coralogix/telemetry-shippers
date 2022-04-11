@@ -25,7 +25,7 @@ fluentd:
 
   env:
   - name: APP_NAME
-    value: namespace_name
+    value: $kubernetes.namespace_name
   - name: SUB_SYSTEM
     value: $kubernetes.container_name
   - name: APP_NAME_SYSTEMD
