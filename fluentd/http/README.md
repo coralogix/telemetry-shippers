@@ -19,6 +19,8 @@ fluentd:
     value: <app_name>
   - name: SUB_SYSTEM
     value: <sub_system>
+  - name: APP_NAME_SYSTEMD
+    value: systemd
   - name: SUB_SYSTEM_SYSTEMD
     value: kubelet.service
   - name: ENDPOINT
