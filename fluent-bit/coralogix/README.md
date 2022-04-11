@@ -25,7 +25,7 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
 
 ## Installation with static app_name and sub_system
 Static `App_Name` and `Sub_System` means using hardcoded values, like 'production', 'test'. 
-If you need to override the default values, and use hardcoded values, then you need to create the following 'override-fluentbit-coralogix.yaml' file instead of using '--set'.
+For setting static values for app_name / subsystem, see the following example:s
 
 ```yaml
 ---
