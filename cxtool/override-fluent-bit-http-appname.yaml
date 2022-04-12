@@ -1,8 +1,6 @@
 ---
 #override-fluentbit-http-appname.yaml
 fluent-bit: 
-  app_name: "${appname}"
-  endpoint: $endpoint
   config:
     filters: |
      appname=tsmssil
@@ -29,8 +27,8 @@ fluent-bit:
       [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName {{ .Values.app_name }}
-          Copy    {{ .Values.subsystem }} subsystemName 
+          Add     applicationName ${APP_NAME}
+          Copy    ${SUB_SYSTEM} subsystemName 
 
       [FILTER]
           Name            nest

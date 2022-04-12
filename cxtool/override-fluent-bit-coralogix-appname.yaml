@@ -5,7 +5,7 @@ fluent-bit:
     outputs: |-
       [OUTPUT]
           Name          coralogix
-          Endpoint      {{ .Values.endpoint }}
+          Endpoint      ${ENDPOINT}
           Match         kube.*
           Private_Key   ${PRIVATE_KEY}
           App_Name      ${APP_NAME}

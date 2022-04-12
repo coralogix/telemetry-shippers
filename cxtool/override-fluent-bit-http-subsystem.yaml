@@ -1,7 +1,6 @@
 ---
 #override-fluentbit-http-subsystem.yaml
 fluent-bit: 
-  endpoint: $endpoint
   config:
     filters: |-
       [FILTER]
@@ -28,7 +27,7 @@ fluent-bit:
           Name    modify
           Match   kube.*
           Copy    ${APP_NAME} applicationName
-          Add     subsystemName ${subsystem}
+          Add     subsystemName ${SUB_SYSTEM}
 
       [FILTER]
           Name            nest
