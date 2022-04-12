@@ -1,0 +1,14 @@
+---
+#override-fluentbit-coralogix.yaml
+fluent-bit:
+  config:
+    outputs: |-
+      [OUTPUT]
+          Name          coralogix
+          Endpoint      ${ENDPOINT}
+          Match         kube.*
+          Private_Key   ${PRIVATE_KEY}
+          App_Name_Key  ${APP_NAME}  #{{ .Values.app_name }}
+          Sub_Name      ${SUB_SYSTEM}  #{{ .Values.sub_system }}
+     
+      @INCLUDE output-systemd.conf
