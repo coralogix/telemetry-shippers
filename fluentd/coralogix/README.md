@@ -10,7 +10,7 @@ helm show values coralogix-charts-virtual/fluentd-coralogix
 
 ## Installation 
 In order to update the environment variables, please create a new yaml file and include all the envs inside, including the overrides, for example:
-```
+```yaml
 ---
 #override.yaml:
 fluentd:
@@ -19,6 +19,8 @@ fluentd:
     value: <app_name>
   - name: SUB_SYSTEM
     value: <sub_system>
+  - name: APP_NAME_SYSTEMD
+    value: systemd
   - name: SUB_SYSTEM_SYSTEMD
     value: kubelet.service
   - name: ENDPOINT
@@ -35,8 +37,11 @@ fluentd:
         fieldPath: spec.nodeName
 ```
 
-```
-helm upgrade fluentd-coralogix coralogix-charts-virtual/fluentd-coralogix --install --namespace=<your-namespace> --create-namespace -f override.yaml
+```bash
+helm upgrade fluentd-coralogix coralogix-charts-virtual/fluentd-coralogix \
+  --install --namespace=<your-namespace> \
+  --create-namespace \
+  -f override.yaml
 ```
 
 ## Disable Systemd Logs
