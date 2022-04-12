@@ -58,5 +58,4 @@ In order to import the dashboard into Grafana, firstly copy the json file conten
 Afterwards go to Grafana press the `Create` tab, then press `import`, and paste the copied json file.
 
 ## Dependencies
-By default this chart installs additional dependent chart:
-(https://github.com/fluent/helm-charts/tree/main/charts/fluentd)
+By default this chart installs additional dependent chart: (https://github.com/fluent/helm-charts/tree/main/charts/fluentd)
