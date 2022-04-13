@@ -3,7 +3,6 @@
 fluent-bit: 
   config:
     filters: |
-     appname=tsmssil
       [FILTER]
           Name kubernetes
           Match kube.*
@@ -27,7 +26,7 @@ fluent-bit:
       [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName ${APP_NAME}
+          Add     applicationName ${AP P_NAME}
           Copy    ${SUB_SYSTEM} subsystemName 
 
       [FILTER]
