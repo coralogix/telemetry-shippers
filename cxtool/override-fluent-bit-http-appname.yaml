@@ -26,7 +26,7 @@ fluent-bit:
       [FILTER]
           Name    modify
           Match   kube.*
-          Add     applicationName ${AP P_NAME}
+          Add     applicationName ${APP_NAME}
           Copy    ${SUB_SYSTEM} subsystemName 
 
       [FILTER]
