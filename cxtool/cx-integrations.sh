@@ -406,7 +406,7 @@ function main {
         echo ""
         echo "Examples:"
         echo "  cx-integrations generate --appdynamic false --appname Prod --platform k8s --destination s3 --bucket mybucket --fluent-bit-http"
-        echo "  cx-integrations deploy --cluster dev-shared.eu-west-1.k8s-rnd.coralogix.net"
+        echo "  cx-integrations deploy --cluster dev --privatekey 1234"
 
         return 0
         ;;
