@@ -4,19 +4,10 @@ generate=false
 deploy=false
 namespace=default
 endpoint=api.eu2.coralogix.com
-integration=
-bucket=
-gitrepo=
-gitusername=
-cluster=
-destination=
 appdynamic=true
 subdynamic=true
 dashboard=false
 platform=k8s
-privatekey=
-appname=
-subsystem=
 
 function main {
 
@@ -80,14 +71,6 @@ function main {
 
     if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluent-bit-coralogix" ] && [ "$integration" != "fluentd-http" ] && [ "$integration" != "fluentd-coralogix" ]; then 
     echo "Integration name is not valid"; exit 1; fi
-    
-    if [[ "$integration" = "fluent-bit-http" ]] || [[ "$integration" = "fluent-bit-coralogix" ]]; then
-      appname=kubernetes.namespace_name
-      subsystem=kubernetes.container_name
-    elif [[ "$integration" = "fluentd-http" ]] || [[ "$integration" = "fluentd-coralogix" ]]; then
-      appname=namespace_name
-      subsystem=container_name    
-    fi
 
     if [[ ! -d "./output" ]]; then 
       mkdir ./output
@@ -96,6 +79,12 @@ function main {
     # Generating templates for fluentbit
     if [[ "$integration" = "fluent-bit-http" ]] || [[ "$integration" = "fluent-bit-coralogix" ]]; then
       if [ $platform == "k8s" ]; then
+        if [ -z "$appname" ]; then 
+          appname=kubernetes.namespace_name
+        fi
+        if [ -z "$subsystem" ]; then 
+          subsystem=kubernetes.container_name
+        fi
         if [ $appdynamic == "true" ]; then 
           validateDynamic ${appname}
           if [ $subdynamic == "true" ]; then
@@ -131,6 +120,12 @@ function main {
     # Generating templates for fluentd-http
     if [ "$integration" = "fluentd-http" ]; then
       if [ $platform == "k8s" ]; then
+        if [ -z "$appname" ]; then 
+          appname=namespace_name
+        fi
+        if [ -z "$subsystem" ]; then 
+          subsystem=container_name
+        fi
         validateDynamic ${appname}
         validateDynamic ${subsystem}
         helm template $integration coralogix-charts-virtual/$integration \
@@ -138,7 +133,7 @@ function main {
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
           --set "fluentd.env[2].name=APP_NAME_SYSTEMD" --set "fluentd.env[2].value=systemd" \
           --set "fluentd.env[3].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[3].value=kubelet.service" \
-          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=api.eu2.coralogix.com" \
+          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=${endpoint}" \
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
@@ -150,6 +145,12 @@ function main {
     # Generating templates for fluentd-coralogix
     if [ "$integration" = "fluentd-coralogix" ]; then
       if [ $platform == "k8s" ]; then
+        if [ -z "$appname" ]; then 
+          appname=namespace_name
+        fi
+        if [ -z "$subsystem" ]; then 
+          subsystem=container_name
+        fi
         validateDynamic ${appname}
         validateDynamic ${subsystem}
         helm template $integration coralogix-charts-virtual/$integration \
@@ -157,7 +158,7 @@ function main {
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
           --set "fluentd.env[2].name=APP_NAME_SYSTEMD" --set "fluentd.env[2].value=systemd" \
           --set "fluentd.env[3].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[3].value=kubelet.service" \
-          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=api.eu2.coralogix.com" \
+          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=${endpoint}" \
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=MAX_LOG_BUFFER_SIZE" --set "fluentd.env[7].value=12582912" \
@@ -179,14 +180,6 @@ function main {
 
     if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluent-bit-coralogix" ] && [ "$integration" != "fluentd-http" ] && [ "$integration" != "fluentd-coralogix" ]; then 
     echo "Integration chart name is not valid"; exit ; fi
-
-    if [[ "$integration" = "fluent-bit-http" ]] || [[ "$integration" = "fluent-bit-coralogix" ]]; then
-      appname=kubernetes.namespace_name
-      subsystem=kubernetes.container_name
-    elif [[ "$integration" = "fluentd-http" ]] || [[ "$integration" = "fluentd-coralogix" ]]; then
-      appname=namespace_name
-      subsystem=container_name    
-    fi
 
     if [ -z "$cluster" ]; then
       echo "Cluster arg is empty! exiting... "
@@ -218,6 +211,12 @@ function main {
     # Deploying Fluent-Bit
     if [[ "$integration" = "fluent-bit-http" ]] || [[ "$integration" = "fluent-bit-coralogix" ]]; then
       if [ $platform == "k8s" ]; then
+        if [ -z "$appname" ]; then 
+          appname=kubernetes.namespace_name
+        fi
+        if [ -z "$subsystem" ]; then 
+          subsystem=kubernetes.container_name
+        fi
         if [ $appdynamic == "true" ]; then 
           validateDynamic ${appname}
           if [ $subdynamic == "true" ]; then
@@ -229,8 +228,8 @@ function main {
               if [ $? -ne 0 ]; then exit 1; fi      
           else
               helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f ./override-$integration-subsystem.yaml \
-                --set "fluent-bit.app_name=${appname_fluentbit}" \
-                --set "fluent-bit.sub_system=${subsystem_fluentbit}" \
+                --set "fluent-bit.app_name=${appname}" \
+                --set "fluent-bit.sub_system=${subsystem}" \
                 --set "fluent-bit.endpoint=${endpoint}" 2>&1
               if [ $? -ne 0 ]; then exit 1; fi
           fi
@@ -253,6 +252,12 @@ function main {
     # Deploying Fluentd-http
     if [ "$integration" = "fluentd-http" ]; then
       if [ $platform == "k8s" ]; then
+        if [ -z "$appname" ]; then 
+          appname=namespace_name
+        fi
+        if [ -z "$subsystem" ]; then 
+          subsystem=container_name
+        fi
         validateDynamic ${appname}
         validateDynamic ${subsystem}
         helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
@@ -260,7 +265,7 @@ function main {
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
           --set "fluentd.env[2].name=APP_NAME_SYSTEMD" --set "fluentd.env[2].value=systemd" \
           --set "fluentd.env[3].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[3].value=kubelet.service" \
-          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=api.eu2.coralogix.com" \
+          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=${endpoint}" \
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
@@ -272,6 +277,12 @@ function main {
     # Deploying Fluentd-coralogix
     if [ "$integration" = "fluentd-coralogix" ]; then
       if [ $platform == "k8s" ]; then
+        if [ -z "$appname" ]; then 
+          appname=namespace_name
+        fi
+        if [ -z "$subsystem" ]; then 
+          subsystem=container_name
+        fi
         validateDynamic ${appname}
         validateDynamic ${subsystem}
         helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
@@ -279,7 +290,7 @@ function main {
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
           --set "fluentd.env[2].name=APP_NAME_SYSTEMD" --set "fluentd.env[2].value=systemd" \
           --set "fluentd.env[3].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[3].value=kubelet.service" \
-          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=api.eu2.coralogix.com" \
+          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=${endpoint}" \
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=MAX_LOG_BUFFER_SIZE" --set "fluentd.env[7].value=12582912" \
@@ -290,6 +301,7 @@ function main {
   }
 
 #################################################################################################################################################
+
   while [ $# -gt 0 ]; do
     case "$1" in
         generate) 
@@ -414,6 +426,7 @@ function main {
     echo "No command was specified, see 'cx-integrations --help'"
     exit 1
   fi
+
 }
 
 main "$@"
