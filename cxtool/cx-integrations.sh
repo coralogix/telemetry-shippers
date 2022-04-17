@@ -6,128 +6,187 @@ namespace=default
 endpoint=api.eu2.coralogix.com
 appdynamic=true
 subdynamic=true
-dashboard=false
-platform=k8s
+platform=kubernetes
+outputdir=output
+destination=local
 
 function main {
 
-  function send_to_dst {
+  function upload {
     if [ "$destination" == "s3" ]; then
       if [ -z "$bucket" ]; then echo "bucket name is empty!"; exit 1; fi
-      aws s3 mv ./output/$integration-manifests.yaml s3://$bucket/$integration-manifests.yaml 2>&1
-      if [ $? -ne 0 ]; then 
-        exit 1
-      fi
+      if [ -z "$bucketpath" ]; then 
+        aws s3 mv ./$outputdir/$integration-manifests.yaml s3://$bucket/$integration-manifests.yaml 2>&1
+        if [ $? -ne 0 ]; then 
+          exit 1
+        fi
+      else
+        aws s3 mv ./$outputdir/$integration-manifests.yaml s3://$bucket/$bucketpath/$integration-manifests.yaml 2>&1
+        if [ $? -ne 0 ]; then 
+          exit 1
+        fi      fi
     
     elif [ "$destination" == "github" ]; then
-      if [ -z "$gitusername" ]; then echo "git username is empty!"; exit 1; fi
-      if [ -z "$gitrepo" ]; then echo "git repo is empty!"; exit 1; fi
-      git clone git@github.com:$gitusername/$gitrepo.git 2>&1
+      if [ -z "$giturl" ]; then echo "git url is empty!"; exit 1; fi
+      git clone $giturl 2>&1
       if [ $? -ne 0 ]; then exit 1; fi
-      git add ./output/$integration-manifests.yaml
+      git add ./$outputdir/$integration-manifests.yaml
       git commit -m "Adding fluent-bit-http kubernetes manifests"
       git push 2>&1
       if [ $? -ne 0 ]; then exit 1; fi
-      rm -rf ./output
+      rm -rf ./$outputdir
 
     elif [ "$destination" == "local" ]; then
-      if [ -z "$path" ]; then
-        echo "local path is empty! exiting..."
-        exit 1
-      fi
-      touch $path 2>&1
-      if [ $? -ne 0 ]; then 
-        exit 1
-      else
-        mv ./output/$integration-manifests.yaml $path 2>&1
+      if [ ! -z "$path" ]; then
+        mv ./$outputdir/$integration-manifests.yaml $path 2>&1
         if [ $? -ne 0 ]; then exit 1; fi
-        rm -rf ./output
+        rm -rf ./$outputdir
+      else
+        echo "The generated manifests now exist under './$outputdir' directory in the current path"
       fi
     fi
   }
 
   function validateDynamic () {
-    if [ "$integration" = "fluent-bit-http" ] || [ "$integration" = "fluent-bit-coralogix" ]; then
-      if [[ $1 != kubernetes.* ]]; then
-        echo "$1 is not valid, must start with kubernetes.*, exiting..."
-        exit 1
-      else
-        return 0
+    if [ $1 == "true" ]; then #dynamic
+      if [ "$integration" = "fluent-bit-http" ]; then
+        if [[ $2 != kubernetes.* ]]; then
+          echo "$2 is not valid, must start with kubernetes.*, exiting..."
+          exit 1
+        else
+          return 0
+        fi
+      elif [ "$integration" = "fluentd-http" ]; then 
+        if [[ $2 == kubernetes.* ]]; then
+          echo "$2 is not valid, cannot include kubernetes in the beginning, exiting..."
+          exit 1
+        fi
       fi
-    elif [ "$integration" = "fluentd-http" ] || [ "$integration" = "fluentd-coralogix" ]; then 
-      if [[ $1 == kubernetes.* ]]; then
-        echo "$1 is not valid, cannot include kubernetes in the beginning, exiting..."
+    else #static
+      if [ "$integration" = "fluent-bit-http" ]; then
+        if [ -z "$2" ]; then echo "when appdynamic/subdynamic is false - the value must be specified [appname/subsystem]"; exit 1; fi
+        if [[ $2 == kubernetes.* ]]; then
+          echo "$2 is not valid, cannot start with kubernetes.*, exiting..."
+          exit 1
+        else
+          return 0
+        fi
+      elif [ "$integration" = "fluentd-http" ]; then 
+        echo "fluentd-http supports only dynamic appname and subname, exiting..."
         exit 1
+      fi
+    fi
+  }
+
+  function check_secret_exists {
+    # Creating the integrations secret if it doesn't exist
+    kubectl get namespace $namespace 2>&1 > /dev/null
+    if [ $? -ne 0 ]; then kubectl create namespace $namespace; fi
+    kubectl get secret integrations-privatekey -n $namespace -oyaml 2>&1 > /dev/null
+    if [ $? -ne 0 ]; then 
+      echo "Creating secret 'integrations-privatekey' in namespace $namespace..." 
+      kubectl create secret generic integrations-privatekey -n $namespace --from-literal=PRIVATE_KEY=$privatekey 2>&1
+      if [ $? -ne 0 ]; then 
+        exit 1;
+      else
+        return 0;
+      fi 
+    fi
+  }
+
+  function helmInstalled { 
+    which helm 2>&1 > /dev/null
+    if [ $? -ne 0 ]; then
+      echo "helm is not installed, do you want to install it now ? y/n" 
+      read ans
+      if [ $ans == 'n' ]; then
+        exit 1;
+      else
+        echo "installing helm..." 
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 2>&1
+        if [ $? -ne 0 ]; then exit 1; fi
+        chmod 700 get_helm.sh 2>&1
+        if [ $? -ne 0 ]; then exit 1; fi
+        ./get_helm.sh 2>&1
+        if [ $? -ne 0 ]; then exit 1; fi
+        rm -f ./get_helm.sh
       fi
     fi
   }
   
 #################################################################################################################################################
   function generate {
+
     if [ -z "$integration" ]; then
       echo "Integration name was no specified! exiting... "
       exit 1
     fi
-
-    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluent-bit-coralogix" ] && [ "$integration" != "fluentd-http" ] && [ "$integration" != "fluentd-coralogix" ]; then 
+  
+    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
     echo "Integration name is not valid"; exit 1; fi
 
-    if [[ ! -d "./output" ]]; then 
-      mkdir ./output
+    if [[ ! -d "./$outputdir" ]]; then 
+      mkdir ./$outputdir
     fi
 
     # Generating templates for fluentbit
-    if [[ "$integration" = "fluent-bit-http" ]] || [[ "$integration" = "fluent-bit-coralogix" ]]; then
-      if [ $platform == "k8s" ]; then
-        if [ -z "$appname" ]; then 
+    if [ "$integration" = "fluent-bit-http" ] ; then
+      if [ "$platform" = "kubernetes" ]; then
+        helmInstalled 
+        if [ -z "$appname" ] && [ "$appdynamic" == "true" ]; then 
           appname=kubernetes.namespace_name
         fi
-        if [ -z "$subsystem" ]; then 
+        if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=kubernetes.container_name
         fi
+        validateDynamic ${appdynamic} ${appname}
+        validateDynamic ${subdynamic} ${subsystem}
         if [ $appdynamic == "true" ]; then 
-          validateDynamic ${appname}
           if [ $subdynamic == "true" ]; then
-              validateDynamic ${subsystem}
               helm template $integration coralogix-charts-virtual/$integration \
                 --set "fluent-bit.app_name=${appname}" \
                 --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" > ./output/$integration-manifests.yaml 2>&1
+                --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
               if [ $? -ne 0 ]; then exit 1; fi
           else
               helm template $integration coralogix-charts-virtual/$integration -f ./override-$integration-subsystem.yaml \
                 --set "fluent-bit.app_name=${appname}" \
                 --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" > ./output/$integration-manifests.yaml 2>&1
+                --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
               if [ $? -ne 0 ]; then exit 1; fi
           fi
         elif [ $subdynamic == "true" ]; then
           helm template $integration coralogix-charts-virtual/$integration -f ./override-$integration-appname.yaml \
             --set "fluent-bit.app_name=${appname}" \
             --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" > ./output/$integration-manifests.yaml 2>&1
+            --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
           if [ $? -ne 0 ]; then exit 1; fi
-        else
+        else #both static
           helm template $integration coralogix-charts-virtual/$integration \
             --set "fluent-bit.app_name=${appname}" \
             --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" > ./output/$integration-manifests.yaml 2>&1
+            --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
           if [ $? -ne 0 ]; then exit 1; fi
         fi
+      else
+        exit 1
       fi
     fi
 
     # Generating templates for fluentd-http
     if [ "$integration" = "fluentd-http" ]; then
-      if [ $platform == "k8s" ]; then
-        if [ -z "$appname" ]; then 
+      if [ $platform == "kubernetes" ]; then
+        helmInstalled 
+        if [ -z "$appname" ] && [ "$appdynamic" == "true" ]; then 
           appname=namespace_name
         fi
-        if [ -z "$subsystem" ]; then 
+        if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=container_name
         fi
-        validateDynamic ${appname}
-        validateDynamic ${subsystem}
+        validateDynamic ${appdynamic} ${appname}
+        validateDynamic ${subdynamic} ${subsystem}
+        # Fluentd doesnt support 'envwithtpl' like Fluentbit, meaning it doesn't template the configuration,
+        # so the overrides must be set like the following, and include all of the environment variables, even if they are similar to the defaults : 
         helm template $integration coralogix-charts-virtual/$integration \
           --set "fluentd.env[0].name=APP_NAME" --set "fluentd.env[0].value=${appname}" \
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
@@ -137,90 +196,48 @@ function main {
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
-          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" > ./output/$integration-manifests.yaml 2>&1
+          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" > ./$outputdir/$integration-manifests.yaml 2>&1
         if [ $? -ne 0 ]; then exit 1; fi
       fi
     fi
-    
-    # Generating templates for fluentd-coralogix
-    if [ "$integration" = "fluentd-coralogix" ]; then
-      if [ $platform == "k8s" ]; then
-        if [ -z "$appname" ]; then 
-          appname=namespace_name
-        fi
-        if [ -z "$subsystem" ]; then 
-          subsystem=container_name
-        fi
-        validateDynamic ${appname}
-        validateDynamic ${subsystem}
-        helm template $integration coralogix-charts-virtual/$integration \
-          --set "fluentd.env[0].name=APP_NAME" --set "fluentd.env[0].value=${appname}" \
-          --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
-          --set "fluentd.env[2].name=APP_NAME_SYSTEMD" --set "fluentd.env[2].value=systemd" \
-          --set "fluentd.env[3].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[3].value=kubelet.service" \
-          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=${endpoint}" \
-          --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
-          --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
-          --set "fluentd.env[7].name=MAX_LOG_BUFFER_SIZE" --set "fluentd.env[7].value=12582912" \
-          --set "fluentd.env[8].name=K8S_NODE_NAME"  --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" > ./output/$integration-manifests.yaml 2>&1
-        if [ $? -ne 0 ]; then exit 1; fi      
-      fi
-    fi
-
-    if [[ ! -z "$destination" ]]; then
-      send_to_dst $destination
-    else
-      echo "The generated manifests now exist under './output' directory in the current path"
-    fi
+  
+    upload $destination
     
   } 
 
 #################################################################################################################################################
   function deploy {
 
-    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluent-bit-coralogix" ] && [ "$integration" != "fluentd-http" ] && [ "$integration" != "fluentd-coralogix" ]; then 
+    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
     echo "Integration chart name is not valid"; exit ; fi
 
-    if [ -z "$cluster" ]; then
-      echo "Cluster arg is empty! exiting... "
-      exit 1
+    if [[ ! -z "$cluster" ]]; then
+      kubectl config use-context $cluster 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
     fi
-
-    kubectl config use-context $cluster 2>&1
-    if [ $? -ne 0 ]; then exit 1; fi
 
     if [ -z "$privatekey" ]; then
       echo "Private Key is empty! exiting..."
       exit 1
     fi
 
-    # Creating the integrations secret if it doesn't exist
-    `kubectl get secret integrations-privatekey -n $namespace -oyaml >> ./check-secret.yaml 2>&1`
-    if [ `cat ./check-secret.yaml | grep -i 'not found' | wc -l` = 1 ]; then 
-      echo "integrations-privatekey secret doesnt exist, creating secret..."
-      if [ `cat ./check-secret.yaml | grep -i 'namespace' | wc -l` = 1 ]; then
-        echo "Creating secret 'integrations-privatekey' in namespace $namespace..."
-        kubectl create namespace $namespace
-        kubectl create secret generic integrations-privatekey -n $namespace --from-literal=PRIVATE_KEY=$privatekey
-      else
-        kubectl create secret generic integrations-privatekey -n $namespace --from-literal=PRIVATE_KEY=$privatekey
-      fi
-    fi 
-    rm -f ./check-secret.yaml
+    helmInstalled
+    check_secret_exists
 
     # Deploying Fluent-Bit
-    if [[ "$integration" = "fluent-bit-http" ]] || [[ "$integration" = "fluent-bit-coralogix" ]]; then
-      if [ $platform == "k8s" ]; then
-        if [ -z "$appname" ]; then 
+    if [ "$integration" = "fluent-bit-http" ]; then
+      if [ $platform == "kubernetes" ]; then
+        helmInstalled 
+        if [ -z "$appname" ] && [ "$appdynamic" == "true" ]; then 
           appname=kubernetes.namespace_name
         fi
-        if [ -z "$subsystem" ]; then 
+        if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=kubernetes.container_name
         fi
+        validateDynamic ${appdynamic} ${appname}
+        validateDynamic ${subdynamic} ${subsystem}
         if [ $appdynamic == "true" ]; then 
-          validateDynamic ${appname}
           if [ $subdynamic == "true" ]; then
-              validateDynamic ${subsystem}
               helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
                 --set "fluent-bit.app_name=${appname}" \
                 --set "fluent-bit.sub_system=${subsystem}" \
@@ -250,16 +267,19 @@ function main {
     fi 
 
     # Deploying Fluentd-http
+    # Fluentd doesnt support 'envwithtpl' like Fluentbit, meaning it doesn't template the configuration,
+    # so the overrides must be set like the following, and include all of the environment variables, even if they are similar to the defaults :
     if [ "$integration" = "fluentd-http" ]; then
-      if [ $platform == "k8s" ]; then
-        if [ -z "$appname" ]; then 
+      if [ $platform == "kubernetes" ]; then
+        helmInstalled 
+        if [ -z "$appname" ] && [ "$appdynamic" == "true" ]; then 
           appname=namespace_name
         fi
-        if [ -z "$subsystem" ]; then 
+        if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=container_name
         fi
-        validateDynamic ${appname}
-        validateDynamic ${subsystem}
+        validateDynamic ${appdynamic} ${appname}
+        validateDynamic ${subdynamic} ${subsystem}
         helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
           --set "fluentd.env[0].name=APP_NAME" --set "fluentd.env[0].value=${appname}" \
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
@@ -269,35 +289,29 @@ function main {
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
-          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" > ./output/$integration-manifests.yaml 2>&1
+          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" 2>&1
         if [ $? -ne 0 ]; then exit 1; fi
       fi
-    fi
+    fi   
+  }
+
+#################################################################################################################################################
+  function apply { 
+
+    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
+    echo "Integration chart name is not valid"; exit ; fi
+
+    generate "$@";
+    echo "Applying manifests..."
     
-    # Deploying Fluentd-coralogix
-    if [ "$integration" = "fluentd-coralogix" ]; then
-      if [ $platform == "k8s" ]; then
-        if [ -z "$appname" ]; then 
-          appname=namespace_name
-        fi
-        if [ -z "$subsystem" ]; then 
-          subsystem=container_name
-        fi
-        validateDynamic ${appname}
-        validateDynamic ${subsystem}
-        helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
-          --set "fluentd.env[0].name=APP_NAME" --set "fluentd.env[0].value=${appname}" \
-          --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
-          --set "fluentd.env[2].name=APP_NAME_SYSTEMD" --set "fluentd.env[2].value=systemd" \
-          --set "fluentd.env[3].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[3].value=kubelet.service" \
-          --set "fluentd.env[4].name=ENDPOINT" --set "fluentd.env[4].value=${endpoint}" \
-          --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
-          --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
-          --set "fluentd.env[7].name=MAX_LOG_BUFFER_SIZE" --set "fluentd.env[7].value=12582912" \
-          --set "fluentd.env[8].name=K8S_NODE_NAME"  --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" > ./output/$integration-manifests.yaml 2>&1
-        if [ $? -ne 0 ]; then exit 1; fi
-      fi
+    if [ -z "$privatekey" ]; then
+      echo "Private Key is empty! exiting..."
+      exit 1
     fi
+
+    check_secret_exists
+
+    kubectl apply -f ./$outputdir/$integration-manifests.yaml -n $namespace
   }
 
 #################################################################################################################################################
@@ -309,6 +323,9 @@ function main {
         ;;
         deploy) 
         deploy=true
+        ;;
+        apply) 
+        apply=true
         ;;
       --namespace|-n)
         if [[ "$1" != *=* ]]; then shift; fi
@@ -334,17 +351,17 @@ function main {
         if [[ "$1" != *=* ]]; then shift; fi
         platform="${1#*=}"
         ;;
-      --gitrepo)
+      --giturl)
         if [[ "$1" != *=* ]]; then shift; fi
-        gitrepo="${1#*=}"
+        giturl="${1#*=}"
         ;;
-      --gitusername)
-        if [[ "$1" != *=* ]]; then shift; fi
-        gitusername="${1#*=}"
-        ;;    
       --bucket)
         if [[ "$1" != *=* ]]; then shift; fi
         bucket="${1#*=}"
+        ;;
+      --bucketpath)
+        if [[ "$1" != *=* ]]; then shift; fi
+        bucketpath="${1#*=}"
         ;;
       --path)
         if [[ "$1" != *=* ]]; then shift; fi
@@ -353,11 +370,7 @@ function main {
       --cluster)
         if [[ "$1" != *=* ]]; then shift; fi
         cluster="${1#*=}"
-        ;;
-      --dashboard)
-        if [[ "$1" != *=* ]]; then shift; fi
-        dashboard="${1#*=}"
-        ;;        
+        ;;      
       --appname)
         if [[ "$1" != *=* ]]; then shift; fi
         appname="${1#*=}"
@@ -377,35 +390,35 @@ function main {
         echo "  cx-integrations [Command] [Flags] integration"
         echo ""
         echo "Available integrations:"
-        echo "  fluentd-http, fluent-bit-http, fluentd-coralogix, fluent-bit-coralogix"
+        echo "  fluentd-http, fluent-bit-http"
         echo ""
         echo "Commands:"
-        echo "  generate              Generating manifests for the desired integration and sending it to the desired destination."
-        echo "  deploy                Deploying desired integration in the specified platform."           
+        echo "  generate                Generating manifests for the desired integration and sending it to the desired destination."
+        echo "  deploy                  Deploying desired integration with Helm."
+        echo "  apply                   Deploying desired integration to Kubernetes without Helm."           
         echo ""  
         echo "Common Flags:"
-        echo "  privatekey            Mandatory, the 'send-your-logs' key"
-        echo "  endpoint|-e           Optional, Coralogix default endpoint is 'api.eu2.coralogix.com'."
-        echo "  appname               Optional, default is kubernetes namespace name."
-        echo "  subsystem             Optional, default is kubernetes container name."
-        echo "  appdynamic            Default is true, if changing the appname to static, this flag is mandatory and must be set to false."
-        echo "  subdynamic            Default is true, if changing the subsystem to static, this flag is mandatory and must be set to false."
-        echo "  platform              The platform to generate/deploy for, k8s or terraform. Optional, default platform is k8s"
+        echo "  --endpoint|-e           Optional, Coralogix default endpoint is 'api.eu2.coralogix.com'."
+        echo "  --appname               Optional, default is kubernetes namespace name."
+        echo "  --subsystem             Optional, default is kubernetes container name."
+        echo "  --appdynamic            Default is true, if changing the appname to static, this flag is mandatory and must be set to false."
+        echo "  --subdynamic            Default is true, if changing the subsystem to static, this flag is mandatory and must be set to false."
+        echo "  --platform              The platform to generate/deploy for, currently the available platform is kubernetes"
         echo ""
         echo "Deploy Flags:"
-        echo "  cluster               Mandatory, the name of the kubernetes cluster to deploy in." 
-        echo "  dashboard             Whether to import the integration dashboard to the hosted Grafana. Optional, default is false"
-        echo "  namespace|-n          Optional, default namespace is 'default"
+        echo "  --privatekey            Mandatory, the 'send-your-logs' key"
+        echo "  --cluster               Optional, the name of the kubernetes cluster to deploy in. Default is the current context" 
+        echo "  --namespace|-n          Optional, default namespace is 'default"
         echo ""
         echo "Generate Flags:"
-        echo "  destination|-d        Mandatory, the destination of the integration manifests - GitHub/S3/local."
-        echo "  path                  Mandatory when using the 'local' destination"
-        echo "  bucket                Mandatory when using the 's3' destination"
-        echo "  gitusername           Mandatory when using the 'github' destination"
-        echo "  gitrepo               Mandatory when using the 'github' destination"
+        echo "  --destination|-d        The destination of the integration manifests - github/s3/local. Optional, default is local"
+        echo "  --path                  Mandatory when using the 'local' destination"
+        echo "  --bucket                Mandatory when using the 's3' destination"
+        echo "  --bucketpath            Path inside the bucket, optional. default is the root path"
+        echo "  --giturl                The url of the desired repo. Mandatory when using the 'github' destination"
         echo ""
         echo "Examples:"
-        echo "  cx-integrations generate --appdynamic false --appname Prod --platform k8s --destination s3 --bucket mybucket --fluent-bit-http"
+        echo "  cx-integrations generate --appdynamic false --appname Prod --platform kubernetes --destination s3 --bucket mybucket --fluent-bit-http"
         echo "  cx-integrations deploy --cluster dev --privatekey 1234"
 
         return 0
@@ -418,10 +431,12 @@ function main {
 
   done
 
-  if [[ "$generate" = true ]] && [[ "$deploy" = false ]]; then 
+  if [ "$generate" = true ]; then 
     generate "$@"; 
-  elif [[ "$deploy" = true ]] && [[ "$generate" = false ]]; then
+  elif [ "$deploy" = true ]; then
     deploy "$@";
+  elif [ "$apply" = true ]; then
+    apply "$@"; 
   else
     echo "No command was specified, see 'cx-integrations --help'"
     exit 1
