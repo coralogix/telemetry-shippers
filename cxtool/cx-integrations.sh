@@ -301,6 +301,11 @@ function main {
     if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
     echo "Integration chart name is not valid"; exit ; fi
 
+    if [[ ! -z "$cluster" ]]; then
+      kubectl config use-context $cluster 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
+    fi
+
     generate "$@";
     echo "Applying manifests..."
     
@@ -406,6 +411,11 @@ function main {
         echo "  --platform              The platform to generate/deploy for, currently the available platform is kubernetes"
         echo ""
         echo "Deploy Flags:"
+        echo "  --privatekey            Mandatory, the 'send-your-logs' key"
+        echo "  --cluster               Optional, the name of the kubernetes cluster to deploy in. Default is the current context" 
+        echo "  --namespace|-n          Optional, default namespace is 'default"
+        echo ""
+        echo "Apply Flags:"
         echo "  --privatekey            Mandatory, the 'send-your-logs' key"
         echo "  --cluster               Optional, the name of the kubernetes cluster to deploy in. Default is the current context" 
         echo "  --namespace|-n          Optional, default namespace is 'default"
