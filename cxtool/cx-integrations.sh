@@ -146,26 +146,26 @@ function main {
               helm template $integration coralogix-charts-virtual/$integration \
                 --set "fluent-bit.app_name=${appname}" \
                 --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
+                --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
               if [ $? -ne 0 ]; then exit 1; fi
           else
               helm template $integration coralogix-charts-virtual/$integration -f ./override-$integration-subsystem.yaml \
                 --set "fluent-bit.app_name=${appname}" \
                 --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
+                --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
               if [ $? -ne 0 ]; then exit 1; fi
           fi
         elif [ $subdynamic == "true" ]; then
           helm template $integration coralogix-charts-virtual/$integration -f ./override-$integration-appname.yaml \
             --set "fluent-bit.app_name=${appname}" \
             --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
+            --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
           if [ $? -ne 0 ]; then exit 1; fi
         else #both static
           helm template $integration coralogix-charts-virtual/$integration \
             --set "fluent-bit.app_name=${appname}" \
             --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" > ./$outputdir/$integration-manifests.yaml 2>&1
+            --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
           if [ $? -ne 0 ]; then exit 1; fi
         fi
       else
@@ -196,7 +196,8 @@ function main {
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
-          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" > ./$outputdir/$integration-manifests.yaml 2>&1
+          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" \
+          --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
         if [ $? -ne 0 ]; then exit 1; fi
       fi
     fi
