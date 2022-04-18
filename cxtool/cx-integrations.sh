@@ -128,7 +128,7 @@ function main {
     fi
   }
 
-  function helmTemplate () {
+  function helmTemplateFluentbit () {
     overridefile=$1
     if [ -z $overridefile ]; then
       helm template $integration coralogix-charts-virtual/$integration \
@@ -137,7 +137,7 @@ function main {
         --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/${integration}-manifests.yaml 2>&1
       if [ $? -ne 0 ]; then exit 1; fi
     else
-      helm template $integration coralogix-charts-virtual/$integration -f $1 \
+      helm template $integration coralogix-charts-virtual/$integration -f $overridefile \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
         --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/${integration}-manifests.yaml 2>&1
@@ -145,15 +145,16 @@ function main {
     fi
   }
 
-  function deployHelm () {
-    if [ -z $1 ]; then
+  function deployHelmFluentbit () {
+    overridefile=$1
+    if [ -z $overridefile ]; then
       helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
         --set "fluent-bit.endpoint=${endpoint}" 2>&1
       if [ $? -ne 0 ]; then exit 1; fi
     else
-      helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f $1 \
+      helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f $overridefile \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
         --set "fluent-bit.endpoint=${endpoint}" 2>&1
@@ -179,12 +180,9 @@ function main {
   function generate {
 
     if [ -z "$integration" ]; then
-      echo "Integration name was no specified! exiting... "
+      echo "Integration name was not specified! exiting... "
       exit 1
     fi
-  
-    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
-    echo "Integration name is not valid"; exit 1; fi
 
     if [[ ! -d "./$outputdir" ]]; then 
       mkdir ./$outputdir
@@ -199,20 +197,19 @@ function main {
         if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=kubernetes.container_name
         fi
-        validateDynamic ${appdynamic} ${appname}
-        validateDynamic ${subdynamic} ${subsystem}
         if [ $appdynamic == "true" ]; then 
           if [ $subdynamic == "true" ]; then #both dynamic
-              helmTemplate
+              helmTemplateFluentbit
           else
-              helmTemplate ./override-${integration}-subsystem.yaml
+              helmTemplateFluentbit ./override-${integration}-subsystem.yaml
           fi
         elif [ $subdynamic == "true" ]; then
-          helmTemplate ./override-${integration}-appname.yaml 
+          helmTemplateFluentbit ./override-${integration}-appname.yaml 
         else #both static
-          helmTemplate ./override-${integration}-static.yaml
+          helmTemplateFluentbit ./override-${integration}-static.yaml
         fi
       else
+        echo "Platform must be kubernetes, exiting..."
         exit 1
       fi
     fi
@@ -226,8 +223,6 @@ function main {
         if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=container_name
         fi
-        validateDynamic ${appdynamic} ${appname}
-        validateDynamic ${subdynamic} ${subsystem}
         # Fluentd doesnt support 'envwithtpl' like Fluentbit, meaning it doesn't template the configuration,
         # so the overrides must be set like the following, and include all of the environment variables, even if they are similar to the defaults : 
         helm template $integration coralogix-charts-virtual/$integration \
@@ -242,6 +237,9 @@ function main {
           --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" \
           --namespace $namespace > ./$outputdir/${integration}-manifests.yaml 2>&1
         if [ $? -ne 0 ]; then exit 1; fi
+      else
+        echo "Platform must be kubernetes, exiting..."
+        exit 1
       fi
     fi
   
@@ -252,9 +250,6 @@ function main {
 #################################################################################################################################################
   function deploy {
 
-    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
-    echo "Integration chart name is not valid"; exit ; fi
-
     switchContext $cluster
     privateKeySupplied $privatekey
     check_secret_exists
@@ -262,26 +257,26 @@ function main {
     # Deploying Fluent-Bit
     if [ "$integration" = "fluent-bit-http" ]; then
       if [ $platform == "kubernetes" ]; then
-        deployHelm 
         if [ -z "$appname" ] && [ "$appdynamic" == "true" ]; then 
           appname=kubernetes.namespace_name
         fi
         if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=kubernetes.container_name
         fi
-        validateDynamic ${appdynamic} ${appname}
-        validateDynamic ${subdynamic} ${subsystem}
         if [ $appdynamic == "true" ]; then 
           if [ $subdynamic == "true" ]; then
-              deployHelm
+              deployHelmFluentbit
           else
-              deployHelm ./override-${integration}-subsystem.yaml
+              deployHelmFluentbit ./override-${integration}-subsystem.yaml
           fi
         elif [ $subdynamic == "true" ]; then
-          deployHelm ./override-${integration}-appname.yaml
+          deployHelmFluentbit ./override-${integration}-appname.yaml
         else
-          deployHelm ./override-${integration}-static.yaml
+          deployHelmFluentbit ./override-${integration}-static.yaml
         fi
+      else
+        echo "Platform must be kubernetes, exiting..."
+        exit 1     
       fi
     fi 
 
@@ -296,8 +291,6 @@ function main {
         if [ -z "$subsystem" ] && [ "$subdynamic" == "true" ]; then 
           subsystem=container_name
         fi
-        validateDynamic ${appdynamic} ${appname}
-        validateDynamic ${subdynamic} ${subsystem}
         helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
           --set "fluentd.env[0].name=APP_NAME" --set "fluentd.env[0].value=${appname}" \
           --set "fluentd.env[1].name=SUB_SYSTEM" --set "fluentd.env[1].value=${subsystem}" \
@@ -309,15 +302,15 @@ function main {
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
           --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" 2>&1
         if [ $? -ne 0 ]; then exit 1; fi
+      else
+        echo "Platform must be kubernetes, exiting..."
+        exit 1
       fi
     fi   
   }
 
 #################################################################################################################################################
   function apply { 
-
-    if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
-    echo "Integration chart name is not valid"; exit ; fi
 
     switchContext $cluster
     generate "$@";
@@ -449,7 +442,13 @@ function main {
 
   done
 
+  if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
+    echo "Integration chart name is not valid"
+    exit 1
+  fi
   helmInstalled 
+  validateDynamic ${appdynamic} ${appname}
+  validateDynamic ${subdynamic} ${subsystem}
   if [ "$generate" = true ]; then 
     generate "$@"; 
   elif [ "$deploy" = true ]; then
