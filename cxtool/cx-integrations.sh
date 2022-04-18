@@ -113,6 +113,52 @@ function main {
       fi
     fi
   }
+
+  function helmTemplate () {
+    if [ -z $1 ]; then
+      helm template $integration coralogix-charts-virtual/$integration \
+        --set "fluent-bit.app_name=${appname}" \
+        --set "fluent-bit.sub_system=${subsystem}" \
+        --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
+    else
+      helm template $integration coralogix-charts-virtual/$integration -f $1 \
+        --set "fluent-bit.app_name=${appname}" \
+        --set "fluent-bit.sub_system=${subsystem}" \
+        --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
+    fi
+  }
+
+  function helmInstall () {
+    if [ -z $1 ]; then
+      helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
+        --set "fluent-bit.app_name=${appname}" \
+        --set "fluent-bit.sub_system=${subsystem}" \
+        --set "fluent-bit.endpoint=${endpoint}" 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
+    else
+      helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f $1 \
+        --set "fluent-bit.app_name=${appname}" \
+        --set "fluent-bit.sub_system=${subsystem}" \
+        --set "fluent-bit.endpoint=${endpoint}" 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
+    fi
+  }
+
+  function switchContext () {
+    if [[ ! -z "$cluster" ]]; then
+      kubectl config use-context $cluster 2>&1
+      if [ $? -ne 0 ]; then exit 1; fi
+    fi
+  }
+
+  function privateKeySupplied () {
+    if [ -z "$privatekey" ]; then
+      echo "Private Key is empty! exiting..."
+      exit 1
+    fi
+  }
   
 #################################################################################################################################################
   function generate {
@@ -142,31 +188,15 @@ function main {
         validateDynamic ${appdynamic} ${appname}
         validateDynamic ${subdynamic} ${subsystem}
         if [ $appdynamic == "true" ]; then 
-          if [ $subdynamic == "true" ]; then
-              helm template $integration coralogix-charts-virtual/$integration \
-                --set "fluent-bit.app_name=${appname}" \
-                --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
-              if [ $? -ne 0 ]; then exit 1; fi
+          if [ $subdynamic == "true" ]; then #both dynamic
+              helmTemplate
           else
-              helm template $integration coralogix-charts-virtual/$integration -f ./override-$integration-subsystem.yaml \
-                --set "fluent-bit.app_name=${appname}" \
-                --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
-              if [ $? -ne 0 ]; then exit 1; fi
+              helmTemplate ./override-$integration-subsystem.yaml
           fi
         elif [ $subdynamic == "true" ]; then
-          helm template $integration coralogix-charts-virtual/$integration -f ./override-$integration-appname.yaml \
-            --set "fluent-bit.app_name=${appname}" \
-            --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
-          if [ $? -ne 0 ]; then exit 1; fi
+          helmTemplate ./override-$integration-appname.yaml 
         else #both static
-          helm template $integration coralogix-charts-virtual/$integration \
-            --set "fluent-bit.app_name=${appname}" \
-            --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/$integration-manifests.yaml 2>&1
-          if [ $? -ne 0 ]; then exit 1; fi
+          helmTemplate ./override-$integration-static.yaml
         fi
       else
         exit 1
@@ -212,16 +242,8 @@ function main {
     if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
     echo "Integration chart name is not valid"; exit ; fi
 
-    if [[ ! -z "$cluster" ]]; then
-      kubectl config use-context $cluster 2>&1
-      if [ $? -ne 0 ]; then exit 1; fi
-    fi
-
-    if [ -z "$privatekey" ]; then
-      echo "Private Key is empty! exiting..."
-      exit 1
-    fi
-
+    switchContext $cluster
+    privateKeySupplied $privatekey
     helmInstalled
     check_secret_exists
 
@@ -239,30 +261,14 @@ function main {
         validateDynamic ${subdynamic} ${subsystem}
         if [ $appdynamic == "true" ]; then 
           if [ $subdynamic == "true" ]; then
-              helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
-                --set "fluent-bit.app_name=${appname}" \
-                --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" 2>&1
-              if [ $? -ne 0 ]; then exit 1; fi      
+              helmInstall
           else
-              helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f ./override-$integration-subsystem.yaml \
-                --set "fluent-bit.app_name=${appname}" \
-                --set "fluent-bit.sub_system=${subsystem}" \
-                --set "fluent-bit.endpoint=${endpoint}" 2>&1
-              if [ $? -ne 0 ]; then exit 1; fi
+              helmInstall ./override-$integration-subsystem.yaml
           fi
         elif [ $subdynamic == "true" ]; then
-          helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f ./override-$integration-appname.yaml \
-            --set "fluent-bit.app_name=${appname}" \
-            --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}" 2>&1
-          if [ $? -ne 0 ]; then exit 1; fi
+          helmInstall ./override-$integration-appname.yaml
         else
-          helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
-            --set "fluent-bit.app_name=${appname}" \
-            --set "fluent-bit.sub_system=${subsystem}" \
-            --set "fluent-bit.endpoint=${endpoint}"  2>&1
-          if [ $? -ne 0 ]; then exit 1; fi
+          helmInstall ./override-$integration-static.yaml
         fi
       fi
     fi 
@@ -302,21 +308,11 @@ function main {
     if [ "$integration" != "fluent-bit-http" ] && [ "$integration" != "fluentd-http" ]; then 
     echo "Integration chart name is not valid"; exit ; fi
 
-    if [[ ! -z "$cluster" ]]; then
-      kubectl config use-context $cluster 2>&1
-      if [ $? -ne 0 ]; then exit 1; fi
-    fi
-
+    switchContext $cluster
     generate "$@";
     echo "Applying manifests..."
-    
-    if [ -z "$privatekey" ]; then
-      echo "Private Key is empty! exiting..."
-      exit 1
-    fi
-
+    privateKeySupplied $privatekey
     check_secret_exists
-
     kubectl apply -f ./$outputdir/$integration-manifests.yaml -n $namespace
   }
 
