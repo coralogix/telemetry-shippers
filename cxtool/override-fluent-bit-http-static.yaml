@@ -17,25 +17,10 @@ fluent-bit:
           Merge_Log On
 
       [FILTER]
-          Name            nest
-          Match           kube.*
-          Operation       lift
-          Nested_under    kubernetes
-          Add_prefix      kubernetes.
-
-      [FILTER]
           Name    modify
           Match   kube.*
           Add     applicationName ${APP_NAME}
           Add     subsystemName ${SUB_SYSTEM} 
-
-      [FILTER]
-          Name            nest
-          Match           kube.*
-          Operation       nest
-          Wildcard        kubernetes.*
-          Nest_under      kubernetes
-          Remove_prefix   kubernetes.
 
       [FILTER]
           Name        nest
