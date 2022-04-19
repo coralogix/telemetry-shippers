@@ -1,0 +1,45 @@
+
+name: Logstash-Image
+
+on:
+  push:
+    branches: master
+    paths:
+    - 'logstash/image/**'
+
+env:
+  DOCKERHUB_REGISTRY: coralogixrepo/logstash-coralogix-image
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2.4.0
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Read Logstash VERSION file
+        id: get-logstash-version
+        run: echo "::set-output name=version::$(cat ./logstash/image/VERSION)"
+      -
+        name: Build And Push Logstash Image To Dockerhub
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./logstash/image
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-logstash-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}:latest
