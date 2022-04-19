@@ -1,0 +1,269 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: fluentd-coralogix-configs
+  namespace: kube-system
+  labels:
+    k8s-app: fluentd-coralogix-logger
+data:
+  fluent.conf: |
+    @include conf/*.conf
+  kubernetes.conf: |
+    <source>
+      @id startupscript.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/startupscript.log
+      pos_file /var/log/startupscript.log.pos
+      <parse>
+        @type syslog
+        message_format auto
+      </parse>
+      tag startupscript
+    </source>
+    <source>
+      @id docker.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/docker.log
+      pos_file /var/log/docker.log.pos
+      <parse>
+        @type regexp
+        expression /^time="(?<time>[^)]*)" level=(?<severity>[^ ]*) msg="(?<message>[^"]*)"( err="(?<error>[^"]*)")?( statusCode=($<status_code>\d+))?/
+        keep_time_key true
+      </parse>
+      tag docker
+    </source>
+    <source>
+      @id etcd.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/etcd.log
+      pos_file /var/log/etcd.log.pos
+      <parse>
+        @type none
+      </parse>
+      tag etcd
+    </source>
+    <source>
+      @id kubelet.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/kubelet.log
+      pos_file /var/log/kubelet.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag kubelet
+    </source>
+    <source>
+      @id kube-proxy.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/kube-proxy.log
+      pos_file /var/log/kube-proxy.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag kube-proxy
+    </source>
+    <source>
+      @id kube-apiserver.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/kube-apiserver.log
+      pos_file /var/log/kube-apiserver.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag kube-apiserver
+    </source>
+    <source>
+      @id kube-controller-manager.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/kube-controller-manager.log
+      pos_file /var/log/kube-controller-manager.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag kube-controller-manager
+    </source>
+    <source>
+      @id kube-scheduler.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/kube-scheduler.log
+      pos_file /var/log/kube-scheduler.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag kube-scheduler
+    </source>
+    <source>
+      @id rescheduler.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/rescheduler.log
+      pos_file /var/log/rescheduler.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag rescheduler
+    </source>
+    <source>
+      @id glbc.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/glbc.log
+      pos_file /var/log/glbc.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag glbc
+    </source>
+    <source>
+      @id cluster-autoscaler.log
+      @type tail
+      @label @KUBERNETES_CLUSTER_COMPONENTS
+      path /var/log/cluster-autoscaler.log
+      pos_file /var/log/cluster-autoscaler.log.pos
+      <parse>
+        @type kubernetes
+      </parse>
+      multiline_flush_interval 5s
+      tag cluster-autoscaler
+    </source>
+
+    <label @KUBERNETES_CLUSTER_COMPONENTS>
+      <filter **>
+        @type record_transformer
+        enable_ruby true
+        auto_typecast true
+        renew_record true
+        <record>
+          component ${tag}
+          privateKey "#{ENV['PRIVATE_KEY']}"
+          applicationName "${tag}-k8s-component"
+          subsystemName ${record.dig("kubernetes", "container_name")}
+          computerName ${record.dig("kubernetes", "host")}
+          timestamp ${time.strftime('%s%L')}
+          text ${record.to_json}
+        </record>
+      </filter>
+
+      <match **>
+        @type relabel
+        @label @SEND_TO_CORALOGIX
+      </match>
+    </label>
+
+    <source>
+      @id fluentd-containers.log
+      @type tail
+      @label @KUBERNETES_CONTAINERS
+      path /var/log/containers/*.log
+      pos_file /var/log/containers.log.pos
+      tag raw.containers.*
+      read_from_head true
+      <parse>
+        @type multi_format
+        <pattern>
+          format json
+          time_key time
+          time_format %Y-%m-%dT%H:%M:%S.%NZ
+          keep_time_key true
+        </pattern>
+        <pattern>
+          format /^(?<time>.+) (?<stream>stdout|stderr) [^ ]* (?<log>.*)$/
+          time_format %Y-%m-%dT%H:%M:%S.%N%:z
+          keep_time_key true
+        </pattern>
+      </parse>
+    </source>
+
+    <label @KUBERNETES_CONTAINERS>
+      <match raw.containers.**>
+        @id raw.containers
+        @type detect_exceptions
+        remove_tag_prefix raw
+        message log
+        stream stream
+        multiline_flush_interval 5
+        max_bytes 500000
+        max_lines 1000
+      </match>
+      <filter containers.**>
+        @type kubernetes_metadata
+      </filter>
+      <match containers.**>
+         @type rewrite_tag_filter
+         <rule>
+           key $.kubernetes.container_name
+           pattern ^(.+)$
+           tag $1.${tag}
+         </rule>
+      </match>
+      <match {heapster,influxdb,grafana,fluentd-coralogix}.containers.**>
+        @type null
+      </match>
+      
+      <filter *.containers.**>
+        @type parser
+        key_name log
+        reserve_time true
+        reserve_data true
+        remove_key_name_field true
+        replace_invalid_sequence true
+        emit_invalid_record_to_error false
+        <parse>
+          @type json
+          keep_time_key true
+        </parse>
+      </filter>
+
+      <filter **>
+        @type record_transformer
+        enable_ruby true
+        auto_typecast true
+        renew_record true
+        <record>
+          privateKey "#{ENV['PRIVATE_KEY']}"
+          applicationName ${record.dig("kubernetes", "namespace_name")}
+          subsystemName ${record.dig("kubernetes", "container_name")}
+          computerName ${record.dig("kubernetes", "host")}
+          timestamp ${time.strftime('%s%L')}
+          text ${record.to_json}
+        </record>
+      </filter>
+
+      <match **>
+        @type relabel
+        @label @SEND_TO_CORALOGIX
+      </match>
+    </label>
+
+    <label @SEND_TO_CORALOGIX>          
+        <match **>
+          @type http
+          endpoint "#{ENV['CORALOGIX_LOG_URL']}"
+          headers_from_placeholders {"private_key":"${$.privateKey}"}
+          error_response_as_unrecoverable false
+          <buffer $.privateKey>
+            @type memory
+            chunk_limit_size 10MB
+            flush_interval 1s
+            overflow_action block
+            retry_max_times 10
+            retry_type periodic
+            retry_wait 8
+          </buffer>
+        </match>
+      </label>
