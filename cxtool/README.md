@@ -6,7 +6,7 @@ Currently the supported integrations are Fluentd-http and Fluent-bit-http.
 ### Installation 
 ```
 git clone git@github.com:coralogix/eng-integrations.git 
-sudo mv ./eng-integrations /usr/local/bin
+sudo mv ./eng-integrations/cxtool /usr/local/bin
 cx-integrations --help
 ```
 
@@ -42,7 +42,7 @@ Apply Flags:
 
 Generate Flags:
   --destination|-d        The destination of the integration manifests - github/s3/local. Optional, default is local
-  --path                  Mandatory when using the 'local' destination
+  --path                  Optional when using the 'local' destination
   --bucket                Mandatory when using the 's3' destination
   --bucketpath            Path inside the bucket, optional. default is the root path
   --giturl                The url of the desired repo. Mandatory when using the 'github' destination

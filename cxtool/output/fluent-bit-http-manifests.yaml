@@ -326,6 +326,29 @@ spec:
       tolerations:
         - operator: Exists
 ---
+# Source: fluent-bit-http/charts/fluent-bit/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fluent-bit-http
+  labels:
+    helm.sh/chart: fluent-bit-0.19.20
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: fluent-bit-http
+    app.kubernetes.io/version: "1.8.13"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  endpoints:
+    - port: http
+      path: /api/v1/metrics/prometheus
+  namespaceSelector:
+    matchNames:
+      - default
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fluent-bit
+      app.kubernetes.io/instance: fluent-bit-http
+---
 # Source: fluent-bit-http/charts/fluent-bit/templates/tests/test-connection.yaml
 apiVersion: v1
 kind: Pod
