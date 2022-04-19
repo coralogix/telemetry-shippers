@@ -437,8 +437,9 @@ function main {
         echo "  --giturl                The url of the desired repo. Mandatory when using the 'github' destination"
         echo ""
         echo "Examples:"
-        echo "  cx-integrations generate --appdynamic false --appname Prod --platform kubernetes --destination s3 --bucket mybucket --fluent-bit-http"
-        echo "  cx-integrations deploy --cluster dev --privatekey 1234"
+        echo "  cx-integrations generate --appdynamic false --appname Prod --destination s3 --bucket mybucket fluent-bit-http"
+        echo "  cx-integrations deploy --privatekey a1234b fluentd-http"
+        echo "  cx-integrations apply --privatekey a1234b -n monitoring fluentd-http"
 
         return 0
         ;;

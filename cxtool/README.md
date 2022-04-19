@@ -49,6 +49,7 @@ Generate Flags:
   --giturl                The url of the desired repo. Mandatory when using the 'github' destination
 
 Examples:
-  cx-integrations generate --appdynamic false --appname Prod --platform kubernetes --destination s3 --bucket mybucket --fluent-bit-http
-  cx-integrations deploy --cluster dev --privatekey 1234
+  cx-integrations generate --appdynamic false --appname Prod --destination s3 --bucket mybucket fluent-bit-http
+  cx-integrations deploy --privatekey a1234b fluentd-http
+  cx-integrations apply --privatekey a1234b -n monitoring fluentd-http
 ```
