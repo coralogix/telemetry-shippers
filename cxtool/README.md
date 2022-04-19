@@ -11,8 +11,9 @@ export PATH=$PATH:/eng-integrations/cxtool
 source ~/.zshrc
 ```
 
-```bash
-Usage:
+
+## Usage:
+```
   cx-integrations [Command] [Flags] integration
 
 Available integrations:
