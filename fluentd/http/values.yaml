@@ -27,7 +27,7 @@ fluentd:
   - name: APP_NAME
     value: namespace_name
   - name: SUB_SYSTEM
-    value: $kubernetes.container_name
+    value: container_name
   - name: APP_NAME_SYSTEMD
     value: systemd
   - name: SUB_SYSTEM_SYSTEMD
@@ -132,7 +132,7 @@ fluentd:
         <record>
           privateKey "#{ENV['PRIVATE_KEY']}"
           applicationName ${record.dig("kubernetes", "#{ENV['APP_NAME']}")}
-          subsystemName ${record.dig("kubernetes", "container_name")}
+          subsystemName ${record.dig("kubernetes", "#{ENV['SUB_SYSTEM']}")}
           computerName ${record.dig("kubernetes", "host")}
           timestamp ${time.strftime('%s%L')}
           text ${record.to_json}
