@@ -1,9 +1,9 @@
-### CX-Integrations CLI
+## CX-Integrations CLI
 
 The easiest way to generate integrations manifests and deploy an integration on Kubernetes with/without Helm. 
 Currently the supported integrations are Fluentd-http and Fluent-bit-http.
 
-## Installation 
+### Installation 
 ```
 git clone git@github.com:coralogix/eng-integrations.git 
 vim ~/.zshrc
@@ -11,8 +11,7 @@ export PATH=$PATH:/eng-integrations/cxtool
 source ~/.zshrc
 ```
 
-
-## Usage:
+### Usage
 ```
   cx-integrations [Command] [Flags] integration
 
