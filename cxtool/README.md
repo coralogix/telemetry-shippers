@@ -6,9 +6,8 @@ Currently the supported integrations are Fluentd-http and Fluent-bit-http.
 ### Installation 
 ```
 git clone git@github.com:coralogix/eng-integrations.git 
-vim ~/.zshrc
-export PATH=$PATH:/eng-integrations/cxtool
-source ~/.zshrc
+sudo mv ./eng-integrations /usr/local/bin
+cx-integrations --help
 ```
 
 ### Usage
