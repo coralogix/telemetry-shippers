@@ -4,5 +4,5 @@
 
 ### Fluentd-http 
 
-* [CHANGE] Coralogix subsystem is coming from an environment variable, and can be any other kubernetes field. 
+* [CHANGE] Enable Coralogix subsystem to be fetched from kuberentes metadata fields.  
   ([#41](https://github.com/coralogix/eng-integrations/pull/41)).
