@@ -7,9 +7,9 @@ endpoint=api.eu2.coralogix.com
 appdynamic=true
 subdynamic=true
 platform=kubernetes
-outputdir=output
 destination=local
-currentPath=/usr/local/bin/cxtool
+outputdir=output
+currentPath=$(dirname $(readlink -f $(which cx-integrations)))
 
 function main {
 
@@ -17,12 +17,12 @@ function main {
     if [ "$destination" == "s3" ]; then
       if [ -z "$bucket" ]; then echo "bucket name is empty!"; exit 1; fi
       if [ -z "$bucketpath" ]; then 
-        aws s3 mv ./$outputdir/${integration}-manifests.yaml s3://$bucket/${integration}-manifests.yaml 2>&1
+        aws s3 mv $outputdir/${integration}-manifests.yaml s3://$bucket/${integration}-manifests.yaml
         if [ $? -ne 0 ]; then 
           exit 1
         fi
       else
-        aws s3 mv ./$outputdir/${integration}-manifests.yaml s3://$bucket/$bucketpath/${integration}-manifests.yaml 2>&1
+        aws s3 mv $outputdir/${integration}-manifests.yaml s3://$bucket/$bucketpath/${integration}-manifests.yaml
         if [ $? -ne 0 ]; then 
           exit 1
         else
@@ -33,7 +33,7 @@ function main {
     
     elif [ "$destination" == "github" ]; then
       if [ -z "$giturl" ]; then echo "git url is empty!"; exit 1; fi
-      git clone $giturl 2>&1
+      git clone $giturl
       if [ $? -ne 0 ]; then exit 1; fi
       reponame=`echo $giturl | awk -F / '{print $2}' | awk -F . '{print $1}'`
       cp $outputdir/${integration}-manifests.yaml $reponame/
@@ -41,25 +41,16 @@ function main {
       git checkout -b integrations-manifests
       git add ${integration}-manifests.yaml
       git commit -m "Adding fluent-bit-http kubernetes manifests"
-      git push -u origin integrations-manifests 2>&1
+      git push -u origin integrations-manifests 
       if [ $? -ne 0 ]; then 
         exit 1
       else
         echo "Successfully pushed to remote branch integrations-manifests"
         exit 0
       fi
-
+    
     elif [ "$destination" == "local" ]; then
-      if [ ! -z "$path" ]; then
-        mv ./$outputdir/${integration}-manifests.yaml $path 2>&1
-        if [ $? -ne 0 ]; then
-          exit 1
-        else
-          echo "Successfully created manifests in $path"
-        fi
-      else
-        echo "The generated manifests now exist under './$outputdir' directory in the current path"
-      fi
+      echo "The generated manifests now exist under '$outputdir' directory in the current path"
     fi
   }
 
@@ -103,7 +94,7 @@ function main {
     kubectl get secret integrations-privatekey -n $namespace -oyaml 2>&1 > /dev/null
     if [ $? -ne 0 ]; then 
       echo "Creating secret 'integrations-privatekey' in namespace $namespace..." 
-      kubectl create secret generic integrations-privatekey -n $namespace --from-literal=PRIVATE_KEY=$privatekey 2>&1
+      kubectl create secret generic integrations-privatekey -n $namespace --from-literal=PRIVATE_KEY=$privatekey 
       if [ $? -ne 0 ]; then 
         exit 1;
       else
@@ -121,11 +112,11 @@ function main {
         exit 1;
       else
         echo "installing helm..." 
-        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 2>&1
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 
         if [ $? -ne 0 ]; then exit 1; fi
-        chmod 700 get_helm.sh 2>&1
+        chmod 700 get_helm.sh 
         if [ $? -ne 0 ]; then exit 1; fi
-        ./get_helm.sh 2>&1
+        ./get_helm.sh 
         if [ $? -ne 0 ]; then exit 1; fi
         rm -f ./get_helm.sh
       fi
@@ -138,7 +129,7 @@ function main {
       helm template --api-versions "monitoring.coreos.com/v1" $integration coralogix-charts-virtual/$integration \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
-        --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/${integration}-manifests.yaml 2>&1
+        --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > $outputdir/${integration}-manifests.yaml
       if [ $? -ne 0 ]; then
         echo "helm template failed, exiting..."
         exit 1
@@ -147,7 +138,7 @@ function main {
       helm template --api-versions "monitoring.coreos.com/v1" $integration coralogix-charts-virtual/$integration -f $overridefile \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
-        --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > ./$outputdir/${integration}-manifests.yaml 2>&1
+        --set "fluent-bit.endpoint=${endpoint}" --namespace $namespace > $outputdir/${integration}-manifests.yaml
       if [ $? -ne 0 ]; then 
         echo "helm template failed, exiting..."
         exit 1
@@ -161,20 +152,20 @@ function main {
       helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
-        --set "fluent-bit.endpoint=${endpoint}" 2>&1
+        --set "fluent-bit.endpoint=${endpoint}"
       if [ $? -ne 0 ]; then exit 1; fi
     else
       helm upgrade $integration coralogix-charts-virtual/$integration --install -n $namespace --create-namespace -f $overridefile \
         --set "fluent-bit.app_name=${appname}" \
         --set "fluent-bit.sub_system=${subsystem}" \
-        --set "fluent-bit.endpoint=${endpoint}" 2>&1
+        --set "fluent-bit.endpoint=${endpoint}" 
       if [ $? -ne 0 ]; then exit 1; fi
     fi
   }
 
   function switchContext () {
     if [[ ! -z "$cluster" ]]; then
-      kubectl config use-context $cluster 2>&1
+      kubectl config use-context $cluster
       if [ $? -ne 0 ]; then exit 1; fi
     fi
   }
@@ -194,8 +185,12 @@ function main {
       exit 1
     fi
 
-    if [[ ! -d "./$outputdir" ]]; then 
-      mkdir ./$outputdir
+    if [[ ! -d "$outputdir" ]]; then 
+      mkdir -p $outputdir
+      if [ $? -ne 0 ]; then
+        echo "Failed to create $outputdir, exiting ... "
+        exit 1
+      fi 
     fi
 
     # Generating templates for fluentbit
@@ -249,7 +244,7 @@ function main {
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
           --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" \
-          --namespace $namespace > ./$outputdir/${integration}-manifests.yaml 2>&1
+          --namespace $namespace > $outputdir/${integration}-manifests.yaml
         if [ $? -ne 0 ]; then exit 1; fi
       else
         echo "Platform must be kubernetes, exiting..."
@@ -318,7 +313,7 @@ function main {
           --set "fluentd.env[5].name=FLUENTD_CONF" --set "fluentd.env[5].value=../../etc/fluent/fluent.conf" \
           --set "fluentd.env[6].name=LOG_LEVEL" --set "fluentd.env[6].value=error" \
           --set "fluentd.env[7].name=SUB_SYSTEM_SYSTEMD" --set "fluentd.env[7].value=kubelet.service" \
-          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName" 2>&1
+          --set "fluentd.env[8].name=K8S_NODE_NAME" --set "fluentd.env[8].valueFrom.fieldRef.fieldPath=spec.nodeName"
         if [ $? -ne 0 ]; then exit 1; fi
       else
         echo "Platform must be kubernetes, exiting..."
@@ -335,7 +330,7 @@ function main {
     echo "Applying manifests..."
     privateKeySupplied $privatekey
     check_secret_exists
-    kubectl apply -f ./$outputdir/${integration}-manifests.yaml -n $namespace
+    kubectl apply -f $outputdir/${integration}-manifests.yaml -n $namespace
   }
 
 #################################################################################################################################################
@@ -387,9 +382,9 @@ function main {
         if [[ "$1" != *=* ]]; then shift; fi
         bucketpath="${1#*=}"
         ;;
-      --path)
+      --outputdir)
         if [[ "$1" != *=* ]]; then shift; fi
-        path="${1#*=}"
+        outputdir="${1#*=}"
         ;;  
       --cluster)
         if [[ "$1" != *=* ]]; then shift; fi
@@ -441,7 +436,7 @@ function main {
         echo ""
         echo "Generate Flags:"
         echo "  --destination|-d        The destination of the integration manifests - github/s3/local. Optional, default is local"
-        echo "  --path                  Optional when using the 'local' destination"
+        echo "  --outputdir             Optional when using the 'local' destination, default is ./output"
         echo "  --bucket                Mandatory when using the 's3' destination"
         echo "  --bucketpath            Path inside the bucket, optional. default is the root path"
         echo "  --giturl                The url of the desired repo. Mandatory when using the 'github' destination"
