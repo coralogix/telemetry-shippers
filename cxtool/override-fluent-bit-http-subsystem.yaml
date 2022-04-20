@@ -1,0 +1,51 @@
+---
+#override-fluentbit-http-subsystem.yaml
+fluent-bit: 
+  config:
+    filters: |-
+      [FILTER]
+          Name kubernetes
+          Match kube.*
+          K8S-Logging.Parser On
+          K8S-Logging.Exclude On
+          Use_Kubelet On
+          Annotations Off
+          Labels On
+          Buffer_Size 0
+          Keep_Log Off
+          Merge_Log_Key log_obj
+          Merge_Log On
+
+      [FILTER]
+          Name            nest
+          Match           kube.*
+          Operation       lift
+          Nested_under    kubernetes
+          Add_prefix      kubernetes.
+
+      [FILTER]
+          Name    modify
+          Match   kube.*
+          Copy    ${APP_NAME} applicationName
+          Add     subsystemName ${SUB_SYSTEM}
+
+      [FILTER]
+          Name            nest
+          Match           kube.*
+          Operation       nest
+          Wildcard        kubernetes.*
+          Nest_under      kubernetes
+          Remove_prefix   kubernetes.
+
+      [FILTER]
+          Name        nest
+          Match       kube.*
+          Operation   nest
+          Wildcard    kubernetes
+          Wildcard    log
+          Wildcard    log_obj
+          Wildcard    stream
+          Wildcard    time
+          Nest_under  json
+
+      @INCLUDE filters-systemd.conf
