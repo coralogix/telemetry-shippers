@@ -12,6 +12,7 @@ env:
   CHART_NAME: fluent-bit-http
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
   ARTIFACTORY_USERNAME: integrations-actions
+  CXINTEGRATIONS_CLI_PATH: cxtool
 
 jobs:
   build:
@@ -38,3 +39,9 @@ jobs:
         run: |
           cd fluent-bit/http
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
+      -
+        name: Generate Integrations Manifests
+        run: |
+          cd ${{ env.CXINTEGRATIONS_CLI_PATH }}
+          ./cx-integrations generate ${{ env.CHART_NAME }} --output-dir manual-manifests/${{ env.CHART_NAME }}
+ 
