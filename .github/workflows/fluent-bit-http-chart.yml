@@ -44,4 +44,3 @@ jobs:
         run: |
           cd ${{ env.CXINTEGRATIONS_CLI_PATH }}
           ./cx-integrations generate ${{ env.CHART_NAME }} --output-dir manual-manifests/${{ env.CHART_NAME }}
- 
