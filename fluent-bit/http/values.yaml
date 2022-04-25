@@ -85,7 +85,7 @@ fluent-bit:
   endpoint: api.eu2.coralogix.com
   app_name: kubernetes.namespace_name
   sub_system: kubernetes.container_name
-  logLevel: info
+  logLevel: error
 
   config: 
     service: |-
@@ -173,7 +173,7 @@ fluent-bit:
           TLS                   On
           Header                private_key ${PRIVATE_KEY}
           compress              gzip
-          Retry_Limit           10
+          Retry_Limit           False
 
       @INCLUDE output-systemd.conf
     

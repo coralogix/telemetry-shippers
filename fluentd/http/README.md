@@ -16,19 +16,19 @@ In order to update the environment variables, please create a new yaml file and 
 fluentd:
   env:
   - name: APP_NAME
-    value: <app_name>
+    value: namespace_name
   - name: SUB_SYSTEM
-    value: <sub_system>
+    value: container_name
   - name: APP_NAME_SYSTEMD
     value: systemd
   - name: SUB_SYSTEM_SYSTEMD
     value: kubelet.service
   - name: ENDPOINT
-    value: <coralogix_endpoint>
+    value: api.eu2.coralogix.com
   - name: "FLUENTD_CONF"
     value: "../../etc/fluent/fluent.conf"
   - name: LOG_LEVEL
-    value: <level>
+    value: error
   - name: K8S_NODE_NAME
     valueFrom:
       fieldRef:
