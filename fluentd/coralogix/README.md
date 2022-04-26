@@ -16,21 +16,21 @@ In order to update the environment variables, please create a new yaml file and 
 fluentd:
   env:
   - name: APP_NAME
-    value: <app_name>
+    value: namespace_name
   - name: SUB_SYSTEM
-    value: <sub_system>
+    value: container_name
   - name: APP_NAME_SYSTEMD
     value: systemd
   - name: SUB_SYSTEM_SYSTEMD
     value: kubelet.service
   - name: ENDPOINT
-    value: <coralogix_endpoint>
+    value: <put_your_coralogix_endpoint_here>
   - name: "FLUENTD_CONF"
     value: "../../etc/fluent/fluent.conf"
   - name: LOG_LEVEL
-    value: <level>
+    value: error
   - name: MAX_LOG_BUFFER_SIZE
-    value: <max_log_buffer_size>
+    value: "12582912"
   - name: K8S_NODE_NAME
     valueFrom:
       fieldRef:
@@ -43,6 +43,18 @@ helm upgrade fluentd-coralogix coralogix-charts-virtual/fluentd-coralogix \
   --create-namespace \
   -f override.yaml
 ```
+
+## Coralogix Endpoints
+
+| Region  | Logs Endpoint
+|---------|------------------------------------------|
+| EU      | `api.coralogix.com`                      |
+| EU2     | `api.eu2.coralogix.com`                  |
+| US      | `api.coralogix.us`                       |
+| SG      | `api.coralogixsg.com`                    |
+| EUROPE1 | `tracing-ingress.coralogix.com:9443`     |
+| EUROPE2 | `tracing-ingress.eu2.coralogix.com:9443` |
+| IN      | `api.app.coralogix.in`                   |
 
 ## Disable Systemd Logs
 In order to disable the systemd logs, please create a new yaml file or edit your existing override.yaml that includes the environment varibales, and comment out the fluentd-system-conf line:
