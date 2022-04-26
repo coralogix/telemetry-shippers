@@ -45,5 +45,5 @@ jobs:
           cd ${{ env.CXINTEGRATIONS_CLI_PATH }}
           ./cx-integrations generate ${{ env.CHART_NAME }} --outputdir manifests
           git add ./manifests/${{ env.CHART_NAME }}-manifests.yaml 
-          git commit -m "Update fluentd-http manifests for manual deploy"
+          git commit -m "Update fluent-bit-http manifests for manual deploy"
           git push
