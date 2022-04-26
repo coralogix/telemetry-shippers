@@ -24,7 +24,7 @@ fluentd:
   - name: SUB_SYSTEM_SYSTEMD
     value: kubelet.service
   - name: ENDPOINT
-    value: <[put_your_coralogix_endpoint_here](https://github.com/coralogix/eng-integrations/blob/master/fluentd/http/README.md#coralogix-endpoints)>
+    value: <put_your_coralogix_endpoint_here>
   - name: "FLUENTD_CONF"
     value: "../../etc/fluent/fluent.conf"
   - name: LOG_LEVEL
