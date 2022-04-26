@@ -1,4 +1,4 @@
-ARG IMAGE_VERSION=v1.14.2-debian-forward-1.1
+ARG IMAGE_VERSION=v1.14.5-debian-forward-1.1
 FROM fluent/fluentd-kubernetes-daemonset:${IMAGE_VERSION}
 
 # Image description labels

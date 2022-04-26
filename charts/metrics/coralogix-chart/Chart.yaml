@@ -1,0 +1,17 @@
+apiVersion: v2
+description: Prometheus Chart
+name: kube-prometheus-stack
+version: 34.2.0
+appVersion: 0.55.0
+keywords:
+  - Prometheus
+  - Operator
+dependencies:
+  - name: kube-prometheus-stack
+    version: 34.2.0
+    repository: https://prometheus-community.github.io/helm-charts
+    tags:
+      - Prometheus Chart
+maintainers:
+  - name: support
+    email: support@coralogix.com

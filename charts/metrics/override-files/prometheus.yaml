@@ -1,0 +1,53 @@
+kube-prometheus-stack:
+  fullnameOverride: coralogix
+  commonLabels:
+    prometheus: coralogix
+  defaultRules:
+    create: true
+    rules:
+      prometheus: true
+  prometheus:
+    enabled: true
+    podDisruptionBudget:
+      enabled: true
+    thanosService:
+      enabled: false
+    thanosServiceMonitor:
+      enabled: false
+      interval: "30s"
+    prometheusSpec:
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            resources:
+              requests:
+                storage: "50Gi"
+      remoteWrite:
+      - bearerToken: # '<send_your_logs_private_key>'
+        name: # '<customer_name>'
+        queueConfig:
+          capacity: 10000
+          maxSamplesPerSend: 2000
+          maxShards: 50
+          minShards: 1
+        remoteTimeout: 120s
+        url: #
+      walCompression: true
+      podAntiAffinity: hard #### ???
+      podMonitorSelector:
+        matchLabels:
+          prometheus: coralogix
+      probeSelector:
+        matchLabels:
+          prometheus: coralogix
+      ruleSelector:
+        matchLabels:
+          prometheus: coralogix
+      serviceMonitorSelector:
+        matchLabels:
+          prometheus: coralogix
+      replicas: 2
+      resources:
+        requests:
+          cpu: '2'
+          memory: "8Gi"
