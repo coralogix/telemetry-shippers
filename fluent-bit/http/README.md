@@ -73,6 +73,18 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   -f override-fluentbit-http.yaml
 ```
 
+## Coralogix Endpoints
+
+| Region  | Logs Endpoint
+|---------|------------------------------------------|
+| EU      | `api.coralogix.com`                      |
+| EU2     | `api.eu2.coralogix.com`                  |
+| US      | `api.coralogix.us`                       |
+| SG      | `api.coralogixsg.com`                    |
+| EUROPE1 | `tracing-ingress.coralogix.com:9443`     |
+| EUROPE2 | `tracing-ingress.eu2.coralogix.com:9443` |
+| IN      | `api.app.coralogix.in`                   |
+
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
 

@@ -67,8 +67,6 @@ fluentd:
     # - fluentd-systemd-conf
 ```
 
-* For override.yaml examples, please see: [fluentd override examples](https://github.com/coralogix/eng-integrations/blob/master/fluentd/examples)
-
 ## Dashboard
 Under the `dashboard` directory, there is a Fluentd Grafana dashboard that Coralogix supplies.
 In order to import the dashboard into Grafana, firstly copy the json file content.
