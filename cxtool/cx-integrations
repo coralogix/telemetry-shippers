@@ -10,6 +10,9 @@ platform=kubernetes
 destination=local
 outputdir=output
 currentPath=$(dirname $(readlink -f $(which cx-integrations)))
+if [ $? -ne 0 ]; then
+  currentPath=. 
+fi
 
 function main {
 
