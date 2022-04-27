@@ -59,8 +59,6 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
 | EU2     | `api.eu2.coralogix.com`                  |
 | US      | `api.coralogix.us`                       |
 | SG      | `api.coralogixsg.com`                    |
-| EUROPE1 | `tracing-ingress.coralogix.com:9443`     |
-| EUROPE2 | `tracing-ingress.eu2.coralogix.com:9443` |
 | IN      | `api.app.coralogix.in`                   |
 
 **NOTE**
