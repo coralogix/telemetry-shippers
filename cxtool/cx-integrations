@@ -11,7 +11,7 @@ destination=local
 outputdir=output
 currentPath=$(dirname $(readlink -f $(which cx-integrations)))
 if [ $? -ne 0 ]; then
-  exit 1 
+  currentPath=. 
 fi
 
 function main {
