@@ -3,7 +3,7 @@ fluent-bit:
 
   image:
     repository: coralogixrepo/coralogix-fluent-bit-multiarch
-    tag: v0.0.1
+    tag: v0.0.2
 
   serviceMonitor:
     enabled: true
