@@ -19,6 +19,6 @@
 
 ### v0.0.2 / 2022-04-26
 
-* [UPGRADE] Upgrade Fluent-Bit version to 1.9.2 
+* [UPGRADE] Upgrade Fluent-Bit version to 1.9.3
 * [CHANGE] Set Retry_Limit to False [no limit] to keep retrying send the logs and not lose any data
   ([#48](https://github.com/coralogix/eng-integrations/pull/48))
