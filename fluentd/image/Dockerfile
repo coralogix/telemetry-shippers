@@ -15,4 +15,5 @@ RUN gem install fluent-plugin-coralogix \
       fluent-plugin-prometheus \
       fluent-plugin-parser-cri \
       fluent-plugin-kubernetes_metadata_filter \
-      fluent-plugin-sampling-filter
+      fluent-plugin-sampling-filter \
+      fluent-plugin-concat
