@@ -1,5 +1,5 @@
 
-name: Fluentd-Image
+name: Fluentd-StandAlone-Image
 
 on:
   push:
