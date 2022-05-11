@@ -99,15 +99,44 @@ fluentd:
         @type tail
         @id in_tail_container_logs
         path /var/log/containers/*.log
+        path_key filename
         pos_file /var/log/fluentd-containers.log.pos
-        tag kubernetes.*
+        tag raw.containers.*
         read_from_head false
         <parse>
-          @type cri
+        @type multi_format
+          <pattern>
+            format json
+            time_key time
+            time_format %Y-%m-%dT%H:%M:%S.%NZ
+            keep_time_key true
+          </pattern>
+          <pattern>
+            format /^(?<time>.+) (?<stream>stdout|stderr) [^ ]* (?<log>.*)$/
+            time_format %Y-%m-%dT%H:%M:%S.%N%:z
+            keep_time_key true
+          </pattern>
         </parse>
       </source>
-    
-      <filter kubernetes.**>
+      
+      # This Segment is using the detect-exceptions-plugin
+      # It will scan the "log" field for well known sctructures of Exception messages
+      # I any are found it will assemble them and will aatempt to resolve the multiline.
+      # this segment will also remove the "raw" prefix fro mthe tag
+      <match raw.containers.**>
+        @id raw.containers
+        @type detect_exceptions
+        remove_tag_prefix raw
+        message log
+        stream stream
+        multiline_flush_interval 5
+        max_bytes 500000
+        max_lines 1000
+      </match>
+
+      # This Segment takes the raw logs and enriches them with the kubernetes metadata
+      # Other Parts in this config are relaying on it.
+      <filter containers.**>
         @type kubernetes_metadata
         @id filter_kube_metadata
         skip_labels false
@@ -115,15 +144,26 @@ fluentd:
         skip_namespace_metadata true
         skip_master_url true
       </filter>
-    
-      <filter kubernetes.**>
-        @type record_transformer
-        remove_keys "$['message']"
-        <record>
-          log_obj ${record["message"]}
-        </record>
-      </filter>
-    
+
+      # Tag rewrite segment
+      # This Section added a tag prefix based on the container name
+      # This can be used to better utilize the concat plugin usage.
+      <match containers.**>
+         @type rewrite_tag_filter
+         <rule>
+           key $.kubernetes.container_name
+           pattern ^(.+)$
+           tag $1.${tag}
+         </rule>
+      </match>
+
+      # This segment is here to block out the FluentD DS logs from being sent.
+      # Any container name added to this list will be dropped and not sent to Coralogix.
+      # This segment is dependent on the Tag re write segment to come first
+      <match {fluentd}.containers.**>
+        @type null
+      </match>
+
       <filter kubernetes.**>
         @type record_transformer
         enable_ruby true
@@ -139,6 +179,8 @@ fluentd:
         </record>
       </filter>
 
+      # This segment will relabel Any message that reaches here.
+      # This label will later be used to send all the logs to coralogix
       <match **>
         @type relabel
         @label @DISPATCH
@@ -157,7 +199,8 @@ fluentd:
             text ${record.to_json}
           </record>
         </filter>
-       
+       # This segment will generate a metric of messages being sent to coralogix
+       # It will enable a closer monitor of the sending process
         <filter **>
           @type prometheus
           <metric>
@@ -182,6 +225,10 @@ fluentd:
             retry_type periodic
             retry_wait 8
           </buffer>
+          <secondary>
+            #If any messages fail to send they will be send to STDOUT for debug.
+            @type stdout
+          </secondary>
         </match>
       </label>
     
