@@ -12,10 +12,11 @@ USER root
 
 # Installing dependencies and plugins
 RUN gem install fluent-plugin-coralogix \
-      fluent-plugin-prometheus \
       fluent-plugin-parser-cri \
       fluent-plugin-kubernetes_metadata_filter \
       fluent-plugin-sampling-filter \
       fluent-plugin-concat \
       fluent-plugin-rewrite-tag-filter \
       fluent-plugin-detect-exceptions
+
+RUN gem install fluent-plugin-prometheus -v 2.0.3
