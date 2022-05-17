@@ -19,4 +19,5 @@ RUN gem install fluent-plugin-coralogix \
       fluent-plugin-rewrite-tag-filter \
       fluent-plugin-detect-exceptions
 
-RUN gem update fluent-plugin-prometheus -v 2.0.3
+RUN gem install fluent-plugin-prometheus -v 2.0.3
+RUN gem update fluent-plugin-prometheus
