@@ -3,7 +3,7 @@ fluentd:
 
   image:
     repository: coralogixrepo/coralogix-fluentd-multiarch
-    tag: v0.0.5
+    tag: v0.0.6
 
   resources:
     requests:
@@ -164,7 +164,7 @@ fluentd:
         @type null
       </match>
 
-      <filter kubernetes.**>
+      <filter *.containers.**>
         @type record_transformer
         enable_ruby true
         auto_typecast true
@@ -174,7 +174,6 @@ fluentd:
           applicationName ${record.dig("kubernetes", "#{ENV['APP_NAME']}")}
           subsystemName ${record.dig("kubernetes", "#{ENV['SUB_SYSTEM']}")}
           computerName ${record.dig("kubernetes", "host")}
-          timestamp ${time.strftime('%s%L')}
           text ${record.to_json}
         </record>
       </filter>
