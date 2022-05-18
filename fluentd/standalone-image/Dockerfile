@@ -18,5 +18,5 @@ RUN gem install fluent-plugin-coralogix \
       fluent-plugin-concat \
       fluent-plugin-rewrite-tag-filter \
       fluent-plugin-detect-exceptions \
-      fluent-plugin-redisstore
+      fluent-plugin-redis-store
 
