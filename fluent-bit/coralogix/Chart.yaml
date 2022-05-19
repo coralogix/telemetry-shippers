@@ -1,8 +1,8 @@
 apiVersion: v2
 name: fluent-bit-coralogix
 description: Fluent-Bit Chart with Coralogix output plugin
-version: 0.0.2
-appVersion: 1.9.2
+version: 0.0.3
+appVersion: 1.9.3
 keywords:
   - Fluent-Bit
   - Coralogix output plugin
