@@ -195,6 +195,7 @@ fluentd:
             privateKey "#{ENV['PRIVATE_KEY']}"
             applicationName "#{ENV['APP_NAME_SYSTEMD']}"
             subsystemName "#{ENV['SUB_SYSTEM_SYSTEMD']}"
+            timestamp ${time.strftime('%s%L')}
             text ${record.to_json}
           </record>
         </filter>
@@ -217,7 +218,7 @@ fluentd:
           <buffer $.privateKey>
             @type memory
             flush_thread_count 4
-            chunk_limit_size 10MB
+            chunk_limit_size 6MB
             flush_interval 1s
             overflow_action throw_exception
             retry_max_times 10
