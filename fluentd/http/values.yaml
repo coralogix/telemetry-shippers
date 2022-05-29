@@ -174,6 +174,7 @@ fluentd:
           applicationName ${record.dig("kubernetes", "#{ENV['APP_NAME']}")}
           subsystemName ${record.dig("kubernetes", "#{ENV['SUB_SYSTEM']}")}
           computerName ${record.dig("kubernetes", "host")}
+          timestamp ${time.strftime('%s%L')}
           text ${record.to_json}
         </record>
       </filter>
@@ -217,6 +218,7 @@ fluentd:
           error_response_as_unrecoverable false
           <buffer $.privateKey>
             @type memory
+            compress gzip
             flush_thread_count 4
             chunk_limit_size 6MB
             flush_interval 1s
