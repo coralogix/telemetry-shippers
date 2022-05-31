@@ -1,7 +1,7 @@
 apiVersion: v2
 name: fluentd-coralogix
 description: Fluentd Chart with Coralogix output plugin
-version: 0.0.5
+version: 0.0.6
 appVersion: v1.14.6
 keywords:
   - Fluentd
