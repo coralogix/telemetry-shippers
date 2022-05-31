@@ -3,7 +3,7 @@ fluentd:
 
   image:
     repository: coralogixrepo/coralogix-fluentd-multiarch
-    tag: v0.0.6
+    tag: v0.0.7
 
   resources:
     requests:

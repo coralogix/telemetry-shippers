@@ -16,3 +16,4 @@ Supported plugin List:
 |fluent-plugin-concat 					   | (https://github.com/fluent-plugins-nursery/fluent-plugin-concat) |
 |fluent-plugin-rewrite-tag-filter          | (https://github.com/fluent/fluent-plugin-rewrite-tag-filter) |
 |fluent-plugin-detect-exceptions           | (https://github.com/GoogleCloudPlatform/fluent-plugin-detect-exceptions) |
+|fluent-plugin-elasticsearch |)(https://github.com/uken/fluent-plugin-elasticsearch) |
