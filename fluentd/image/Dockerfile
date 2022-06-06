@@ -11,6 +11,8 @@ LABEL Description="Multi-Arch FluentD image for Coralogix integration" \
 USER root
 
 # Installing dependencies and plugins
+RUN gem install elasticsearch -v 7.13
+
 RUN gem install fluent-plugin-coralogix \
       fluent-plugin-parser-cri \
       fluent-plugin-kubernetes_metadata_filter \
