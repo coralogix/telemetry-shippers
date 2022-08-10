@@ -16,8 +16,7 @@ fluent-bit:
       cpu: 100m
       memory: 250Mi
 
-  tolerations:
-    - operator: Exists
+
 
   # The private key must exist under the field 'PRIVATE_KEY' in a secret called 'integrations-privatekey' in the same namsespace as the daemonset
   envFrom:
