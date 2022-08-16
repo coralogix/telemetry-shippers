@@ -1,10 +1,11 @@
 apiVersion: v2
-name: opentelemetry-collector
-description: OpenTelemetry Collector Helm chart
+name: opentelemetry-agent
+description: OpenTelemetry agent to which instrumentation libraries export their telemetry data
 version: 0.0.1
 appVersion: 0.57.2
 keywords:
   - OpenTelemetry Collector
+  - OpenTelemetry agent
 dependencies:
   - name: opentelemetry-collector
     version: "0.25.0"
