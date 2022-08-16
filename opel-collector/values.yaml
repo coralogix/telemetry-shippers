@@ -1,0 +1,95 @@
+opentelemetry-collector:
+  mode: daemonset
+
+  fullnameOverride: otel-agent
+
+  extraEnvs:
+  - name: CORALOGIX_PRIVATE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: coralogix-otel-privatekey
+        key: PRIVATE_KEY
+  - name: APP_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+  - name: SUBSYSTEM
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: KUBE_NODE_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: spec.nodeName
+  - name: CORALOGIX_ENDPOINT
+    value: "tracing-ingress.eu2.coralogix.com"
+    
+  config:
+    exporters:
+      coralogix:
+        endpoint: "${CORALOGIX_ENDPOINT}:9443"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        application_name: "${APP_NAME}"
+        subsystem_name: "${SUBSYSTEM}"
+    receivers:
+      prometheus: null
+    processors:
+      memory_limiter: null # Will get the k8s resource limits
+      k8sattributes:
+        passthrough: false
+        filter:
+          node_from_env_var: KUBE_NODE_NAME # The agent only discovers pods from the same host that it is running on
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.namespace.name
+            - k8s.node.name
+            - k8s.pod.start_time
+    service:
+      pipelines:
+        metrics: null
+        logs: null
+        traces:
+          exporters:
+            - coralogix
+          processors:
+            - k8sattributes
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - zipkin
+            - jaeger
+
+  image: 
+    tag: 0.57.2
+
+  tolerations: 
+    - operator: Exists
+
+  ports:
+    metrics:
+      enabled: true
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 1G
+
+  serviceMonitor:
+    enabled: true
+
+  prometheusRule:
+    enabled: true
+    defaultRules:
+      enabled: true
+
+  clusterRole:
+    create: true
+    rules: 
+    - apiGroups: [""]
+      resources: ["pods", "namespaces"]
+      verbs: ["get", "watch", "list"]
