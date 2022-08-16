@@ -1,0 +1,112 @@
+{
+    "ipcMode": null,
+    "executionRoleArn": null,
+    "containerDefinitions": [
+        {
+            "dnsSearchDomains": null,
+            "environmentFiles": null,
+            "logConfiguration": null,
+            "entryPoint": null,
+            "portMappings": [],
+            "command": null,
+            "linuxParameters": null,
+            "cpu": 0,
+            "environment": [
+                {
+                    "name": "APP_NAME",
+                    "value": "ECS"
+                },
+                {
+                    "name": "ENDPOINT",
+                    "value": ""
+                },
+                {
+                    "name": "log_level",
+                    "value": "info"
+                },
+                {
+                    "name": "PRIVATE_KEY",
+                    "value": ""
+                },
+                {
+                    "name": "SUB_SYSTEM",
+                    "value": ""
+                }
+            ],
+            "resourceRequirements": null,
+            "ulimits": null,
+            "dnsServers": null,
+            "mountPoints": [
+                {
+                    "readOnly": null,
+                    "containerPath": "/var/lib/docker",
+                    "sourceVolume": "varlibdocker"
+                },
+                {
+                    "readOnly": true,
+                    "containerPath": "/var/run/docker.sock",
+                    "sourceVolume": "varrundocker"
+                }
+            ],
+            "workingDirectory": null,
+            "secrets": null,
+            "dockerSecurityOptions": null,
+            "memory": null,
+            "memoryReservation": 512,
+            "volumesFrom": [],
+            "stopTimeout": null,
+            "image": "docker.io/natan757/ecs_test:1.0.31",
+            "startTimeout": null,
+            "firelensConfiguration": null,
+            "dependsOn": null,
+            "disableNetworking": null,
+            "interactive": null,
+            "healthCheck": null,
+            "essential": true,
+            "links": null,
+            "hostname": null,
+            "extraHosts": null,
+            "pseudoTerminal": null,
+            "user": null,
+            "readonlyRootFilesystem": false,
+            "dockerLabels": null,
+            "systemControls": null,
+            "privileged": null,
+            "name": "fluentd-coralogix"
+        }
+    ],
+    "memory": null,
+    "taskRoleArn": null,
+    "family": "fluentd-coralogix",
+    "pidMode": null,
+    "requiresCompatibilities": [
+        "EC2"
+    ],
+    "networkMode": null,
+    "runtimePlatform": null,
+    "cpu": null,
+    "inferenceAccelerators": null,
+    "proxyConfiguration": null,
+    "volumes": [
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "varlibdocker",
+            "host": {
+                "sourcePath": "/var/lib/docker"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "varrundocker",
+            "host": {
+                "sourcePath": "/var/run/docker.sock"
+            },
+            "dockerVolumeConfiguration": null
+        }
+    ],
+    "placementConstraints": [],
+    "tags": []
+}
