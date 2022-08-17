@@ -55,7 +55,7 @@
             "memoryReservation": 512,
             "volumesFrom": [],
             "stopTimeout": null,
-            "image": "docker.io/natan757/ecs_test:1.0.31",
+            "image": "docker.io/coralogixrepo/fluentd-coralogix-ecs:latest",
             "startTimeout": null,
             "firelensConfiguration": null,
             "dependsOn": null,
