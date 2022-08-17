@@ -25,7 +25,6 @@ opentelemetry-collector:
         endpoint: "${CORALOGIX_ENDPOINT}:9443"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         application_name: "${APP_NAME}"
-        subsystem_name: "${SUBSYSTEM}"
     receivers:
       prometheus: null
     processors:
