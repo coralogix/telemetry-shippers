@@ -9,7 +9,8 @@ The supported receivers are Otel, Zipkin and Jaeger.
 helm upgrade otel-coralogix-agent coralogix-charts-virtual/opentelemetry-agent \
   --install --namespace=<your-namespace> \
   --create-namespace \
-  -f values.yaml
+  --set "opentelemetry-collector.APP_NAME=<desired-app-name>"
+  --set "opentelemetry-collector.CORALOGIX_ENDPOINT=<your-traces-endpoint>"
 ```
 
 ## Monitoring the agent
