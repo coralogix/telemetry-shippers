@@ -10,20 +10,14 @@ opentelemetry-collector:
         name: coralogix-otel-privatekey
         key: PRIVATE_KEY
   - name: APP_NAME
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.namespace
-  - name: SUBSYSTEM
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.name
+    value: dev-shared # Can be any static value
   - name: KUBE_NODE_NAME
     valueFrom:
       fieldRef:
         apiVersion: v1
         fieldPath: spec.nodeName
-  - name: CORALOGIX_ENDPOINT
-    value: "tracing-ingress.eu2.coralogix.com"
+  #- name: CORALOGIX_ENDPOINT
+  #  value: <The Coralogix traces ingress endpoint, must be configured>
     
   config:
     exporters:
@@ -41,13 +35,8 @@ opentelemetry-collector:
         filter:
           node_from_env_var: KUBE_NODE_NAME # The agent only discovers pods from the same host that it is running on
         extract:
-          metadata:
-            - k8s.pod.name
-            - k8s.pod.uid
-            - k8s.deployment.name
-            - k8s.namespace.name
-            - k8s.node.name
-            - k8s.pod.start_time
+          labels:
+          - key_regex: '(.*)'
     service:
       pipelines:
         metrics: null
@@ -70,26 +59,28 @@ opentelemetry-collector:
   tolerations: 
     - operator: Exists
 
-  ports:
-    metrics:
-      enabled: true
-
   resources:
     limits:
       cpu: 100m
       memory: 1G
 
-  serviceMonitor:
-    enabled: true
-
-  prometheusRule:
-    enabled: true
-    defaultRules:
-      enabled: true
-
+  # Creating a clusterrole for the k8sattributes filter 
   clusterRole:
     create: true
     rules: 
     - apiGroups: [""]
       resources: ["pods", "namespaces"]
       verbs: ["get", "watch", "list"]
+
+  # If using Prometheus, the following part can be enabled in order to monitor the agent:
+  # ports:
+  #   metrics:
+  #     enabled: true
+
+  # serviceMonitor:
+  #   enabled: true
+
+  # prometheusRule:
+  #   enabled: true
+  #   defaultRules:
+  #     enabled: true
