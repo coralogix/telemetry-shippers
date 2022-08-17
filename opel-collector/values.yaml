@@ -10,7 +10,7 @@ opentelemetry-collector:
         name: coralogix-otel-privatekey
         key: PRIVATE_KEY
   - name: APP_NAME
-    value: dev-shared # Can be any static value
+    value: production # Can be any static value
   - name: KUBE_NODE_NAME
     valueFrom:
       fieldRef:
