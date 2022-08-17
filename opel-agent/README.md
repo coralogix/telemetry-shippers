@@ -1,3 +1,20 @@
+# OpenTelemetry Agent
+The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data. 
+In this chart, the collector will be deployed as a daemonset, meaning the collector will run as an agent on each node.
+It supports only the traces pipeline, and configured with the Coralogix exporter.
+The supported receivers are Otel, Zipkin and Jaeger. 
+
+## Installation
+```bash
+helm upgrade otel-coralogix-agent coralogix-charts-virtual/opentelemetry-agent \
+  --install --namespace=<your-namespace> \
+  --create-namespace \
+  -f values.yaml
+```
+
+## Monitoring the agent
+If you have Prometheus configured, with the Prometheus operator, it is recommended to enable the servicemonitor and the prometheusrules offered by this chart. By enabling it, a servicemonitor for the agent will be created, and some default Prometheus alerts will be created.    
+
 ## Coralogix Endpoints
 
 | Region  | Traces Endpoint
