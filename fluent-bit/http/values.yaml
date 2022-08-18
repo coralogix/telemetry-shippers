@@ -66,7 +66,7 @@ fluent-bit:
   - name: APP_NAME_SYSTEMD
     value: systemd 
   - name: SUB_SYSTEM_SYSTEMD
-    value: _SYSTEMD_UNIT
+    value: SYSLOG_IDENTIFIER
   - name: HOSTNAME
     valueFrom:
       fieldRef:  
@@ -157,8 +157,8 @@ fluent-bit:
           Wildcard    log
           Wildcard    log_obj
           Wildcard    stream
-          Wildcard    time 
-          Nest_under  json 
+          Wildcard    time
+          Nest_under  json
 
       @INCLUDE filters-systemd.conf
 
@@ -174,24 +174,26 @@ fluent-bit:
           Header                private_key ${PRIVATE_KEY}
           compress              gzip
           Retry_Limit           False
+          net.keepalive         off
 
       @INCLUDE output-systemd.conf
     
     extraFiles:
-      input-systemd.conf: |-    
+      input-systemd.conf: |-
         [INPUT]
           Name systemd
           Tag host.*
           Systemd_Filter _SYSTEMD_UNIT=kubelet.service
-          Read_From_Tail On 
-          Mem_Buf_Limit 5MB  
+          Read_From_Tail On
+          Mem_Buf_Limit 5MB
+          DB /var/log/host-journal.db
 
       filters-systemd.conf: |-
         [FILTER]
           Name    modify
           Match   host.*
-          Add    applicationName ${APP_NAME_SYSTEMD} 
-          Add    subsystemName ${SUB_SYSTEM_SYSTEMD} 
+          Add    applicationName ${APP_NAME_SYSTEMD}
+          Copy   ${SUB_SYSTEM_SYSTEMD} subsystemName
 
         [FILTER]
           Name        nest
@@ -201,7 +203,7 @@ fluent-bit:
           Wildcard    SYSLOG_IDENTIFIER
           Wildcard    _CMDLINE 
           Wildcard    MESSAGE
-          Nest_under  json 
+          Nest_under  json
 
       output-systemd.conf: |-
         [OUTPUT]
@@ -214,4 +216,5 @@ fluent-bit:
           TLS                   On
           Header                private_key ${PRIVATE_KEY}
           compress              gzip
-          Retry_Limit           10
+          Retry_Limit           False
+          net.keepalive         off

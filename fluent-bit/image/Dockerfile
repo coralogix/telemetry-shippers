@@ -8,7 +8,7 @@ COPY ./out_coralogix.go ./go.mod ./go.sum ./
 RUN go mod vendor && \
     go build -buildmode=c-shared -ldflags "-s -w" -mod=vendor -o out_coralogix.$TARGETARCH.so .
 
-FROM fluent/fluent-bit:1.9.3
+FROM fluent/fluent-bit:1.9.7
 ARG TARGETARCH
 MAINTAINER Coralogix Inc. <info@coralogix.com>
 LABEL Description="Special Fluent-Bit image for Coralogix integration" Vendor="Coralogix Inc." Version="1.0.0"
