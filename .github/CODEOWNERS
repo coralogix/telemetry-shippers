@@ -1,2 +1,3 @@
-/fluent-bit @coralogix/platform-engineering @talknopf
-/fluentd @coralogix/platform-engineering @talknopf
+/fluent-bit @coralogix/platform-engineering @talknopf @giltk
+/fluentd @coralogix/platform-engineering @talknopf @giltk
+/logstash @coralogix/platform-engineering @talknopf @giltk
