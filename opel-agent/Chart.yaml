@@ -15,4 +15,4 @@ sources:
   - https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
   - name: Coralogix
-    email: support@coralogix.com
+    email: platform@coralogix.com

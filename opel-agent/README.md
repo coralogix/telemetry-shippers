@@ -31,7 +31,10 @@ If you have Prometheus configured, with the Prometheus operator, it is recommend
 
 The Open Telemetry Coralogix exporter requires the Coralogix private key. Therefore the following secret must be created: 
 
-* The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI.
+* The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI:
+!(https://github.com/coralogix/eng-integrations/blob/master/opel-agent/images/dataflow.jpg?raw=true)
+!(https://github.com/coralogix/eng-integrations/blob/master/opel-agent/images/key.jpg?raw=true)
+
 
 ```bash
 kubectl create secret generic coralogix-otel-privatekey \
