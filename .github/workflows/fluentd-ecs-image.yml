@@ -8,7 +8,7 @@ on:
     - 'fluentd/ECS/image/**'
 
 env:
-  DOCKERHUB_REGISTRY: coralogixrepo/coralogix-fluentd-ecs
+  DOCKERHUB_REGISTRY: coralogixrepo/fluentd-coralogix-ecs
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
       -
         name: Read Fluentd VERSION file
         id: get-fluentd-version
-        run: echo "::set-output name=version::$(cat ./fluentd/image/VERSION)"
+        run: echo "::set-output name=version::$(cat ./fluentd/ecs/VERSION)"
       -
         name: Build And Push Fluentd Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
