@@ -1,5 +1,5 @@
 
-name: OpenTelemetry-Agent-Chart
+name: OpenTelemetry-Coralogix-Chart
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
     - 'opel-agent/**'
 
 env:
-  CHART_VERSION: $(yq eval '.version' opel-collector/Chart.yaml)
-  CHART_NAME: opentelemetry-agent
+  CHART_VERSION: $(yq eval '.version' opel-agent/Chart.yaml)
+  CHART_NAME: opentelemetry-coralogix
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
   ARTIFACTORY_USERNAME: integrations-actions
 
