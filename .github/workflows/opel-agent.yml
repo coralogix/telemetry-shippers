@@ -1,11 +1,11 @@
 
 name: OpenTelemetry-Coralogix-Chart
 
-on:
-  push:
-    branches: master
-    paths:
-    - 'opel-agent/**'
+on: [pull_request]
+#push:
+#    branches: master
+#    paths:
+#    - 'opel-agent/**'
 
 env:
   CHART_VERSION: $(yq eval '.version' opel-agent/Chart.yaml)
