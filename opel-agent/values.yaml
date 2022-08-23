@@ -1,0 +1,85 @@
+opentelemetry-collector:
+  mode: daemonset
+
+  fullnameOverride: otel-coralogix
+
+  extraEnvs:
+  - name: CORALOGIX_PRIVATE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: coralogix-otel-privatekey
+        key: PRIVATE_KEY
+  - name: APP_NAME
+    value: production # Can be any static value
+  - name: KUBE_NODE_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: spec.nodeName
+  #- name: CORALOGIX_ENDPOINT
+  #  value: <The Coralogix traces ingress endpoint, must be configured>
+    
+  config:
+    exporters:
+      coralogix:
+        endpoint: "${CORALOGIX_ENDPOINT}:9443"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        application_name: "${APP_NAME}"
+    receivers:
+      prometheus: null
+    processors:
+      memory_limiter: null # Will get the k8s resource limits
+      k8sattributes:
+        passthrough: false
+        filter:
+          node_from_env_var: KUBE_NODE_NAME # The agent only discovers pods from the same host that it is running on
+        extract:
+          labels:
+          - key_regex: '(.*)'
+    service:
+      pipelines:
+        metrics: null
+        logs: null
+        traces:
+          exporters:
+            - coralogix
+          processors:
+            - k8sattributes
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - zipkin
+            - jaeger
+
+  image: 
+    tag: 0.57.2
+
+  tolerations: 
+    - operator: Exists
+
+  resources:
+    limits:
+      cpu: 1
+      memory: 2G
+
+  # Creating a clusterrole for the k8sattributes filter 
+  clusterRole:
+    create: true
+    rules: 
+    - apiGroups: [""]
+      resources: ["pods", "namespaces"]
+      verbs: ["get", "watch", "list"]
+
+  # If using Prometheus, the following part can be enabled in order to monitor the agent:
+  # ports:
+  #   metrics:
+  #     enabled: true
+
+  # serviceMonitor:
+  #   enabled: true
+
+  # prometheusRule:
+  #   enabled: true
+  #   defaultRules:
+  #     enabled: true
