@@ -1,0 +1,335 @@
+version: '3.9'
+x-default-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "5m"
+    max-file: "2"
+
+networks:
+  default:
+    name: opentelemetry-demo
+    driver: bridge
+
+services:
+  # Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one
+    container_name: jaeger
+    ports:
+      - "16686:16686"                    # Jaeger UI
+      - "14250"                          # Jaeger model.proto endpoint
+    logging: *logging
+
+  # Collector
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.56.0
+    container_name: otel-col
+    command: [ "--config=/etc/otelcol-config.yml" ]
+    volumes:
+      - ./otelcol-config.yml:/etc/otelcol-config.yml
+    ports:
+      - "4317"          # OTLP over gRPC receiver
+      - "4318:4318"     # OTLP over HTTP receiver
+      - "9464"          # Prometheus exporter
+      - "8888"          # metrics endpoint
+    depends_on:
+      - jaeger
+    logging: *logging
+
+  # Redis
+  redis-cart:
+    image: redis:alpine
+    container_name: redis-cart
+    ports:
+      - "${REDIS_PORT}"
+    logging: *logging
+
+  # AdService
+  adservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-adservice
+    container_name: ad-service
+    ports:
+      - "${AD_SERVICE_PORT}"
+    environment:
+      - AD_SERVICE_PORT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+      - OTEL_SERVICE_NAME=adservice
+    depends_on:
+      - otelcol
+    logging: *logging
+
+  # CartService
+  cartservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-cartservice
+    container_name: cart-service
+    ports:
+      - "${CART_SERVICE_PORT}"
+    environment:
+      - CART_SERVICE_PORT
+      - REDIS_ADDR
+      - OTEL_EXPORTER_OTLP_ENDPOINT
+      - OTEL_SERVICE_NAME=cartservice
+      - ASPNETCORE_URLS=http://*:${CART_SERVICE_PORT}
+    depends_on:
+      - redis-cart
+      - otelcol
+    logging: *logging
+
+  # CheckoutService
+  checkoutservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-checkoutservice
+    container_name: checkout-service
+    ports:
+      - "${CHECKOUT_SERVICE_PORT}"
+    environment:
+      - CHECKOUT_SERVICE_PORT
+      - CART_SERVICE_ADDR
+      - CURRENCY_SERVICE_ADDR
+      - EMAIL_SERVICE_ADDR
+      - PAYMENT_SERVICE_ADDR
+      - PRODUCT_CATALOG_SERVICE_ADDR
+      - SHIPPING_SERVICE_ADDR
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_SERVICE_NAME=checkoutservice
+    depends_on:
+      - cartservice
+      - currencyservice
+      - emailservice
+      - paymentservice
+      - productcatalogservice
+      - shippingservice
+      - otelcol
+    logging: *logging
+
+  # CurrencyService
+  currencyservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-currencyservice
+    container_name: currency-service
+    ports:
+      - "${CURRENCY_SERVICE_PORT}"
+    environment:
+      - CURRENCY_SERVICE_PORT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=currencyservice   # The C++ SDK does not support OTEL_SERVICE_NAME
+    depends_on:
+      - otelcol
+    logging: *logging
+
+  # EmailService
+  emailservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-emailservice
+    container_name: email-service
+    ports:
+      - "${EMAIL_SERVICE_PORT}"
+    environment:
+      - APP_ENV=production
+      - EMAIL_SERVICE_PORT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otelcol:4318/v1/traces
+      - OTEL_SERVICE_NAME=emailservice
+    depends_on:
+      - otelcol
+    logging: *logging
+
+  # Frontend
+  frontend:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-frontend
+    container_name: frontend
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    environment:
+      - PORT=${FRONTEND_PORT}
+      - FRONTEND_ADDR
+      - AD_SERVICE_ADDR
+      - CART_SERVICE_ADDR
+      - CHECKOUT_SERVICE_ADDR
+      - CURRENCY_SERVICE_ADDR
+      - PRODUCT_CATALOG_SERVICE_ADDR
+      - RECOMMENDATION_SERVICE_ADDR
+      - SHIPPING_SERVICE_ADDR
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=frontend
+      - OTEL_EXPORTER_OTLP_ENDPOINT
+      - ENV_PLATFORM
+      - OTEL_SERVICE_NAME=frontend
+    depends_on:
+      - adservice
+      - cartservice
+      - checkoutservice
+      - currencyservice
+      - otelcol
+      - productcatalogservice
+      - recommendationservice
+      - shippingservice
+    logging: *logging
+
+  # Frontend Tests
+  frontendTests:
+    image: cypress/included:10.3.1-typescript
+    depends_on:
+      - frontend
+    profiles:
+      - tests
+    environment:
+      - CYPRESS_baseUrl=http://${FRONTEND_ADDR}
+      - NODE_ENV=production
+    working_dir: /cypress
+    volumes:
+      - ./src/frontend:/cypress
+
+  # Integration Tests
+  integrationTests:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-integrationTests
+    container_name: integrationTests
+    profiles:
+      - tests
+    environment:
+      - AD_SERVICE_ADDR
+      - CART_SERVICE_ADDR
+      - CHECKOUT_SERVICE_ADDR
+      - CURRENCY_SERVICE_ADDR
+      - EMAIL_SERVICE_ADDR
+      - PAYMENT_SERVICE_ADDR
+      - PRODUCT_CATALOG_SERVICE_ADDR
+      - RECOMMENDATION_SERVICE_ADDR
+      - SHIPPING_SERVICE_ADDR
+    depends_on:
+      - adservice
+      - cartservice
+      - checkoutservice
+      - currencyservice
+      - emailservice
+      - paymentservice
+      - productcatalogservice
+      - recommendationservice
+      - shippingservice
+
+  # PaymentService
+  paymentservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-paymentservice
+    container_name: payment-service
+    ports:
+      - "${PAYMENT_SERVICE_PORT}"
+    environment:
+      - PAYMENT_SERVICE_PORT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_SERVICE_NAME=paymentservice
+    depends_on:
+      - otelcol
+    logging: *logging
+
+  # ProductCatalogService
+  productcatalogservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-productcatalogservice
+    container_name: product-catalog-service
+    ports:
+      - "${PRODUCT_CATALOG_SERVICE_PORT}"
+    environment:
+      - PRODUCT_CATALOG_SERVICE_PORT
+      - FEATURE_FLAG_GRPC_SERVICE_ADDR
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_SERVICE_NAME=productcatalogservice
+    depends_on:
+      - otelcol
+    logging: *logging
+
+  # RecommendationService
+  recommendationservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-recommendationservice
+    container_name: recommendation-service
+    ports:
+      - "${RECOMMENDATION_SERVICE_PORT}"
+    depends_on:
+      - productcatalogservice
+      - otelcol
+    environment:
+      - RECOMMENDATION_SERVICE_PORT
+      - PRODUCT_CATALOG_SERVICE_ADDR
+      - OTEL_PYTHON_LOG_CORRELATION=true
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_SERVICE_NAME=recommendationservice
+    logging: *logging
+
+  # ShippingService
+  shippingservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-shippingservice
+    container_name: shipping-service
+    ports:
+      - "${SHIPPING_SERVICE_PORT}"
+    environment:
+      - SHIPPING_SERVICE_PORT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_SERVICE_NAME=shippingservice
+    depends_on:
+      - otelcol
+    logging: *logging
+
+  # FeatureFlagService
+  featureflagservice:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-featureflagservice
+    container_name: feature-flag-service
+    ports:
+      - "${FEATURE_FLAG_SERVICE_PORT}:${FEATURE_FLAG_SERVICE_PORT}"     # Feature Flag Service UI
+      - "${FEATURE_FLAG_GRPC_SERVICE_PORT}"                             # Feature Flag Service gRPC API
+    environment:
+      - FEATURE_FLAG_SERVICE_PORT
+      - FEATURE_FLAG_GRPC_SERVICE_PORT
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
+      - OTEL_SERVICE_NAME=featureflagservice
+      - DATABASE_URL=ecto://ffs:ffs@ffs_postgres:5432/ffs
+    depends_on:
+      ffs_postgres:
+        condition: service_healthy
+    logging: *logging
+
+  ffs_postgres:
+    image: cimg/postgres:14.2
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=ffs
+      - POSTGRES_DB=ffs
+      - POSTGRES_PASSWORD=ffs
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LoadGenerator
+  loadgenerator:
+    image: ghcr.io/open-telemetry/demo:0.3.1-alpha-loadgenerator
+    container_name: load-generator
+    ports:
+      - "${LOCUST_WEB_PORT}:${LOCUST_WEB_PORT}"
+    environment:
+      - LOCUST_WEB_PORT
+      - LOCUST_USERS
+      - LOCUST_HOST
+      - LOCUST_HEADLESS
+      - LOCUST_AUTOSTART
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      - OTEL_SERVICE_NAME=loadgenerator
+      - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+    depends_on:
+      - frontend
+    logging: *logging
+
+  # Prometheus
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.34.0
+    container_name: prometheus
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+    volumes:
+      - ./src/prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
+    ports:
+      - "${PROMETHEUS_SERVICE_PORT}:${PROMETHEUS_SERVICE_PORT}"
+    logging: *logging
