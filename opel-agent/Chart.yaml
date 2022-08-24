@@ -1,7 +1,7 @@
 apiVersion: v2
 name: opentelemetry-coralogix
 description: OpenTelemetry agent to which instrumentation libraries export their telemetry data
-version: 0.0.1
+version: 0.0.2
 appVersion: 0.57.2
 keywords:
   - OpenTelemetry Collector

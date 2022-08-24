@@ -31,26 +31,29 @@ For installation of each integration, please go inside each intergation's direct
 - [Fluentd-HTTP chart](https://github.com/coralogix/eng-integrations/blob/master/fluentd/http/README.md)
 - [Fluent-bit-Coralogix chart](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/coralogix/README.md)
 - [Fluent-bit-HTTP chart](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/http/README.md)
+- [OpenTelementry-Agent chart](https://github.com/coralogix/eng-integrations/blob/master/opel-agent/README.md)
 
 ---
 **NOTE**
 
-All integrations require a `secret` called `integrations-privatekey` with the relevant `send your logs` key under a secrey key called `PRIVATE_KEY`,
+All integrations require a `secret` called `integrations-privatekey` with the relevant `private key` under a secrey key called `PRIVATE_KEY`,
 inside the `same namespace` that the chart is installed in.
 
-* The `send-your-logs` key appears under 'Data Flow' --> 'API Keys' in Coralogix UI. 
+* The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI:
+![logo](https://github.com/coralogix/eng-integrations/blob/master/opel-agent/images/dataflow.jpg?raw=true)
+![logo](https://github.com/coralogix/eng-integrations/blob/master/opel-agent/images/key.jpg?raw=true)
 
 ```bash
 kubectl create secret generic integrations-privatekey \
   -n <the-namespace-of-the-release> \
-  --from-literal=PRIVATE_KEY=<send-your-logs-private-key>
+  --from-literal=PRIVATE_KEY=<private-key>
 ```
 
 The created secret should look like this:
 ```yaml
 apiVersion: v1
 data:
-  PRIVATE_KEY: <encrypted-send-your-logs-key>
+  PRIVATE_KEY: <encrypted-private-key>
 kind: Secret
 metadata:
   name: integrations-privatekey
