@@ -8,6 +8,8 @@ The supported receivers are Otel, Zipkin and Jaeger.
 
 ## Installation
 In order to update the environment variables, please create a new yaml file and include *all* of the following envs inside:
+There is an override.yaml file that can be copied under the `examples` directory.
+
 ```yaml
 ---
 #override.yaml:

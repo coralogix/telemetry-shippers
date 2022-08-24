@@ -1,0 +1,16 @@
+opentelemetry-collector:
+  extraEnvs:
+  - name: CORALOGIX_PRIVATE_KEY
+    valueFrom:
+      secretKeyRef:
+        name: integrations-privatekey
+        key: PRIVATE_KEY
+  - name: APP_NAME
+    value: production # Can be any other static value
+  - name: KUBE_NODE_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: spec.nodeName
+  - name: CORALOGIX_ENDPOINT
+    value: # <The Coralogix traces ingress endpoint, must be configured>
