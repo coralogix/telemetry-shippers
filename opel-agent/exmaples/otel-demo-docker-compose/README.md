@@ -13,6 +13,8 @@ The setup is based on [otel-demo](https://github.com/open-telemetry/opentelemetr
 
 All the examples are using `open-telemtry` SDK. Which can be found [here](https://opentelemetry.io/docs/instrumentation/)
 
+The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory. 
+
 
 
 ## Installation
