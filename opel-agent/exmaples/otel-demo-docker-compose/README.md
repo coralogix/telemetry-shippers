@@ -18,7 +18,7 @@ All the examples are using `open-telemtry` SDK. Which can be found [here](https:
 ## Installation
 In order to ship traffic to your Coralogix account, please edit `otelcol-config.yml` and upadte the following:
 * ENDPOINT
-* PRIVATE-KEY
+* PRIVATE_KEY
 
 ```bash
 docker-compose up -d 

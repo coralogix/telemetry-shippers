@@ -8,7 +8,7 @@ exporters:
   logging:
   coralogix:
     endpoint: "${ENDPOINT}:9443"
-    private_key: "${PRIVATE-KEY}"
+    private_key: "${PRIVATE_KEY}"
     application_name: "otel-demo"
 
 
