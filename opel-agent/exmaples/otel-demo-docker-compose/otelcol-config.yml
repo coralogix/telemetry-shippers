@@ -1,0 +1,23 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+exporters:
+  logging:
+  coralogix:
+    endpoint: "${ENDPOINT}:9443"
+    private_key: "${privateKey}"
+    application_name: "otel-demo"
+
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [coralogix]
