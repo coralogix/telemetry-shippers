@@ -7,7 +7,7 @@ opentelemetry-collector:
   - name: CORALOGIX_PRIVATE_KEY
     valueFrom:
       secretKeyRef:
-        name: coralogix-otel-privatekey
+        name: integrations-privatekey
         key: PRIVATE_KEY
   - name: APP_NAME
     value: production # Can be any static value
@@ -22,11 +22,11 @@ opentelemetry-collector:
   config:
     exporters:
       coralogix:
-        endpoint: "${CORALOGIX_ENDPOINT}:9443"
+        endpoint: "${CORALOGIX_ENDPOINT}"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         application_name: "${APP_NAME}"
     receivers:
-      prometheus: null
+      prometheus: null # If you want to enable the prometheusrules/servicemonitor, this line must be deleted, and also the line above ['receivers:']
     processors:
       memory_limiter: null # Will get the k8s resource limits
       k8sattributes:
@@ -38,8 +38,6 @@ opentelemetry-collector:
           - key_regex: '(.*)'
     service:
       pipelines:
-        metrics: null
-        logs: null
         traces:
           exporters:
             - coralogix
@@ -51,6 +49,8 @@ opentelemetry-collector:
             - otlp
             - zipkin
             - jaeger
+        metrics: null
+        logs: null
 
   image: 
     tag: 0.57.2
