@@ -44,12 +44,12 @@ If you have Prometheus configured, with the Prometheus operator, it is recommend
 ## Coralogix Endpoints
 
 | Region  | Traces Endpoint
-|---------|------------------------------------------|
-| USA1	  | `tracing-ingress.coralogix.us`           |
-| APAC1   | `tracing-ingress.app.coralogix.in`       |
-| APAC2   | `tracing-ingress.coralogixsg.com`        |
-| EUROPE1 | `tracing-ingress.coralogix.com`          |
-| EUROPE2 | `tracing-ingress.eu2.coralogix.com`      |
+|---------|-----------------------------------------------|
+| USA1	  | `tracing-ingress.coralogix.us:9443`           |
+| APAC1   | `tracing-ingress.app.coralogix.in:9443`       |
+| APAC2   | `tracing-ingress.coralogixsg.com:9443`        |
+| EUROPE1 | `tracing-ingress.coralogix.com:9443`          |
+| EUROPE2 | `tracing-ingress.eu2.coralogix.com:9443`      |
 
 ---
 **NOTE**

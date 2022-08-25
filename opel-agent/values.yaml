@@ -22,7 +22,7 @@ opentelemetry-collector:
   config:
     exporters:
       coralogix:
-        endpoint: "${CORALOGIX_ENDPOINT}:9443"
+        endpoint: "${CORALOGIX_ENDPOINT}"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         application_name: "${APP_NAME}"
     receivers:
