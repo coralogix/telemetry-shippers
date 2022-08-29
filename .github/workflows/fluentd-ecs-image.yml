@@ -37,7 +37,7 @@ jobs:
         name: Build And Push Fluentd Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
         with:
-          context: ./fluentd/image
+          context: ./fluentd/aws-ecs/image/
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
