@@ -186,7 +186,6 @@ fluent-bit:
           Systemd_Filter _SYSTEMD_UNIT=kubelet.service
           Read_From_Tail On
           Mem_Buf_Limit 5MB
-          DB /var/log/host-journal.db
 
       filters-systemd.conf: |-
         [FILTER]
