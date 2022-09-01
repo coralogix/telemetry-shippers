@@ -15,11 +15,12 @@ RUN gem install elasticsearch -v 7.13
 
 RUN gem install fluent-plugin-coralogix \
       fluent-plugin-parser-cri \
-      fluent-plugin-kubernetes_metadata_filter \
       fluent-plugin-sampling-filter \
       fluent-plugin-concat \
       fluent-plugin-rewrite-tag-filter \
       fluent-plugin-detect-exceptions \
       fluent-plugin-elasticsearch
 
+
+RUN gem install fluent-plugin-kubernetes_metadata_filter -v 2.11.1
 RUN gem install fluent-plugin-prometheus -v 2.0.3
