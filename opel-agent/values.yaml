@@ -53,7 +53,7 @@ opentelemetry-collector:
         logs: null
 
   image: 
-    tag: 0.57.2
+    tag: 0.59.0
 
   tolerations: 
     - operator: Exists
