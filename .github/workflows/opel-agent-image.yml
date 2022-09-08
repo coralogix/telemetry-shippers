@@ -2,10 +2,11 @@
 name: OpenTelemetry-Coralogix-Image
 
 on:
-  push:
-    branches: master
-    paths:
-    - 'open-agent/image/**'
+  pull_request
+  #push:
+  #  branches: master
+  #  paths:
+  #  - 'open-agent/image/**'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/coralogix-opentelemetry-agent
