@@ -2,10 +2,11 @@
 name: OpenTelemetry-Coralogix-Image
 
 on:
-  push:
-    branches: master
-    paths:
-    - 'open-agent/image/**'
+  pull_request
+#  push:
+#    branches: master
+#    paths:
+#    - 'open-agent/image/**'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/coralogix-opentelemetry-agent
@@ -38,7 +39,7 @@ jobs:
         uses: docker/build-push-action@v2.8.0
         with:
           context: ./opel-agent/image
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/386,linux/ppc64le
           push: true
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-opel-agent-version.outputs.version }}
