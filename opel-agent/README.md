@@ -27,8 +27,10 @@ opentelemetry-collector:
       fieldRef:
         apiVersion: v1
         fieldPath: spec.nodeName
-  - name: CORALOGIX_ENDPOINT
-    value: # <The Coralogix traces ingress endpoint, must be configured>
+  - name: CORALOGIX_TRACES_ENDPOINT
+    value: # <The Coralogix traces ingress endpoint, must be configured for sending traces>
+  - name: CORALOGIX_METRICS_ENDPOINT
+    value: # <The Coralogix metrics ingress endpoint, must be configured for sending metrics>
 ```
 
 ```bash
@@ -38,18 +40,64 @@ helm upgrade otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralog
   -f override.yaml
 ```
 
+## Send your traces to Coralogix
+By default, the Otlp, Jaeger and Zipkin receivers are enabled, they collect your traces, and these are sent to Coralogix via the Coralogix exporter. 
+All you need to configure, is the environment varibale `CORALOGIX_TRACES_ENDPOINT`.
+
+In order to disable traces, edit the `pipelines` section in the override.yaml file, remove the `coralogix` exporter, and put `logging` exporter like the following:
+ 
+```yaml
+---
+#override.yaml:
+  service:
+    pipelines:
+      traces:
+        exporters:
+          - logging
+        processors:
+          - k8sattributes
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
+          - zipkin
+          - jaeger
+```  
+
+## Send your metrics to Coralogix
+By default, the Prometheus receiver is enabled, it collects metrics on the agent itself, and they are sent to Coralogix. 
+All you need to configure, is the environment varibale `CORALOGIX_METRICS_ENDPOINT`.
+
+In order to disable metrics, edit the `pipelines` section in the override.yaml file, remove the `prometheus` receiver and the `coralogix` exporter, and put `logging` exporter like the following:
+ 
+```yaml
+---
+#override.yaml:
+  service:
+    pipelines:
+      metrics:
+        exporters:
+        - logging
+        processors:
+        - memory_limiter
+        - batch
+        receivers:
+        - otlp
+```  
+
 ## Monitoring the agent
-If you have Prometheus configured, with the Prometheus operator, it is recommended to enable the servicemonitor and the prometheusrules offered by this chart. By enabling it, a servicemonitor for the agent will be created, and some default Prometheus alerts will be created.    
+If you have Prometheus configured, with the Prometheus operator, it is recommended to enable the podMonitor and the prometheusRules offered by this chart. 
+In order to enable it By enabling it, the metrics port must be enabled, the podmonitor must be enabled, and the prometheusrules must be enabled [if desired].
 
 ## Coralogix Endpoints
 
-| Region  | Traces Endpoint
-|---------|-----------------------------------------------|
-| USA1	  | `tracing-ingress.coralogix.us:9443`           |
-| APAC1   | `tracing-ingress.app.coralogix.in:9443`       |
-| APAC2   | `tracing-ingress.coralogixsg.com:9443`        |
-| EUROPE1 | `tracing-ingress.coralogix.com:9443`          |
-| EUROPE2 | `tracing-ingress.eu2.coralogix.com:9443`      |
+| Region  | Traces Endpoint                               | Metrics Endpoint	
+|---------|-----------------------------------------------|-----------------------------------------------
+| USA1	  | `tracing-ingress.coralogix.us:9443`           | `otel-metrics.coralogix.us:443`	
+| APAC1   | `tracing-ingress.app.coralogix.in:9443`       | `otel-metrics.coralogix.in:443`
+| APAC2   | `tracing-ingress.coralogixsg.com:9443`        | `otel-metrics.coralogixsg.com:443`
+| EUROPE1 | `tracing-ingress.coralogix.com:9443`          | `otel-metrics.coralogix.com:443`
+| EUROPE2 | `tracing-ingress.eu2.coralogix.com:9443`      | `otel-metrics.eu2.coralogix.com:443`
 
 ---
 **NOTE**

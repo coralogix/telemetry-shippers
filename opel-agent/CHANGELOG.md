@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Collector
 
+### v0.0.4 / 2022-09-08
+
+* [FEATURE] Add support for metrics using the Coralogix exporter
+* [FIX] Change serviceMonitor to podMonitor since serviceMonitor is not supported for daemonset mode
+
 ### v0.0.3 / 2022-09-06
 
 * [UPRADE] Upgrading chart version from 0.25.0 to 0.30.0
