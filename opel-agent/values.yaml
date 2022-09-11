@@ -58,7 +58,7 @@ opentelemetry-collector:
             - memory_limiter
             - batch
           receivers:
-            - prometheus
+            - prometheus # The Prometheus receiver is configured by default
             - otlp
         logs: null
 
