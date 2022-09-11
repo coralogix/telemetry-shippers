@@ -40,15 +40,39 @@ helm upgrade otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralog
   -f override.yaml
 ```
 
-## Send your metrics to Coralogix
-By default, the Prometheus receiver is enabled, it collects metrics on the agent itself, and they are sent to Coralogix. 
-In order to disable it, in addition to the `extraEnvs` section, add the following section to your override.yaml:
-*** It will disable the prometheus receiver and the coralogix exporter from the metrics pipeline.
+## Send your traces to Coralogix
+By default, the Otlp, Jaeger and Zipkin receivers are enabled, they collect your traces, and these are sent to Coralogix via the Coralogix exporter. 
+All you need to configure, is the environment varibale `CORALOGIX_TRACES_ENDPOINT`.
+
+In order to disable traces, edit the `pipelines` section in the override.yaml file, remove the `coralogix` exporter, and put `logging` exporter like the following:
  
 ```yaml
 ---
 #override.yaml:
-opentelemetry-collector:
+  service:
+    pipelines:
+      traces:
+        exporters:
+          - logging
+        processors:
+          - k8sattributes
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
+          - zipkin
+          - jaeger
+```  
+
+## Send your metrics to Coralogix
+By default, the Prometheus receiver is enabled, it collects metrics on the agent itself, and they are sent to Coralogix. 
+All you need to configure, is the environment varibale `CORALOGIX_METRICS_ENDPOINT`.
+
+In order to disable metrics, edit the `pipelines` section in the override.yaml file, remove the `prometheus` receiver and the `coralogix` exporter, and put `logging` exporter like the following:
+ 
+```yaml
+---
+#override.yaml:
   service:
     pipelines:
       metrics:
