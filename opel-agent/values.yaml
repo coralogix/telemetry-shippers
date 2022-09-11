@@ -59,6 +59,7 @@ opentelemetry-collector:
             - batch
           receivers:
             - prometheus
+            - otlp
         logs: null
 
   image: 
