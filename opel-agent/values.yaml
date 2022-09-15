@@ -60,6 +60,7 @@ opentelemetry-collector:
           receivers:
             - prometheus # The receiver configuration is coming from the open-telemetry dependency chart
             - otlp
+        logs: null
 
   image: 
     tag: 0.59.0
