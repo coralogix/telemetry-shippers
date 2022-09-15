@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Collector
 
+### v0.0.5 / 2022-09-15
+
+* [CHANGE] Enable hostNetwork
+
 ### v0.0.4 / 2022-09-08
 
 * [FEATURE] Add support for metrics using the Coralogix exporter
