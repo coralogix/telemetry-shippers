@@ -17,9 +17,9 @@ opentelemetry-collector:
         apiVersion: v1
         fieldPath: spec.nodeName
   #- name: CORALOGIX_TRACES_ENDPOINT
-  #  value: <The Coralogix traces ingress endpoint, must be configured>
+  #  value: <The Coralogix traces ingress endpoint, must be configured to send traces to Coralogix>
   #- name: CORALOGIX_METRICS_ENDPOINT
-  #  value: <The Coralogix metrics ingress endpoint, must be configured>
+  #  value: <The Coralogix metrics ingress endpoint, must be configured must be configured to send metrcs to Coralogix>
     
   config:
     exporters:
@@ -80,6 +80,8 @@ opentelemetry-collector:
     - apiGroups: [""]
       resources: ["pods", "namespaces"]
       verbs: ["get", "watch", "list"]
+
+  hostNetwork: true
 
   # In order to enable podMonitor, following part must be enabled in order to expose the required port:
   # ports:
