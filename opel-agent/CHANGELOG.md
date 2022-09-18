@@ -4,7 +4,7 @@
 
 ### v0.0.6 / 2022-09-18
 
-* [CHANGE] Add binary protocol to Jaeger reciever
+* [FEATURE] Add binary protocol to Jaeger reciever
 
 ### v0.0.5 / 2022-09-15
 
