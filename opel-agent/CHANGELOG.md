@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Collector
 
+### v0.0.6 / 2022-09-18
+
+* [FEATURE] Add binary protocol to Jaeger reciever
+
 ### v0.0.5 / 2022-09-15
 
 * [CHANGE] Enable hostNetwork

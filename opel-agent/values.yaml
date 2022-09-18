@@ -38,6 +38,13 @@ opentelemetry-collector:
         extract:
           labels:
           - key_regex: '(.*)'
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+          thrift_http:
+          thrift_compact:
+          thrift_binary:
     service:
       pipelines:
         traces:
