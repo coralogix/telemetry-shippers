@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Collector
 
+### v0.0.7 / 2022-09-18
+
+* [FIX] Set the jaeger receiver thrift_binary protocol default endpoint
+
 ### v0.0.6 / 2022-09-18
 
 * [FEATURE] Add binary protocol to Jaeger reciever

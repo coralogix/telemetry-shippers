@@ -45,6 +45,7 @@ opentelemetry-collector:
           thrift_http:
           thrift_compact:
           thrift_binary:
+            endpoint: 0.0.0.0:6832
     service:
       pipelines:
         traces:
