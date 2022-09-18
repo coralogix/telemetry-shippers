@@ -13,23 +13,15 @@
             "cpu": 0,
             "environment": [
                 {
-                    "name": "APP_NAME",
-                    "value": "ECS"
-                },
-                {
                     "name": "ENDPOINT",
                     "value": ""
                 },
                 {
                     "name": "log_level",
-                    "value": "info"
+                    "value": "error"
                 },
                 {
                     "name": "PRIVATE_KEY",
-                    "value": ""
-                },
-                {
-                    "name": "SUB_SYSTEM",
                     "value": ""
                 }
             ],
@@ -55,7 +47,7 @@
             "memoryReservation": 512,
             "volumesFrom": [],
             "stopTimeout": null,
-            "image": "docker.io/coralogixrepo/fluentd-coralogix-ecs:1.7.0",
+            "image": "docker.io/coralogixrepo/fluentd-coralogix-ecs:1.7.1",
             "startTimeout": null,
             "firelensConfiguration": null,
             "dependsOn": null,
