@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Collector
 
+### v0.0.8 / 2022-09-19
+
+* [FEATURE] Add a Grafana dashboard for OpenTelemetry agent
+
 ### v0.0.7 / 2022-09-18
 
 * [BUGFIX] Set the jaeger receiver thrift_binary protocol default endpoint
