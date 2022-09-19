@@ -108,7 +108,9 @@ The Open Telemetry Coralogix exporter requires the Coralogix private key.
 
 ## Dashboard - OpenTelemetry metrics Format 
 Under the `dashboard` directory, there is a Opel-Agent Grafana dashboard that Coralogix supplies, including instructions on how to install it.
-In order to have a dashboard, make sure you configure the `CORALOGIX_METRICS_ENDPOINT` environment variable, in order for the agent metrics to be sent to Coralogix. 
+
+### Prerequisites
+Configure the `CORALOGIX_METRICS_ENDPOINT` environment variable, in order for the agent metrics to be sent to Coralogix. 
 
 **Note**
 
