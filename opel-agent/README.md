@@ -106,10 +106,16 @@ The Open Telemetry Coralogix exporter requires the Coralogix private key.
 #### Please see the note in the [main README](https://github.com/coralogix/eng-integrations/blob/master/README.md) in order to create the required secret.
 ---
 
-## Dashboard
-Under the `dashboard` directory, there is a Opel-Agent Grafana dashboard that Coralogix supplies.
-In order to import the dashboard into Grafana, firstly copy the json file content.
-Afterwards go to Grafana press the `Create` tab, then press `import`, and paste the copied json file.
+## Dashboard - OpenTelemetry metrics Format 
+Under the `dashboard` directory, there is a Opel-Agent Grafana dashboard that Coralogix supplies, including instructions on how to install it.
+In order to have a dashboard, make sure you configure the `CORALOGIX_METRICS_ENDPOINT` environment variable, in order for the agent metrics to be sent to Coralogix. 
+
+**Note**
+
+The Open Telemetry agent metrics are in `OpenTelemetry format`, and not Promtheus format.
+Meaning if you are trying to query the dashboard metrics in Prometheus, 
+you won't be able to find them in the metric name because they are in a different format. 
+for instance, in the dashboard we use the metric `otelcol_exporter_send_failed_spans_total`, and in Prometheus its `otelcol_exporter_send_failed_spans`.
 
 ## Dependencies
 By default this chart installs additional dependent chart:
