@@ -114,10 +114,8 @@ Configure the `CORALOGIX_METRICS_ENDPOINT` environment variable, in order for th
 
 **Note**
 
-The Open Telemetry agent metrics are in `OpenTelemetry format`, and not Promtheus format.
-Meaning if you are trying to query the dashboard metrics in Prometheus, 
-you won't be able to find them in the metric name because they are in a different format. 
-for instance, in the dashboard we use the metric `otelcol_exporter_send_failed_spans_total`, and in Prometheus its `otelcol_exporter_send_failed_spans`.
+The Open Telemetry agent metrics are in `OpenTelemetry specification`.
+Once the `CORALOGIX_METRICS_ENDPOINT` is set, the OpenTelemetry collector will send the metrics to Coralogix backend.
 
 ## Dependencies
 By default this chart installs additional dependent chart:
