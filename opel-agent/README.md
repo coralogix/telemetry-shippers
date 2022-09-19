@@ -105,3 +105,18 @@ In order to enable it By enabling it, the metrics port must be enabled, the podm
 The Open Telemetry Coralogix exporter requires the Coralogix private key.
 #### Please see the note in the [main README](https://github.com/coralogix/eng-integrations/blob/master/README.md) in order to create the required secret.
 ---
+
+## Dashboard - OpenTelemetry metrics Format 
+Under the `dashboard` directory, there is a Opel-Agent Grafana dashboard that Coralogix supplies, including instructions on how to install it.
+
+### Prerequisites
+Configure the `CORALOGIX_METRICS_ENDPOINT` environment variable, in order for the agent metrics to be sent to Coralogix. 
+
+**Note**
+
+The Open Telemetry agent metrics are in `OpenTelemetry specification`.
+Once the `CORALOGIX_METRICS_ENDPOINT` is set, the OpenTelemetry collector will send the metrics to Coralogix backend.
+
+## Dependencies
+By default this chart installs additional dependent chart:
+(https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector)
