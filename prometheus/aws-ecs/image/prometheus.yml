@@ -3,8 +3,11 @@ scrape_configs:
     scrape_interval: 5s
     static_configs:
       - targets: ['172.17.0.1:9100'] # target is the host
+    relabel_configs:
+      - target_label: instance
+        replacement: '<HOSTNAME>'
 remote_write:
 - url: '<ENDPOINT>'
   name: 'crx'
   remote_timeout: 120s
-  bearer_token: '<PRIVATEKEY>'
+  bearer_token: '<PRIVATEKEY>'  

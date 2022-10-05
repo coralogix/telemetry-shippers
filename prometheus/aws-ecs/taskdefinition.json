@@ -28,7 +28,13 @@
             "resourceRequirements": null,
             "ulimits": null,
             "dnsServers": null,
-            "mountPoints": [],
+            "mountPoints": [
+                {
+                    "readOnly": true,
+                    "containerPath": "/hostetc",
+                    "sourceVolume": "hostname"
+                }
+            ],
             "workingDirectory": null,
             "secrets": null,
             "dockerSecurityOptions": null,
@@ -159,6 +165,15 @@
             "name": "root",
             "host": {
                 "sourcePath": "/"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "hostname",
+            "host": {
+                "sourcePath": "/etc"
             },
             "dockerVolumeConfiguration": null
         }
