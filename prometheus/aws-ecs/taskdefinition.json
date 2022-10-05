@@ -42,7 +42,7 @@
             "memoryReservation": 400,
             "volumesFrom": [],
             "stopTimeout": null,
-            "image": "docker.io/coralogixrepo/ecs-prometheus-node-exporter:0.0.1",
+            "image": "docker.io/coralogixrepo/prometheus-node-exporter-ecs:0.0.1",
             "startTimeout": null,
             "firelensConfiguration": null,
             "dependsOn": null,
