@@ -1,0 +1,44 @@
+
+name: Prometheus-node-exporter-ecs
+
+on:
+  push:
+    branches: master
+    paths:
+    - 'prometheus/aws-ecs/image/**'
+
+env:
+  DOCKERHUB_REGISTRY: coralogixrepo/prometheus-node-exporter-ecs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2.4.0
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Read prometheus node exporter ecs VERSION file
+        id: get-prometheus-version
+        run: echo "::set-output name=version::$(cat ./prometheus/aws-ecs/VERSION)"
+      -
+        name: Build And Push Prometheus node exporter ecs Image To Dockerhub
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./prometheus/aws-ecs/image/
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-prometheus-version.outputs.version }}
