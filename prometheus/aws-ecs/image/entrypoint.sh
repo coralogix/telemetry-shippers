@@ -1,6 +1,16 @@
 #!/bin/sh
 set -e
 
+# Get docker host 
+DOCKERHOST=`cat /hostetc/hostname`
+
+# Get Cluster name from the ecs-agent
+CLUSTERNAME=`wget -qO- http://172.17.0.1:51678/v1/metadata | sed -e 's/[{}]/''/g' | awk -F , '{split($1,a,"\"");print a[4]}'`
+
+# Get host public ip
+HOSTPUBLICIP=`wget -qO- http://checkip.amazonaws.com`
+
+# Variables check
 if [[ -z $CORALOGIX_PRIVATEKEY ]]; then
   echo "CORALOGIX_PRIVATEKEY environment variable must be set"
   exit 1
@@ -16,9 +26,20 @@ if [[ -z $SCRAPE_INTERVAL ]]; then
   exit 1
 fi
 
-DOCKERHOST=`cat /hostetc/hostname`
-CLUSTERNAME=`wget -qO- http://172.17.0.1:51678/v1/metadata | sed -e 's/[{}]/''/g' | awk -F , '{split($1,a,"\"");print a[4]}'`
-HOSTPUBLICIP=`wget -qO- http://checkip.amazonaws.com`
+if [[ -z $DOCKERHOST ]]; then
+  echo "error while retrieving instance hostname, verify that /etc/hostname is mounted"
+  exit 1
+fi
+
+if [[ -z $CLUSTERNAME ]]; then
+  echo "error while retrieving clustername from ecs-agent"
+  exit 1
+fi
+
+if [[ -z $HOSTPUBLICIP ]]; then
+  echo "error while retrieving host public ip, verify that host has outgoing ports (80,443) open"
+  exit 1
+fi
 
 sed -i "s/<PRIVATEKEY>/$CORALOGIX_PRIVATEKEY/" /etc/prometheus/prometheus.yml 
 sed -i "s|<ENDPOINT>|$CORALOGIX_ENDPOINT|" /etc/prometheus/prometheus.yml
