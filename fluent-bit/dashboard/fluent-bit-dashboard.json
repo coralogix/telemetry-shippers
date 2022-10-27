@@ -25,7 +25,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 472,
-  "iteration": 1666867933565,
+  "iteration": 1666873104421,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1216,8 +1216,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1308,8 +1307,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1426,8 +1424,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1516,8 +1513,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1606,8 +1602,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1698,8 +1693,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1796,7 +1790,7 @@
           "uid": "${datasource}"
         },
         "definition": "label_values(fluentbit_uptime, job)",
-        "hide": 0,
+        "hide": 2,
         "includeAll": true,
         "multi": false,
         "name": "fluentbit",
@@ -1867,8 +1861,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "FluentBit New",
+  "title": "FluentBit",
   "uid": "JB43E0A7k",
-  "version": 108,
+  "version": 110,
   "weekStart": ""
 }
