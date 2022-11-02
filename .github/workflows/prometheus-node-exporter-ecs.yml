@@ -1,14 +1,14 @@
 
-name: Fluentd-ecs-Image
+name: Prometheus-node-exporter-ecs
 
 on:
   push:
     branches: master
     paths:
-    - 'fluentd/aws-ecs/image/**'
+    - 'prometheus/aws-ecs/image/**'
 
 env:
-  DOCKERHUB_REGISTRY: coralogixrepo/fluentd-coralogix-ecs
+  DOCKERHUB_REGISTRY: coralogixrepo/prometheus-node-exporter-ecs
 
 jobs:
   build:
@@ -30,15 +30,15 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       -
-        name: Read Fluentd VERSION file
-        id: get-fluentd-version
-        run: echo "::set-output name=version::$(cat ./fluentd/aws-ecs/VERSION)"
+        name: Read prometheus node exporter ecs VERSION file
+        id: get-prometheus-version
+        run: echo "::set-output name=version::$(cat ./prometheus/aws-ecs/VERSION)"
       -
-        name: Build And Push Fluentd Image To Dockerhub
+        name: Build And Push Prometheus node exporter ecs Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
         with:
-          context: ./fluentd/aws-ecs/image/
+          context: ./prometheus/aws-ecs/image/
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-prometheus-version.outputs.version }}

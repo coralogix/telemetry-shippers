@@ -1,0 +1,304 @@
+{
+    "ipcMode": null,
+    "executionRoleArn": null,
+    "containerDefinitions": [
+        {
+            "dnsSearchDomains": null,
+            "environmentFiles": null,
+            "logConfiguration": {
+                "logDriver": "none",
+                "secretOptions": null,
+                "options": null
+            },
+            "entryPoint": null,
+            "portMappings": [],
+            "command": null,
+            "linuxParameters": null,
+            "cpu": 0,
+            "environment": [
+                {
+                    "name": "CORALOGIX_ENDPOINT",
+                    "value": ""
+                },
+                {
+                    "name": "CORALOGIX_PRIVATEKEY",
+                    "value": ""
+                },
+                {
+                    "name": "SCRAPE_INTERVAL",
+                    "value": "1m"
+                }
+            ],
+            "resourceRequirements": null,
+            "ulimits": null,
+            "dnsServers": null,
+            "mountPoints": [
+                {
+                    "readOnly": true,
+                    "containerPath": "/hostetc",
+                    "sourceVolume": "hostname"
+                }
+            ],
+            "workingDirectory": null,
+            "secrets": null,
+            "dockerSecurityOptions": null,
+            "memory": 400,
+            "memoryReservation": 100,
+            "volumesFrom": [],
+            "stopTimeout": null,
+            "image": "docker.io/coralogixrepo/prometheus-node-exporter-ecs:0.0.2",
+            "startTimeout": null,
+            "firelensConfiguration": null,
+            "dependsOn": null,
+            "disableNetworking": null,
+            "interactive": null,
+            "healthCheck": null,
+            "essential": true,
+            "links": null,
+            "hostname": null,
+            "extraHosts": null,
+            "pseudoTerminal": null,
+            "user": null,
+            "readonlyRootFilesystem": null,
+            "dockerLabels": null,
+            "systemControls": null,
+            "privileged": null,
+            "name": "prometheus"
+        },
+        {
+            "dnsSearchDomains": null,
+            "environmentFiles": null,
+            "logConfiguration": {
+                "logDriver": "none",
+                "secretOptions": null,
+                "options": null
+            },
+            "entryPoint": null,
+            "portMappings": [
+                {
+                    "hostPort": 9100,
+                    "protocol": "tcp",
+                    "containerPort": 9100
+                }
+            ],
+            "command": null,
+            "linuxParameters": null,
+            "cpu": 250,
+            "environment": [],
+            "resourceRequirements": null,
+            "ulimits": null,
+            "dnsServers": null,
+            "mountPoints": [
+                {
+                    "readOnly": null,
+                    "containerPath": "/host/proc:ro",
+                    "sourceVolume": "proc"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/host/sys:ro",
+                    "sourceVolume": "sys"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/rootfs:ro",
+                    "sourceVolume": "root"
+                }
+            ],
+            "workingDirectory": null,
+            "secrets": null,
+            "dockerSecurityOptions": null,
+            "memory": 180,
+            "memoryReservation": null,
+            "volumesFrom": [],
+            "stopTimeout": null,
+            "image": "docker.io/prom/node-exporter:v1.4.0",
+            "startTimeout": null,
+            "firelensConfiguration": null,
+            "dependsOn": null,
+            "disableNetworking": null,
+            "interactive": null,
+            "healthCheck": null,
+            "essential": true,
+            "links": null,
+            "hostname": null,
+            "extraHosts": null,
+            "pseudoTerminal": null,
+            "user": null,
+            "readonlyRootFilesystem": null,
+            "dockerLabels": null,
+            "systemControls": null,
+            "privileged": null,
+            "name": "node-exporter"
+        },
+        {
+            "dnsSearchDomains": null,
+            "environmentFiles": null,
+            "logConfiguration": {
+                "logDriver": "none",
+                "secretOptions": null,
+                "options": null
+            },
+            "entryPoint": null,
+            "portMappings": [
+                {
+                    "hostPort": 9101,
+                    "protocol": "tcp",
+                    "containerPort": 8080
+                }
+            ],
+            "command": null,
+            "linuxParameters": null,
+            "cpu": 0,
+            "environment": [],
+            "resourceRequirements": null,
+            "ulimits": null,
+            "dnsServers": null,
+            "mountPoints": [
+                {
+                    "readOnly": null,
+                    "containerPath": "/rootfs:ro",
+                    "sourceVolume": "root"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/var/run:ro",
+                    "sourceVolume": "varrun"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/sys:ro",
+                    "sourceVolume": "sys"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/var/lib/docker:ro",
+                    "sourceVolume": "varlibdocker"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/dev/disk:ro",
+                    "sourceVolume": "devdisk"
+                },
+                {
+                    "readOnly": null,
+                    "containerPath": "/dev/kmsg",
+                    "sourceVolume": "devkmsg"
+                }
+            ],
+            "workingDirectory": null,
+            "secrets": null,
+            "dockerSecurityOptions": null,
+            "memory": null,
+            "memoryReservation": 400,
+            "volumesFrom": [],
+            "stopTimeout": null,
+            "image": "gcr.io/cadvisor/cadvisor:v0.44.0",
+            "startTimeout": null,
+            "firelensConfiguration": null,
+            "dependsOn": null,
+            "disableNetworking": null,
+            "interactive": null,
+            "healthCheck": null,
+            "essential": true,
+            "links": null,
+            "hostname": null,
+            "extraHosts": null,
+            "pseudoTerminal": null,
+            "user": null,
+            "readonlyRootFilesystem": null,
+            "dockerLabels": null,
+            "systemControls": null,
+            "privileged": true,
+            "name": "cAdvisor"
+        }
+    ],
+    "memory": null,
+    "taskRoleArn": "",
+    "family": "coralogix-ecs-prometheus",
+    "pidMode": null,
+    "requiresCompatibilities": [
+        "EC2"
+    ],
+    "networkMode": "bridge",
+    "runtimePlatform": null,
+    "cpu": null,
+    "inferenceAccelerators": [],
+    "proxyConfiguration": null,
+    "volumes": [
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "proc",
+            "host": {
+                "sourcePath": "/proc"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "sys",
+            "host": {
+                "sourcePath": "/sys"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "root",
+            "host": {
+                "sourcePath": "/"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "hostname",
+            "host": {
+                "sourcePath": "/etc"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "varrun",
+            "host": {
+                "sourcePath": "/var/run"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "varlibdocker",
+            "host": {
+                "sourcePath": "/var/lib/docker"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "devdisk",
+            "host": {
+                "sourcePath": "/dev/disk"
+            },
+            "dockerVolumeConfiguration": null
+        },
+        {
+            "fsxWindowsFileServerVolumeConfiguration": null,
+            "efsVolumeConfiguration": null,
+            "name": "devkmsg",
+            "host": {
+                "sourcePath": "/dev/kmsg"
+            },
+            "dockerVolumeConfiguration": null
+        }
+    ],
+    "placementConstraints": [],
+    "tags": []
+}
