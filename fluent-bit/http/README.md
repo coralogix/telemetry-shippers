@@ -9,7 +9,7 @@ helm show values coralogix-charts-virtual/fluent-bit-http
 ```
 ## Default installation
 A simple installation with the default values only specifing the correct endpoint.
-By default we set `applicationName` to the log namespace name in k8s and `subsystemName` to the log container name is k8s.
+By default we set `applicationName` to the log namespace name in k8s and `subsystemName` to the log container name in k8s.
 
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
@@ -20,7 +20,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
 ```
 
 ## Installation with dynamic app_name and sub_system
-Dynamic metadata `app_name` and `sub_system` means that the values for applicationName and subsystemName is coming from any desired field from your logs' structure.
+Dynamic metadata `app_name` and `sub_system` means that the values for applicationName and subsystemName are coming from any desired field from your logs' structure.
 
 installation using cli only:
 
