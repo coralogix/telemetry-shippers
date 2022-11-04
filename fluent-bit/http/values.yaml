@@ -127,6 +127,7 @@ fluent-bit:
           Match   kube.*
           script  /fluent-bit/scripts/script.lua
           call    addcrxmetadata
+          time_as_table true
 
       [FILTER]
           Name        nest

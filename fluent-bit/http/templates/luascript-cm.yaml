@@ -25,5 +25,7 @@ data:
         {{- else }}
         new_record["subsystemName"] = "no-subsystem"
         {{- end }}
+        local processed_fraction = string.format("%09d", timestamp['nsec'])
+        new_record["timestamp"] = string.format("%s%s", timestamp['sec'], string.sub(processed_fraction, 1, -4))
         return RETURN_WITHOUT_MODIFYING_TIMESTAMP, timestamp, new_record
       end  
