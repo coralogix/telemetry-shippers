@@ -75,16 +75,10 @@ fluent-bit:
 
   # The same usage as env, but used for passing dynamic values to the chart using the helm argument "--set <variable>=<value>"
   envWithTpl:
-  - name: APP_NAME
-    value: "{{ .Values.app_name }}"
-  - name: SUB_SYSTEM
-    value: "{{ .Values.sub_system }}"
   - name: ENDPOINT
     value: "{{ .Values.endpoint }}"
 
   endpoint: api.eu2.coralogix.com
-  app_name: kubernetes.namespace_name
-  sub_system: kubernetes.container_name
   logLevel: error
 
   config: 
@@ -129,25 +123,10 @@ fluent-bit:
           Merge_Log On
 
       [FILTER]
-          Name            nest
-          Match           kube.*
-          Operation       lift
-          Nested_under    kubernetes
-          Add_prefix      kubernetes.
-
-      [FILTER]
-          Name    modify
+          Name    lua
           Match   kube.*
-          Copy    ${APP_NAME} applicationName
-          Copy    ${SUB_SYSTEM} subsystemName 
-
-      [FILTER]
-          Name            nest
-          Match           kube.*
-          Operation       nest
-          Wildcard        kubernetes.*
-          Nest_under      kubernetes
-          Remove_prefix   kubernetes.
+          script  /fluent-bit/scripts/script.lua
+          call    addcrxmetadata
 
       [FILTER]
           Name        nest
@@ -217,3 +196,20 @@ fluent-bit:
           compress              gzip
           Retry_Limit           False
           net.keepalive         off
+
+  extraVolumes:
+  - name: crxluascript
+    configMap: 
+      name: fluent-bit-http-crxluascript
+
+  extraVolumeMounts: 
+  - name: crxluascript
+    mountPath: /fluent-bit/scripts/script.lua
+    subPath: script.lua
+
+dynamic_metadata:
+  app_name: kubernetes.namespace_name
+  sub_system: kubernetes.container_name
+static_metadata:
+  app_name: ""
+  sub_system: ""

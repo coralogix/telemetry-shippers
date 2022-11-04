@@ -7,72 +7,88 @@ The default values we provide can be overriden according to your needs, the defa
 ```bash
 helm show values coralogix-charts-virtual/fluent-bit-http
 ```
+## Default installation
+A simple installation with the default values only specifing the correct endpoint.
+By default we set `applicationName` to the log namespace name in k8s and `subsystemName` to the log container name is k8s.
 
-## Installation with dynamic app_name and sub_system
-By default we set the `app_name` and `subsystem` dynamically.  
-Dynamic `App_Name` and `Sub_System` means that the value is coming from any desired field from your logs' structure.
-
-For example:
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --install \
   --namespace=<your-namespace> \
   --create-namespace \
-  --set "fluent-bit.app_name=kubernetes.namespace_name" \ # Each log's app_name will be fetched from the fluentbit record's 'kubernetes.namespace_name' value.
-  --set "fluent-bit.sub_system=kubernetes.container_name" \ # Each log's subsystem will be fetched from the fluentbit record's 'kubernetes.container_name' value.
   --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
 ```
 
-## Installation with static app_name and sub_system
-Static `App_Name` and `Sub_System` means using hardcoded values.
-For setting static values for app_name / subsystem, see the following example:s
+## Installation with dynamic app_name and sub_system
+Dynamic metadata `app_name` and `sub_system` means that the values for applicationName and subsystemName is coming from any desired field from your logs' structure.
+
+installation using cli only:
+
+```bash
+helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
+  --install \
+  --namespace=<your-namespace> \
+  --create-namespace \
+  --set "dynamic_metadata.app_name=myfield.application" \ # Each log's app_name will be fetched from the fluentbit record's 'myfield.application' value.
+  --set "dynamic_metadata.sub_system=kubernetes.container_name" \ # Each log's subsystem will be fetched from the fluentbit record's 'kubernetes.container_name' value.
+  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
+```
+
+installation using a values file:
 
 ```yaml
 ---
-#override-fluentbit-http.yaml - configuring both app_name and subsystem as static values
-fluent-bit:  
-  config:
-    filters: |-
-      [FILTER]
-          Name kubernetes
-          Match kube.*
-          K8S-Logging.Parser On
-          K8S-Logging.Exclude On
-          Use_Kubelet On
-          Annotations Off
-          Labels On
-          Buffer_Size 0
-          Keep_Log Off
-          Merge_Log_Key log_obj
-          Merge_Log On
-
-      [FILTER]
-          Name    modify
-          Match   kube.*
-          Add     applicationName production # Each log will be under 'production' application name 
-          Add     subsystemName infra-services # Each log will be under 'infra-services' subsystem  
-
-      [FILTER]
-          Name        nest
-          Match       kube.*
-          Operation   nest
-          Wildcard    kubernetes
-          Wildcard    log
-          Wildcard    log_obj
-          Wildcard    stream
-          Wildcard    time
-          Nest_under  json
-
-      @INCLUDE filters-systemd.conf
+# override-values.yaml:
+dynamic_metadata:
+  app_name: myfield.application
+  sub_system: kubernetes.container_name
+fluent-bit:
+  endpoint: api.eu2.coralogix.com
 ```
 
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --install \
   --namespace=<your-namespace> \
-  -f override-fluentbit-http.yaml
+  --create-namespace \
+  -f override-values.yaml
 ```
 
+## Installation with static app_name and sub_system
+static metadata `app_name` and `sub_system` means using hard-coded values for applicationName and subsystemName
+
+installation using cli only:
+
+```bash
+helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
+  --install \
+  --namespace=<your-namespace> \
+  --create-namespace \
+  --set "static_metadata.app_name=MyApplication" \ # Each log's app_name will be 'MyApplication'.
+  --set "static_metadata.sub_system=MySubsystem" \ # Each log's subsystem will be 'MySubsystem'.
+  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
+```
+
+installation using a values file:
+
+```yaml
+---
+# override-values.yaml:
+static_metadata:
+  app_name: MyApplication
+  sub_system: MySubsystem
+fluent-bit:
+  endpoint: api.eu2.coralogix.com
+```
+
+```bash
+helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
+  --install \
+  --namespace=<your-namespace> \
+  --create-namespace \
+  -f override-values.yaml
+```
+Note: we can use both static and dynamic at the sametime, static values take precedence.
 ## Coralogix Endpoints
 
 | Region  | Logs Endpoint
