@@ -123,23 +123,19 @@ fluent-bit:
           Merge_Log On
 
       [FILTER]
+          Name        nest
+          Match       kube.*
+          Operation   nest
+          Wildcard    *
+          Nest_under  json
+
+      [FILTER]
           Name    lua
           Match   kube.*
           script  /fluent-bit/scripts/script.lua
           call    addcrxmetadata
           time_as_table true
-
-      [FILTER]
-          Name        nest
-          Match       kube.*
-          Operation   nest
-          Wildcard    kubernetes
-          Wildcard    log
-          Wildcard    log_obj
-          Wildcard    stream
-          Wildcard    time
-          Nest_under  json
-
+          
       @INCLUDE filters-systemd.conf
 
     outputs: |-
