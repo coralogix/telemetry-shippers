@@ -31,7 +31,7 @@ For installation of each integration, please go inside each intergation's direct
 - [Fluentd-HTTP chart](https://github.com/coralogix/eng-integrations/blob/master/fluentd/http/README.md)
 - [Fluent-bit-Coralogix chart](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/coralogix/README.md)
 - [Fluent-bit-HTTP chart](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/http/README.md)
-- [OpenTelementry-Agent chart](https://github.com/coralogix/eng-integrations/blob/master/opel-agent/README.md)
+- [OpenTelementry-Agent chart](https://github.com/coralogix/eng-integrations/blob/master/otel-agent/README.md)
 
 ---
 **NOTE**
@@ -40,8 +40,8 @@ All integrations require a `secret` called `integrations-privatekey` with the re
 inside the `same namespace` that the chart is installed in.
 
 * The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI:
-![logo](https://github.com/coralogix/eng-integrations/blob/master/opel-agent/images/dataflow.jpg?raw=true)
-![logo](https://github.com/coralogix/eng-integrations/blob/master/opel-agent/images/key.jpg?raw=true)
+![logo](https://github.com/coralogix/eng-integrations/blob/master/otel-agent/images/dataflow.jpg?raw=true)
+![logo](https://github.com/coralogix/eng-integrations/blob/master/otel-agent/images/key.jpg?raw=true)
 
 ```bash
 kubectl create secret generic integrations-privatekey \
