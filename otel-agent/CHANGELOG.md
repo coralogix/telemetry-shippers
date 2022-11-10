@@ -1,6 +1,10 @@
 # Changelog
 
-## OpenTelemtry-Collector
+## OpenTelemtry-Agent
+
+### v0.0.9 / 2022-11-10
+* [FEATURE] Support OpenTelemetry native agent
+* [FIX] Example override file attribute
 
 ### v0.0.8 / 2022-09-19
 

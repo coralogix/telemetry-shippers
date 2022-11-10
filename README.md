@@ -40,8 +40,6 @@ All integrations require a `secret` called `integrations-privatekey` with the re
 inside the `same namespace` that the chart is installed in.
 
 * The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI:
-![logo](https://github.com/coralogix/eng-integrations/blob/master/otel-agent/images/dataflow.jpg?raw=true)
-![logo](https://github.com/coralogix/eng-integrations/blob/master/otel-agent/images/key.jpg?raw=true)
 
 ```bash
 kubectl create secret generic integrations-privatekey \
@@ -56,7 +54,7 @@ data:
   PRIVATE_KEY: <encrypted-private-key>
 kind: Secret
 metadata:
-  name: integrations-privatekey
+  name: coralogix-keys
   namespace: <the-release-namespace>
 type: Opaque 
 ```

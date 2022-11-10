@@ -7,7 +7,7 @@ opentelemetry-collector:
         key: PRIVATE_KEY
   - name: APP_NAME
     value: production # Can be any other static value
-  - name: KUBE_NODE_NAME
+  - name: K8S_NODE_NAME
     valueFrom:
       fieldRef:
         apiVersion: v1
