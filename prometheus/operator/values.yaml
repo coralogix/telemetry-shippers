@@ -1,0 +1,24 @@
+kube-prometheus-stack:
+  fullnameOverride: prometheus-coralogix
+  prometheus: 
+    prometheusSpec: 
+      ## disable the extra label added to the monitors
+      ## to allow monitors to be added outside of the chart
+      podMonitorSelectorNilUsesHelmValues: false
+      probeSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+      serviceMonitorSelectorNilUsesHelmValues: false
+      ## the global default scrape interval and timeout
+      scrapeInterval: '1m'
+      scrapeTimeout: '30s'
+      remoteWrite:
+        ## the coralogix account domain url
+        - url: 'https://prometheus-gateway.coralogix.com/prometheus/api/v1/write'
+          name: 'crx'
+          remoteTimeout: 120s
+          ## the coralogix account privatekey 
+          bearerToken: '' 
+  grafana:
+    enabled: false
+  alertmanager:
+    enabled: false

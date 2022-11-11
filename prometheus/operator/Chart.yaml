@@ -1,0 +1,18 @@
+apiVersion: v2
+name: prometheus-operator-coralogix
+description: Prometheus operator for coralogix
+version: 0.0.1
+appVersion: 0.60.1
+keywords:
+  - Prometheus
+  - Prometheus operator
+  - Coralogix
+dependencies:
+  - name: kube-prometheus-stack
+    version: "41.7.3"
+    repository: https://prometheus-community.github.io/helm-charts
+sources:
+  - https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+maintainers:
+  - name: Coralogix
+    email: platform@coralogix.com
