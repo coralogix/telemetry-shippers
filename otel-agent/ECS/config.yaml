@@ -1,0 +1,41 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  batch:
+  resourcedetection/env:
+    detectors: [env]
+    timeout: 2s
+    override: false
+  resourcedetection/system:
+    detectors: ["system"]
+    system:
+      hostname_sources: ["os"]
+exporters:
+  logging:
+  coralogix:
+    traces:
+      endpoint: "$Traces"
+    private_key: "$Private_Key"
+    application_name: "OTel"
+    application_name_attributes:
+    - "APP_NAME"
+    subsystem_name_attributes:
+    - "SUB_SYS"
+    timeout: 30s
+service:
+  pipelines:
+    traces:
+      exporters:
+      - coralogix
+      - logging
+      processors:
+        - batch
+        - resourcedetection/env
+        - resourcedetection/system
+      receivers:
+        - otlp
