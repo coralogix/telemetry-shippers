@@ -19,8 +19,8 @@ exporters:
   logging:
   coralogix:
     traces:
-      endpoint: "$Traces"
-    private_key: "$Private_Key"
+      endpoint: "$TRACES_ENDPOINT"
+    private_key: "$PRIVATE_KEY"
     application_name: "OTel"
     application_name_attributes:
     - "APP_NAME"
