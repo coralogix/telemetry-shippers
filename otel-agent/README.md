@@ -24,7 +24,7 @@ OpenTelemetry Agent require a `secret` called `coralogix-keys` with the relevant
 
 
 ```bash
-kubectl create secret generic coralogix-key \
+kubectl create secret generic coralogix-keys \
   --from-literal=PRIVATE_KEY=<private-key>
 ```
 
