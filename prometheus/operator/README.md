@@ -37,7 +37,37 @@ kube-prometheus-stack:
           remoteTimeout: 120s
           bearerToken: 'xxx' 
 ```  
+Using secret as bearer token:
 
+Secret:
+```yaml
+apiVersion: v1
+data:
+  PRIVATE_KEY: <encrypted-private-key>
+kind: Secret
+metadata:
+  name: coralogix-keys
+  namespace: <the-release-namespace>
+type: Opaque 
+```
+values:
+```yaml
+kube-prometheus-stack:
+  prometheus: 
+    prometheusSpec: 
+      secrets: ['coralogix-keys']
+      remoteWrite:
+        ## the coralogix account domain url
+        - url: 'https://prometheus-gateway.coralogix.com/prometheus/api/v1/write'
+          name: 'crx'
+          remoteTimeout: 120s
+          ## the coralogix account privatekey secret and name.
+          bearerTokenFile: '/etc/prometheus/secrets/coralogix-keys/PRIVATE_KEY' 
+  grafana:
+    enabled: false
+  alertmanager:
+    enabled: false
+```
 ## Installation
 
 ```bash
