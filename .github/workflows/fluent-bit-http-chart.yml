@@ -5,10 +5,12 @@ on:
   push:
     branches: master
     paths:
-    - 'fluent-bit/http/**'
+    - 'logs/fluent-bit/http/templates/**'
+    - 'logs/fluent-bit/http/Chart.yaml'
+    - 'logs/fluent-bit/http/values.yaml'
 
 env:
-  CHART_VERSION: $(yq eval '.version' fluent-bit/http/Chart.yaml)
+  CHART_VERSION: $(yq eval '.version' logs/fluent-bit/http/Chart.yaml)
   CHART_NAME: fluent-bit-http
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
   ARTIFACTORY_USERNAME: integrations-actions
@@ -25,8 +27,8 @@ jobs:
         run: |
           helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
           helm repo update
-          helm dependency build ./fluent-bit/http/
-          cd fluent-bit/http
+          helm dependency build ./logs/fluent-bit/http/
+          cd logs/fluent-bit/http
           helm package .
       -
         name: Setup JFrog CLI
@@ -36,5 +38,5 @@ jobs:
       -
         name: use-jfrog-cli
         run: |
-          cd fluent-bit/http
+          cd logs/fluent-bit/http
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
