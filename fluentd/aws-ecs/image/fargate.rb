@@ -38,6 +38,8 @@ def filter(tag, time, record)
         'image_id' => metadata['ImageID'],
         'labels' => metadata['Labels']
       }
+      record.delete('ecs_task_arn')
+      record.delete('ecs_task_definition')
       record.delete('container_name')
       record.delete('container_id')
     else
