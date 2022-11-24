@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-http-crxluascript
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  script.lua: |
+      RETURN_WITHOUT_MODIFYING_TIMESTAMP = 2
+      function addcrxmetadata(tag, timestamp, record)
+        new_record = record
+        {{- if ((.Values.static_metadata).app_name) }}
+        new_record["applicationName"] = {{ .Values.static_metadata.app_name | quote }}
+        {{- else if ((.Values.dynamic_metadata).app_name) }}
+        new_record["applicationName"] = record.json{{- .Values.dynamic_metadata.app_name }}
+        {{- else }}
+        new_record["applicationName"] = "no-application"
+        {{- end }}
+        {{- if ((.Values.static_metadata).sub_system) }}
+        new_record["subsystemName"] = {{ .Values.static_metadata.sub_system | quote }}
+        {{- else if ((.Values.dynamic_metadata).sub_system) }}
+        new_record["subsystemName"] = record.json{{- .Values.dynamic_metadata.sub_system }}
+        {{- else }}
+        new_record["subsystemName"] = "no-subsystem"
+        {{- end }}
+        local processed_fraction = string.format("%09d", timestamp['nsec'])
+        new_record["timestamp"] = string.format("%s%s", timestamp['sec'], string.sub(processed_fraction, 1, -4))
+        return RETURN_WITHOUT_MODIFYING_TIMESTAMP, timestamp, new_record
+      end  
