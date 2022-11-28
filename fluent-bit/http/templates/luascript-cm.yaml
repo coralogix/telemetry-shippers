@@ -14,14 +14,18 @@ data:
         {{- if ((.Values.static_metadata).app_name) }}
         new_record["applicationName"] = {{ .Values.static_metadata.app_name | quote }}
         {{- else if ((.Values.dynamic_metadata).app_name) }}
-        new_record["applicationName"] = record.json{{- .Values.dynamic_metadata.app_name }}
+        new_record["applicationName"] = record.json.{{- .Values.dynamic_metadata.app_name }}
+        if new_record["applicationName"] == nil then
+        new_record["applicationName"] = "no-application" end
         {{- else }}
         new_record["applicationName"] = "no-application"
         {{- end }}
         {{- if ((.Values.static_metadata).sub_system) }}
         new_record["subsystemName"] = {{ .Values.static_metadata.sub_system | quote }}
         {{- else if ((.Values.dynamic_metadata).sub_system) }}
-        new_record["subsystemName"] = record.json{{- .Values.dynamic_metadata.sub_system }}
+        new_record["subsystemName"] = record.json.{{- .Values.dynamic_metadata.sub_system }}
+        if new_record["subsystemName"] == nil then
+        new_record["subsystemName"] = "no-subsystem" end
         {{- else }}
         new_record["subsystemName"] = "no-subsystem"
         {{- end }}
