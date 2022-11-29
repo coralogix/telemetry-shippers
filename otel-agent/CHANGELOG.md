@@ -2,6 +2,13 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.11 / 2022-11-28
+* [UPGRADE] Upgrading chart version from 0.39.0 to 0.40.2
+* [UPGRADE] Upgrading app version from v0.64.0 to v0.66.0
+
+### v0.0.10 / 2022-11-21
+* [FEATURE] Add self monitoring 
+
 ### v0.0.9 / 2022-11-10
 * [FEATURE] Support OpenTelemetry native agent
 * [FIX] Example override file attribute
