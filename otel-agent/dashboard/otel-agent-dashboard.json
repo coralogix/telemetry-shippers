@@ -1169,27 +1169,25 @@
           "expr": "sum by (processor)(rate(otelcol_processor_batch_batch_send_size_sum[10m]))",
           "hide": false,
           "interval": "",
-          "l          }
-            ]
-          }
-        },
-        "overrides": []
-      },
+          "legendFormat": "{{ processor }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Batch Processor Sent Data",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 1,
+        "w": 24,
         "x": 0,
-        "y": 58
+        "y": 66
       },
-      "id": 20,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "display     "title": "Receivers",
+      "id": 8,
+      "panels": [],
+      "title": "Receivers",
       "type": "row"
     },
     {
@@ -1547,7 +1545,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
