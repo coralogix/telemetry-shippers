@@ -4,9 +4,8 @@ name: FluentBit-Coralogix-Chart
 on:
   push:
     branches: master
-    paths:
-    - 'logs/fluent-bit/coralogix/Chart.yaml'
-    - 'logs/fluent-bit/coralogix/values.yaml'
+    paths-ignore: 
+      - 'logs/fluent-bit/coralogix/**.md'
 
 env:
   CHART_VERSION: $(yq eval '.version' logs/fluent-bit/coralogix/Chart.yaml)

@@ -4,10 +4,8 @@ name: FluentBit-HTTP-Chart
 on:
   push:
     branches: master
-    paths:
-    - 'logs/fluent-bit/http/templates/**'
-    - 'logs/fluent-bit/http/Chart.yaml'
-    - 'logs/fluent-bit/http/values.yaml'
+    paths-ignore: 
+      - 'logs/fluent-bit/http/**.md'
 
 env:
   CHART_VERSION: $(yq eval '.version' logs/fluent-bit/http/Chart.yaml)
