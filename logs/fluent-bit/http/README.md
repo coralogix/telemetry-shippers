@@ -1,6 +1,5 @@
 # Fluent-Bit-HTTP Chart
-#### Please read the [main README](https://github.com/coralogix/eng-integrations/blob/master/README.md) before following this chart installation.
-
+#### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
 Fluent-Bit is a lightweight data shipper, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluent-Bit shipper, together with the http output plugin to ship the logs to the Coralogix platform.
 The default values we provide can be overriden according to your needs, the default values can be showed by running:
@@ -104,4 +103,4 @@ We suggest using dynamic app_name and sub_system, since it's more agile than usi
 
 ## Dashboard
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.
-Please see [the dashboard README](https://github.com/coralogix/eng-integrations/blob/master/fluent-bit/dashboard) for installation instructions.
+Please see [the dashboard README](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/dashboard/README.md) for installation instructions.
