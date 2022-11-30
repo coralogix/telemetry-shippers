@@ -1,3 +1,4 @@
+# THIS PLUGIN IS NO LONGER MAINTAINED - USE THE HTTP PLUGIN - [Fluentbit HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/http/README.md)
 # Fluent-Bit-Coralogix Chart
 #### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
 
