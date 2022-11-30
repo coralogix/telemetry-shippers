@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.12 / 2022-11-30
+* [FEATURE] Add zpages extension
+* [BUGFIX] Increase Coralogix exporter timeout 5s -> 30s
+
 ### v0.0.11 / 2022-11-28
 * [UPGRADE] Upgrading chart version from 0.39.0 to 0.40.2
 * [UPGRADE] Upgrading app version from v0.64.0 to v0.66.0
