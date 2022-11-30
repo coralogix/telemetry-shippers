@@ -5,8 +5,8 @@ on:
   push:
     branches: master
     paths:
-    - 'logs/fluent-bit/http/Chart.yaml'
-    - 'logs/fluent-bit/http/values.yaml'
+    - 'logs/fluent-bit/coralogix/Chart.yaml'
+    - 'logs/fluent-bit/coralogix/values.yaml'
 
 env:
   CHART_VERSION: $(yq eval '.version' logs/fluent-bit/coralogix/Chart.yaml)
