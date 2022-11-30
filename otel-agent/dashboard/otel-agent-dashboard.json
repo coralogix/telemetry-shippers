@@ -1539,16 +1539,12 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "text": [
-            "staging"
-          ],
-          "value": [
-            "staging"
-          ]
+          "selected": false,
+          "text": "staging",
+          "value": "staging"
         },
         "datasource": null,
-        "definition": "label_values(otelcol_exporter_sent_spans_total, __meta_applicationname)",
+        "definition": "label_values(otelcol_exporter_queue_capacity, __meta_applicationname)",
         "description": null,
         "error": null,
         "hide": 0,
@@ -1558,7 +1554,7 @@
         "name": "appname",
         "options": [],
         "query": {
-          "query": "label_values(otelcol_exporter_sent_spans_total, __meta_applicationname)",
+          "query": "label_values(otelcol_exporter_queue_capacity, __meta_applicationname)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -1579,7 +1575,7 @@
           ]
         },
         "datasource": null,
-        "definition": "label_values(otelcol_exporter_sent_spans_total, __meta_subsystem)",
+        "definition": "label_values(otelcol_exporter_queue_capacity, __meta_subsystem)",
         "description": null,
         "error": null,
         "hide": 0,
@@ -1589,7 +1585,7 @@
         "name": "subsystem",
         "options": [],
         "query": {
-          "query": "label_values(otelcol_exporter_sent_spans_total, __meta_subsystem)",
+          "query": "label_values(otelcol_exporter_queue_capacity, __meta_subsystem)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -1608,5 +1604,5 @@
   "timezone": "",
   "title": "OpenTelemetry Collector",
   "uid": "wp8NM",
-  "version": 8
+  "version": 9
 }
