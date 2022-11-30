@@ -1,5 +1,5 @@
 # Fluentd-HTTP Chart
-#### Please read the [main README](https://github.com/coralogix/eng-integrations/blob/master/README.md) before following this chart installation.
+#### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
 
 Fluentd is a flexible data shipper with many available plugins and capabalities, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluentd shipper, together with the http output plugin to ship the logs to the Coralogix platform.
@@ -73,4 +73,4 @@ By default this chart installs additional dependent chart:
 (https://github.com/fluent/helm-charts/tree/main/charts/fluentd)
 
 ## Coralogix Fluentd Buffer Alert
-In order to create an alert on Fluentd buffer in Coralogix, please see [coralogix-alert doc](https://github.com/coralogix/eng-integrations/blob/master/fluentd/docs/coralogix-alerts.md) 
+In order to create an alert on Fluentd buffer in Coralogix, please see [coralogix-alert doc](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/docs/coralogix-alerts.md) 
