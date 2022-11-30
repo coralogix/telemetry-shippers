@@ -5,7 +5,7 @@ on:
   push:
     branches: master
     paths:
-    - 'fluentd/image/**'
+    - 'logs/fluentd/image/**'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/coralogix-fluentd-multiarch
@@ -32,12 +32,12 @@ jobs:
       -
         name: Read Fluentd VERSION file
         id: get-fluentd-version
-        run: echo "::set-output name=version::$(cat ./fluentd/image/VERSION)"
+        run: echo "::set-output name=version::$(cat ./logs/fluentd/image/VERSION)"
       -
         name: Build And Push Fluentd Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
         with:
-          context: ./fluentd/image
+          context: ./logs/fluentd/image
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
