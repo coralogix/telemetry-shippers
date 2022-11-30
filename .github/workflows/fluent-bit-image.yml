@@ -5,7 +5,7 @@ on:
   push:
     branches: master
     paths:
-    - 'fluent-bit/image/**'
+    - 'logs/fluent-bit/image/**'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/coralogix-fluent-bit-multiarch
@@ -32,12 +32,12 @@ jobs:
       -
         name: Read Fluent-Bit VERSION file
         id: get-fluentbit-version
-        run: echo "::set-output name=version::$(cat ./fluent-bit/image/VERSION)"
+        run: echo "::set-output name=version::$(cat ./logs/fluent-bit/image/VERSION)"
       -
         name: Build And Push Fluent-Bit Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
         with:
-          context: ./fluent-bit/image
+          context: ./logs/fluent-bit/image
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
