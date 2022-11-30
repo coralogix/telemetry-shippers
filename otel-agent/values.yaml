@@ -8,6 +8,7 @@ global:
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
 
+
 opentelemetry-collector:
   mode: daemonset
   hostNetwork: true
@@ -35,8 +36,12 @@ opentelemetry-collector:
   - name: OTEL_RESOURCE_ATTRIBUTES
     value: "k8s.node.name=$(K8S_NODE_NAME)"
   config:
+    extensions:
+      zpages:
+        endpoint: localhost:55679
     exporters:
       coralogix:
+        timeout: "30s"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         traces:
           endpoint: "{{ .Values.global.traces.endpoint }}"
@@ -101,6 +106,10 @@ opentelemetry-collector:
                 - targets:
                     - ${MY_POD_IP}:8888
     service:
+      extensions:
+      - zpages
+      - health_check
+      - memory_ballast
       telemetry:
         metrics:
           address: ${MY_POD_IP}:8888
