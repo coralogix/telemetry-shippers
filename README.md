@@ -3,7 +3,8 @@ Coralogix Open Source Integrations repository is Coralogix's way to ship our bes
 Currently we support:  
 Logging integrations, [Fluentd](https://www.fluentd.org/) and [Fluentbit](https://fluentbit.io/),  
 Metrics integrations, [Prometheus](https://prometheus.io/),  
-Tracing integrations, [OpenTelemetry](https://opentelemetry.io/)
+Tracing integrations, [OpenTelemetry](https://opentelemetry.io/)  
+
 Please see [#Getting Started](README.md#getting-started) for more information about the existing integrations.  
 
 
@@ -31,7 +32,8 @@ helm repo update
 For installation of each integration, please go inside each intergation's directory:
 - [Fluentd-HTTP chart](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/http/README.md)
 - [Fluent-bit-HTTP chart](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/http/README.md)
-- [OpenTelementry-Agent chart](https://github.com/coralogix/telemetry-shippers/blob/repo-redesign/otel-agent/README.md)
+- [Prometheus operator chart](https://github.com/coralogix/telemetry-shippers/blob/master/metrics/prometheus/operator/README.md)
+- [OpenTelementry-Agent chart](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/README.md)
 
 ---
 **NOTE**
@@ -42,7 +44,7 @@ inside the `same namespace` that the chart is installed in.
 * The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI:
 
 ```bash
-kubectl create secret generic integrations-privatekey \
+kubectl create secret generic coralogix-keys \
   -n <the-namespace-of-the-release> \
   --from-literal=PRIVATE_KEY=<private-key>
 ```
