@@ -28,7 +28,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --install \
   --namespace=<your-namespace> \
   --create-namespace \
-  --set "dynamic_metadata.app_name=myfield.application" \ # Each log's app_name will be fetched from the fluentbit record's 'myfield.application' value.
+  --set "dynamic_metadata.app_name=kubernetes.namespace_name" \ # Each log's app_name will be fetched from the fluentbit record's 'kubernetes.namespace_name' value.
   --set "dynamic_metadata.sub_system=kubernetes.container_name" \ # Each log's subsystem will be fetched from the fluentbit record's 'kubernetes.container_name' value.
   --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
 ```
@@ -39,11 +39,13 @@ installation using a values file:
 ---
 # override-values.yaml:
 dynamic_metadata:
-  app_name: myfield.application
+  app_name: kubernetes.namespace_name
   sub_system: kubernetes.container_name
 fluent-bit:
   endpoint: api.eu2.coralogix.com
 ```
+Note - 'kubernetes.namespace_name' and 'kubernetes.container_name' are the fields from which we take the values.  
+So for example the value of a field named 'namespace_name' inside the 'kubernetes' field will be application name of this log.
 
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
