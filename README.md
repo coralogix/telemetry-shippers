@@ -18,7 +18,7 @@ Under each integration there is an 'image' directory which our GitHub Actions wo
 ## Installation
 Our Helm charts repository can be added to the local repos list with the following command:
 it will create a repository name `coralogix-charts-virtual` if you wish to change it to anything else.
-be sure to adapt you commands in the other segments reffering to this repository.
+be sure to adapt your commands in the other segments referring to this repository.
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
@@ -36,7 +36,7 @@ For installation of each integration, please go inside each intergation's direct
 ---
 **NOTE**
 
-All integrations require a `secret` called `integrations-privatekey` with the relevant `private key` under a secrey key called `PRIVATE_KEY`,
+All integrations require a `secret` called `coralogix-keys` with the relevant `private key` under a secrey key called `PRIVATE_KEY`,
 inside the `same namespace` that the chart is installed in.
 
 * The `private key` appears under 'Data Flow' --> 'API Keys' in Coralogix UI:
@@ -46,6 +46,8 @@ kubectl create secret generic integrations-privatekey \
   -n <the-namespace-of-the-release> \
   --from-literal=PRIVATE_KEY=<private-key>
 ```
+
+for more information regarding the coralogix private key please visit [here](https://coralogix.com/docs/private-key/)
 
 The created secret should look like this:
 ```yaml

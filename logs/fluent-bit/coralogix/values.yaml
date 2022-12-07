@@ -22,7 +22,7 @@ fluent-bit:
   # The private key must exist under the field 'PRIVATE_KEY' in a secret called 'integrations-privatekey' in the same namsespace as the daemonset
   envFrom:
     - secretRef:
-        name: integrations-privatekey
+        name: coralogix-keys
 
   #prometheusRule:
   #  enabled: true

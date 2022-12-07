@@ -45,7 +45,7 @@ fluentd:
 
   envFrom:
     - secretRef:
-        name: integrations-privatekey
+        name: coralogix-keys
 
   metrics:
     serviceMonitor:
