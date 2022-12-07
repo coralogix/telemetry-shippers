@@ -4,8 +4,9 @@ name: Fluentd-Coralogix-Chart
 on:
   push:
     branches: master
-    paths-ignore: 
-      - 'logs/fluentd/coralogix/**.md'
+    paths: 
+      - 'logs/fluentd/coralogix/Chart.yaml'
+      - 'logs/fluentd/coralogix/values.yaml'
 
 env:
   CHART_VERSION: $(yq eval '.version' logs/fluentd/coralogix/Chart.yaml)

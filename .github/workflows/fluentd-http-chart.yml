@@ -4,8 +4,9 @@ name: Fluentd-HTTP-Chart
 on:
   push:
     branches: master
-    paths-ignore: 
-      - 'logs/fluentd/http/**.md'
+    paths: 
+      - 'logs/fluentd/http/Chart.yaml'
+      - 'logs/fluentd/http/values.yaml'
 
 env:
   CHART_VERSION: $(yq eval '.version' logs/fluentd/http/Chart.yaml)
