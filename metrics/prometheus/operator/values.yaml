@@ -1,0 +1,28 @@
+global:
+  endpoint: "<remote_write_endpoint>"
+
+kube-prometheus-stack:
+  fullnameOverride: prometheus-coralogix
+  prometheus: 
+    prometheusSpec: 
+      ## disable the extra label added to the monitors
+      ## to allow monitors to be added outside of the chart
+      podMonitorSelectorNilUsesHelmValues: false
+      probeSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+      serviceMonitorSelectorNilUsesHelmValues: false
+      ## the global default scrape interval and timeout
+      scrapeInterval: '1m'
+      scrapeTimeout: '30s'
+      secrets: ['coralogix-keys']
+      remoteWrite:
+        ## the coralogix account domain url
+        - url: '{{ .Values.global.endpoint }}'
+          name: 'crx'
+          remoteTimeout: 120s
+          ## the secret name and key name that hold the coralogix private key.
+          bearerTokenFile: '/etc/prometheus/secrets/coralogix-keys/PRIVATE_KEY'
+  grafana:
+    enabled: false
+  alertmanager:
+    enabled: false
