@@ -86,7 +86,7 @@ helm upgrade --install prometheus-coralogix coralogix-charts-virtual/prometheus-
 ## Removal
 ```bash
 helm uninstall prometheus-coralogix \
--n monitoring
+--namespace=monitoring
 ```
 
 # Dependencies
