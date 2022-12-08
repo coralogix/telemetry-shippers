@@ -79,8 +79,14 @@ kube-prometheus-stack:
 ## Installation
 
 ```bash
-helm upgrade --install prometheus-coralogix coralogix-charts-virtual/prometheus-coralogix \
+helm upgrade --install prometheus-coralogix coralogix-charts-virtual/prometheus-operator-coralogix \
+  --namespace=monitoring \
   -f values.yaml
+```
+## Removal
+```bash
+helm uninstall prometheus-coralogix \
+--namespace=monitoring
 ```
 
 # Dependencies
