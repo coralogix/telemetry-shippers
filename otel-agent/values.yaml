@@ -23,7 +23,7 @@ opentelemetry-collector:
     kubernetesAttributes:
       enabled: true
     hostMetrics:
-      enabled: true
+      enabled: false
     kubeletMetrics:
       enabled: true
 
@@ -81,6 +81,51 @@ opentelemetry-collector:
           - name: "k8s.node.name"
           - name: "k8s.namespace.name" 
     receivers:
+      hostmetrics:
+        collection_interval: 10s
+        scrapers:
+            cpu:
+            load:
+            memory:
+            disk:
+            network:
+            filesystem:
+              exclude_mount_points:
+                mount_points:
+                  - /dev/*
+                  - /proc/*
+                  - /sys/*
+                  - /run/k3s/containerd/*
+                  - /var/lib/docker/*
+                  - /var/lib/kubelet/*
+                  - /snap/*
+                match_type: regexp
+              exclude_fs_types:
+                fs_types:
+                  - autofs
+                  - binfmt_misc
+                  - bpf
+                  - cgroup2
+                  - configfs
+                  - debugfs
+                  - devpts
+                  - devtmpfs
+                  - fusectl
+                  - hugetlbfs
+                  - iso9660
+                  - mqueue
+                  - nsfs
+                  - overlay
+                  - proc
+                  - procfs
+                  - pstore
+                  - rpc_pipefs
+                  - securityfs
+                  - selinuxfs
+                  - squashfs
+                  - sysfs
+                  - tracefs
+                match_type: strict
       otlp:
         protocols:
           grpc:
@@ -135,6 +180,7 @@ opentelemetry-collector:
           receivers:
             - prometheus
             - otlp
+            - hostmetrics
         logs:
           exporters:
             - coralogix
