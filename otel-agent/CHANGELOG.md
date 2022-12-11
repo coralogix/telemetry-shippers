@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.14 / 2022-11-11
+* [BUGFIX] Add all of the relevant metrics to be suported in hostmetrics   
+
+### v0.0.13 / 2022-11-08
+* [FEATURE] Configure hostmetrics filesystem metrics
+
 ### v0.0.12 / 2022-11-30
 * [FEATURE] Add zpages extension
 * [BUGFIX] Increase Coralogix exporter timeout 5s -> 30s

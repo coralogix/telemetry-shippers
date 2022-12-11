@@ -84,11 +84,11 @@ opentelemetry-collector:
       hostmetrics:
         collection_interval: 10s
         scrapers:
-            cpu:
-            load:
-            memory:
-            disk:
-            network:
+            cpu: null
+            load: null
+            memory: null
+            disk: null
+            network: null
             filesystem:
               exclude_mount_points:
                 mount_points:
