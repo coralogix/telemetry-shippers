@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fluentd-http
+  labels:
+    app.kubernetes.io/name: fluentd
+    app.kubernetes.io/instance: fluentd-http
+    release: prometheus-operator
+spec:
+  jobLabel: fluentd-http
+  endpoints:
+    - port: metrics
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fluentd
+      app.kubernetes.io/instance: fluentd-http
