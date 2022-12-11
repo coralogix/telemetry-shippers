@@ -5,11 +5,11 @@ on:
   push:
     branches: master
     paths: 
-      - 'logs/fluentd/coralogix/Chart.yaml'
-      - 'logs/fluentd/coralogix/values.yaml'
+      - 'logs/fluentd/k8s-helm/coralogix/Chart.yaml'
+      - 'logs/fluentd/k8s-helm/coralogix/values.yaml'
 
 env:
-  CHART_VERSION: $(yq eval '.version' logs/fluentd/coralogix/Chart.yaml)
+  CHART_VERSION: $(yq eval '.version' logs/fluentd/k8s-helm/coralogix/Chart.yaml)
   CHART_NAME: fluentd-coralogix
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
   ARTIFACTORY_USERNAME: integrations-actions
@@ -27,8 +27,8 @@ jobs:
         run: |
           helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
           helm repo update
-          helm dependency build ./logs/fluentd/coralogix/
-          cd logs/fluentd/coralogix
+          helm dependency build ./logs/fluentd/k8s-helm/coralogix/
+          cd logs/fluentd/k8s-helm/coralogix
           helm package .
       -
         name: Setup JFrog CLI
@@ -38,5 +38,5 @@ jobs:
       -
         name: use-jfrog-cli
         run: |
-          cd logs/fluentd/coralogix
+          cd logs/fluentd/k8s-helm/coralogix
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
