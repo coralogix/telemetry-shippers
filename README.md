@@ -3,7 +3,8 @@ Coralogix Open Source Integrations repository is Coralogix's way to ship our bes
 Currently we support:  
 Logging integrations, [Fluentd](https://www.fluentd.org/) and [Fluentbit](https://fluentbit.io/),  
 Metrics integrations, [Prometheus](https://prometheus.io/),  
-Tracing integrations, [OpenTelemetry](https://opentelemetry.io/)
+Tracing integrations, [OpenTelemetry](https://opentelemetry.io/).  
+
 Please see [#Getting Started](README.md#getting-started) for more information about the existing integrations.  
 
 
@@ -34,7 +35,7 @@ data:
 kind: Secret
 metadata:
   name: coralogix-keys
-  namespace: <the-release-namespace>
+  namespace: <the-integration-namespace>
 type: Opaque 
 ```
 ## Installation
