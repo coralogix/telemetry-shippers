@@ -1,7 +1,7 @@
 # Fluentd-HTTP manifest files
 #### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
 
-Fluentd is a flexible data shipper with many available plugins and capabalities, that we are using as a logs shipper to our platform.
+Fluentd is a flexible data shipper with many available plugins and capabilities, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluentd shipper, together with the http output plugin to ship the logs to the Coralogix platform.
 
 ## Installation 
