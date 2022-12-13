@@ -23,7 +23,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 460,
-  "iteration": 1669800010200,
+  "iteration": 1670926408011,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -47,35 +47,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -84,13 +56,10 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
-          }
+          },
+          "unit": "none"
         },
         "overrides": []
       },
@@ -102,33 +71,95 @@
       },
       "id": 35,
       "options": {
-        "legend": {
+        "orientation": "auto",
+        "reduceOptions": {
           "calcs": [
-            "last",
-            "max",
-            "mean"
+            "lastNotNull"
           ],
-          "displayMode": "table",
-          "placement": "bottom"
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
       },
+      "pluginVersion": "8.2.6",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by (k8s_node_name)(otelcol_exporter_queue_capacity{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"})",
+          "expr": "otelcol_exporter_queue_capacity{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"}",
+          "format": "table",
+          "instant": true,
           "interval": "",
-          "legendFormat": "{{ k8s_node_name }} - capacity",
+          "legendFormat": "capacity",
           "refId": "A"
         }
       ],
       "title": "Retry Queue Capacity (in Batches)",
-      "type": "timeseries"
+      "type": "gauge"
     },
     {
       "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 38,
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "8.2.6",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum by (host_name)(otelcol_exporter_queue_size{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"}) > 0",
+          "interval": "",
+          "legendFormat": "{{ host_name }}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Queue Current Size [non empty queues]",
+      "type": "bargauge"
+    },
+    {
+      "datasource": null,
+      "description": "The collector is not able to export data as expected. It's not necessarily means data loss because there can be retries, s but a high rate of failures can indicate issues with the network or backend receiving the data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -180,12 +211,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 12,
-        "y": 1
+        "x": 0,
+        "y": 9
       },
-      "id": 38,
+      "id": 36,
       "options": {
         "legend": {
           "calcs": [
@@ -203,13 +234,13 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by (k8s_node_name)(otelcol_exporter_queue_size{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"})",
+          "expr": "sum by(exporter)(rate(otelcol_exporter_send_failed_spans_total{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
           "interval": "",
-          "legendFormat": "{{ k8s_node_name }} - current size",
+          "legendFormat": "{{ exporter }} ",
           "refId": "A"
         }
       ],
-      "title": "Retry Queue Current Size (in Batches)",
+      "title": "Failed Exported Spans",
       "type": "timeseries"
     },
     {
@@ -266,12 +297,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
+        "h": 9,
+        "w": 12,
+        "x": 12,
         "y": 9
       },
-      "id": 36,
+      "id": 39,
       "options": {
         "legend": {
           "calcs": [
@@ -289,13 +320,13 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum by(exporter)(rate(otelcol_exporter_send_failed_spans_total{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+          "expr": "sum by(exporter)(rate(otelcol_exporter_send_failed_metric_points_total{__meta_applicationname=~\"$appname\",__meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
           "interval": "",
           "legendFormat": "{{ exporter }} ",
           "refId": "A"
         }
       ],
-      "title": "Failed Exported Spans",
+      "title": "Failed Exported Metrics",
       "type": "timeseries"
     },
     {
@@ -354,7 +385,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 18
       },
       "id": 22,
       "options": {
@@ -439,7 +470,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 18
       },
       "id": 25,
       "options": {
@@ -525,7 +556,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 26
       },
       "id": 29,
       "options": {
@@ -611,7 +642,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 26
       },
       "id": 31,
       "options": {
@@ -641,532 +672,533 @@
       "type": "timeseries"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 34
       },
       "id": 13,
-      "panels": [],
+      "panels": [
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 35
+          },
+          "id": 10,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (processor)(rate(otelcol_processor_accepted_spans_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+              "interval": "",
+              "legendFormat": "{{ processor }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Received Spans",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 35
+          },
+          "id": 11,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (processor)(rate(otelcol_processor_accepted_metric_points_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+              "interval": "",
+              "legendFormat": "{{ processor }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Received Metrics",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "It indicates that too many errors are returned, it may indicate data loss",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "id": 15,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (processor)(rate(otelcol_processor_refused_spans_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+              "interval": "",
+              "legendFormat": "{{ processor }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Refused Spans",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "It indicates that too many errors are returned, it may indicate data loss",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 43
+          },
+          "id": 17,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (processor)(rate(otelcol_processor_refused_metric_points_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+              "interval": "",
+              "legendFormat": "{{ processor }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Refused Metrics",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "Dropped Spans for a sustained period of time means a data loss",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 51
+          },
+          "id": 16,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (processor)(rate(otelcol_processor_dropped_spans_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+              "interval": "",
+              "legendFormat": "{{ processor }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Dropped Spans",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "description": "Dropped metrics for a sustained period of time means a data loss",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 51
+          },
+          "id": 18,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (processor)(rate(otelcol_processor_dropped_metric_points_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
+              "interval": "",
+              "legendFormat": "{{ processor }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Dropped Metrics",
+          "type": "timeseries"
+        }
+      ],
       "title": "Processors",
       "type": "row"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 34
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by (processor)(rate(otelcol_processor_accepted_spans_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "{{ processor }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Received Spans",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 34
-      },
-      "id": 11,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by (processor)(rate(otelcol_processor_accepted_metric_points_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "{{ processor }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Received Metrics",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "It indicates that too many errors are returned, it may indicate data loss",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 42
-      },
-      "id": 15,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by (processor)(rate(otelcol_processor_refused_spans_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "{{ processor }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Refused Spans",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "It indicates that too many errors are returned, it may indicate data loss",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 42
-      },
-      "id": 17,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by (processor)(rate(otelcol_processor_refused_metric_points_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "{{ processor }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Refused Metrics",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "Dropped Spans for a sustained period of time means a data loss",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 50
-      },
-      "id": 16,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by (processor)(rate(otelcol_processor_dropped_spans_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "{{ processor }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Dropped Spans",
-      "type": "timeseries"
-    },
-    {
-      "datasource": null,
-      "description": "Dropped metrics for a sustained period of time means a data loss",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 50
-      },
-      "id": 18,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum by (processor)(rate(otelcol_processor_dropped_metric_points_total{__meta_applicationname=~\"$appname\", __meta_subsystem=~\"$subsystem\"}[$__rate_interval]))",
-          "interval": "",
-          "legendFormat": "{{ processor }}",
-          "refId": "A"
-        }
-      ],
-      "title": "Dropped Metrics",
-      "type": "timeseries"
     },
     {
       "collapsed": true,
@@ -1175,7 +1207,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 58
+        "y": 35
       },
       "id": 8,
       "panels": [
@@ -1236,7 +1268,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 67
+            "y": 36
           },
           "id": 2,
           "options": {
@@ -1323,7 +1355,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 67
+            "y": 36
           },
           "id": 4,
           "options": {
@@ -1409,7 +1441,7 @@
             "h": 9,
             "w": 12,
             "x": 0,
-            "y": 76
+            "y": 45
           },
           "id": 5,
           "options": {
@@ -1496,7 +1528,7 @@
             "h": 9,
             "w": 12,
             "x": 12,
-            "y": 76
+            "y": 45
           },
           "id": 6,
           "options": {
@@ -1540,8 +1572,8 @@
         "allValue": null,
         "current": {
           "selected": false,
-          "text": "staging",
-          "value": "staging"
+          "text": "production",
+          "value": "production"
         },
         "datasource": null,
         "definition": "label_values(otelcol_exporter_queue_capacity, __meta_applicationname)",
@@ -1550,7 +1582,7 @@
         "hide": 0,
         "includeAll": false,
         "label": null,
-        "multi": true,
+        "multi": false,
         "name": "appname",
         "options": [],
         "query": {
@@ -1566,13 +1598,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "text": [
-            "telemetry-agent"
-          ],
-          "value": [
-            "telemetry-agent"
-          ]
+          "selected": false,
+          "text": "telemetry-agent",
+          "value": "telemetry-agent"
         },
         "datasource": null,
         "definition": "label_values(otelcol_exporter_queue_capacity, __meta_subsystem)",
@@ -1581,7 +1609,7 @@
         "hide": 0,
         "includeAll": false,
         "label": null,
-        "multi": true,
+        "multi": false,
         "name": "subsystem",
         "options": [],
         "query": {
@@ -1604,5 +1632,5 @@
   "timezone": "",
   "title": "OpenTelemetry Collector",
   "uid": "wp8NM",
-  "version": 9
+  "version": 11
 }
