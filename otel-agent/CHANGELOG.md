@@ -2,18 +2,34 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.15 / 2022-12-12
+
+* [FEATURE] Add support for thrift_binary protocol in Jaeger receiver
+
+### v0.0.14 / 2022-12-11
+
+* [BUGFIX] Add all of the relevant metrics to be suported in hostmetrics   
+
+### v0.0.13 / 2022-12-08
+
+* [FEATURE] Configure hostmetrics filesystem metrics
+
 ### v0.0.12 / 2022-11-30
+
 * [FEATURE] Add zpages extension
 * [BUGFIX] Increase Coralogix exporter timeout 5s -> 30s
 
 ### v0.0.11 / 2022-11-28
+
 * [UPGRADE] Upgrading chart version from 0.39.0 to 0.40.2
 * [UPGRADE] Upgrading app version from v0.64.0 to v0.66.0
 
 ### v0.0.10 / 2022-11-21
+
 * [FEATURE] Add self monitoring 
 
 ### v0.0.9 / 2022-11-10
+
 * [FEATURE] Support OpenTelemetry native agent
 * [FIX] Example override file attribute
 

@@ -61,7 +61,9 @@ helm repo update
 For installation of each integration, please go inside each intergation's directory:
 - [Fluentd-HTTP chart](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/k8s-helm/http/README.md)
 - [Fluent-bit-HTTP chart](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/k8s-helm/http/README.md)
+- [Prometheus operator chart](https://github.com/coralogix/telemetry-shippers/blob/master/metrics/prometheus/operator/README.md)
 - [OpenTelementry-Agent chart](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/README.md)
+
 
 ### Kubernetes
 
