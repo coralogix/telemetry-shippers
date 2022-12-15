@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.16 / 2022-12-15
+
+* [FEATURE] Add checkpoints for Kubernetes logs
+* [FIX] Host metrics processor exclude various pseudo filesystems
+* [CHORE] Update OpenTelemetry Collector to v0.67.0
+
 ### v0.0.15 / 2022-12-12
 
 * [FEATURE] Add support for thrift_binary protocol in Jaeger receiver
