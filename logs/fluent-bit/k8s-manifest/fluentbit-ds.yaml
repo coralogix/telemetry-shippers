@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  labels:
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: fluent-bit-http
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fluent-bit
+      app.kubernetes.io/instance: fluent-bit-http
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fluent-bit
+        app.kubernetes.io/instance: fluent-bit-http
+    spec:
+      serviceAccountName: fluent-bit
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: fluent-bit
+          image: "coralogixrepo/coralogix-fluent-bit-multiarch:v0.0.2"
+          imagePullPolicy: Always
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          envFrom:
+            - secretRef:
+                name: coralogix-keys
+            - configMapRef:
+                name: fluent-bit-env
+          ports:
+            - name: http
+              containerPort: 2020
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+          resources:
+            limits:
+              cpu: 100m
+              memory: 250Mi
+            requests:
+              cpu: 100m
+              memory: 250Mi
+          volumeMounts:
+            - mountPath: /fluent-bit/etc/fluent-bit.conf
+              name: config
+              subPath: fluent-bit.conf
+            - mountPath: /fluent-bit/etc/custom_parsers.conf
+              name: config
+              subPath: custom_parsers.conf
+            - name: config
+              mountPath: /fluent-bit/etc/filters-systemd.conf
+              subPath: filters-systemd.conf
+            - name: config
+              mountPath: /fluent-bit/etc/input-systemd.conf
+              subPath: input-systemd.conf
+            - name: config
+              mountPath: /fluent-bit/etc/output-systemd.conf
+              subPath: output-systemd.conf
+            - mountPath: /var/log
+              name: varlog
+            - mountPath: /var/lib/docker/containers
+              name: varlibdockercontainers
+              readOnly: true
+            - mountPath: /etc/machine-id
+              name: etcmachineid
+              readOnly: true
+            - mountPath: /fluent-bit/scripts/script.lua
+              name: crxluascript
+              subPath: script.lua
+      volumes:
+        - name: config
+          configMap:
+            name: fluent-bit
+        - hostPath:
+            path: /var/log
+          name: varlog
+        - hostPath:
+            path: /var/lib/docker/containers
+          name: varlibdockercontainers
+        - hostPath:
+            path: /etc/machine-id
+            type: File
+          name: etcmachineid
+        - configMap:
+            name: fluent-bit-http-crxluascript
+          name: crxluascript
+      tolerations:
+        - operator: Exists

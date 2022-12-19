@@ -1,4 +1,4 @@
-# THIS PLUGIN IS NO LONGER MAINTAINED - USE THE HTTP PLUGIN - [Fluentd HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/http/README.md)
+# THIS PLUGIN IS NO LONGER MAINTAINED - USE THE HTTP PLUGIN - [Fluentd HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/k8s-helm/http/README.md)
 # Fluentd-Coralogix Chart
 #### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
 

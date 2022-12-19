@@ -1,0 +1,293 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: fluentd
+    app.kubernetes.io/instance: fluentd-http
+  name: fluentd-prometheus-conf
+data:
+  prometheus.conf: |-
+    <source>
+      @type prometheus
+      @id in_prometheus
+      bind "0.0.0.0"
+      port 24231
+      metrics_path "/metrics"
+    </source>
+
+    <source>
+      @type prometheus_monitor
+      @id in_prometheus_monitor
+    </source>
+
+    <source>
+      @type prometheus_output_monitor
+      @id in_prometheus_output_monitor
+    </source>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: fluentd
+    app.kubernetes.io/instance: fluentd-http
+  name: fluentd-systemd-conf
+data:
+  systemd.conf: |-
+    <source>
+      @type systemd
+      @id in_systemd_internal_kubernetes
+      @label @KUBERNETES_SYSTEM
+      matches [{"_SYSTEMD_UNIT":"kubelet.service"},{"_SYSTEMD_UNIT":"kube-apiserver.service"},{"_SYSTEMD_UNIT":"kube-controller-manager.service"},{"_SYSTEMD_UNIT":"kube-proxy.service"},{"_SYSTEMD_UNIT":"kube-scheduler.service"}]
+      read_from_head true
+      tag "internal-kubernetes.systemd"
+      <storage>
+        @type "local"
+        persistent true
+        path "/var/log/fluentd-journald-internal_kubernetes-cursor.json"
+      </storage>
+      <entry>
+        fields_strip_underscores true
+        field_map {"MESSAGE": "message", "_TRANSPORT": "stream", "_SYSTEMD_UNIT": "systemd_unit", "_HOSTNAME": "hostname"}
+        field_map_strict true
+      </entry>
+    </source>
+
+    <source>
+      @type systemd
+      @id in_systemd_etcd
+      @label @KUBERNETES_SYSTEM
+      matches [{"_SYSTEMD_UNIT":"etcd.service"}]
+      read_from_head true
+      tag "etcd.systemd"
+      <storage>
+        @type "local"
+        persistent true
+        path "/var/log/fluentd-journald-internal_etcd-cursor.json"
+      </storage>
+      <entry>
+        fields_strip_underscores true
+        field_map {"MESSAGE": "message", "_TRANSPORT": "stream", "_SYSTEMD_UNIT": "systemd_unit", "_HOSTNAME": "hostname"}
+        field_map_strict true
+      </entry>
+    </source>
+
+    <label @KUBERNETES_SYSTEM>
+      <filter internal-kubernetes.systemd>
+        @type parser
+        key_name message
+        <parse>
+          @type regexp
+          expression /^(?<level>[a-zA-Z])[0-9]* ([\d:.]+)\s+\d+ (?<file>[a-zA-Z-_.]+):(?<line>[\d]+)\]\s+(?<log>.*)$/
+        </parse>
+        reserve_data true
+        reserve_time true
+      </filter>
+
+      <filter etcd.systemd>
+        @type parser
+        key_name message
+        <parse>
+          @type regexp
+          expression /^([^ ]+\s[^ ]+) (?<level>[A-Z]) \| (?<component>[a-zA-Z-_.]+): (?<log>.*)$/
+        </parse>
+        reserve_data true
+        reserve_time true
+      </filter>
+
+      <filter **>
+        @type record_transformer
+        enable_ruby
+        <record>
+          raw ${record["message"]}
+        </record>
+        remove_keys message
+      </filter>
+
+      <match **>
+        @type relabel
+        @label @DISPATCH
+      </match>
+    </label>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  labels:
+    app.kubernetes.io/name: fluentd
+    app.kubernetes.io/instance: fluentd-http
+data:
+  01_sources.conf: |-
+
+  02_filters.conf: |-
+
+  03_dispatch.conf: |-
+
+  04_outputs.conf: |-
+
+  coralogix.conf: |-
+    <system>
+      log_level "#{ENV['LOG_LEVEL']}"
+    </system>
+
+    <source>
+      @type tail
+      @id in_tail_container_logs
+      path /var/log/containers/*.log
+      path_key filename
+      pos_file /var/log/fluentd-containers.log.pos
+      tag raw.containers.*
+      read_from_head false
+      <parse>
+      @type multi_format
+        <pattern>
+          format json
+          time_key time
+          time_format %Y-%m-%dT%H:%M:%S.%NZ
+          keep_time_key true
+        </pattern>
+        <pattern>
+          format /^(?<time>.+) (?<stream>stdout|stderr) [^ ]* (?<log>.*)$/
+          time_format %Y-%m-%dT%H:%M:%S.%N%:z
+          keep_time_key true
+        </pattern>
+      </parse>
+    </source>
+
+    # This Segment is using the detect-exceptions-plugin
+    # It will scan the "log" field for well known sctructures of Exception messages
+    # I any are found it will assemble them and will aatempt to resolve the multiline.
+    # this segment will also remove the "raw" prefix fro mthe tag
+    <match raw.containers.**>
+      @id raw.containers
+      @type detect_exceptions
+      remove_tag_prefix raw
+      message log
+      stream stream
+      multiline_flush_interval 5
+      max_bytes 500000
+      max_lines 1000
+    </match>
+
+    # This Segment takes the raw logs and enriches them with the kubernetes metadata
+    # Other Parts in this config are relaying on it.
+    <filter containers.**>
+      @type kubernetes_metadata
+      @id filter_kube_metadata
+      skip_labels false
+      skip_container_metadata false
+      skip_namespace_metadata true
+      skip_master_url true
+    </filter>
+
+    # Tag rewrite segment
+    # This Section added a tag prefix based on the container name
+    # This can be used to better utilize the concat plugin usage.
+    <match containers.**>
+       @type rewrite_tag_filter
+       <rule>
+         key $.kubernetes.container_name
+         pattern ^(.+)$
+         tag $1.${tag}
+       </rule>
+    </match>
+
+    # This segment is here to block out the FluentD DS logs from being sent.
+    # Any container name added to this list will be dropped and not sent to Coralogix.
+    # This segment is dependent on the Tag re write segment to come first
+    <match {fluentd}.containers.**>
+      @type null
+    </match>
+
+    <filter *.containers.**>
+      @type record_transformer
+      enable_ruby true
+      auto_typecast true
+      renew_record true
+      <record>
+        privateKey "#{ENV['PRIVATE_KEY']}"
+        applicationName ${record.dig("kubernetes", "namespace_name")}
+        subsystemName ${record.dig("kubernetes", "container_name")}
+        computerName ${record.dig("kubernetes", "host")}
+        timestamp ${time.strftime('%s%L')}
+        text ${record.to_json}
+      </record>
+    </filter>
+
+    # This segment will relabel Any message that reaches here.
+    # This label will later be used to send all the logs to coralogix
+    <match **>
+      @type relabel
+      @label @DISPATCH
+    </match>
+
+    <label @DISPATCH>
+      <filter internal-kubernetes.systemd>
+        @type record_transformer
+        enable_ruby true
+        auto_typecast true
+        renew_record true
+        <record>
+          privateKey "#{ENV['PRIVATE_KEY']}"
+          applicationName "systemd"
+          subsystemName "kubelet.service"
+          timestamp ${time.strftime('%s%L')}
+          text ${record.to_json}
+        </record>
+      </filter>
+     # This segment will generate a metric of messages being sent to coralogix
+     # It will enable a closer monitor of the sending process
+      <filter **>
+        @type prometheus
+        <metric>
+          name fluentd_input_status_num_records_total
+          type counter
+          desc The total number of incoming records
+        </metric>
+      </filter>
+
+      <match **>
+        @type http
+        endpoint "https://#{ENV['ENDPOINT']}/logs/rest/singles"
+        headers_from_placeholders {"private_key":"${$.privateKey}"}
+        error_response_as_unrecoverable false
+        <buffer $.privateKey>
+          @type memory
+          compress gzip
+          flush_thread_count 4
+          chunk_limit_size 6MB
+          flush_interval 1s
+          overflow_action throw_exception
+          retry_max_times 10
+          retry_type periodic
+          retry_wait 8
+        </buffer>
+        <secondary>
+          #If any messages fail to send they will be send to STDOUT for debug.
+          @type stdout
+        </secondary>
+      </match>
+    </label>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-main
+  labels:
+    app.kubernetes.io/name: fluentd
+    app.kubernetes.io/instance: fluentd-http
+data:
+  fluent.conf: |-
+    # do not collect fluentd logs to avoid infinite loops.
+    <label @FLUENT_LOG>
+      <match **>
+        @type null
+        @id ignore_fluent_logs
+      </match>
+    </label>
+
+    @include config.d/*.conf
+    @include fluentd-prometheus-conf.d/*
+---
+
