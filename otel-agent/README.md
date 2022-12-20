@@ -104,7 +104,7 @@ env:
     value: "$(NODE):4417"
 ```
 
-# Performance of OpenTelemetry Collector - Picking the right span processor
+# Performance of the Collector - Picking the right span processor
 
 Picking the right span processor can have an impact on the performance of the collector.
 When using the SimpleSpanProcessor, it affects the resources usage, the latenct, and the buffering behaviour of the collector.
