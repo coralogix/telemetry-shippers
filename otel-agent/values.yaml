@@ -40,6 +40,8 @@ opentelemetry-collector:
     extensions:
       zpages:
         endpoint: localhost:55679
+      pprof:
+        endpoint: localhost:1777
     exporters:
       coralogix:
         timeout: "30s"
@@ -111,6 +113,7 @@ opentelemetry-collector:
     service:
       extensions:
       - zpages
+      - pprof
       - health_check
       - memory_ballast
       telemetry:
