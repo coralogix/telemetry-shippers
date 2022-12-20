@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.17 / 2022-12-20
+
+* [FEATURE] Add pprof extension
+
 ### v0.0.16 / 2022-12-15
 
 * [FEATURE] Add checkpoints for Kubernetes logs
