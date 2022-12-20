@@ -104,6 +104,22 @@ env:
     value: "$(NODE):4417"
 ```
 
+# Performance of OpenTelemetry Collector - Picking the right span processor
+
+Picking the right span processor can have an impact on the performance of the collector.
+When using the SimpleSpanProcessor, it affects the resources usage, the latenct, and the buffering behaviour of the collector.
+
+While the SimpleSpanProcessor processes spans as they are created, the BatchSpanProcessor processes spans in batches before they are exported. 
+We switched our span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement:
+
+| Span Processor  | Agent Memory Usage	                          | Agent CPU Usage                     | Latency Samples[traces]       |
+|---------|------------------------------------------|------------------------------------- | --------------------------------- |
+| SimpleSpanProcessor    |    3.7 GB   | 0.5 | >1m40s |
+| BatchSpanProcessor   | 600 MB  | 0.02 | >1s <10s| 
+
+In addition, it improved the buffer performance, when we used the SimpleSpanProcessor, the buffer queues were getting full very quickly,
+and after switching to the BatchSpanProcessor, it stopped becoming full all the time, therefore stopped dropping data.   
+
 # Infrastructure Monitoring
 
 ## Log Collection
