@@ -113,15 +113,17 @@ While the SimpleSpanProcessor submits a span every time a span is finished, the 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector.
 We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
+
 | Span Processor  | Agent Memory Usage	                          | Agent CPU Usage                     | Latency Samples       |
 |---------|------------------------------------------|------------------------------------- | --------------------------------- |
 | SimpleSpanProcessor    |    3.7 GB   | 0.5 | >1m40s |
 | BatchSpanProcessor   | 600 MB  | 0.02 | >1s <10s| 
 
+
 In addition, it improved the buffer performance of the collector, when we used the SimpleSpanProcessor, the buffer queues were getting full very quickly,
 and after switching to the BatchSpanProcessor, it stopped becoming full all the time, therefore stopped dropping data.
 
-Example:
+### Example:
 ```
 import BatchSpanProcessor from "@opentelemetry/sdk-trace-base";
 tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
