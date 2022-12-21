@@ -4,7 +4,7 @@
 
 ### v0.0.18 / 2022-12-21
 
-* [FIX] Set node_from_env_var filter for k8sattributes 
+* [FIX] Set node_from_env_var filter for k8sattributes, reducing memory and cpu usage for those using k8sattributes
 
 ### v0.0.17 / 2022-12-20
 
