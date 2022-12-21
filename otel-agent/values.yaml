@@ -36,6 +36,11 @@ opentelemetry-collector:
         key: PRIVATE_KEY
   - name: OTEL_RESOURCE_ATTRIBUTES
     value: "k8s.node.name=$(K8S_NODE_NAME)"
+  - name: KUBE_NODE_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: spec.nodeName
   config:
     extensions:
       zpages:
@@ -67,6 +72,9 @@ opentelemetry-collector:
         application_name: "{{.Values.global.defaultApplicationName }}"
         subsystem_name: "{{.Values.global.defaultSubsystemName }}"
     processors:
+      k8sattributes:
+        filter:
+          node_from_env_var: KUBE_NODE_NAME     
       memory_limiter: null # Will get the k8s resource limits
       resourcedetection/env:
         detectors: ["system","env"]

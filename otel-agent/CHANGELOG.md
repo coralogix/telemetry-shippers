@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.18 / 2022-12-21
+
+* [FIX] Set node_from_env_var filter for k8sattributes 
+
 ### v0.0.17 / 2022-12-20
 
 * [FEATURE] Add pprof extension
