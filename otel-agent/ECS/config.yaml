@@ -1,6 +1,4 @@
 receivers:
-  docker_stats:
-    endpoint: 'unix:///var/run/docker.sock'
   hostmetrics:
     collection_interval: 60s
     root_path: /hostfs
@@ -43,6 +41,8 @@ exporters:
   coralogix:
     traces:
       endpoint: "$TRACES_ENDPOINT"
+    metrics:
+      endpoint: "$METRICS_ENDPOINT"
     private_key: "$PRIVATE_KEY"
     application_name: "OTel"
     subsystem_name: "ECS"
@@ -75,4 +75,3 @@ service:
       receivers:
         - hostmetrics
         - prometheus
-        - docker_stats
