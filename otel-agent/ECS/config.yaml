@@ -1,4 +1,6 @@
 receivers:
+  docker_stats:
+    endpoint: 'unix:///var/run/docker.sock'
   hostmetrics:
     collection_interval: 60s
     root_path: /hostfs
@@ -73,3 +75,4 @@ service:
       receivers:
         - hostmetrics
         - prometheus
+        - docker_stats
