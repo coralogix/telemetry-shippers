@@ -7,10 +7,9 @@ Tracing integrations, [OpenTelemetry](https://opentelemetry.io/).
 
 Please see [#Getting Started](README.md#getting-started) for more information about the existing integrations.  
 
-
+Super important change
 ## Getting Started
 This repository contains directories for each integration type, logs and metrics, and open-telemetry that can send all.  
-Inside each integration type there are multiple ways to install our integrations, using helm, installing kubernetes manifests directly, using a docker image or installing a service.
 
 ## Helm/Kubernetes integrations prerequisite
 
