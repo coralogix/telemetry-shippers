@@ -42,3 +42,4 @@ jobs:
           push: true
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-otel-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}:latest
