@@ -70,6 +70,17 @@ global:
 
 ## Installation
 
+First make sure to add our Helm charts repository to the local repos list with the following command:
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run: 
+```bash
+helm repo update
+```
+
+Install the charts:
 ```bash
 helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralogix \
   -f values.yaml
