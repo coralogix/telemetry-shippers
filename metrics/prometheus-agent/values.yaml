@@ -1,0 +1,53 @@
+fullnameOverride: prometheus-agent
+
+global:
+  rbac:
+    create: true
+
+prometheus:
+  prometheusSpec:
+    enableAdminAPI: true
+    logFormat: json
+    logLevel: warn
+    scrapeInterval: 30s
+    serviceAccountName: prometheus-agent
+    remoteWrite:
+    - authorization:
+        credentials:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+      name: prometheus-agent-coralogix
+      queueConfig:
+        capacity: 2500
+        maxSamplesPerSend: 1000
+        maxShards: 200
+      remoteTimeout: 120s
+      url: https://prometheus-gateway.eu2.coralogix.com:9090/prometheus/api/v1/write?external_labels=CX_LEVEL    
+    replicaExternalLabelName: "prometheus_replica"
+    replicas: 1
+    securityContext:
+      fsGroup: 2000
+      runAsGroup: 2000
+      runAsNonRoot: true
+      runAsUser: 1000
+    resources:
+      requests:
+        cpu: "0.3"
+        memory: 500Mi
+    serviceMonitorNamespaceSelector: {}
+    ## Example which selects ServiceMonitors in namespaces with label "prometheus" set to "somelabel"
+    # serviceMonitorNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+    serviceMonitorSelector: {}
+    ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
+    # serviceMonitorSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+    podMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+  serviceAccount:
+    create: true
+
+
+
