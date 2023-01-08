@@ -43,11 +43,11 @@ Depending on your region, you need to configure correct Coralogix endpoint. Here
 
 | Cluster (Region)  | Remote_write URL                                                     |
 |-------------------|----------------------------------------------------------------------|
-| EU (Irland)       | https://prometheus-gateway.coralogix.com/prometheus/api/v1/write?external_labels=CX_LEVE   |
-| EU2 (Sweden)      | https://prometheus-gateway.eu2.coralogix.com/prometheus/api/v1/write?external_labels=CX_LEVE |
-| US                | https://prometheus-gateway.coralogix.us/prometheus/api/v1/write?external_labels=CX_LEVE    |
-| APAC1 (India)     | https://prometheus-gateway.coralogix.in/prometheus/api/v1/write?external_labels=CX_LEVE     |
-| APAC2 (Singapore) | https://prometheus-gateway.coralogixsg.com/prometheus/api/v1/write?external_labels=CX_LEVE   |
+| EU (Irland)       | https://prometheus-gateway.coralogix.com/prometheus/api/v1/write?external_labels=CX_LEVEL   |
+| EU2 (Sweden)      | https://prometheus-gateway.eu2.coralogix.com/prometheus/api/v1/write?external_labels=CX_LEVEL |
+| US                | https://prometheus-gateway.coralogix.us/prometheus/api/v1/write?external_labels=CX_LEVEL    |
+| APAC1 (India)     | https://prometheus-gateway.coralogix.in/prometheus/api/v1/write?external_labels=CX_LEVEL     |
+| APAC2 (Singapore) | https://prometheus-gateway.coralogixsg.com/prometheus/api/v1/write?external_labels=CX_LEVEL   |
 
 ## Installation
 
