@@ -69,7 +69,7 @@ prometheus:
         maxSamplesPerSend: 1000
         maxShards: 200
       remoteTimeout: 120s
-      url: https://prometheus-gateway.coralogix.in:9090/prometheus/api/v1/write?external_labels=CX_LEVEL
+      url: https://prometheus-gateway.coralogix.in/prometheus/api/v1/write?external_labels=CX_LEVEL
 ```
 
 ```bash
