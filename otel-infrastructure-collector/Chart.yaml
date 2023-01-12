@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-infrastructure-collector
 description: OpenTelemetry Infrastructure collector
-version: 0.0.1
+version: 0.0.2
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Infrastructure Collector
