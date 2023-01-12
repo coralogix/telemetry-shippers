@@ -1,0 +1,17 @@
+{{ if .Values.prometheus.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ template "prometheus-agent.fullname" . }}
+  namespace: {{ template "prometheus-agent.namespace" . }}
+  labels:
+    app: {{ template "prometheus-agent.name" . }}
+    app.kubernetes.io/name: {{ template "prometheus-agent.name" . }}
+    app.kubernetes.io/component: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "prometheus-agent.fullname" . }}
+  podMetricsEndpoints:
+  - port: {{ .Values.prometheus.prometheusSpec.portName }}
+{{- end }}

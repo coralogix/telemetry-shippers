@@ -6,7 +6,7 @@ global:
   logs:
     endpoint: "<logs-endpoint-here>"
   defaultApplicationName: "default"
-  defaultSubsystemName: "nodes"
+  defaultSubsystemName: "metrics"
 
 opentelemetry-collector:
   mode: deployment
@@ -44,6 +44,7 @@ opentelemetry-collector:
       zpages:
         endpoint: localhost:55679
     receivers:
+      k8s_events:
       prometheus:
         config:
           scrape_configs:
@@ -84,6 +85,15 @@ opentelemetry-collector:
       - health_check
       - memory_ballast
       pipelines:
+        logs:
+          exporters:
+          - coralogix
+          processors:
+          - k8sattributes
+          - batch
+          receivers:
+          - k8s_events
+          - otlp
         metrics:
           exporters:
             - coralogix
