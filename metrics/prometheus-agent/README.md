@@ -9,7 +9,11 @@ In addition, it is scalable, enabling easier horizontal scalability for ingestio
 
 ### Prometheus Operator 
 
-The Prometheus Agent collects servicemonitors and podmonitors, which are enabled only when using the Prometheus Operator.
+The Prometheus agent is a Prometheus crd managed by the Promethues operator, meaning the operator must run. 
+The agent collects servicemonitors and podmonitors, which are enabled only when using the Prometheus Operator.
+
+#### Prometheus Operator Version
+The Prometheus operator must be in version 0.59.0 at least in order to support the agent mode.
 
 ###  Secret Key
 
