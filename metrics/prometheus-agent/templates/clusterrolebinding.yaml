@@ -1,0 +1,16 @@
+{{- if .Values.global.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "prometheus-agent.fullname" . }}
+  labels:
+    app: {{ template "prometheus-agent.name" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "prometheus-agent.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "prometheus-agent.serviceAccountName" . }}
+    namespace: {{ template "prometheus-agent.namespace" . }}
+{{- end }}

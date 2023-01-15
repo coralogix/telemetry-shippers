@@ -1,0 +1,14 @@
+prometheus:
+  prometheusSpec:
+    remoteWrite:
+    - authorization:
+        credentials:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+      name: prometheus-agent-coralogix
+      queueConfig:
+        capacity: 2500
+        maxSamplesPerSend: 1000
+        maxShards: 200
+      remoteTimeout: 120s
+      url: https://example-gateway.eu2.coralogix.com/prometheus/api/v1/write 

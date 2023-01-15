@@ -1,0 +1,107 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: {{ template "prometheus-agent.name" . }} 
+  namespace: {{ template "prometheus-agent.namespace" . }}
+spec:
+  alerting: null
+  ruleNamespaceSelector: null
+  ruleSelector: null
+  walCompression: null
+  disableCompaction: null
+  retention: null
+  containers:
+  - args:
+    - --config.file=/etc/prometheus/config_out/prometheus.env.yaml
+    - --enable-feature=promql-at-modifier,agent
+    - --storage.agent.path=/prometheus
+    - --web.enable-lifecycle
+    - --web.console.templates=/etc/prometheus/consoles
+    - --web.console.libraries=/etc/prometheus/console_libraries
+    - --web.route-prefix=/
+    - --web.config.file=/etc/prometheus/web_config/web-config.yaml
+    name: prometheus
+{{- if .Values.prometheus.prometheusSpec.enableFeatures }}
+  enableFeatures:
+{{- range $enableFeatures := .Values.prometheus.prometheusSpec.enableFeatures }}
+  - {{ tpl $enableFeatures $ }}
+{{- end }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.tolerations }}
+  tolerations:
+{{ toYaml .Values.prometheus.prometheusSpec.tolerations | indent 4 }}
+{{- end }}
+{{- if or .Values.prometheus.prometheusSpec.podAntiAffinity .Values.prometheus.prometheusSpec.affinity }}
+  affinity:
+{{- if .Values.prometheus.prometheusSpec.affinity }}
+{{ toYaml .Values.prometheus.prometheusSpec.affinity | indent 4 }}
+{{- end }}
+{{- if eq .Values.prometheus.prometheusSpec.podAntiAffinity "hard" }}
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
+        labelSelector:
+          matchExpressions:
+            - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
+            - {key: prometheus, operator: In, values: [{{ template "prometheus-agent.name" . }}]}
+{{- else if eq .Values.prometheus.prometheusSpec.podAntiAffinity "soft" }}
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
+          labelSelector:
+            matchExpressions:
+              - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
+              - {key: prometheus, operator: In, values: [{{ template "prometheus-agent.name" . }}]}
+{{- end }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
+  scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.securityContext }}
+  securityContext:
+{{ toYaml .Values.prometheus.prometheusSpec.securityContext | indent 4 }}
+{{- end }}
+  serviceAccountName: {{ template "prometheus-agent.serviceAccountName" . }}
+{{- if .Values.prometheus.prometheusSpec.remoteWrite }}
+  remoteWrite:
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.remoteWrite | indent 4) . }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.replicaExternalLabelName }}
+  replicaExternalLabelName: "{{ .Values.prometheus.prometheusSpec.replicaExternalLabelName }}"
+{{- else }}
+  replicaExternalLabelName: ""
+{{- end }}
+  replicas: {{ .Values.prometheus.prometheusSpec.replicas }}
+  enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
+  logLevel: {{ .Values.prometheus.prometheusSpec.logLevel }}
+  logFormat: {{ .Values.prometheus.prometheusSpec.logFormat }}
+{{- if .Values.prometheus.prometheusSpec.resources }}
+  resources:
+{{ toYaml .Values.prometheus.prometheusSpec.resources | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.serviceMonitorSelector }}
+  serviceMonitorSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.serviceMonitorSelector | indent 4 }}
+{{ else }}
+  serviceMonitorSelector: {}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.serviceMonitorNamespaceSelector }}
+  serviceMonitorNamespaceSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.serviceMonitorNamespaceSelector | indent 4 }}
+{{ else }}
+  serviceMonitorNamespaceSelector: {}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.podMonitorSelector }}
+  podMonitorSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.podMonitorSelector | indent 4 }}
+{{ else }}
+  podMonitorSelector: {}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.podMonitorNamespaceSelector }}
+  podMonitorNamespaceSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.podMonitorNamespaceSelector | indent 4 }}
+{{ else }}
+  podMonitorNamespaceSelector: {}
+{{- end }}
