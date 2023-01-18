@@ -1,5 +1,6 @@
 prometheus:
   prometheusSpec:
+
     remoteWrite:
     - authorization:
         credentials:
@@ -11,4 +12,16 @@ prometheus:
         maxSamplesPerSend: 1000
         maxShards: 200
       remoteTimeout: 120s
-      url: https://example-gateway.eu2.coralogix.com/prometheus/api/v1/write 
+      url: https://example-gateway.eu2.coralogix.com/prometheus/api/v1/write
+
+    storageSpec:
+      volumeClaimTemplate:
+        metadata:
+          labels:
+            prometheus: coralogix
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: monitoring
