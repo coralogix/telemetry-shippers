@@ -2,7 +2,7 @@ apiVersion: v2
 name: prometheus-agent-coralogix
 namespace: observability
 description: Prometheus running in agent mode
-version: 0.0.2
+version: 0.0.3
 appVersion: 0.61.1
 keywords:
   - prometheus

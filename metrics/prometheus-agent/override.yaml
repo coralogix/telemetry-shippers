@@ -1,6 +1,7 @@
 prometheus:
   prometheusSpec:
-
+    externalLabels:
+      prometheus: coralogix
     remoteWrite:
     - authorization:
         credentials:
@@ -13,7 +14,6 @@ prometheus:
         maxShards: 200
       remoteTimeout: 120s
       url: https://example-gateway.eu2.coralogix.com/prometheus/api/v1/write
-
     storageSpec:
       volumeClaimTemplate:
         metadata:

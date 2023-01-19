@@ -58,5 +58,6 @@ prometheus:
     #        requests:
     #          storage: 50Gi
     #    selector: {}
+    externalLabels: {}
   serviceAccount:
     create: true
