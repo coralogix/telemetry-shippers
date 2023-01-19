@@ -111,3 +111,7 @@ spec:
 {{ else }}
   storage: {}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.externalLabels }}
+  externalLabels:
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.externalLabels | indent 4) . }}
+{{- end }}
