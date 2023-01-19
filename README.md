@@ -46,9 +46,7 @@ and another one using the `http` output plugin.
 We recommend using the `http` chart, since it's an open source plugin, and therefore it is more community driven.       
 Under each integration there is an 'image' directory which our GitHub Actions workflows use in order to build the image and publish it to DockerHub. 
 
-Our Helm charts repository can be added to the local repos list with the following command:
-it will create a repository name `coralogix-charts-virtual` if you wish to change it to anything else.
-be sure to adapt your commands in the other segments referring to this repository.
+Our Helm charts repository can be added to the local repos list with the following command. It will create a repository named `coralogix-charts-virtual`. If you wish to change it to anything else, be sure to adapt your commands in the other segments referring to this repository.
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
