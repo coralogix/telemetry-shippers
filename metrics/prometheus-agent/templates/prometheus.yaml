@@ -115,3 +115,4 @@ spec:
   externalLabels:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.externalLabels | indent 4) . }}
 {{- end }}
+  image: "{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ default .Chart.AppVersion .Values.prometheus.prometheusSpec.image.tag }}"

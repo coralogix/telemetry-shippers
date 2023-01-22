@@ -3,7 +3,7 @@ name: prometheus-agent-coralogix
 namespace: observability
 description: Prometheus running in agent mode
 version: 0.0.3
-appVersion: 0.61.1
+appVersion: v2.41.0
 keywords:
   - prometheus
   - agent
