@@ -6,6 +6,9 @@ global:
 
 prometheus:
   prometheusSpec:
+    image: 
+      repository: quay.io/prometheus/prometheus
+      tag: v2.41.0
     enableAdminAPI: true
     logFormat: json
     logLevel: warn
