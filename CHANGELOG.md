@@ -17,6 +17,10 @@
 
 ## Fluent-Bit
 
+### v0.0.4 / 2023-01-23
+
+* Updating fluent-bit to the 2.0.5 version
+
 ### v0.0.3 / 2022-05-19
 
 * Updating the app version to 1.9.3 in the 'chart.yaml' file
