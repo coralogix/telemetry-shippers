@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.19 / 2023-01-26
+
+* [CHORE] Update OpenTelemetry Collector to v0.70.0
+
 ### v0.0.18 / 2022-12-21
 
 * [FIX] Set node_from_env_var filter for k8sattributes, reducing memory and cpu usage for those using k8sattributes
