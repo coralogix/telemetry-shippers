@@ -9,6 +9,8 @@ spec:
   endpoints:
     - port: http
       path: /api/v1/metrics/prometheus
+    - port: metrics
+      path: /metrics
   namespaceSelector:
     matchNames:
       - monitoring

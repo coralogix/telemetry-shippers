@@ -37,6 +37,8 @@ data:
         DB /var/log/fluentbit-tail.db
 
     @INCLUDE input-systemd.conf
+    @INCLUDE input-fluentbit-metrics.conf
+    
     [FILTER]
         Name kubernetes
         Match kube.*
@@ -79,6 +81,8 @@ data:
         net.keepalive         off
 
     @INCLUDE output-systemd.conf
+    @INCLUDE output-fluentbit-metrics.conf
+
   filters-systemd.conf: |
     [FILTER]
       Name    modify
@@ -95,6 +99,14 @@ data:
       Wildcard    _CMDLINE
       Wildcard    MESSAGE
       Nest_under  json
+
+  input-fluentbit-metrics.conf: |-
+    [INPUT]
+      name            fluentbit_metrics
+      tag             internal_metrics
+      scrape_interval 5
+      scrape_on_start true
+
   input-systemd.conf: |
     [INPUT]
       Name systemd
@@ -102,6 +114,7 @@ data:
       Systemd_Filter _SYSTEMD_UNIT=kubelet.service
       Read_From_Tail On
       Mem_Buf_Limit 5MB
+
   output-systemd.conf: |
     [OUTPUT]
       Name                  http
@@ -115,6 +128,14 @@ data:
       compress              gzip
       Retry_Limit           False
       net.keepalive         off
+
+  output-fluentbit-metrics.conf: |-
+    [OUTPUT]
+      name            prometheus_exporter
+      match           internal_metrics
+      host            0.0.0.0
+      port            2021
+
 ---
 apiVersion: v1
 kind: ConfigMap
