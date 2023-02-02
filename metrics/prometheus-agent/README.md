@@ -83,3 +83,23 @@ helm upgrade prometheus-agent coralogix-charts-virtual/prometheus-agent-coralogi
   --create-namespace \
   -f override.yaml
 ```
+## Recommendations
+
+By default, the Prometheus agent is using ephemeral volumes which is not suitable for a production environment.
+
+For the production environment is highly recommended you define a persistent volume to avoid data loss between restarts, to do that you can use the specification available on the values file.
+
+> :information_source: Beaware if you don not specify the `storageClassName` Kubernetes will use the default storage class available on the cluster.
+
+```yaml
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+
+```
