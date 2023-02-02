@@ -55,7 +55,6 @@ prometheus:
     #      labels:
     #        prometheus: coralogix
     #    spec:
-    #      storageClassName: monitoring
     #      accessModes: ["ReadWriteOnce"]
     #      resources:
     #        requests:
