@@ -38,7 +38,7 @@ spec:
             - name: http
               containerPort: 2020
               protocol: TCP
-            - name: metrics
+            - name: storage-metrics
               containerPort: 2021
               protocol: TCP
           livenessProbe:

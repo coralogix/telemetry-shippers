@@ -8,7 +8,7 @@ fluent-bit:
   serviceMonitor:
     enabled: true
     additionalEndpoints:
-      - port: metrics
+      - port: storage-metrics
         path: /metrics
 
   resources:
@@ -31,7 +31,7 @@ fluent-bit:
     - port: 2021
       containerPort: 2021
       protocol: TCP
-      name: metrics
+      name: storage-metrics
 
   #prometheusRule:
   #  enabled: true

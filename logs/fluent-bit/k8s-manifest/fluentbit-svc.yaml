@@ -15,7 +15,7 @@ spec:
     - port: 2021
       targetPort: http
       protocol: TCP
-      name: metrics
+      name: storage-metrics
   selector:
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/instance: fluent-bit-http
