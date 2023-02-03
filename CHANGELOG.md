@@ -30,3 +30,8 @@
 * [UPGRADE] Upgrade Fluent-Bit version to 1.9.3
 * [CHANGE] Set Retry_Limit to False [no limit] to keep retrying send the logs and not lose any data
   ([#48](https://github.com/coralogix/eng-integrations/pull/48))
+
+### v0.1.0 / 2023-02-03
+
+* [UPGRADE] Upgrade Fluent-bit version to 2.0.8
+* [CHANGE] Enable by default the new storage metrics plugins which gives more information about fluent bit ingestion.

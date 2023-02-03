@@ -38,6 +38,9 @@ spec:
             - name: http
               containerPort: 2020
               protocol: TCP
+            - name: storage-metrics
+              containerPort: 2021
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /
@@ -69,6 +72,12 @@ spec:
             - name: config
               mountPath: /fluent-bit/etc/output-systemd.conf
               subPath: output-systemd.conf
+            - name: config
+              mountPath: /fluent-bit/etc/input-fluentbit-metrics.conf
+              subPath: input-fluentbit-metrics.conf
+            - name: config
+              mountPath: /fluent-bit/etc/output-fluentbit-metrics.conf
+              subPath: output-fluentbit-metrics.conf
             - mountPath: /var/log
               name: varlog
             - mountPath: /var/lib/docker/containers
