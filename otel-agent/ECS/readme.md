@@ -78,7 +78,7 @@ We can deploy these resources by using the cloudform template defined [here](./c
 |---|---|---|---|
 | ClusterName | The name of an __existing__ ECS Cluster |   | :heavy_check_mark: | 
 | Image | The open telemtry collector container image.<br><br>ECR Images must be prefixed with the ECR image URI. For eg. `<AccountID>.dkr.ecr.<REGION>.amazonaws.com/image:tag` | coralogixrepo/otel-coralogix-ecs | |
-| Memory | The amount of memory to allocate to the Open Telemetry container.<br>_Assigning too much memory can lead to instances not being deployed. Make sure that values are within the range of what is available on your ECS Cluster_ | 256 | |
+| Memory | The amount of memory to allocate to the Open Telemetry container.<br>_Assigning too much memory can lead to the ECS Service not being deployed. Make sure that values are within the range of what is available on your ECS Cluster_ | 256 | |
 | CoralogixRegion | The region of your Coralogix Account | _Allowed Values:_<br>- Europe<br>- Europe2<br>- India<br>- Singapore<br>- US | :heavy_check_mark: |
 | ApplicationName | You application name |  | :heavy_check_mark: |
 | SubsystemName | You Subsystem name | AWS Account ID | __Required__ when using the default Coralogix image. |
