@@ -3,10 +3,13 @@ fluent-bit:
 
   image:
     repository: coralogixrepo/coralogix-fluent-bit-multiarch
-    tag: v0.0.2
+    tag: v0.0.3
 
   serviceMonitor:
     enabled: true
+    additionalEndpoints:
+      - port: storage-metrics
+        path: /metrics
 
   resources:
     limits:
@@ -23,6 +26,12 @@ fluent-bit:
   envFrom:
     - secretRef:
         name: coralogix-keys
+
+  extraPorts:
+    - port: 2021
+      containerPort: 2021
+      protocol: TCP
+      name: storage-metrics
 
   #prometheusRule:
   #  enabled: true
@@ -107,6 +116,7 @@ fluent-bit:
           DB /var/log/fluentbit-tail.db
 
       @INCLUDE input-systemd.conf
+      @INCLUDE input-fluentbit-metrics.conf
 
     filters: |-
       [FILTER]
@@ -153,6 +163,7 @@ fluent-bit:
           net.keepalive         off
 
       @INCLUDE output-systemd.conf
+      @INCLUDE output-fluentbit-metrics.conf
     
     extraFiles:
       input-systemd.conf: |-
@@ -162,6 +173,13 @@ fluent-bit:
           Systemd_Filter _SYSTEMD_UNIT=kubelet.service
           Read_From_Tail On
           Mem_Buf_Limit 5MB
+
+      input-fluentbit-metrics.conf: |-
+        [INPUT]
+          name            fluentbit_metrics
+          tag             internal_metrics
+          scrape_interval 5
+          scrape_on_start true
 
       filters-systemd.conf: |-
         [FILTER]
@@ -179,6 +197,13 @@ fluent-bit:
           Wildcard    _CMDLINE 
           Wildcard    MESSAGE
           Nest_under  json
+
+      output-fluentbit-metrics.conf: |-
+        [OUTPUT]
+          name            prometheus_exporter
+          match           internal_metrics
+          host            0.0.0.0
+          port            2021
 
       output-systemd.conf: |-
         [OUTPUT]
