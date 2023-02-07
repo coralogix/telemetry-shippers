@@ -1,6 +1,8 @@
 receivers:
   filelog:
-    start_at: end
+    start_at: beginning
+
+    # note that the host filesystem is mounted at /hostfs
     include:
       - /hostfs/var/log/*.log
       - /hostfs/var/log/messages
@@ -8,6 +10,11 @@ receivers:
       - /hostfs/var/log/xm/*.log
       - /hostfs/var/lib/docker/containers/*/*.log
     include_file_path: true
+
+    operators:
+      - type: move
+        from: attributes["log.file.name"]
+        to: resource["log.file.name"]
 
 exporters:
   logging:
