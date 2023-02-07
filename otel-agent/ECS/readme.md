@@ -20,6 +20,11 @@ This guide shows the process for deploying Open Telemetry to ECS to fascilitate 
 
 The Open Telemetry configuration for the agent is stored in a Base64 encoded environment variable and applied at runtime. This allows you to dynamically pass any configuration values you choose as a parameter to Cloudformation.
 
+This repo provides the following configuration files which work directly with the _coralogixrepo/otel-coralogix-ecs-wrapper_ docker image for ECS.
+
+- [logging](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ECS/loggging.yaml)
+- [traces & metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ECS/config.yaml)
+
 
 
 ### ECS Cluster
