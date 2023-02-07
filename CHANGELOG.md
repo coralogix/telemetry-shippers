@@ -17,6 +17,11 @@
 
 ## Fluent-Bit
 
+### v0.1.0 / 2023-02-03
+
+* [UPGRADE] Upgrade Fluent-bit version to 2.0.8
+* [CHANGE] Enable by default the new storage metrics plugins which gives more information about fluent bit ingestion.
+
 ### v0.0.4 / 2023-01-23
 
 * Updating fluent-bit to the 2.0.5 version
