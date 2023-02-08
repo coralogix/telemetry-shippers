@@ -31,8 +31,8 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{/* Create the name of prometheus service account to use */}}
 {{- define "prometheus-agent.serviceAccountName" -}}
 {{- if .Values.prometheus.prometheusSpec.serviceAccountName -}}
-    {{ default (print (include "prometheus-agent.fullname" .) "") .Values.prometheus.prometheusSpec.serviceAccountName }}
+    {{ .Values.prometheus.prometheusSpec.serviceAccountName }}
 {{- else -}}
-    {{ default "default" .Values.prometheus.prometheusSpec.serviceAccountName }}
+    {{- print (include "prometheus-agent.fullname" .) "" }}
 {{- end -}}
 {{- end -}}

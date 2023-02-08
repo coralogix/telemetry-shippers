@@ -13,7 +13,6 @@ prometheus:
     logFormat: json
     logLevel: warn
     scrapeInterval: 30s
-    serviceAccountName: prometheus-agent
     remoteWrite:
     - authorization:
         credentials:
