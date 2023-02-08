@@ -55,10 +55,11 @@ Once we have an ECS Cluster in place, we need to deploy a Task Definition, which
 
 A __Task Definition__ is a template defining a container configuration and an __ECS Service__ is a configuration item that defines and orchestrates how a task definition should be run.
 
-Deploy the cloudformation template found [here](https://github.com/coralogix/cloudformation-corlaogix-aws/tree/main/opentelemetry/ecs), ensuring that all the necessary parameters are provided
+Deploy the cloudformation template found [here](https://github.com/coralogix/cloudformation-corlaogix-aws/tree/main/opentelemetry/ecs-ec2), ensuring that all the necessary parameters are provided
 
 Once the template is deployed successfully, you can verify if the container is running using:
 
 ```sh
 ecs-cli ps --region <region> -c <cluster name>
 ```
+
