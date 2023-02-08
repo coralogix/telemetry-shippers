@@ -5,10 +5,10 @@ on:
   push:
     branches: master
     paths:
-    - 'otel-infrastructure-collector/**'
+    - 'otel-infrastructure-collector/k8s-helm/**'
 
 env:
-  CHART_VERSION: $(yq eval '.version' otel-infrastructure-collector/Chart.yaml)
+  CHART_VERSION: $(yq eval '.version' otel-infrastructure-collector/k8s-helm/Chart.yaml)
   CHART_NAME: otel-infrastructure-collector
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
   ARTIFACTORY_USERNAME: integrations-actions
@@ -26,8 +26,8 @@ jobs:
           helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
-          helm dependency build ./otel-infrastructure-collector/
-          cd otel-infrastructure-collector
+          helm dependency build ./otel-infrastructure-collector/k8s-helm/
+          cd otel-infrastructure-collector/k8s-helm
           helm package .
       -
         name: Setup JFrog CLI
@@ -37,5 +37,5 @@ jobs:
       -
         name: use-jfrog-cli
         run: |
-          cd otel-infrastructure-collector
+          cd otel-infrastructure-collector/k8s-helm
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
