@@ -2,6 +2,10 @@
 
 ## Prometheus-Agent
 
+### v0.0.5 / 2023-02-08
+
+* [FIX] Update serviceAccount name template to use the fullName
+
 ### v0.0.4 / 2023-01-22
 
 * [FEATURE] Add Prometheus image to the template so it can be overriden
