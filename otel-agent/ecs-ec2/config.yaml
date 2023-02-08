@@ -1,40 +1,48 @@
-# This file is used to configure the OpenTelemetry Collector for collecting 
-# logs from the host and sending them to Coralogix.
-# The file is intended to be used an example and should be modified to fit your needs.
-
-# All values prefixed with $ are environment variables that are set by the ECS task definition and
-# swapped out at runtime. These values can be hard-coded if you are not using ECS or if you are
-# using your own configuration with the ECS wrapper.
-
 receivers:
-  filelog:
-    start_at: beginning
-
-    # note that the host filesystem is mounted at /hostfs
-    include:
-      - /hostfs/var/log/*.log
-      - /hostfs/var/log/messages
-      - /hostfs/var/log/dmesg
-      - /hostfs/var/log/xm/*.log
-      - /hostfs/var/lib/docker/containers/*/*.log
-    include_file_path: true
-
-    operators:
-      - type: move
-        from: attributes["log.file.name"]
-        to: resource["log.file.name"]
-
+  hostmetrics:
+    collection_interval: 60s
+    root_path: /hostfs
+    scrapers:
+      load:
+      filesystem:
+      memory:
+      network:
+      paging:
+      cpu:
+      disk:
+      process:
+        exclude:
+          names: [ otelcol-contrib ]
+          match_type: strict
+        mute_process_name_error: true
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 60s
+          static_configs:
+            - targets: ['0.0.0.0:8888']
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
 processors:
+  batch:
+  batch/metrics:
+    timeout: 60s
   resourcedetection/ecs:
     detectors: [env, ecs]
     timeout: 2s
     override: false
-
 exporters:
   logging:
   coralogix:
-    logs:
-      endpoint: "$LOGS_ENDPOINT"
+    traces:
+      endpoint: "$TRACES_ENDPOINT"
+    metrics:
+      endpoint: "$METRICS_ENDPOINT"
     private_key: "$PRIVATE_KEY"
     application_name: "OTel"
     subsystem_name: "ECS"
@@ -46,14 +54,24 @@ exporters:
     - "aws.ecs.task.family"
     - "service.name"
     timeout: 30s
-
 service:
   pipelines:
-    logs:
-      receivers: 
-        - filelog
-      processors:
-        - resourcedetection/ecs
+    traces:
       exporters:
-        - logging
         - coralogix
+        - logging
+      processors:
+        - batch
+        - resourcedetection/ecs
+      receivers:
+        - otlp
+    metrics:
+      exporters:
+        - coralogix
+        - logging
+      processors:
+        - batch
+        - resourcedetection/ecs
+      receivers:
+        - hostmetrics
+        - prometheus
