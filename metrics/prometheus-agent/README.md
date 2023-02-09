@@ -47,11 +47,11 @@ Depending on your region, you need to configure correct Coralogix endpoint. Here
 
 | Cluster (Region)  | Remote_write URL                                                     |
 |-------------------|----------------------------------------------------------------------|
-| EU (Irland)       | https://prometheus-gateway.coralogix.com/prometheus/api/v1/write |
-| EU2 (Sweden)      | https://prometheus-gateway.eu2.coralogix.com/prometheus/api/v1/write |
-| US                | https://prometheus-gateway.coralogix.us/prometheus/api/v1/write    |
-| APAC1 (India)     | https://prometheus-gateway.coralogix.in/prometheus/api/v1/write     |
-| APAC2 (Singapore) | https://prometheus-gateway.coralogixsg.com/prometheus/api/v1/write   |
+| EU (Irland)       | https://ingress.coralogix.com/prometheus/v1                          |
+| EU2 (Sweden)      | https://ingress.eu2.coralogix.com/prometheus/v1                      |
+| US                | https://ingress.coralogix.us/prometheus/v1                           |
+| APAC1 (India)     | https://ingress.coralogix.in/prometheus/v1                           |
+| APAC2 (Singapore) | https://ingress.coralogixsg.com/prometheus/v1                         |
 
 ## Installation
 
