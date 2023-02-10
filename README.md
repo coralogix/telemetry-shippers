@@ -73,39 +73,4 @@ For installation of each integration, please go inside each intergation's direct
 
 ### These integrations were checked on Kubernetes 1.20+. 
 
----
-
-### Open Telemetry
-
-1. [ecs-ec2](./otel-agent/ecs-ec2/)
-2. [k8s helm](./otel-agent/k8s-helm/)
-
-
-
----
-
-## Coralogix's Endpoints 
-
-Depending on your region, you need to configure correct Coralogix endpoint. Here are the available Endpoints:
-
-| Region  | Traces Endpoint                          | Metrics Endpoint                     | Logs Endpoint                     |
-|---------|------------------------------------------|------------------------------------- | --------------------------------- |
-| USA1    | `otel-traces.coralogix.us:443`      | `otel-metrics.coralogix.us:443`      | `otel-logs.coralogix.us:443`      |
-| APAC1   | `otel-traces.app.coralogix.in:443`  | `otel-metrics.app.coralogix.in:443`  | `otel-logs.app.coralogix.in:443`  | 
-| APAC2   | `otel-traces.coralogixsg.com:443`   | `otel-metrics.coralogixsg.com:443`   | `otel-logs.coralogixsg.com:443`   |
-| EUROPE1 | `otel-traces.coralogix.com:443`     | `otel-metrics.coralogix.com:443`     | `otel-logs.coralogix.com:443`     |
-| EUROPE2 | `otel-traces.eu2.coralogix.com:443` | `otel-metrics.eu2.coralogix.com:443` | `otel-logs.eu2.coralogix.com:443` |
-
-Example configuration:
-```yaml
-#values.yaml:
----
-global:
-  traces:
-    endpoint: "<traces-endpoint-here>"
-  metrics:
-    endpoint: "<metrics-endpoint-here>"
-  logs:
-    endpoint: "<logs-endpoint-here>"
-```  
 
