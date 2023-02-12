@@ -71,4 +71,6 @@ For installation of each integration, please go inside each intergation's direct
 - [Fluentd-HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/k8s-manifest/http/README.md)
 - [Fluent-bit-HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/k8s-maifest/http/README.md)
 
-## These integrations were checked on Kubernetes 1.20+. 
+### These integrations were checked on Kubernetes 1.20+. 
+
+
