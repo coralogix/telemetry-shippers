@@ -10,7 +10,7 @@ This guide shows the process for deploying Open Telemetry to ECS to fascilitate 
 
 ### Image
 
-This implementation utilises a wrapper image which is based on the official Open Telemetry image. The wrapper image is used to dynamically apply the Open Telemetry configuration at runtime from an environment variable.
+This implementation utilises a wrapper image (__coralogixrepo/otel-coralogix-ecs-ec2__) which is based on the official Open Telemetry Contrib image. The wrapper image is used to dynamically apply the Open Telemetry configuration at runtime from an environment variable.
 
 
 ### Required
