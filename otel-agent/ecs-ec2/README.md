@@ -7,6 +7,12 @@ Our Coralogix exporter allows us to use enrichments such as dynamic `application
 
 This guide shows the process for deploying Open Telemetry to ECS to fascilitate the collection of logs, metrics and traces.
 
+
+### Image
+
+This implementation utilises a wrapper image (__coralogixrepo/otel-coralogix-ecs-ec2__) which is based on the official Open Telemetry Contrib image. The wrapper image is used to dynamically apply the Open Telemetry configuration at runtime from an environment variable.
+
+
 ### Required
 
 - [AWS credentials must be configured](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html)
