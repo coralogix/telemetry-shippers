@@ -5,7 +5,7 @@ on:
   push:
     branches: master
     paths:
-    - 'otel-agent/**'
+    - 'otel-agent/k8s-helm/**'
 
 env:
   CHART_VERSION: $(yq eval '.version' otel-agent/k8s-helm/Chart.yaml)
