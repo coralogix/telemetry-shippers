@@ -130,4 +130,4 @@ Under the `dashboard` directory, there are:
 
 # Dependencies
 
-This chart uses [openetelemetry-collector](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart.
+This chart uses [openetelemetry-collector](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart. 
