@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.20 / 2023-02-13
+
+* [UPRADE] Upgrading chart version from 0.47.0 to 0.48.1
+
 ### v0.0.19 / 2023-01-26
 
 * [CHORE] Update OpenTelemetry Collector to v0.70.0
