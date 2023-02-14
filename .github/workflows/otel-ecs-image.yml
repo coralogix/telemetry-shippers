@@ -6,6 +6,7 @@ on:
     paths:
     - 'otel-agent/ecs-ec2/Dockerfile'
     - 'otel-agent/ecs-ec2/entrypoint.sh'
+    - '.github/workflows/otel-ecs-image.yml'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/otel-coralogix-ecs-ec2
