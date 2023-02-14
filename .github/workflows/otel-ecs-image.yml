@@ -41,5 +41,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.DOCKERHUB_REGISTRY }}${{ steps.get-otel-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}${{ steps.set-image-version.outputs.version }}
             ${{ env.DOCKERHUB_REGISTRY }}:latest
