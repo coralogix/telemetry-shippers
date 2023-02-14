@@ -1,14 +1,14 @@
 apiVersion: v2
 name: otel-infrastructure-collector
 description: OpenTelemetry Infrastructure collector
-version: 0.0.2
+version: 0.0.3
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Infrastructure Collector
   - Coralogix
 dependencies:
   - name: opentelemetry-collector
-    version: "0.40.7"
+    version: "0.48.1"
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
 sources:
   - https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
