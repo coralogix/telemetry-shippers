@@ -108,8 +108,6 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.storageSpec }}  
   storage:
 {{ toYaml .Values.prometheus.prometheusSpec.storageSpec | indent 4 }}
-{{ else }}
-  storage: {}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.externalLabels }}
   externalLabels:

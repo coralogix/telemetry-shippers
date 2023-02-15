@@ -2,6 +2,10 @@
 
 ## Prometheus-Agent
 
+### v0.0.6 / 2023-02-15
+
+* [FIX] Fix storage template to enable an empty storage field    
+
 ### v0.0.5 / 2023-02-08
 
 * [FIX] Update serviceAccount name template to use the fullName
