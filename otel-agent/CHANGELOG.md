@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.21 / 2023-02-16
+
+* [FEATURE] Add podName and nodeName to the k8sattributes processor
+
 ### v0.0.20 / 2023-02-13
 
 * [UPRADE] Upgrading chart version from 0.47.0 to 0.48.1
