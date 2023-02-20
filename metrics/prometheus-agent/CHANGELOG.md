@@ -2,6 +2,10 @@
 
 ## Prometheus-Agent
 
+### v0.0.7 / 2023-02-20
+
+* [UPGRADE] Upgrade prometheus version to 2.42.0
+
 ### v0.0.6 / 2023-02-15
 
 * [FIX] Fix storage template to enable an empty storage field    
