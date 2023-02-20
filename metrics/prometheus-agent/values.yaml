@@ -8,7 +8,7 @@ prometheus:
   prometheusSpec:
     image: 
       repository: quay.io/prometheus/prometheus
-      tag: v2.41.0
+      tag: v2.42.0
     enableAdminAPI: true
     logFormat: json
     logLevel: warn
