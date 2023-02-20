@@ -35,9 +35,3 @@
 * [UPGRADE] Upgrade Fluent-Bit version to 1.9.3
 * [CHANGE] Set Retry_Limit to False [no limit] to keep retrying send the logs and not lose any data
   ([#48](https://github.com/coralogix/eng-integrations/pull/48))
-
-## Prometheus-agent
-
-### v0.0.7 / 2023-02-20
-
-* [UPGRADE] Upgrade prometheus version to 2.42.0
