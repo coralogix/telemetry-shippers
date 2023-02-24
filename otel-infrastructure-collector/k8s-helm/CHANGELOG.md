@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.0.4 / 2023-02-24
+
+* [UPRADE] Upgrading chart version from 0.48.1 to 0.49.0
+
 ### v0.0.3 / 2023-02-14
 
 * [UPRADE] Upgrading chart version from 0.40.7 to 0.48.1
