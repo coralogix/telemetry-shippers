@@ -1,4 +1,4 @@
-FROM coralogixrepo/coralogix-fluentd-multiarch:v0.0.9
+FROM coralogixrepo/coralogix-fluentd-multiarch:v1.15.2
 USER root
 RUN gem install fluent-plugin-docker_metadata_filter
 RUN gem install fluent-plugin-script
