@@ -6,6 +6,7 @@ on:
     branches: master
     paths:
     - 'logs/fluentd/aws-ecs/image/**'
+  workflow_dispatch:
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/fluentd-coralogix-ecs
