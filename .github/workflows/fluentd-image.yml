@@ -6,6 +6,7 @@ on:
     branches: master
     paths:
     - 'logs/fluentd/image/**'
+  workflow_dispatch:
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/coralogix-fluentd-multiarch
@@ -40,6 +41,4 @@ jobs:
           context: ./logs/fluentd/image
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
-            ${{ env.DOCKERHUB_REGISTRY }}:latest
+          tags: ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
