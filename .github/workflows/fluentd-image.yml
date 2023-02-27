@@ -42,4 +42,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
+<<<<<<< HEAD
 
+=======
+>>>>>>> 912f9a9 (Update fluentd-image.yml (#170))
