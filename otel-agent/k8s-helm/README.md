@@ -85,7 +85,7 @@ env:
       fieldRef:
         fieldPath: status.hostIP
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
-    value: "$(NODE):4417"
+    value: "$(NODE):4317"
 ```
 
 # Performance of the Collector
