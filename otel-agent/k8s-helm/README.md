@@ -17,12 +17,11 @@ The included agent provides:
 
 ## Prerequisites
 
-###  Secret Key
+### Secret Key
 
 Follow the [private key docs](https://coralogix.com/docs/private-key/) tutorial to obtain your secret key tutorial to obtain your secret key.
 
 OpenTelemetry Agent require a `secret` called `coralogix-keys` with the relevant `private key` under a secret key called `PRIVATE_KEY`, inside the `same namespace` that the chart is installed in.
-
 
 ```bash
 kubectl create secret generic coralogix-keys \
@@ -30,6 +29,7 @@ kubectl create secret generic coralogix-keys \
 ```
 
 The created secret should look like this:
+
 ```yaml
 apiVersion: v1
 data:
@@ -44,16 +44,19 @@ type: Opaque
 ## Installation
 
 First make sure to add our Helm charts repository to the local repos list with the following command:
+
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
 
-In order to get the updated Helm charts from the added repository, please run: 
+In order to get the updated Helm charts from the added repository, please run:
+
 ```bash
 helm repo update
 ```
 
 Install the charts:
+
 ```bash
 helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralogix \
   -f values.yaml
@@ -65,51 +68,52 @@ helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemet
 
 Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
 
-| Protocol | Port 
-| --- | --- 
-| Zipkin | 9411 
-| Jaeger GRPC | 6832 
+| Protocol | Port
+| --- | ---
+| Zipkin | 9411
+| Jaeger GRPC | 6832
 | Jaeger Thrift binary | 6832
-| Jaeger Thrift compact | 6831 
+| Jaeger Thrift compact | 6831
 | Jaeger Thrift http | 14268
 | OTLP GRPC | 4317
 | OTLP HTTP | 4318
 
-### Example Application environment configuration:
+### Example Application environment configuration
 
-The following 
-```
+The following code creates a new environment variable (`NODE`) containing the node's IP address and then uses that IP in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
+This ensures that each instrumented pod will send data to the local OTEL collector on the node it is currently running on.
+
+```yaml
 env:
   - name: NODE
     valueFrom:
       fieldRef:
         fieldPath: status.hostIP
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
-    value: "$(NODE):4417"
+    value: "$(NODE):4317"
 ```
 
 # Performance of the Collector
+
 ## Picking the right tracing SDK span processor
 
-OpenTelemetry tracing SDK supports two strategies to create an application traces, a “SimpleSpanProcessor” and a “BatchSpanProcessor.” 
+OpenTelemetry tracing SDK supports two strategies to create an application traces, a “SimpleSpanProcessor” and a “BatchSpanProcessor.”
 While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector.
 We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
-
-
-| Span Processor  | Agent Memory Usage	                          | Agent CPU Usage                     | Latency Samples       |
+| Span Processor  | Agent Memory Usage                          | Agent CPU Usage                     | Latency Samples       |
 |---------|------------------------------------------|------------------------------------- | --------------------------------- |
 | SimpleSpanProcessor    |    3.7 GB   | 0.5 | >1m40s |
-| BatchSpanProcessor   | 600 MB  | 0.02 | >1s <10s| 
-
+| BatchSpanProcessor   | 600 MB  | 0.02 | >1s <10s|
 
 In addition, it improved the buffer performance of the collector, when we used the SimpleSpanProcessor, the buffer queues were getting full very quickly,
 and after switching to the BatchSpanProcessor, it stopped becoming full all the time, therefore stopped dropping data.
 
-#### Example:
-```
+#### Example
+
+```python
 import BatchSpanProcessor from "@opentelemetry/sdk-trace-base";
 tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 ```
@@ -118,11 +122,12 @@ tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 
 ## Log Collection
 
-Default installation collects Kubernetes logs. 
+Default installation collects Kubernetes logs.
 
 ## Dashboards
 
 Under the `dashboard` directory, there are:
+
 - Host Metrics Dashboard
 - Kubernetes Pod Dashboard
 - Span Metrics Dashboard
@@ -130,4 +135,4 @@ Under the `dashboard` directory, there are:
 
 # Dependencies
 
-This chart uses [openetelemetry-collector](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart. 
+This chart uses [openetelemetry-collector](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart.
