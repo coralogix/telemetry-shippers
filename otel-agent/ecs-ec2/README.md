@@ -27,8 +27,8 @@ The Open Telemetry configuration for the agent is stored in a Base64 encoded env
 
 This repo provides the following configuration files which work directly with the _coralogixrepo/otel-coralogix-ecs-wrapper_ docker image for ECS.
 
-- [logging](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ECS/loggging.yaml)
-- [traces & metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ECS/config.yaml)
+- [logging](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/logging.yaml)
+- [traces & metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/config.yaml)
 
 
 
