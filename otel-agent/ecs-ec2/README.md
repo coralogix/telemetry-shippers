@@ -18,7 +18,7 @@ This implementation utilises a wrapper image (__coralogixrepo/otel-coralogix-ecs
 - [AWS credentials must be configured](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html)
 - [ecs-cli](https://github.com/aws/amazon-ecs-cli#installing)
 - [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- Coralogix Otel ECS Agent [cloudformation template](https://github.com/coralogix/aws-cloudformation/tree/main/opentelemetry/ECS)
+- Coralogix Otel ECS Agent [cloudformation template](https://github.com/coralogix/cloudformation-corlaogix-aws/tree/master/opentelemetry/ecs-ec2)
 
 
 ### Open Telemetry Configuration
