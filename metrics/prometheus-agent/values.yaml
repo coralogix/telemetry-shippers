@@ -6,6 +6,10 @@ global:
 
 prometheus:
   prometheusSpec:
+    routePrefix: /
+    enableFeatures:
+      - memory-snapshot-on-shutdown
+      - new-service-discovery-manager
     image: 
       repository: quay.io/prometheus/prometheus
       tag: v2.42.0
@@ -21,7 +25,7 @@ prometheus:
       name: prometheus-agent-coralogix
       queueConfig:
         capacity: 2500
-        maxSamplesPerSend: 1000
+        maxSamplesPerSend: 500
         maxShards: 200
       remoteTimeout: 120s
       url: https://prometheus-gateway.eu2.coralogix.com/prometheus/api/v1/write 
@@ -62,3 +66,17 @@ prometheus:
     externalLabels: {}
   serviceAccount:
     create: true
+  serviceMonitor:
+    interval: ""
+    selfMonitor: true
+    sampleLimit: 0
+    targetLimit: 0
+    labelLimit: 0
+    labelNameLengthLimit: 0
+    labelValueLengthLimit: 0
+    scheme: ""
+    tlsConfig: {}
+    bearerTokenFile:
+    metricRelabelings: []
+    relabelings: []
+

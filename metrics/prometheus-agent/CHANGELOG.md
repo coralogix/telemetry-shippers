@@ -2,6 +2,11 @@
 
 ## Prometheus-Agent
 
+### v0.0.8 / 2023-02-20
+
+* [FEATURE] Adding Self Monitor
+* [FEATURE] Adding extra features to improve restarts
+
 ### v0.0.7 / 2023-02-20
 
 * [UPGRADE] Upgrade prometheus version to 2.42.0
