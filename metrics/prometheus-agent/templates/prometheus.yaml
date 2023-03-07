@@ -3,6 +3,12 @@ kind: Prometheus
 metadata:
   name: {{ template "prometheus-agent.name" . }} 
   namespace: {{ template "prometheus-agent.namespace" . }}
+  labels:
+    app: {{ template "prometheus-agent.name" . }}
+    app.kubernetes.io/name: {{ template "prometheus-agent.name" . }}
+    app.kubernetes.io/component: prometheus
+    release: {{ $.Release.Name | quote }}
+    self-monitor: {{ .Values.prometheus.serviceMonitor.selfMonitor | quote}}
 spec:
   alerting: null
   ruleNamespaceSelector: null
@@ -13,7 +19,11 @@ spec:
   containers:
   - args:
     - --config.file=/etc/prometheus/config_out/prometheus.env.yaml
-    - --enable-feature=promql-at-modifier,agent
+    {{- if .Values.prometheus.prometheusSpec.enableFeatures }}
+    - --enable-feature=agent,{{ join "," .Values.prometheus.prometheusSpec.enableFeatures }}
+    {{- else }}
+    - --enable-feature=agent
+    {{- end }}
     - --storage.agent.path=/prometheus
     - --web.enable-lifecycle
     - --web.console.templates=/etc/prometheus/consoles
@@ -21,12 +31,6 @@ spec:
     - --web.route-prefix=/
     - --web.config.file=/etc/prometheus/web_config/web-config.yaml
     name: prometheus
-{{- if .Values.prometheus.prometheusSpec.enableFeatures }}
-  enableFeatures:
-{{- range $enableFeatures := .Values.prometheus.prometheusSpec.enableFeatures }}
-  - {{ tpl $enableFeatures $ }}
-{{- end }}
-{{- end }}
 {{- if .Values.prometheus.prometheusSpec.tolerations }}
   tolerations:
 {{ toYaml .Values.prometheus.prometheusSpec.tolerations | indent 4 }}
