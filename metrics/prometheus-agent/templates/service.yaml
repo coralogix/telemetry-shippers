@@ -45,10 +45,9 @@ spec:
 {{- end }}
   publishNotReadyAddresses: {{ .Values.prometheus.service.publishNotReadyAddresses }}
   selector:
-    app: {{ template "prometheus-agent.name" . }}
-    app.kubernetes.io/name: {{ template "prometheus-agent.name" . }}
-    app.kubernetes.io/component: prometheus
-    release: {{ $.Release.Name | quote }}
+    app.kubernetes.io/instance: {{ template "prometheus-agent.name" . }}
+    app.kubernetes.io/name: prometheus
+    prometheus: {{ template "prometheus-agent.name" . }}
 {{- if .Values.prometheus.service.sessionAffinity }}
   sessionAffinity: {{ .Values.prometheus.service.sessionAffinity }}
 {{- end }}
