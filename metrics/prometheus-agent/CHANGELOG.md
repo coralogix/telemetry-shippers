@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.9 / 2023-02-20
+* [FEATURE] Adding Prometheus Service
+
 ### v0.0.8 / 2023-02-20
 
 * [FEATURE] Adding Self Monitor

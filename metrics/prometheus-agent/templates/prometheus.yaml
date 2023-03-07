@@ -8,7 +8,6 @@ metadata:
     app.kubernetes.io/name: {{ template "prometheus-agent.name" . }}
     app.kubernetes.io/component: prometheus
     release: {{ $.Release.Name | quote }}
-    self-monitor: {{ .Values.prometheus.serviceMonitor.selfMonitor | quote}}
 spec:
   alerting: null
   ruleNamespaceSelector: null

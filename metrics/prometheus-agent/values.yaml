@@ -5,7 +5,23 @@ global:
     create: true
 
 prometheus:
+  service:
+    labels: {}
+    annotations: {}
+    clusterIP: ""
+    externalIPs: []
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    type: ClusterIP
+    externalTrafficPolicy: Cluster
+    port: 9090
+    targetPort: 9090
+    nodePort: 30090
+    publishNotReadyAddresses: false
+    sessionAffinity: ""
+
   prometheusSpec:
+    portName: "http-web"
     routePrefix: /
     enableFeatures:
       - memory-snapshot-on-shutdown
@@ -68,6 +84,7 @@ prometheus:
     create: true
   serviceMonitor:
     interval: ""
+    labels: {}
     selfMonitor: true
     sampleLimit: 0
     targetLimit: 0

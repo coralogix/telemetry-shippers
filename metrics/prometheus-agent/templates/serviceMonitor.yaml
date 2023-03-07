@@ -6,6 +6,9 @@ metadata:
   namespace: {{ template "prometheus-agent.namespace" . }}
   labels:
     app: {{ template "prometheus-agent.name" . }}
+{{- if .Values.prometheus.serviceMonitor.labels }}
+{{ toYaml .Values.prometheus.serviceMonitor.labels | indent 4 }}
+{{- end }}
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.prometheus.serviceMonitor | nindent 2 }}
   selector:
