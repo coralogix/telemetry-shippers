@@ -30,6 +30,11 @@ spec:
     - --web.route-prefix=/
     - --web.config.file=/etc/prometheus/web_config/web-config.yaml
     name: prometheus
+    startupProbe:
+      failureThreshold: {{ .Values.prometheus.prometheusSpec.startupProbe.failureThreshold }}
+      periodSeconds: {{ .Values.prometheus.prometheusSpec.startupProbe.periodSeconds }}
+      successThreshold: {{ .Values.prometheus.prometheusSpec.startupProbe.successThreshold }}
+      timeoutSeconds: {{ .Values.prometheus.prometheusSpec.startupProbe.timeoutSeconds }}
 {{- if .Values.prometheus.prometheusSpec.tolerations }}
   tolerations:
 {{ toYaml .Values.prometheus.prometheusSpec.tolerations | indent 4 }}
