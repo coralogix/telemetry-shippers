@@ -12,6 +12,14 @@ Please see [#Getting Started](README.md#getting-started) for more information ab
 This repository contains directories for each integration type, logs and metrics, and open-telemetry that can send all.  
 Inside each integration type there are multiple ways to install our integrations, using helm, installing kubernetes manifests directly, using a docker image or installing a service.
 
+## Kubernetes 1.25+
+podsecuritypolicy has been deprecated for this version up.
+You can disable this by adding the following to your override file
+```bash
+podSecurityPolicy:
+  create: false
+```
+
 ## Helm/Kubernetes integrations prerequisite
 
 All K8s integrations, both helm and manifests, require a `secret` called `coralogix-keys` with the relevant `private key` under a secret key called `PRIVATE_KEY`,
