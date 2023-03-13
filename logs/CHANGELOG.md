@@ -3,7 +3,7 @@
 ## Fluentd-http
 
 ### v0.0.11 / 2023-03-13
-* [CHANGE] 
+* [CHANGE] Disable PodSecurityPolicy
 
 ### v0.0.3 / 2022-04-26
 
