@@ -5,6 +5,9 @@ fluentd:
     repository: coralogixrepo/coralogix-fluentd-multiarch
     tag: v0.0.9
 
+  podSecurityPolicy:
+    enabled: false
+
   resources:
     requests:
       cpu: 800m

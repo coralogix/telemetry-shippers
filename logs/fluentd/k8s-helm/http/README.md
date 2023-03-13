@@ -42,6 +42,10 @@ helm upgrade fluentd-http coralogix-charts-virtual/fluentd-http \
   -f override.yaml
 ```
 
+## Kubernetes Version 1.25+
+PodSecurityPolicy is deprecated in Kubernetes v1.21+, and unavailable in Kubernetes v1.25+.
+Therefore, the PodSecurityPolicy is disabled in this chart since version 0.0.11.
+
 ## Coralogix Endpoints
 
 | Region  | Logs Endpoint

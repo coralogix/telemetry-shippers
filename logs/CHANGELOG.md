@@ -2,6 +2,9 @@
 
 ## Fluentd-http
 
+### v0.0.11 / 2023-03-13
+* [CHANGE] Disable PodSecurityPolicy
+
 ### v0.0.3 / 2022-04-26
 
 * [UPGRADE] Upgrade Fluentd version to v1.14.6 
