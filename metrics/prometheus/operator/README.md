@@ -83,6 +83,157 @@ helm upgrade --install prometheus-coralogix coralogix-charts-virtual/prometheus-
   --namespace=monitoring \
   -f values.yaml
 ```
+
+## Example App with Pod Selector:
+
+ For this example we are going to deploy an app that is exposing metrics
+
+ ```json
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+   name: example-app
+ spec:
+   replicas: 3
+   selector:
+     matchLabels:
+       app: example-app
+   template:
+     metadata:
+       labels:
+         app: example-app
+     spec:
+       containers:
+       - name: example-app
+         image: fabxc/instrumented_app
+         ports:
+         - name: web
+           containerPort: 8080
+ ```
+
+ Once we have the application running we need to create a Prometheus podMonitor.
+
+ ```json
+ apiVersion: monitoring.coreos.com/v1
+ kind: PodMonitor
+ metadata:
+   name: example-app
+   labels:
+     team: frontend
+ spec:
+   selector:
+     matchLabels:
+       app: example-app
+   podMetricsEndpoints:
+   - port: web
+ ```
+
+ As you can see in this example, the selector is pointing to every pod that has the label “ app: example-app”
+
+ ## Deplying Node Exporter.
+
+ ```json
+ apiVersion: v1
+ kind: Namespace
+ metadata:
+    name: monitoring
+ ---
+ apiVersion: apps/v1
+ kind: DaemonSet
+ metadata:
+   labels:
+     app.kubernetes.io/component: exporter
+     app.kubernetes.io/name: node-exporter
+   name: node-exporter
+   namespace: monitoring
+ spec:
+   selector:
+     matchLabels:
+       app.kubernetes.io/component: exporter
+       app.kubernetes.io/name: node-exporter
+   updateStrategy:
+     type: RollingUpdate
+     rollingUpdate:
+       maxUnavailable: 2
+   template:
+     metadata:
+       labels:
+         app.kubernetes.io/component: exporter
+         app.kubernetes.io/name: node-exporter
+       annotations:
+         prometheus.io/scrape: "true"
+         prometheus.io/path: '/metrics'
+         prometheus.io/port: "9100"
+     spec:
+       hostPID: true
+       hostIPC: true
+       hostNetwork: true
+       enableServiceLinks: false
+       containers:
+         - name: node-exporter
+           image: prom/node-exporter
+           imagePullPolicy: IfNotPresent
+           securityContext:
+             privileged: true
+           args:
+             - '--path.sysfs=/host/sys'
+             - '--path.rootfs=/root'
+             - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
+             - --collector.netclass.ignored-devices=^(veth.*)$
+           ports:
+             - containerPort: 9100
+               protocol: TCP
+           resources:
+             limits:
+               cpu: 100m
+               memory: 100Mi
+             requests:
+               cpu: 50m
+               memory: 50Mi
+           volumeMounts:
+             - name: sys
+               mountPath: /host/sys
+               mountPropagation: HostToContainer
+             - name: root
+               mountPath: /root
+               mountPropagation: HostToContainer
+       tolerations:
+         - operator: Exists
+           effect: NoSchedule
+       volumes:
+         - name: sys
+           hostPath:
+             path: /sys
+         - name: root
+           hostPath:
+             path: /
+ ```
+
+ ```json
+ kubectl create -f <exporter.yml>
+ ```
+
+ Once we have the node exporter running in every node, we need to create a Prometheus serviceMonitor so we can scrape the metrics.
+
+ ```json
+ apiVersion: monitoring.coreos.com/v1
+ kind: ServiceMonitor
+ metadata:
+   labels:
+     k8s-app: node-exporter
+   name: node-exporter
+   namespace: default
+ spec:
+   endpoints:
+     - path: /metrics
+       port: metrics
+   jobLabel: k8s-app
+   selector:
+     matchLabels:
+       app.kubernetes.io/name: prometheus-node-exporter
+ ```
+
+ This serviceMonitor will match any service that has label “app.kubernetes.io/name: prometheus-node-exporter”
 ## Removal
 ```bash
 helm uninstall prometheus-coralogix \
@@ -92,3 +243,155 @@ helm uninstall prometheus-coralogix \
 # Dependencies
 
 This chart uses [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) chart.
+
+## Example App with Pod Selector:
+
+ For this example we are going to deploy an app that is exposing metrics
+
+ ```json
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+   name: example-app
+ spec:
+   replicas: 3
+   selector:
+     matchLabels:
+       app: example-app
+   template:
+     metadata:
+       labels:
+         app: example-app
+     spec:
+       containers:
+       - name: example-app
+         image: fabxc/instrumented_app
+         ports:
+         - name: web
+           containerPort: 8080
+ ```
+
+ Once we have the application running we need to create a Prometheus podMonitor.
+
+ ```json
+ apiVersion: monitoring.coreos.com/v1
+ kind: PodMonitor
+ metadata:
+   name: example-app
+   labels:
+     team: frontend
+ spec:
+   selector:
+     matchLabels:
+       app: example-app
+   podMetricsEndpoints:
+   - port: web
+ ```
+
+ As you can see in this example, the selector is pointing to every pod that has the label “ app: example-app”
+
+ ## Deplying Node Exporter.
+
+ ```json
+ apiVersion: v1
+ kind: Namespace
+ metadata:
+    name: monitoring
+ ---
+ apiVersion: apps/v1
+ kind: DaemonSet
+ metadata:
+   labels:
+     app.kubernetes.io/component: exporter
+     app.kubernetes.io/name: node-exporter
+   name: node-exporter
+   namespace: monitoring
+ spec:
+   selector:
+     matchLabels:
+       app.kubernetes.io/component: exporter
+       app.kubernetes.io/name: node-exporter
+   updateStrategy:
+     type: RollingUpdate
+     rollingUpdate:
+       maxUnavailable: 2
+   template:
+     metadata:
+       labels:
+         app.kubernetes.io/component: exporter
+         app.kubernetes.io/name: node-exporter
+       annotations:
+         prometheus.io/scrape: "true"
+         prometheus.io/path: '/metrics'
+         prometheus.io/port: "9100"
+     spec:
+       hostPID: true
+       hostIPC: true
+       hostNetwork: true
+       enableServiceLinks: false
+       containers:
+         - name: node-exporter
+           image: prom/node-exporter
+           imagePullPolicy: IfNotPresent
+           securityContext:
+             privileged: true
+           args:
+             - '--path.sysfs=/host/sys'
+             - '--path.rootfs=/root'
+             - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
+             - --collector.netclass.ignored-devices=^(veth.*)$
+           ports:
+             - containerPort: 9100
+               protocol: TCP
+           resources:
+             limits:
+               cpu: 100m
+               memory: 100Mi
+             requests:
+               cpu: 50m
+               memory: 50Mi
+           volumeMounts:
+             - name: sys
+               mountPath: /host/sys
+               mountPropagation: HostToContainer
+             - name: root
+               mountPath: /root
+               mountPropagation: HostToContainer
+       tolerations:
+         - operator: Exists
+           effect: NoSchedule
+       volumes:
+         - name: sys
+           hostPath:
+             path: /sys
+         - name: root
+           hostPath:
+             path: /
+ ```
+
+ ```json
+ kubectl create -f <exporter.yml>
+ ```
+
+ Once we have the node exporter running in every node, we need to create a Prometheus serviceMonitor so we can scrape the metrics.
+
+ ```json
+ apiVersion: monitoring.coreos.com/v1
+ kind: ServiceMonitor
+ metadata:
+   labels:
+     k8s-app: node-exporter
+   name: node-exporter
+   namespace: default
+ spec:
+   endpoints:
+     - path: /metrics
+       port: metrics
+   jobLabel: k8s-app
+   selector:
+     matchLabels:
+       app.kubernetes.io/name: prometheus-node-exporter
+ ```
+
+ This serviceMonitor will match any service that has label “app.kubernetes.io/name: prometheus-node-exporter”
+ 
