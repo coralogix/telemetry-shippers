@@ -1,15 +1,21 @@
-# Prometheus Agent
-
+# Prometheus Agent 
+ 
 The Agent Mode of Prometheus optimizes the remote write use case of Prometheus. 
 When running in Agent mode, the querying and alerting are disabled, it focuses on scraping the metrics and send them to the destination.
 It is using the same API and discover capabilities as Prometheus, in an efficient way by using customised TSDB WAL that keeps the data that can't be delivered, until the delivery succeeds.
 In addition, it is scalable, enabling easier horizontal scalability for ingestion compared to server-mode.
+
+Prometheus Agent  allows you to deploy a lightweighted prometheus that will send metrics to Coralogix.
+But it will send whatever Prometheus Operator is already scraping. 
 
 ## Prerequisites
 
 ### Prometheus Operator 
 
 The Prometheus agent is a Prometheus crd managed by the Promethues operator, meaning the operator must run. 
+If you need to install Prometheus Operator, here is the link to our docs: 
+https://github.com/coralogix/telemetry-shippers/tree/master/metrics/prometheus/operator
+
 The agent collects servicemonitors and podmonitors, which are enabled only when using the Prometheus Operator.
 
 #### Prometheus Operator Version
