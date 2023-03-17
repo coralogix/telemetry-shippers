@@ -45,7 +45,11 @@ fluent-bit:
   endpoint: api.eu2.coralogix.com
 ```
 Note - 'kubernetes.namespace_name' and 'kubernetes.container_name' are the fields from which we take the values.  
-So for example the value of a field named 'namespace_name' inside the 'kubernetes' field will be application name of this log.
+So for example the value of a field named 'namespace_name' inside the 'kubernetes' field will be application name of this log. If you attempt to use a field name that includes hyphens (-) or slashes (/) you need to use the below alternate variable declaration syntax. Otherwise the LUA code will treat the variable assignment incorrectly, as variables in LUA are not allowed to contain those characters.
+
+```yaml
+  app_name: kubernetes.labels["k8s-app"]
+```
 
 ```bash
 helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
