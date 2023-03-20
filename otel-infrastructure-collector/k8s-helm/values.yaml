@@ -13,6 +13,11 @@ opentelemetry-collector:
   fullnameOverride: otel-infrastructure-collector
   clusterRole:
     name: "otel-infrastructure-collector"
+    create: true
+    rules: 
+    - apiGroups: ["", "events.k8s.io"]
+      resources: ["events"]
+      verbs: ["watch", "list"]
     clusterRoleBinding:
       name: "otel-infrastructure-collector"
   replicaCount: 1
@@ -44,6 +49,12 @@ opentelemetry-collector:
       zpages:
         endpoint: localhost:55679
     receivers:
+      k8sobjects:
+        objects:
+          - name: events
+            mode: pull
+            interval: 15s
+            group: events.k8s.io
       prometheus:
         config:
           scrape_configs:
@@ -78,12 +89,32 @@ opentelemetry-collector:
         subsystem_name: "{{.Values.global.defaultSubsystemName }}"
     processors:
       memory_limiter: null # Will get the k8s resource limits
+      transform/kube-events:
+        log_statements:
+          - context: log
+            statements:
+              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+      resource/kube-events:
+        attributes:
+          - key: service.name
+            value: "kube-events"
+            action: upsert
     service:
       extensions:
       - zpages
       - health_check
       - memory_ballast
       pipelines:
+        logs/kube-events:
+          exporters:
+            - coralogix
+          processors:
+            - memory_limiter
+            - batch
+            - transform/kube-events
+            - resource/kube-events
+          receivers:
+            - k8sobjects
         metrics:
           exporters:
             - coralogix

@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.0 / 2023-03-20
+
+* [FEATURE] Collecting Kubernetes events
+
 ### v0.0.4 / 2023-02-24
 
 * [UPRADE] Upgrading chart version from 0.48.1 to 0.49.0
