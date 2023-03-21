@@ -32,8 +32,8 @@ processors:
   batch:
   batch/metrics:
     timeout: 60s
-  resourcedetection/ecs:
-    detectors: [env, ecs]
+  resourcedetection:
+    detectors: [env, ec2, ecs, docker, system]
     timeout: 2s
     override: false
 exporters:
@@ -62,7 +62,7 @@ service:
         - logging
       processors:
         - batch
-        - resourcedetection/ecs
+        - resourcedetection
       receivers:
         - otlp
     metrics:
@@ -71,7 +71,7 @@ service:
         - logging
       processors:
         - batch
-        - resourcedetection/ecs
+        - resourcedetection
       receivers:
         - hostmetrics
         - prometheus
