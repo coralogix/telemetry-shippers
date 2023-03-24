@@ -5,6 +5,12 @@ The configuration should be done in the Fluentd options in configuring via Json 
                     "config-file-value": "/fluentd/etc/firelens-extra.conf"
                 }
 
-Image base: The image is based on our Coralogix fluentd multiarch image: coralogixrepo/coralogix-fluentd-multiarch:latest
+Image base: The image is based on our Coralogix fluentd multiarch image: coralogixrepo/coralogix-fluentd-multiarch:v1.15.2
+
+
+If you need to create a HEALTHCHECK on the log_router:
+Use the following Healthcheck command:
+
+CMD-SHELL, curl -f http://localhost:24220/api/plugins.json || exit 1
 
 supported plugins: docker metadata- https://github.com/fabric8io/fluent-plugin-docker_metadata_filter
