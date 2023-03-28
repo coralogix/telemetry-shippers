@@ -15,7 +15,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --install \
   --namespace=<your-namespace> \
   --create-namespace \
-  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
+  --set "fluent-bit.endpoint=ingress.eu2.coralogix.com" # Override according to your account's region. 
 ```
 
 ## Installation with dynamic app_name and sub_system
@@ -30,7 +30,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --create-namespace \
   --set "dynamic_metadata.app_name=kubernetes.namespace_name" \ # Each log's app_name will be fetched from the fluentbit record's 'kubernetes.namespace_name' value.
   --set "dynamic_metadata.sub_system=kubernetes.container_name" \ # Each log's subsystem will be fetched from the fluentbit record's 'kubernetes.container_name' value.
-  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
+  --set "fluent-bit.endpoint=ingress.eu2.coralogix.com" # Override according to your account's region. 
 ```
 
 installation using a values file:
@@ -42,7 +42,7 @@ dynamic_metadata:
   app_name: kubernetes.namespace_name
   sub_system: kubernetes.container_name
 fluent-bit:
-  endpoint: api.eu2.coralogix.com
+  endpoint: ingress.eu2.coralogix.com
 ```
 Note - 'kubernetes.namespace_name' and 'kubernetes.container_name' are the fields from which we take the values.  
 So for example the value of a field named 'namespace_name' inside the 'kubernetes' field will be application name of this log. If you attempt to use a field name that includes hyphens (-) or slashes (/) you need to use the below alternate variable declaration syntax. Otherwise the LUA code will treat the variable assignment incorrectly, as variables in LUA are not allowed to contain those characters.
@@ -71,7 +71,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --create-namespace \
   --set "static_metadata.app_name=MyApplication" \ # Each log's app_name will be 'MyApplication'.
   --set "static_metadata.sub_system=MySubsystem" \ # Each log's subsystem will be 'MySubsystem'.
-  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Override according to your account's region. 
+  --set "fluent-bit.endpoint=ingress.eu2.coralogix.com" # Override according to your account's region. 
 ```
 
 installation using a values file:
@@ -83,7 +83,7 @@ static_metadata:
   app_name: MyApplication
   sub_system: MySubsystem
 fluent-bit:
-  endpoint: api.eu2.coralogix.com
+  endpoint: ingress.eu2.coralogix.com
 ```
 
 ```bash
@@ -98,11 +98,11 @@ Note: we can use both static and dynamic at the sametime, static values take pre
 
 | Region  | Logs Endpoint
 |---------|------------------------------------------|
-| EU      | `api.coralogix.com`                      |
-| EU2     | `api.eu2.coralogix.com`                  |
-| US      | `api.coralogix.us`                       |
-| SG      | `api.coralogixsg.com`                    |
-| IN      | `api.app.coralogix.in`                   |
+| EU      | `ingress.coralogix.com`                      |
+| EU2     | `ingress.eu2.coralogix.com`                  |
+| US      | `ingress.coralogix.us`                       |
+| SG      | `ingress.coralogixsg.com`                    |
+| IN      | `ingress.coralogix.in`                       |
 
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.

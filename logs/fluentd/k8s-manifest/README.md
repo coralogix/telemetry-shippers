@@ -17,7 +17,7 @@ metadata:
     app.kubernetes.io/instance: fluentd-http
   name: fluentd-env
 data:
-  ENDPOINT: api.coralogix.com
+  ENDPOINT: ingress.coralogix.com
   LOG_LEVEL: error
 ```
 Note: the configmap name is important and is being used by the daemonSet.  
@@ -151,11 +151,11 @@ configmap "fluentd-env" deleted
 
 | Region  | Logs Endpoint
 |---------|------------------------------------------|
-| EU      | `api.coralogix.com`                      |
-| EU2     | `api.eu2.coralogix.com`                  |
-| US      | `api.coralogix.us`                       |
-| SG      | `api.coralogixsg.com`                    |
-| IN      | `api.app.coralogix.in`                   |
+| EU      | `ingress.coralogix.com`                      |
+| EU2     | `ingress.eu2.coralogix.com`                  |
+| US      | `ingress.coralogix.us`                       |
+| SG      | `ingress.coralogixsg.com`                    |
+| IN      | `ingress.coralogix.in`                       |
 
 ## Disable Systemd Logs
 In order to disable the systemd logs, remove the `fluentd-systemd-conf` configmap:

@@ -17,7 +17,7 @@ metadata:
     app.kubernetes.io/instance	: fluent-bit-http
   name: fluent-bit-env
 data:
-  ENDPOINT: api.coralogix.com
+  ENDPOINT: ingress.coralogix.com
   LOG_LEVEL: error
 ```
 Note: the configmap name is important and is being used by the daemonSet.  
@@ -123,11 +123,11 @@ service "fluent-bit" deleted
 
 | Region  | Logs Endpoint
 |---------|------------------------------------------|
-| EU      | `api.coralogix.com`                      |
-| EU2     | `api.eu2.coralogix.com`                  |
-| US      | `api.coralogix.us`                       |
-| SG      | `api.coralogixsg.com`                    |
-| IN      | `api.app.coralogix.in`                   |
+| EU      | `ingress.coralogix.com`                      |
+| EU2     | `ingress.eu2.coralogix.com`                  |
+| US      | `ingress.coralogix.us`                       |
+| SG      | `ingress.coralogixsg.com`                    |
+| IN      | `ingress.coralogix.in`                       |
 
 
 ## Dashboard
