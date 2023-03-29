@@ -42,13 +42,7 @@ type: Opaque
 
 Depending on your region, you need to configure correct Coralogix endpoint. Here are the available Endpoints:
 
-| Region            | Prometheus remoteWrite Endpoint     | 
-|-------------------|------------------------------------------------------------------------|
-| US1 (Ohio)                | `https://prometheus-gateway.coralogix.us/prometheus/api/v1/write`      |
-| APAC1 (Mumbai)     | `https://prometheus-gateway.coralogix.in/prometheus/api/v1/write`      |
-| APAC2 (Singapore) | `https://prometheus-gateway.coralogixsg.com/prometheus/api/v1/write`   |
-| EUROPE1 (Ireland)  | `https://prometheus-gateway.coralogix.com/prometheus/api/v1/write`     |
-| EUROPE2 (Stockholm)  | `https://prometheus-gateway.eu2.coralogix.com/prometheus/api/v1/write` |
+ https://coralogix.com/docs/coralogix-endpoints/.
 
 ## Example configuration:
 

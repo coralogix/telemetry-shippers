@@ -13,7 +13,7 @@ prometheus:
         maxSamplesPerSend: 1000
         maxShards: 200
       remoteTimeout: 120s
-      url: https://example-gateway.eu2.coralogix.com/prometheus/api/v1/write
+      url: https://ingress.coralogix.com/prometheus/v1
     storageSpec:
       volumeClaimTemplate:
         metadata:
