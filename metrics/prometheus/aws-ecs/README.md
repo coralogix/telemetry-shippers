@@ -20,17 +20,11 @@ Service run:
 
 ### Variables
 
-CORALOGIX_ENDPOINT - your coralogix endpoint according to your account cluster, use table below.  
+CORALOGIX_ENDPOINT - your coralogix endpoint according to your account cluster, Check https://coralogix.com/docs/coralogix-endpoints/.  
 CORALOGIX_PRIVATEKEY - your coralogix private 'send your data' key.  
 SCRAPE_INTERVAL - the interval between each scrape of data, default to 1m (1 minute).  
 
-| Cluster (Region)  | Remote_write URL                                                     |
-|-------------------|----------------------------------------------------------------------|
-| EU (Irland)       | prometheus-gateway.coralogix.com   |
-| EU2 (Sweden)      | prometheus-gateway.eu2.coralogix.com |
-| US                | prometheus-gateway.coralogix.us    |
-| APAC1 (India)     | prometheus-gateway.coralogix.in     |
-| APAC2 (Singapore) | prometheus-gateway.coralogixsg.com   |
+
 
 ### Todo
 
