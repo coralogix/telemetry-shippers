@@ -12,6 +12,7 @@ global:
 opentelemetry-collector:
   mode: daemonset
   hostNetwork: true
+  dnsPolicy: "ClusterFirstWithHostNet"
   fullnameOverride: otel-coralogix
   clusterRole:
     name: "otel-coralogix"
