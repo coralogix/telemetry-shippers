@@ -51,13 +51,7 @@ type: Opaque
 
 Depending on your region, you need to configure correct Coralogix endpoint. Here are the available Endpoints:
 
-| Cluster (Region)  | Remote_write URL                                                     |
-|-------------------|----------------------------------------------------------------------|
-| EU (Irland)       | https://ingress.coralogix.com/prometheus/v1                          |
-| EU2 (Sweden)      | https://ingress.eu2.coralogix.com/prometheus/v1                      |
-| US                | https://ingress.coralogix.us/prometheus/v1                           |
-| APAC1 (India)     | https://ingress.coralogix.in/prometheus/v1                           |
-| APAC2 (Singapore) | https://ingress.coralogixsg.com/prometheus/v1                         |
+ https://coralogix.com/docs/coralogix-endpoints/.
 
 ## Installation
 
@@ -89,7 +83,7 @@ prometheus:
         maxSamplesPerSend: 1000
         maxShards: 200
       remoteTimeout: 120s
-      url: https://prometheus-gateway.coralogix.in/prometheus/api/v1/write
+      url: https://ingress.coralogix.com/prometheus/v1
 ```
 
 Install the chart:

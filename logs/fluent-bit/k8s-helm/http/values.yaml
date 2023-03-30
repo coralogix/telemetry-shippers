@@ -87,7 +87,7 @@ fluent-bit:
   - name: ENDPOINT
     value: "{{ .Values.endpoint }}"
 
-  endpoint: api.eu2.coralogix.com
+  endpoint: ingress.eu2.coralogix.com
   logLevel: error
 
   config: 

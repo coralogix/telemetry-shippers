@@ -21,7 +21,7 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
   --create-namespace \
   --set "fluent-bit.app_name=<app_name>" \ # Dynamic label, such as: kubernetes.namespace_name
   --set "fluent-bit.sub_system=<sub_system>" \ # Dynamic label, such as: kubernetes.containers_name
-  --set "fluent-bit.endpoint=api.eu2.coralogix.com" # Can be changed
+  --set "fluent-bit.endpoint=ingress.eu2.coralogix.com" # Can be changed
 ```
 
 ## Installation with static app_name and sub_system
@@ -36,7 +36,7 @@ fluent-bit:
     outputs: |-
       [OUTPUT]
           Name          coralogix
-          Endpoint      api.eu2.coralogix.com
+          Endpoint      ingress.eu2.coralogix.com
           Match         kube.*
           Private_Key   ${PRIVATE_KEY}
           App_Name      <static_app_name>
@@ -56,11 +56,11 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
 
 | Region  | Logs Endpoint
 |---------|------------------------------------------|
-| EU      | `api.coralogix.com`                      |
-| EU2     | `api.eu2.coralogix.com`                  |
-| US      | `api.coralogix.us`                       |
-| SG      | `api.coralogixsg.com`                    |
-| IN      | `api.app.coralogix.in`                   |
+| EU      | `ingress.coralogix.com`                      |
+| EU2     | `ingress.eu2.coralogix.com`                  |
+| US      | `ingress.coralogix.us`                       |
+| SG      | `ingress.coralogixsg.com`                    |
+| IN      | `ingress.coralogix.in`                       |
 
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.

@@ -91,7 +91,7 @@ fluent-bit:
   - name: ENDPOINT
     value: "{{ .Values.endpoint }}"
 
-  endpoint: api.eu2.coralogix.com
+  endpoint: ingress.eu2.coralogix.com
   app_name:  kubernetes.namespace_name
   sub_system: kubernetes.container_name
   logLevel: error

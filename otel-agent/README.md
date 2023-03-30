@@ -33,13 +33,7 @@ __Agent Implementations:__
 
 Depending on your region, you need to configure correct Coralogix endpoint. Here are the available Endpoints:
 
-| Region  | Traces Endpoint                          | Metrics Endpoint                     | Logs Endpoint                     |
-|---------|------------------------------------------|------------------------------------- | --------------------------------- |
-| USA1    | `otel-traces.coralogix.us:443`      | `otel-metrics.coralogix.us:443`      | `otel-logs.coralogix.us:443`      |
-| APAC1   | `otel-traces.app.coralogix.in:443`  | `otel-metrics.app.coralogix.in:443`  | `otel-logs.app.coralogix.in:443`  | 
-| APAC2   | `otel-traces.coralogixsg.com:443`   | `otel-metrics.coralogixsg.com:443`   | `otel-logs.coralogixsg.com:443`   |
-| EUROPE1 | `otel-traces.coralogix.com:443`     | `otel-metrics.coralogix.com:443`     | `otel-logs.coralogix.com:443`     |
-| EUROPE2 | `otel-traces.eu2.coralogix.com:443` | `otel-metrics.eu2.coralogix.com:443` | `otel-logs.eu2.coralogix.com:443` |
+https://coralogix.com/docs/coralogix-endpoints/.
 
 Example configuration:
 ```yaml

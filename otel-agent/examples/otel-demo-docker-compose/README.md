@@ -28,11 +28,5 @@ docker-compose up -d
 
 ## Coralogix Endpoints
 
-| Region  | Traces Endpoint
-|---------|------------------------------------------|
-| USA1	  | `tracing-ingress.coralogix.us`           |
-| APAC1   | `tracing-ingress.app.coralogix.in`       |
-| APAC2   | `tracing-ingress.coralogixsg.com`        |
-| EUROPE1 | `tracing-ingress.coralogix.com`          |
-| EUROPE2 | `tracing-ingress.eu2.coralogix.com`      |
+Please Check https://coralogix.com/docs/coralogix-endpoints/.
 

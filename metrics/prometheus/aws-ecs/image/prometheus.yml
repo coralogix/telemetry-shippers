@@ -18,7 +18,7 @@ scrape_configs:
       - target_label: instance
         replacement: '<HOSTNAME>'
 remote_write:
-- url: 'https://<ENDPOINT>/prometheus/api/v1/write'
+- url: '<ENDPOINT>'
   name: 'crx'
   remote_timeout: 120s
   bearer_token: '<PRIVATEKEY>'
