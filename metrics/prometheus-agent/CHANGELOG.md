@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.10 / 2023-02-20
+* [FEATURE] Adding shard support
+
 ### v0.0.9 / 2023-02-20
 * [FEATURE] Adding Prometheus Startup Probe Override
 
