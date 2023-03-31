@@ -29,6 +29,8 @@ spec:
     - --web.console.libraries=/etc/prometheus/console_libraries
     - --web.route-prefix=/
     - --web.config.file=/etc/prometheus/web_config/web-config.yaml
+    - --log.level={{ .Values.prometheus.prometheusSpec.logLevel }}
+    - --log.format={{ .Values.prometheus.prometheusSpec.logFormat }}
     name: prometheus
     startupProbe:
       failureThreshold: {{ .Values.prometheus.prometheusSpec.startupProbe.failureThreshold }}
@@ -84,8 +86,6 @@ spec:
   shards: {{ .Values.prometheus.prometheusSpec.shards }}
   replicas: {{ .Values.prometheus.prometheusSpec.replicas }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
-  logLevel: {{ .Values.prometheus.prometheusSpec.logLevel }}
-  logFormat: {{ .Values.prometheus.prometheusSpec.logFormat }}
 {{- if .Values.prometheus.prometheusSpec.resources }}
   resources:
 {{ toYaml .Values.prometheus.prometheusSpec.resources | indent 4 }}
