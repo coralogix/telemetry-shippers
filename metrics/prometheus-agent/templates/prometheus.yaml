@@ -81,6 +81,7 @@ spec:
 {{- else }}
   replicaExternalLabelName: ""
 {{- end }}
+  shards: {{ .Values.prometheus.prometheusSpec.shards }}
   replicas: {{ .Values.prometheus.prometheusSpec.replicas }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
   logLevel: {{ .Values.prometheus.prometheusSpec.logLevel }}
