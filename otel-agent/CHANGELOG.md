@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.24 / 2023-04-05
+
+* [CHORE] Update OpenTelemetry Collector to v0.75.0
+
 ### v0.0.23 / 2023-03-29
 
 * [CHORE] Update OpenTelemetry Collector to v0.74.0
