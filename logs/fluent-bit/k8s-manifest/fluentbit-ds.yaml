@@ -33,7 +33,7 @@ spec:
             - secretRef:
                 name: coralogix-keys
             - configMapRef:
-                name: fluent-bit-env
+                name: fluent-bit
           ports:
             - name: http
               containerPort: 2020
