@@ -104,6 +104,11 @@ opentelemetry-collector:
       - zpages
       - health_check
       - memory_ballast
+      telemetry:
+        logs:
+          encoding: json
+        metrics:
+          address: ${MY_POD_IP}:8888
       pipelines:
         logs/kube-events:
           exporters:
