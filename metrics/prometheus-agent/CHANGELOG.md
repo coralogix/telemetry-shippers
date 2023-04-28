@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.12 / 2023-02-20
+* [UPGRADE] Upgrade prometheus version to 2.43.0-stringlabels
+
 ### v0.0.10 / 2023-02-20
 * [FIX] Prometheus Agent logs config
 
