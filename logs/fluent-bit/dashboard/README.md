@@ -1,4 +1,4 @@
-## Installation 
+## Installation
 
 * Copy the [fluent-bit-dashboard.json](./assets/fluent-bit-dashboard.json) file content
 * Go to your hosted grafana

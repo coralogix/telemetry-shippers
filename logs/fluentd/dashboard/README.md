@@ -1,4 +1,4 @@
-## Installation 
+## Installation
 
 * Copy the [fluentd-dashboard.json](./assets/fluentd-dashboard.json) file content
 * Go to your hosted grafana
