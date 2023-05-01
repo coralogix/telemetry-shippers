@@ -15,6 +15,7 @@ The setup is based on [otel-demo](https://github.com/open-telemetry/opentelemetr
 * Erlang/Elixir
 
 All the examples are using `open-telemtry` SDK. Which can be found [here](https://opentelemetry.io/docs/instrumentation/)
+<<<<<<< HEAD
 
 The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory. 
 
@@ -28,15 +29,46 @@ The source code for this demo is available [here](https://github.com/open-teleme
 
 ## Installation
 =======
+=======
+>>>>>>> ceb3204 (Updating the otel-demo config & doc following onboarding issues)
 The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory.
-
-## Installation
 
 In order to ship traffic to your Coralogix account, please edit `otelcol-config.yml` and upadte the following:
 * ENDPOINT
 * PRIVATE_KEY
+=======
+The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory. 
 
+<<<<<<< HEAD
 Getting started is easy! 
+=======
+## Before you begin
+
+1. Install the Docker client on your machine. This demo runs in Docker.
+2. Visit https://dashboard.eu2.coralogix.com/#/signup and sign up for an account. 
+3. Visit `https://YOUR_ACCOUNT_NAME.app.coralogix.us/#/integration/apikey` (updating `YOUR_ACCOUNT_NAME`
+   with the name of the account you had created at signup. This is where you can select an API key. 
+   Keep this page around for one moment.
+
+## Installation
+
+Getting started is easy!
+
+1. Open the [otelcol-config.yml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/examples/otel-demo-docker-compose/otelcol-config.yml)
+   file in this directory and update the two coralogix fields at the top of the page.
+   * The `CORALOGIX_ENDPOINT` should be the appropriate open-telemetry routes. Please Check
+     https://coralogix.com/docs/coralogix-endpoints/ for the most appropriate endpoint.
+   * The `CORALOGIX_API_KEY` should come from the integration link indicated above. Use the "Send Your Data"
+     access key.
+2. Run `docker compose up -d`
+3. In your Coralogix UI, visit the "Explore" tab and click on "Tracing". You should see some input.
+   * If you do not, check out `docker logs otel-col` and look for any issues. It should look like this
+   on the latest line of the log:
+```
+2023-05-01T22:39:28.349Z	info	service/service.go:157	Everything is ready. Begin running and processing data.
+```
+4. Visit http://localhost:8089 and try increasing the volume of traffic to increase the inputto Coralogix.
+>>>>>>> ceb3204 (Updating the otel-demo config & doc following onboarding issues)
 
 1. Open the [otelcol-config.yml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/examples/otel-demo-docker-compose/otelcol-config.yml)
    file in this directory and update the two Coralogix fields at the top of the page.
@@ -61,3 +93,9 @@ Getting started is easy!
 ## Coralogix Endpoints
 
 Please Check https://coralogix.com/docs/coralogix-endpoints/.
+=======
+## Suggested reading
+
+* https://coralogix.com/docs/guide-first-steps-coralogix/
+* https://opentelemetry.io/docs/what-is-opentelemetry/
+* https://opentelemetry.io/docs/collector/configuration/
