@@ -7,8 +7,9 @@ receivers:
 exporters:
   logging:
   coralogix:
-    endpoint: "${ENDPOINT}:9443"
-    private_key: "${PRIVATE_KEY}"
+    traces:
+      endpoint: "CORALOGIX_ENDPOINT"
+    private_key: "CORALOGIX_API_KEY
     application_name: "otel-demo"
 
 

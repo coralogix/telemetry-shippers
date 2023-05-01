@@ -22,7 +22,7 @@ services:
 
   # Collector
   otelcol:
-    image: otel/opentelemetry-collector-contrib:0.56.0
+    image: otel/opentelemetry-collector-contrib:0.72.0
     container_name: otel-col
     command: [ "--config=/etc/otelcol-config.yml" ]
     volumes:
@@ -35,6 +35,9 @@ services:
     depends_on:
       - jaeger
     logging: *logging
+    environment:
+      - CORALOGIX_ENDPOINT
+      - CORALOGIX_API_KEY
 
   # Redis
   redis-cart:
