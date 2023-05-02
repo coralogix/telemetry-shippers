@@ -44,7 +44,7 @@ Getting started is easy!
 ```
 2023-05-01T22:39:28.349Z	info	service/service.go:157	Everything is ready. Begin running and processing data.
 ```
-4. Visit http://localhost:8089 and try increasing the volume of traffic to increase the inputto Coralogix.
+4. Visit http://localhost:8089 and try increasing the volume of traffic to increase the input to Coralogix.
 
 ## Suggested reading
 
