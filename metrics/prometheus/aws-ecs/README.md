@@ -1,10 +1,11 @@
 ## ECS prometheus node exporter
 
-Prometheus is an open-source monitoring solution for collecting and aggregating metrics as time series data.  
+Prometheus is an open-source monitoring solution for collecting and aggregating metrics as time series data.
+
 Using this ECS task definition will install on your ECS cluster a node exporter which exports the host metrics
 and promethues which will send these metrics to your coralogix account.
 
-### Installation 
+### Installation
 
 Task Creation:
 - Create a new ECS Task definition
@@ -20,11 +21,11 @@ Service run:
 
 ### Variables
 
-CORALOGIX_ENDPOINT - your coralogix endpoint according to your account cluster, Check https://coralogix.com/docs/coralogix-endpoints/.  
-CORALOGIX_PRIVATEKEY - your coralogix private 'send your data' key.  
-SCRAPE_INTERVAL - the interval between each scrape of data, default to 1m (1 minute).  
+CORALOGIX_ENDPOINT - your coralogix endpoint according to your account cluster, Check https://coralogix.com/docs/coralogix-endpoints/.
 
+CORALOGIX_PRIVATEKEY - your coralogix private 'send your data' key.
 
+SCRAPE_INTERVAL - the interval between each scrape of data, default to 1m (1 minute).
 
 ### Todo
 

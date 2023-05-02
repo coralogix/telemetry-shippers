@@ -1,4 +1,5 @@
 # OpenTelemetry Demo
+
 This Online Boutique with exmaple how to confiugre the open-telemetry collector to send data to Coralogix.
 The setup is based on [otel-demo](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha), which contains services exposing tracing telemetry data from all running platforms:
 * Java
@@ -13,11 +14,10 @@ The setup is based on [otel-demo](https://github.com/open-telemetry/opentelemetr
 
 All the examples are using `open-telemtry` SDK. Which can be found [here](https://opentelemetry.io/docs/instrumentation/)
 
-The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory. 
-
-
+The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory.
 
 ## Installation
+
 In order to ship traffic to your Coralogix account, please edit `otelcol-config.yml` and upadte the following:
 * ENDPOINT
 * PRIVATE_KEY
@@ -29,4 +29,3 @@ docker-compose up -d
 ## Coralogix Endpoints
 
 Please Check https://coralogix.com/docs/coralogix-endpoints/.
-

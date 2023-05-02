@@ -1,6 +1,6 @@
 ## Installation
 
-* Copy the [otel-agent-dashboard.json](https://github.com/coralogix/eng-integrations/blob/master/otel-agent/dashboard/otel-agent-dashboard.json) file content
+* Copy the [otel-agent-dashboard.json](./assets/otel-agent-dashboard.json) file content
 * Go to your hosted grafana
 * Press the `Create` tab
 * Press the `Import` tab
@@ -8,16 +8,16 @@
 
 ### Host Metrics
 
-![Alt text](./host-metrics.png?raw=true)%
+![Alt text](./assets/host-metrics.png)
 
 ### Span Metrics
 
-![Alt text](./spanmetrics.png?raw=true)%
+![Alt text](./assets/spanmetrics.png)
 
 ### Kubernetes Pod
 
-![Alt text](./kubernetes-pod.png?raw=true)%
+![Alt text](./assets/kubernetes-pod.png)
 
 ### Otel Agent
 
-![Alt text](./dashboard-screenshot.jpg?raw=true)%
+![Alt text](./assets/dashboard-screenshot.jpg)
