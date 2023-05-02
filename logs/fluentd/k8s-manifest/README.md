@@ -1,11 +1,14 @@
 # Fluentd-HTTP manifest files
+
 #### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
 
 Fluentd is a flexible data shipper with many available plugins and capabilities, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluentd shipper, together with the http output plugin to ship the logs to the Coralogix platform.
 
-## Installation 
+## Installation
+
 In order to specify important environment variables, please create a configmap:
+
 ```yaml
 ---
 ## fluentd-env-cm.yaml:
@@ -20,22 +23,28 @@ data:
   ENDPOINT: ingress.coralogix.com
   LOG_LEVEL: error
 ```
-Note: the configmap name is important and is being used by the daemonSet.  
+
+Note: the configmap name is important and is being used by the daemonSet.
+
 change 'ENDPOINT' according to your logs endpoint from the table below.
 
 And apply it:
+
 ```bash
 kubectl apply -f fluentd-env-cm.yaml
 ```
 
 Next apply the manifest files in this directory:
+
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-cm.yaml
 kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-rbac.yaml
 kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc.yaml
 kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-ds.yaml
 ```
+
 The output should be :
+
 ```bash
 configmap/fluentd-prometheus-conf created
 configmap/fluentd-systemd-conf created
@@ -50,6 +59,7 @@ service/fluentd-http created
 ```
 
 If you have prometheus-operator installed you can also install this service monitor resource:
+
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc-monitor.yaml
 ```
@@ -59,8 +69,10 @@ kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/
 By default we use the field `kubernetes.namespace_name` as the applicationName and `kubernetes.container_name` as the subsystemName.
 
 ### Dynamic
+
 To modify these values and use another field as the value of applicationName and subsystemName modify the `fluentd-config` configmap and specifically the `coralogix.conf` key.
 For example given this log structure:
+
 ```yaml
 {
 	"kubernetes": {
@@ -81,8 +93,10 @@ For example given this log structure:
 	"time": "2022-12-11T16:43:15.906733172Z",
 }
 ```
+
 We could use the 'app' label from the kubernetes object as our subsystemName.
 To achive that we modify the 'record_transformer' filter:
+
 ```
 <filter *.containers.**>
   @type record_transformer
@@ -99,12 +113,15 @@ To achive that we modify the 'record_transformer' filter:
   </record>
 </filter>
 ```
+
 Note: as this script run on all logs make sure to use a field that is present in all the logs or add if/else logic to the ruby code inside the ${}.
 
 ### Static
+
 To modify these values and use a hard-coded value as the value of applicationName and subsystemName modify the `fluentd-config` configmap and specifically the `coralogix.conf` key.
 For example if we want all logs to have the 'my-awesome-app' as the applicationName,
 To achive that we modify the 'record_transformer' filter:
+
 ```
 <filter *.containers.**>
   @type record_transformer
@@ -125,6 +142,7 @@ To achive that we modify the 'record_transformer' filter:
 ## Removal
 
 To remove all resources created with manifest files use these commands:
+
 ```bash
 kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-cm.yaml
 kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-rbac.yaml
@@ -134,6 +152,7 @@ kubectl delete -f fluentd-env-cm.yaml
 ```
 
 The output should be :
+
 ```bash
 configmap "fluentd-prometheus-conf" deleted
 configmap "fluentd-systemd-conf" deleted
@@ -147,26 +166,31 @@ servicemonitor.monitoring.coreos.com "fluentd-http" deleted
 service "fluentd-http" deleted
 configmap "fluentd-env" deleted
 ```
+
 ## Coralogix Endpoints
 
-| Region  | Logs Endpoint
-|---------|------------------------------------------|
-| EU      | `ingress.coralogix.com`                      |
-| EU2     | `ingress.eu2.coralogix.com`                  |
-| US      | `ingress.coralogix.us`                       |
-| SG      | `ingress.coralogixsg.com`                    |
-| IN      | `ingress.coralogix.in`                       |
+| Region | Logs Endpoint               |
+|--------|-----------------------------|
+| EU     | `ingress.coralogix.com`     |
+| EU2    | `ingress.eu2.coralogix.com` |
+| US     | `ingress.coralogix.us`      |
+| SG     | `ingress.coralogixsg.com`   |
+| IN     | `ingress.coralogix.in`      |
 
 ## Disable Systemd Logs
+
 In order to disable the systemd logs, remove the `fluentd-systemd-conf` configmap:
+
 ```yaml
 kubectl delete cm fluentd-systemd-conf  
 ```
 
 ## Dashboard
+
 Under the `dashboard` directory, there is a Fluentd Grafana dashboard that Coralogix supplies.
 In order to import the dashboard into Grafana, firstly copy the json file content.
 Afterwards go to Grafana press the `Create` tab, then press `import`, and paste the copied json file.
 
 ## Coralogix Fluentd Buffer Alert
-In order to create an alert on Fluentd buffer in Coralogix, please see [coralogix-alert doc](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/docs/coralogix-alerts.md) 
+
+In order to create an alert on Fluentd buffer in Coralogix, please see [coralogix-alert doc](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/docs/coralogix-alerts.md)

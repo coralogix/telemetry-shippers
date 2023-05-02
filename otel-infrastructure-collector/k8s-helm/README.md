@@ -2,17 +2,16 @@
 
 This Infrastructure collector provides:
 
-- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) -  Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
+- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) - Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
 - [Cluster Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) - The Kubernetes Cluster receiver collects cluster-level metrics from the Kubernetes API server. Alternative to Kube State Metrics project.
 
 ### Required
 
--  __Secret Key__
+- **Secret Key**
 
 Follow the [private key docs](https://coralogix.com/docs/private-key/) tutorial to obtain your secret key tutorial to obtain your secret key.
 
 OpenTelemetry Infrastructure Collector require a `secret` called `coralogix-keys` with the relevant `private key` under a secret key called `PRIVATE_KEY`, inside the `same namespace` that the chart is installed in.
-
 
 ```bash
 kubectl create secret generic coralogix-keys \
@@ -20,6 +19,7 @@ kubectl create secret generic coralogix-keys \
 ```
 
 The created secret should look like this:
+
 ```yaml
 apiVersion: v1
 data:
@@ -34,16 +34,19 @@ type: Opaque
 ## Installation
 
 First make sure to add our Helm charts repository to the local repos list with the following command:
+
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
 
-In order to get the updated Helm charts from the added repository, please run: 
+In order to get the updated Helm charts from the added repository, please run:
+
 ```bash
 helm repo update
 ```
 
 Install the charts:
+
 ```bash
 helm upgrade --install otel-infrastructure-collector coralogix-charts-virtual/otel-infrastructure-collector \
   -f values.yaml
@@ -62,6 +65,7 @@ With that in mind we're configuring an OpenTelemetry receiver to collect Kuberne
 On the OpenTelemetry config, you will find a new pipeline named `logs/kube-events`, which is used to collect, process, and export the Kubernetes events to Coralogix.
 
 ### Cleaning the data
+
 By default, there's a transform processor named `transform/kube-events` which is removing some unneeded fields, but feel free to override this and add back some fields or even remove fields that are not needed at all on your specific use case.
 
 ### Filtering Events
@@ -75,6 +79,7 @@ processors:
           log_record:
             - 'IsMatch(body["reason"], "(BackoffLimitExceeded|FailedScheduling|Unhealthy)") == true'
 ```
+
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
 
 ## Cluster Receiver

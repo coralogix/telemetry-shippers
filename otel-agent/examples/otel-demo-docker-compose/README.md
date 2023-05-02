@@ -27,6 +27,14 @@ The source code for this demo is available [here](https://github.com/open-teleme
    Keep this page around for one moment.
 
 ## Installation
+=======
+The source code for this demo is available [here](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha) under the `/src` directory.
+
+## Installation
+
+In order to ship traffic to your Coralogix account, please edit `otelcol-config.yml` and upadte the following:
+* ENDPOINT
+* PRIVATE_KEY
 
 Getting started is easy! 
 
@@ -49,3 +57,7 @@ Getting started is easy!
 * https://coralogix.com/docs/guide-first-steps-coralogix/
 * https://opentelemetry.io/docs/what-is-opentelemetry/
 * https://opentelemetry.io/docs/collector/configuration/
+=======
+## Coralogix Endpoints
+
+Please Check https://coralogix.com/docs/coralogix-endpoints/.
