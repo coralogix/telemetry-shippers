@@ -20,7 +20,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/charmbracelet/glamour v0.3.0 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
-	github.com/dlclark/regexp2 v1.2.0 // indirect
+	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/efficientgo/tools/core v0.0.0-20210609125236-d73259166f20 // indirect
 	github.com/efficientgo/tools/extkingpin v0.0.0-20210609125236-d73259166f20 // indirect
 	github.com/fatih/color v1.7.0 // indirect
@@ -29,7 +29,7 @@ require (
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly/v2 v2.1.1-0.20201013153555-8252c346cfb0 // indirect
-	github.com/gohugoio/hugo v0.74.3 // indirect
+	github.com/gohugoio/hugo v0.79.1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99 // indirect
@@ -42,10 +42,10 @@ require (
 	github.com/mattn/go-shellwords v1.0.10 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.6 // indirect
-	github.com/mitchellh/mapstructure v1.2.2 // indirect
+	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/muesli/reflow v0.2.1-0.20210115123740-9e1d0d53df68 // indirect
 	github.com/muesli/termenv v0.8.1 // indirect
-	github.com/niklasfasching/go-org v1.3.0 // indirect
+	github.com/niklasfasching/go-org v1.3.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -56,7 +56,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
-	github.com/spf13/afero v1.2.2 // indirect
+	github.com/spf13/afero v1.4.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
