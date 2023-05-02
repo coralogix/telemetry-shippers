@@ -1,12 +1,16 @@
 global:
-  traces:
-    endpoint: "<traces-endpoint-here>"
-  metrics:
-    endpoint: "<metrics-endpoint-here>"
-  logs:
-    endpoint: "<logs-endpoint-here>"
+  domain: "<domain-here>"
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
+
+  # Old endpoint based configuration, 
+  # please use domain instead.
+  traces:
+    endpoint: ""
+  metrics:
+    endpoint: ""
+  logs:
+    endpoint: ""
 
 
 opentelemetry-collector:
@@ -52,6 +56,7 @@ opentelemetry-collector:
       coralogix:
         timeout: "30s"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{.Values.global.domain}}"
         traces:
           endpoint: "{{ .Values.global.traces.endpoint }}"
         metrics:

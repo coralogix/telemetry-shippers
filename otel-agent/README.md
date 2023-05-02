@@ -31,7 +31,7 @@ __Agent Implementations:__
 
 ## Coralogix's Endpoints 
 
-Depending on your region, you need to configure correct Coralogix endpoint. Here are the available Endpoints:
+Depending on your region, you need to configure correct Coralogix endpoint. Here are the available Domains:
 
 https://coralogix.com/docs/coralogix-endpoints/.
 
@@ -40,10 +40,5 @@ Example configuration:
 #config.yaml:
 ---
 coralogix:
-  logging:
-    endpoint: "<logs endpoint here>"
-  traces:
-    endpoint: "<traces endpoint here>"
-  metrics:
-    endpoint: "<metrics endpoint here>"
-```  
+  domain: "<coralogix domain here>"
+```
