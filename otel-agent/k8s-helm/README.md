@@ -55,7 +55,8 @@ In order to get the updated Helm charts from the added repository, please run:
 helm repo update
 ```
 
-Install the charts:
+Install the chart:
+
 
 ```bash
 helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralogix \

@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.25 / 2023-05-02
+
+* [FEATURE] Allow users to configure Coralogix domain instead of endpoints
+* [CHORE] Update OpenTelemetry Collector to v0.76.1
+
 ### v0.0.24 / 2023-04-05
 
 * [CHORE] Update OpenTelemetry Collector to v0.75.0
