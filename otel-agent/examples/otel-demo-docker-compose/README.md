@@ -31,9 +31,8 @@ The source code for this demo is available [here](https://github.com/open-teleme
 Getting started is easy! 
 
 1. Open the [otelcol-config.yml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/examples/otel-demo-docker-compose/otelcol-config.yml)
-   file in this directory and update the two coralogix fields at the top of the page.
-   * The `CORALOGIX_ENDPOINT` should be the appropriate open-telemetry routes. Please Check
-     https://coralogix.com/docs/coralogix-endpoints/ for the most appropriate endpoint.
+   file in this directory and update the two Coralogix fields at the top of the page.
+   * The `CORALOGIX_ENDPOINT` should be set to appropriate endpoints accepting data. Please see [our documentation](https://coralogix.com/docs/coralogix-endpoints/) to know which endpoint to use. 
    * The `CORALOGIX_API_KEY` should come from the integration link indicated above. Use the "Send Your Data"
      access key.
 2. Run `docker compose up -d`
