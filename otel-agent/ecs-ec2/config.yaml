@@ -39,6 +39,7 @@ processors:
 exporters:
   logging:
   coralogix:
+    domain: "$CORALOGIX_DOMAIN"
     traces:
       endpoint: "$TRACES_ENDPOINT"
     metrics:
