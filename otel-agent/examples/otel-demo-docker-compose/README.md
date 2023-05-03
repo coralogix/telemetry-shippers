@@ -21,9 +21,9 @@ The source code for this demo is available [here](https://github.com/open-teleme
 ## Before you begin
 
 1. Install the Docker client on your machine. This demo runs in Docker.
-2. Visit https://dashboard.eu2.coralogix.com/#/signup and sign up for an account. 
+2. [Sign up](https://dashboard.eu2.coralogix.com/#/signup) for a Coralogix account, if you don't have one yet. 
 3. Visit `https://YOUR_ACCOUNT_NAME.app.coralogix.us/#/integration/apikey` (updating `YOUR_ACCOUNT_NAME`
-   with the name of the account you had created at signup. This is where you can select an API key. 
+   with the name of the account you have created during the signup. This is where you can access your API key. 
    Keep this page around for one moment.
 
 ## Installation
