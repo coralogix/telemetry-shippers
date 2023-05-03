@@ -52,7 +52,7 @@
 
 ### v0.0.14 / 2022-12-11
 
-* [BUGFIX] Add all of the relevant metrics to be suported in hostmetrics   
+* [BUGFIX] Add all of the relevant metrics to be suported in hostmetrics
 
 ### v0.0.13 / 2022-12-08
 
@@ -70,7 +70,7 @@
 
 ### v0.0.10 / 2022-11-21
 
-* [FEATURE] Add self monitoring 
+* [FEATURE] Add self monitoring
 
 ### v0.0.9 / 2022-11-10
 
@@ -104,9 +104,8 @@
 * [UPRADE] Upgrading app version from 0.57.2 to 0.59.0
 
 ### v0.0.2 / 2022-08-24
- 
-* [FIX] Disable logs and metrics pipeline by default 
-* [FIX] Installation command had a wrong configuratin and chart name 
-* [CHANGE] Update the Coralogix private key secret name to match the logs charts required secret name ['coralogix-otel-privatekey' --> 'integrations-privatekey'] 
-  ([#80](https://github.com/coralogix/eng-integrations/pull/80))
 
+* [FIX] Disable logs and metrics pipeline by default
+* [FIX] Installation command had a wrong configuratin and chart name
+* [CHANGE] Update the Coralogix private key secret name to match the logs charts required secret name ['coralogix-otel-privatekey' --> 'integrations-privatekey']
+  ([#80](https://github.com/coralogix/eng-integrations/pull/80))

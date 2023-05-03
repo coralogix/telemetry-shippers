@@ -3,9 +3,9 @@
 Fluentd uses memory to store buffer chunks, once its buffer is full, it starts throwing exceptions in its logs,
 and it means there is a bottleneck, the Fluentd cant tail new logs.
 Therefore we recommend creating an alert in Coralogix, that will trigger while Fluentd starts throwing buffer exceptions,
-Run the following command in order to create a new alert in Coralogix: 
+Run the following command in order to create a new alert in Coralogix:
 ** `Alerts, Rules and Tags API Key` needs to be inserted in the command
-** Notifications emails and integrations need to be updated 
+** Notifications emails and integrations need to be updated
 
 ```
 curl -X POST https://api.eu2.coralogix.com/api/v1/external/alerts -H "Authorization: bearer <Alerts, Rules and Tags API Key>" -H "Content-Type: application/json" --data-binary '{

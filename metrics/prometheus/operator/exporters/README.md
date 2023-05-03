@@ -1,6 +1,7 @@
 # Prometheus Operator Exporters
 
-Most exporters have a ready helm chart ready to be deployed - [Exporters charts](https://github.com/prometheus-community/helm-charts/tree/main/charts)  
+Most exporters have a ready helm chart ready to be deployed - [Exporters charts](https://github.com/prometheus-community/helm-charts/tree/main/charts)
+
 be sure to first check there for any exporter.
 
 ## Scrape a standalone exporter / container
@@ -8,8 +9,11 @@ be sure to first check there for any exporter.
 Prometheus operator has monitors resources to help it generate dynamic scrape config for prometheus.
 
 ### PodMonitor
-When we want to scrape a single pod we can use the PodMonitor resrouce.  
+
+When we want to scrape a single pod we can use the PodMonitor resrouce.
+
 Example mongodb deployment manifest:
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -35,8 +39,11 @@ spec:
               name: metrics
               protocol: TCP
 ```
-Note the `ports` inside the 'containers' this is important for the podmonitor.  
+
+Note the `ports` inside the 'containers' this is important for the podmonitor.
+
 Pod monitor manifest:
+
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
@@ -56,8 +63,11 @@ spec:
 ```
 
 ### ServiceMonitor
-When we want to scrape a multiple pods using a service we can use the ServiceMonitor resrouce.  
+
+When we want to scrape a multiple pods using a service we can use the ServiceMonitor resrouce.
+
 Example fluentbit service:
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -75,8 +85,11 @@ spec:
       protocol: TCP
       port: 2020
 ```
-Note the `ports` inside the 'spec', this is important for the servicemonitor.  
+
+Note the `ports` inside the 'spec', this is important for the servicemonitor.
+
 Service monitor manifest:
+
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

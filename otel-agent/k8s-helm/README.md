@@ -1,15 +1,15 @@
 # OpenTelemetry Agent
 
-The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data. 
+The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 In this chart, the collector will be deployed as a daemonset, meaning the collector will run as an `agent` on each node. Agent runs in host network mode allowing you to easily send application telemetry data.
 
 The included agent provides:
 
-- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) -  Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
+- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) - Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
 - [Kubernetes Attributes Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) Kubernetes Attributes Processor, enriches data with Kubernetes metadata, such as Deployment information.
 - [Kubernetes Log Collection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) - native Kubernetes Log collection with Opentelemetry Collector. No need to run multiple agents such as fluentd, fluent-bit or filebeat.
 - [Host Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver) - native Linux monitor resource collection agent. No need to run Node exporter or vendor agents.
-- [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) - Fetches running container metrics from the local Kubelet. 
+- [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) - Fetches running container metrics from the local Kubelet.
 - [OTLP Metrics](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) - Send application metrics via OpenTelemetry protocol.
 - Traces - You can send data in various format, such as [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver), [OpenTelemetry Protocol](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) or [Zipkin](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/zipkinreceiver).
 - [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/spanmetricsprocessor) - Traces are converted to Requests, Duration and Error metrics using spanmetrics processor.
@@ -69,15 +69,15 @@ helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemet
 
 Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
 
-| Protocol | Port
-| --- | ---
-| Zipkin | 9411
-| Jaeger GRPC | 6832
-| Jaeger Thrift binary | 6832
-| Jaeger Thrift compact | 6831
-| Jaeger Thrift http | 14268
-| OTLP GRPC | 4317
-| OTLP HTTP | 4318
+| Protocol              | Port  |
+|-----------------------|-------|
+| Zipkin                | 9411  |
+| Jaeger GRPC           | 6832  |
+| Jaeger Thrift binary  | 6832  |
+| Jaeger Thrift compact | 6831  |
+| Jaeger Thrift http    | 14268 |
+| OTLP GRPC             | 4317  |
+| OTLP HTTP             | 4318  |
 
 ### Example Application environment configuration
 
@@ -104,10 +104,10 @@ While the SimpleSpanProcessor submits a span every time a span is finished, the 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector.
 We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
-| Span Processor  | Agent Memory Usage                          | Agent CPU Usage                     | Latency Samples       |
-|---------|------------------------------------------|------------------------------------- | --------------------------------- |
-| SimpleSpanProcessor    |    3.7 GB   | 0.5 | >1m40s |
-| BatchSpanProcessor   | 600 MB  | 0.02 | >1s <10s|
+| Span Processor      | Agent Memory Usage | Agent CPU Usage | Latency Samples |
+|---------------------|--------------------|-----------------|-----------------|
+| SimpleSpanProcessor | 3.7 GB             | 0.5             | >1m40s          |
+| BatchSpanProcessor  | 600 MB             | 0.02            | >1s <10s        |
 
 In addition, it improved the buffer performance of the collector, when we used the SimpleSpanProcessor, the buffer queues were getting full very quickly,
 and after switching to the BatchSpanProcessor, it stopped becoming full all the time, therefore stopped dropping data.

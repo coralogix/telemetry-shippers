@@ -1,12 +1,17 @@
 # Fluent-Bit-HTTP Chart
+
 #### Please read the [main README](https://github.com/coralogix/telemetry-shippers/blob/master/README.md) before following this chart installation.
+
 Fluent-Bit is a lightweight data shipper, that we are using as a logs shipper to our platform.
 Here you can find instructions on how to install the Fluent-Bit shipper, together with the http output plugin to ship the logs to the Coralogix platform.
 The default values we provide can be overriden according to your needs, the default values can be showed by running:
+
 ```bash
 helm show values coralogix-charts-virtual/fluent-bit-http
 ```
+
 ## Default installation
+
 A simple installation with the default values only specifing the correct endpoint.
 By default we set `applicationName` to the log namespace name in k8s and `subsystemName` to the log container name in k8s.
 
@@ -19,6 +24,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
 ```
 
 ## Installation with dynamic app_name and sub_system
+
 Dynamic metadata `app_name` and `sub_system` means that the values for applicationName and subsystemName are coming from any desired field from your logs' structure.
 
 installation using cli only:
@@ -44,7 +50,9 @@ dynamic_metadata:
 fluent-bit:
   endpoint: ingress.eu2.coralogix.com
 ```
-Note - 'kubernetes.namespace_name' and 'kubernetes.container_name' are the fields from which we take the values.  
+
+Note - 'kubernetes.namespace_name' and 'kubernetes.container_name' are the fields from which we take the values.
+
 So for example the value of a field named 'namespace_name' inside the 'kubernetes' field will be application name of this log. If you attempt to use a field name that includes hyphens (-) or slashes (/) you need to use the below alternate variable declaration syntax. Otherwise the LUA code will treat the variable assignment incorrectly, as variables in LUA are not allowed to contain those characters.
 
 ```yaml
@@ -60,6 +68,7 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
 ```
 
 ## Installation with static app_name and sub_system
+
 static metadata `app_name` and `sub_system` means using hard-coded values for applicationName and subsystemName
 
 installation using cli only:
@@ -93,20 +102,23 @@ helm upgrade fluent-bit-http coralogix-charts-virtual/fluent-bit-http \
   --create-namespace \
   -f override-values.yaml
 ```
+
 Note: we can use both static and dynamic at the sametime, static values take precedence.
+
 ## Coralogix Endpoints
 
-| Region  | Logs Endpoint
-|---------|------------------------------------------|
-| EU      | `ingress.coralogix.com`                      |
-| EU2     | `ingress.eu2.coralogix.com`                  |
-| US      | `ingress.coralogix.us`                       |
-| SG      | `ingress.coralogixsg.com`                    |
-| IN      | `ingress.coralogix.in`                       |
+| Region | Logs Endpoint               |
+|--------|-----------------------------|
+| EU     | `ingress.coralogix.com`     |
+| EU2    | `ingress.eu2.coralogix.com` |
+| US     | `ingress.coralogix.us`      |
+| SG     | `ingress.coralogixsg.com`   |
+| IN     | `ingress.coralogix.in`      |
 
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.
 
 ## Dashboard
+
 Under the `dashboard` directory, there is a Fluent-Bit Grafana dashboard that Coralogix supplies.
 Please see [the dashboard README](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/dashboard/README.md) for installation instructions.
