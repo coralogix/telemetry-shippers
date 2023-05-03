@@ -57,7 +57,6 @@ helm repo update
 
 Install the chart:
 
-
 ```bash
 helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralogix \
   -f values.yaml
