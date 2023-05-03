@@ -1,5 +1,7 @@
 version: 1
 timeout: "1m"
+cache:
+  type: 'SQLite'
 
 validators: 
   # Ignore links that includes 'assets' because the generated content will resolve them correctly.
