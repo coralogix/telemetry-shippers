@@ -16,4 +16,8 @@ jobs:
     - uses: actions/setup-go@v4
       with:
         go-version: '${{ env.golang-version }}'
+    - uses: actions/cache@v3
+      with:
+        path: .mdoxcache
+        key: mdoxcache
     - run: make check-docs
