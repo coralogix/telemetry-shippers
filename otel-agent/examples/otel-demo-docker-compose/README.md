@@ -1,8 +1,7 @@
 # OpenTelemetry Demo
 
-The Demo stack here shows how the open-telemetry collector sends data to Coralogix. The stack here serves
-a robust online store with an automatic traffic generator. The basics will send tracing data to be read
-by Coralogix.
+This demo shows how the OpenTelemtry collector sends data to Coralogix. The stack here serves
+a robust online store with an automatic traffic generator. The signals data will be sent to Coralogix backend.
 
 The setup is based on [otel-demo](https://github.com/open-telemetry/opentelemetry-demo/tree/v0.3.1-alpha), which contains services exposing tracing telemetry data from all running platforms:
 * Java
