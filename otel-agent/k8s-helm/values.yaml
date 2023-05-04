@@ -1,5 +1,5 @@
 global:
-  domain: "<domain-here>"
+  domain: ""
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
 
