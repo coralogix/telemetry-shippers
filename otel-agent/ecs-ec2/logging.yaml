@@ -16,6 +16,12 @@ receivers:
         from: attributes["log.file.name"]
         to: resource["log.file.name"]
 
+processors:
+  resourcedetection:
+    detectors: [env, ec2, ecs, docker, system]
+    timeout: 2s
+    override: false
+    
 exporters:
   logging:
   coralogix:
@@ -40,6 +46,7 @@ service:
     logs:
       receivers: 
         - filelog
+      processors:
+        - resourcedetection
       exporters:
-        - logging
         - coralogix
