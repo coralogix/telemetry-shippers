@@ -1,10 +1,11 @@
 global:
+  domain: ""
   traces:
-    endpoint: "<traces-endpoint-here>"
+    endpoint: ""
   metrics:
-    endpoint: "<metrics-endpoint-here>"
+    endpoint: ""
   logs:
-    endpoint: "<logs-endpoint-here>"
+    endpoint: ""
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
 
@@ -14,10 +15,10 @@ opentelemetry-collector:
   clusterRole:
     name: "otel-infrastructure-collector"
     create: true
-    rules: 
-    - apiGroups: ["", "events.k8s.io"]
-      resources: ["events"]
-      verbs: ["watch", "list"]
+    rules:
+      - apiGroups: ["", "events.k8s.io"]
+        resources: ["events"]
+        verbs: ["watch", "list"]
     clusterRoleBinding:
       name: "otel-infrastructure-collector"
   replicaCount: 1
@@ -39,11 +40,11 @@ opentelemetry-collector:
       enabled: false
 
   extraEnvs:
-  - name: CORALOGIX_PRIVATE_KEY
-    valueFrom:
-      secretKeyRef:
-        name: coralogix-keys
-        key: PRIVATE_KEY
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
   config:
     extensions:
       zpages:
@@ -67,6 +68,7 @@ opentelemetry-collector:
       coralogix:
         timeout: "1m"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{.Values.global.domain}}"
         traces:
           endpoint: "{{ .Values.global.traces.endpoint }}"
         metrics:
@@ -74,17 +76,17 @@ opentelemetry-collector:
         logs:
           endpoint: "{{ .Values.global.logs.endpoint }}"
         application_name_attributes:
-        - "k8s.namespace.name" 
-        - "service.namespace"
+          - "k8s.namespace.name"
+          - "service.namespace"
         subsystem_name_attributes:
-        - "k8s.deployment.name"
-        - "k8s.statefulset.name"
-        - "k8s.daemonset.name"
-        - "k8s.cronjob.name"
-        - "k8s.job.name"
-        - "k8s.container.name"
-        - "k8s.node.name"
-        - "service.name"
+          - "k8s.deployment.name"
+          - "k8s.statefulset.name"
+          - "k8s.daemonset.name"
+          - "k8s.cronjob.name"
+          - "k8s.job.name"
+          - "k8s.container.name"
+          - "k8s.node.name"
+          - "service.name"
         application_name: "{{.Values.global.defaultApplicationName }}"
         subsystem_name: "{{.Values.global.defaultSubsystemName }}"
     processors:
@@ -101,9 +103,9 @@ opentelemetry-collector:
             action: upsert
     service:
       extensions:
-      - zpages
-      - health_check
-      - memory_ballast
+        - zpages
+        - health_check
+        - memory_ballast
       telemetry:
         logs:
           encoding: json
@@ -129,7 +131,7 @@ opentelemetry-collector:
           receivers:
             - prometheus
             - otlp
-  tolerations: 
+  tolerations:
     - operator: Exists
 
   resources:
