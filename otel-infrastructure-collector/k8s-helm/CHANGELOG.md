@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.2 / 2023-05-08
+
+* [FEATURE] Allow users to configure Coralogix domain instead of endpoints
+* [CHORE] Update OpenTelemetry Collector to v0.76.1
+
 ### v0.1.0 / 2023-03-20
 
 * [FEATURE] Collecting Kubernetes events
