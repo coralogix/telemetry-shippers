@@ -2,6 +2,7 @@ global:
   domain: ""
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
+  fullnameOverride: otel-coralogix
 
   # Old endpoint based configuration, 
   # please use domain instead.
@@ -12,12 +13,21 @@ global:
   logs:
     endpoint: ""
 
-
+# set distribution to openshift for openshift clusters
+distribution: ""
 opentelemetry-collector:
   mode: daemonset
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
-  fullnameOverride: otel-coralogix
+  fullnameOverride: "otel-coralogix"
   clusterRole:
     name: "otel-coralogix"
     clusterRoleBinding:

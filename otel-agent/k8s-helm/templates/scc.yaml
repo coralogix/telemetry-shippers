@@ -1,0 +1,49 @@
+{{/*
+Default values for SecurityContextConstraints
+*/}}
+
+{{- define "opentelemetry-coralogix.defaultSecurityContextConstraints" -}}
+priority: 10
+allowHostNetwork: true
+allowHostPorts: true
+allowHostPID: true
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowPrivilegedContainer: false
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- hostPath
+- secret
+seLinuxContext:
+  type: RunAsAny
+allowedFlexVolumes: []
+allowedCapabilities: []
+defaultAddCapabilities: []
+fsGroup:
+  type: MustRunAs
+readOnlyRootFilesystem: true
+runAsUser:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+requiredDropCapabilities:
+- ALL
+{{- end -}}
+
+{{- if eq ((.Values.distribution)) "openshift" }}
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: {{.Values.global.fullnameOverride }}
+  labels:
+    app: {{ template "opentelemetry-collector.name" . }}
+    chart: {{ template "opentelemetry-collector.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+users:
+- system:serviceaccount:{{ .Release.Namespace }}:{{.Values.global.fullnameOverride }}
+{{- $config := include "opentelemetry-coralogix.defaultSecurityContextConstraints" . | fromYaml }}
+{{ .Values.securityContextConstraintsOverwrite | mustMergeOverwrite $config | toYaml }}
+{{- end }}
