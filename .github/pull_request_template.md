@@ -2,7 +2,7 @@
 
 <!-- Please describe the changes you made in a few words or sentences. -->
 
-Fixes # <!-- (provide issue number, if applicable; otherwise remove) -->
+<!-- (provide issue number, if applicable; otherwise remove) --> Fixes #
 
 # How Has This Been Tested?
 
