@@ -21,3 +21,45 @@ jobs:
         path: .mdoxcache
         key: mdoxcache
     - run: make check-docs
+  check-changelog-updates:
+    if: github.event.label.name != 'skip changelog'
+    runs-on: ubuntu-latest
+    name: Check changelog update
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: | # Determine where the change occured and run the appropriate check.
+          logs-fluent-bit-coralogix:
+            - 'logs/fluent-bit/k8s-helm/coralogix/**'
+          logs-fluent-bit-http:
+            - 'logs/fluent-bit/k8s-helm/http/**'
+          logs-fluentd-coralogix:
+            - 'logs/fluentd/k8s-helm/coralogix/**'
+          logs-fluentd-http:
+            - 'logs/fluentd/k8s-helm/http/**'
+          otel-agent:
+            - 'otel-agent/k8s-helm/**'
+          otel-infrastructure-collector:
+            - 'otel-infrastructure-collector/k8s-helm/**'
+          metrics-prometheus-agent:
+            - 'metrics/prometheus-agent/**'
+          metrics-prometheus-operator:
+            - 'metrics/prometheus/operator/**'
+      # Look for diff in the changelog file.
+    - name: Logs Changelog
+      if: steps.filter.outputs.logs-fluent-bit-coralogix == 'true' ||
+        steps.filter.outputs.logs-fluent-bit-http == 'true' ||
+        steps.filter.outputs.logs-fluentd-http == 'true' ||
+        steps.filter.outputs.logs-fluentd-http == 'true'
+      run: git diff --exit-code --quiet logs/CHANGELOG.md
+    - name: OpenTelemetry Agent Changelog
+      if: steps.filter.outputs.otel-agent == 'true'
+      run: git diff --exit-code --quiet otel-agent/CHANGELOG.md
+    - name: OpenTelemetry Infrastructure Collector Changelog
+      if: steps.filter.outputs.otel-infrastructure-collector == 'true'
+      run: git diff --exit-code --quiet otel-infrastructure-collector/CHANGELOG.md
+    - name: Prometheus Agent Changelog
+      if: steps.filter.outputs.metrics-prometheus-agent == 'true'
+      run: git diff --exit-code --quiet metrics/prometheus-agent/CHANGELOG.md
