@@ -104,7 +104,6 @@ git commit --amend -s
 
 We require that contributors have signed our Contributor License Agreement (CLA).
 
-⚠️ **Explain how to sign the CLA**
 
 When a contributor submits their first Pull Request, the CLA Bot will step in with a friendly comment on the new pull request, kindly requesting them to sign the [Coralogix's CLA](https://cla-assistant.io/coralogix/telemetry-shippers).
 
