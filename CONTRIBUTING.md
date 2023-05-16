@@ -51,8 +51,6 @@ The best way to reach us with a question when contributing is to ask on the orig
 
 ## Pull Request Lifecycle
 
-⚠️ **Explain your pull request process**
-
 - Open a PR; if it's not finished yet, please make it a draft first
 - Reviewers will be automatically assigned based on code owners
 - Reviewers will get to the PR as soon as possible, but usually within 2 days
@@ -63,47 +61,11 @@ You must have a Helm Chart CLI available in your environment to install the char
 
 If you don't have Helm installed yet, please check the official Helm documentation [here](https://helm.sh/docs/helm/helm_install/).
 
-⚠️ **Explain how to set up a development environment**
-
 ## Sign Your Commits
-
-⚠️ **Keep either the DCO or CLA section depending on which you use**
-
-### DCO
-
-Licensing is important to open source projects. It provides some assurances that
-the software will continue to be available based under the terms that the
-author(s) desired. We require that contributors sign off on commits submitted to
-our project's repositories. The [Developer Certificate of Origin
-(DCO)](https://probot.github.io/apps/dco/) is a way to certify that you wrote and
-have the right to contribute the code you are submitting to the project.
-
-You sign-off by adding the following to your commit messages. Your sign-off must
-match the git user and email associated with the commit.
-
-```
-This is my commit message
-
-Signed-off-by: Your Name <your.name@example.com>
-```
-
-Git has a `-s` command line option to do this automatically:
-
-```
-git commit -s -m 'This is my commit message'
-```
-
-If you forgot to do this and have not yet pushed your changes to the remote
-repository, you can amend your commit with the sign-off by running
-
-```
-git commit --amend -s 
-```
 
 ### CLA
 
 We require that contributors have signed our Contributor License Agreement (CLA).
-
 
 When a contributor submits their first Pull Request, the CLA Bot will step in with a friendly comment on the new pull request, kindly requesting them to sign the [Coralogix's CLA](https://cla-assistant.io/coralogix/telemetry-shippers).
 
