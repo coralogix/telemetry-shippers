@@ -58,4 +58,3 @@ jobs:
     - name: Prometheus Operator Chart
       if: steps.filter.outputs.metrics-prometheus-operator == 'true'
       run: scripts/version_bump_check.sh metrics/prometheus/operator/Chart.yaml
-  
