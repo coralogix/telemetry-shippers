@@ -1,0 +1,72 @@
+name: Install and Lint Charts
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+    - 'metrics/prometheus/operator/values.yaml'
+    - 'metrics/prometheus/operator/Chart.yaml'
+
+env:
+  CHART_VERSION: $(yq eval '.version' prometheus/operator/Chart.yaml)
+  CHART_NAME: prometheus-operator-coralogix
+  ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
+  ARTIFACTORY_USERNAME: integrations-actions
+
+jobs:
+  install-lint-test:
+    strategy:
+      matrix:
+        suite: [fluent-bit, fluentd, prometheus-operator, prometheus-agent, otel-agent, otel-infra]
+        include:
+          - suite: fluent-bit
+            dependency: fluent-bit
+            dependency-chart-repo: https://fluent.github.io/helm-charts
+            chart-path: logs/fluent-bit/k8s-helm/coralogix
+            install-prom-operator-crd: false
+          - suite: fluentd
+            dependency: fluent-bit
+            dependency-chart-repo: https://fluent.github.io/helm-charts
+            chart-path: logs/fluentd/k8s-helm/coralogix
+            install-prom-operator-crd: false
+          - suite: prometheus-operator
+            dependency: kube-prometheus-stack
+            dependency-chart-repo: https://prometheus-community.github.io/helm-charts
+            chart-path: metrics/prometheus/operator
+            install-prom-operator-crd: true
+          - suite: prometheus-agent
+            dependency: ""
+            dependency-chart-repo: ""
+            chart-path: "metrics/prometheus-agent"
+            install-prom-operator-crd: true
+          - suite: otel-agent
+            dependency: "opentelemetry-collector"
+            dependency-chart-repo: "https://open-telemetry.github.io/opentelemetry-helm-charts"
+            chart-path: "otel-agent/k8s-helm"
+            install-prom-operator-crd: false
+          - suite: otel-infra
+            dependency: "opentelemetry-collector"
+            dependency-chart-repo: "https://open-telemetry.github.io/opentelemetry-helm-charts"
+            chart-path: "otel-infrastructure-collector/k8s-helm"
+            install-prom-operator-crd: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          install-prom-operator-crd: ${{ matrix.install-prom-operator-crd }}
+          coralogix-API-key: ${{ secrets.ARTHUR_CORALOGIX_API_KEY }}
+
+      - name: Add Dependencies
+        shell: bash
+        if: ${{ matrix.dependency != '' }}
+        run: |
+          helm repo add ${{ matrix.dependency }} ${{ matrix.dependency-chart-repo }}
+      - name: Install chart
+        run: ct install --charts ${{ matrix.chart-path }} --namespace default

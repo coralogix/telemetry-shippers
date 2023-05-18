@@ -1,0 +1,60 @@
+name: Setup
+description: sets up helm lint and testing environment
+inputs:
+  create-kind-cluster: # id of input
+    description: "Whether or not to create a kind cluster during setup"
+    required: true
+    default: "false"
+  install-prom-operator-crd:
+    description: "Whether or not to install CRDs managed by Prometheus-Operator"
+    required: false
+    default: "false"
+  coralogix-API-key: # Unfortunately composite actions do not read secrets: https://stackoverflow.com/questions/70098241/using-secrets-in-composite-actions-github
+    description: "API Key of the coralogix account used to send telemetry data"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Helm
+      uses: azure/setup-helm@v3.5
+      with:
+        version: v3.9.0
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.7
+
+    - name: Set up chart-testing
+      uses: helm/chart-testing-action@v2.4.0
+
+    - name: Create kind cluster
+      uses: helm/kind-action@v1.5.0
+      if: ${{ inputs.create-kind-cluster == 'true' }}
+      with:
+        node_image: kindest/node:v1.24.12
+
+    - name: Add Coralogix repo
+      shell: bash
+      if: ${{ inputs.create-kind-cluster == 'true' }}
+      run: |
+        helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    - name: Setup coralogix-keys
+      shell: bash
+      if: ${{ inputs.create-kind-cluster == 'true' }}
+      run: |
+        kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=${{ inputs.coralogix-API-key }} -n default
+    - name: Installing Prometheus-Operator CRDs
+      shell: bash
+      if: ${{ inputs.install-prom-operator-crd == 'true' }}
+      run: |
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_alertmanagerconfigs.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_alertmanagers.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_podmonitors.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_probes.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheusagents.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheuses.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_prometheusrules.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_scrapeconfigs.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
+        kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd-full/monitoring.coreos.com_thanosrulers.yaml
