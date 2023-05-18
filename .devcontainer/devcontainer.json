@@ -1,0 +1,12 @@
+{
+    "name": "Telemetry Shippers Workspace",
+    "features": {
+        "ghcr.io/mpriscella/features/kind:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
+        "ghcr.io/mpriscella/features/helm-chart-testing:1": {
+            "version": "latest"
+        }
+    }
+}
