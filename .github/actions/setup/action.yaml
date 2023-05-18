@@ -9,6 +9,10 @@ inputs:
     description: "Whether or not to install CRDs managed by Prometheus-Operator"
     required: false
     default: "false"
+  coralogix-API-key: # Unfortunately composite actions do not read secrets: https://stackoverflow.com/questions/70098241/using-secrets-in-composite-actions-github
+    description: "API Key of the coralogix account used to send telemetry data"
+    required: true
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -40,7 +44,8 @@ runs:
       shell: bash
       if: ${{ inputs.create-kind-cluster == 'true' }}
       run: |
-        kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake-key -n default
+        echo ${{ inputs.coralogix-API-key }}
+        kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=${{ inputs.coralogix-API-key }} -n default
 
     - name: Installing Prometheus-Operator CRDs
       shell: bash
