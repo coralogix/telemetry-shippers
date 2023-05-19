@@ -24,9 +24,13 @@ jobs:
   check-changelog-updates:
     if: github.event.label.name != 'skip changelog'
     runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.number }}
     name: Check changelog update
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - uses: dorny/paths-filter@v2
       id: filter
       with:
@@ -53,13 +57,13 @@ jobs:
         steps.filter.outputs.logs-fluent-bit-http == 'true' ||
         steps.filter.outputs.logs-fluentd-http == 'true' ||
         steps.filter.outputs.logs-fluentd-http == 'true'
-      run: git diff --exit-code --quiet logs/CHANGELOG.md
+      run: scripts/changelog_check.sh --quiet logs
     - name: OpenTelemetry Agent Changelog
       if: steps.filter.outputs.otel-agent == 'true'
-      run: git diff --exit-code --quiet otel-agent/CHANGELOG.md
+      run: scripts/changelog_check.sh otel-agent
     - name: OpenTelemetry Infrastructure Collector Changelog
       if: steps.filter.outputs.otel-infrastructure-collector == 'true'
-      run: git diff --exit-code --quiet otel-infrastructure-collector/CHANGELOG.md
+      run: scripts/changelog_check.sh otel-infrastructure-collector
     - name: Prometheus Agent Changelog
       if: steps.filter.outputs.metrics-prometheus-agent == 'true'
-      run: git diff --exit-code --quiet metrics/prometheus-agent/CHANGELOG.md
+      run: scripts/changelog_check.sh metrics/prometheus-agent

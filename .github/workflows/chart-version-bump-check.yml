@@ -11,8 +11,12 @@ jobs:
   check-chart-version:
     runs-on: ubuntu-latest
     name: Check Helm chart version bump
+    env:
+      PR_NUMBER: ${{ github.event.number }}
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - uses: dorny/paths-filter@v2
       id: filter
       with:
@@ -36,25 +40,25 @@ jobs:
       # Look for `+version` string in the diff to detect if chart has been bumped.
     - name: Fluent-Bit-Coralogix Chart
       if: steps.filter.outputs.logs-fluent-bit-coralogix == 'true'
-      run: scripts/version_bump_check.sh logs/fluent-bit/k8s-helm/coralogix/Chart.yaml
+      run: scripts/version_bump_check.sh logs/fluent-bit/k8s-helm/coralogix
     - name: Fluent-Bit-HTTP Chart
       if: steps.filter.outputs.logs-fluent-bit-http == 'true'
-      run: scripts/version_bump_check.sh logs/fluent-bit/k8s-helm/http/Chart.yaml
+      run: scripts/version_bump_check.sh logs/fluent-bit/k8s-helm/http
     - name: Fluentd-Coralogix Chart
       if: steps.filter.outputs.logs-fluentd-http == 'true'
-      run: scripts/version_bump_check.sh logs/fluentd/k8s-helm/coralogix/Chart.yaml
+      run: scripts/version_bump_check.sh logs/fluentd/k8s-helm/coralogix
     - name: Fluentd-HTTP Chart
       if: steps.filter.outputs.logs-fluentd-http == 'true'
-      run: scripts/version_bump_check.sh logs/fluentd/k8s-helm/http/Chart.yaml
+      run: scripts/version_bump_check.sh logs/fluentd/k8s-helm/http
     - name: OpenTelemetry Agent Chart
       if: steps.filter.outputs.otel-agent == 'true'
-      run: scripts/version_bump_check.sh otel-agent/k8s-helm/Chart.yaml
+      run: scripts/version_bump_check.sh otel-agent/k8s-helm
     - name: OpenTelemetry Infrastructure Collector Chart
       if: steps.filter.outputs.otel-infrastructure-collector == 'true'
-      run: scripts/version_bump_check.sh otel-infrastructure-collector/k8s-helm/Chart.yaml
+      run: scripts/version_bump_check.sh otel-infrastructure-collector/k8s-helm
     - name: Prometheus Agent Chart
       if: steps.filter.outputs.metrics-prometheus-agent == 'true'
-      run: scripts/version_bump_check.sh metrics/prometheus-agent/Chart.yaml
+      run: scripts/version_bump_check.sh metrics/prometheus-agent
     - name: Prometheus Operator Chart
       if: steps.filter.outputs.metrics-prometheus-operator == 'true'
-      run: scripts/version_bump_check.sh metrics/prometheus/operator/Chart.yaml
+      run: scripts/version_bump_check.sh metrics/prometheus/operator
