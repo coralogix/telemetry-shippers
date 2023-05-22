@@ -14,7 +14,7 @@ spec:
   ruleSelector: {}
   walCompression: true
   disableCompaction: false
-  retention: 10d
+  retention: 2h
   containers:
   - args:
     - --config.file=/etc/prometheus/config_out/prometheus.env.yaml
