@@ -32,7 +32,7 @@ kind: Secret
 metadata:
   name: coralogix-keys
   namespace: <the-release-namespace>
-type: Opaque 
+type: Opaque
 ```
 
 ### Coralogix's Endpoints
@@ -60,14 +60,14 @@ global:
 #values.yaml:
 ---
 kube-prometheus-stack:
-  prometheus: 
-    prometheusSpec: 
+  prometheus:
+    prometheusSpec:
       secrets: [] ## important when not using a secret
       remoteWrite:
         - url: '<remote_write_endpoint>'
           name: 'crx'
           remoteTimeout: 120s
-          bearerToken: '<private_key>' 
+          bearerToken: '<private_key>'
 ```
 
 ## Installation
@@ -239,6 +239,10 @@ helm uninstall prometheus-coralogix \
 # Dependencies
 
 This chart uses [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) chart.
+
+<!---
+since version 0.0.2 the Chart was updated to use prometheus-kube-stack v45.30.0 due to deprecation of autoscaling/v1beta object in Kubernetes v1.23+
+-->
 
 ## Example App with Pod Selector:
 
