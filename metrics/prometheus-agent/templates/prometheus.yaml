@@ -9,9 +9,6 @@ metadata:
     app.kubernetes.io/component: prometheus
     release: {{ $.Release.Name | quote }}
 spec:
-  alerting: {}
-  ruleNamespaceSelector: {}
-  ruleSelector: {}
   walCompression: true
   disableCompaction: false
   retention: 2h
