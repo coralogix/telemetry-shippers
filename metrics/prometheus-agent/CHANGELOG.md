@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.14 / 2023-05-22
+* [FIX] Remove non required objects from Prometheus object
+
 ### v0.0.13 / 2023-05-22
 * [FIX] Provide default values for prometheus.monitoring.coreos.com since null values are not allowed
 
