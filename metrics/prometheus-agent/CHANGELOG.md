@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.13 / 2023-05-22
+* [FIX] Provide default values for prometheus.monitoring.coreos.com since null values are not allowed
+
 ### v0.0.12 / 2023-02-20
 * [UPGRADE] Upgrade prometheus version to 2.43.0-stringlabels
 
