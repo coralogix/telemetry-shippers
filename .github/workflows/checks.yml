@@ -1,9 +1,6 @@
 name: checks
 on:
   pull_request:
-  push:
-    branches:
-      - 'master'
 
 jobs:
   check-docs:
@@ -24,8 +21,6 @@ jobs:
   check-changelog-updates:
     if: github.event.label.name != 'skip changelog'
     runs-on: ubuntu-latest
-    env:
-      PR_NUMBER: ${{ github.event.number }}
     name: Check changelog update
     steps:
     - uses: actions/checkout@v2

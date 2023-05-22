@@ -1,18 +1,13 @@
 name: chart-bump-checks
 on:
   pull_request:
-  push:
-    branches: 
-    - master
     paths:
-    - '!**.md' # ignore changes to markdown files
+      - '!**.md' # ignore changes to markdown files
 
 jobs:
   check-chart-version:
     runs-on: ubuntu-latest
     name: Check Helm chart version bump
-    env:
-      PR_NUMBER: ${{ github.event.number }}
     steps:
     - uses: actions/checkout@v2
       with:
