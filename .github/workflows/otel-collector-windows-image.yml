@@ -1,4 +1,4 @@
-name: OpenTelemetry-ECS-EC2
+name: OpenTelemetry-Collector-Contrib-Windows
 
 on:
   push:
@@ -55,4 +55,4 @@ jobs:
           build-args: |
             WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2022
           tags: |
-            ${{ env.DOCKERHUB_REGISTRY }}$:{{ steps.set-image-version.outputs.version }}-windows2022
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}-windows2022
