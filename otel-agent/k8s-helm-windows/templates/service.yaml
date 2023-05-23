@@ -1,4 +1,3 @@
-{{- if or (eq .Values.mode "deployment") (eq .Values.mode "statefulset") (.Values.ingress.enabled) -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -27,7 +26,7 @@ spec:
     {{- end }}
   {{- end }}
   ports: {{ include "opentelemetry-collector.deploymentPortsConfig" . | nindent 4 }}
+  internalTrafficPolicy: {{ include "opentelemetry-collector.serviceInternalTrafficPolicy" . }}
   selector:
     {{- include "opentelemetry-collector.selectorLabels" . | nindent 4 }}
     {{- include "opentelemetry-collector.component" . | nindent 4 }}
-{{- end }}
