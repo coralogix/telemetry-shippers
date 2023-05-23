@@ -1,0 +1,58 @@
+name: OpenTelemetry-ECS-EC2
+
+on:
+  push:
+    branches: master
+    paths:
+    - 'otel-agent/otel-collector-windows-image/Dockerfile'
+    - '.github/workflows/otel-collector-windows-image.yml'
+
+env:
+  DOCKERHUB_REGISTRY: coralogixrepo/opentelemetry-collector-contrib-windows
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # get upstream version from Dockerfile
+      - name: Set image version
+        id: set-image-version
+        run: echo "version=$(grep -Eo '\v([0-9\.]+)' ./otel-agent/otel-collector-windows-image/Dockerfile | cut -f2- -dv)" >> $GITHUB_OUTPUT
+
+      - name: Build And Push Collector Image To Dockerhub (Windows 2019)
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./otel-agent/otel-collector-windows-image/
+          platforms: windows/amd64
+          push: true
+          build-args: |
+            WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:1809
+          tags: |
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}:latest
+
+      - name: Build And Push Collector Image To Dockerhub (Windows 2022)
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./otel-agent/otel-collector-windows-image/
+          platforms: windows/amd64
+          push: true
+          build-args: |
+            WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2022
+          tags: |
+            ${{ env.DOCKERHUB_REGISTRY }}$:{{ steps.set-image-version.outputs.version }}-windows2022
