@@ -3,11 +3,6 @@ global:
 
 kube-prometheus-stack:
   fullnameOverride: prometheus-coralogix
-  # hack in order to bypass issue with kube-prometheus-stack chart which always prints empty labels if not adding this
-  # https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/templates/prometheus/rules-1.14/node-exporter.yaml#L47
-  defaultRules:
-    additionalRuleLabels:
-      app: prometheus-coralogix
   prometheus:
     prometheusSpec:
       ## disable the extra label added to the monitors
