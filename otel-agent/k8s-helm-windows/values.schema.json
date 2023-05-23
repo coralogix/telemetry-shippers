@@ -505,6 +505,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
         "type": {
           "type": "string",
           "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"]
@@ -523,6 +526,10 @@
         },
         "annotations": {
           "type": "object"
+        },
+        "internalTrafficPolicy": {
+          "type": "string",
+          "enum": ["Cluster", "Local", ""]
         }
       }
     },
