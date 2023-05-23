@@ -2,6 +2,9 @@
 
 ## OpenTelemtry Agent for Windows
 
+### v0.0.3 / 2023-05-23
+* Use image from Coralogix Docker Hub instead of the test image.
+
 ### v0.0.2 / 2023-05-23
 * Add Service for DaemonSet, since windows does not support hostnetworking
 * Fix includeCollectorLogs=true breaks configuration.

@@ -2,7 +2,7 @@
 
 This is an (unofficial) Docker image for the OpenTelemetry Collector Contrib distribution, based on the [official OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector-releases/releases) Windows releases.
 
-These images are published on Docker Hub. The tag version always corresponds to the official OpenTelemetry Collector release version.
+These images are published on [Docker Hub](https://hub.docker.com/r/coralogixrepo/opentelemetry-collector-contrib-windows). The tag version always corresponds to the official OpenTelemetry Collector release version.
 
 Depending on your Windows server version you can use images:
 - For Windows 2019: `coralogixrepo/opentelemetry-collector-contrib-windows:latest`, `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>`

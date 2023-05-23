@@ -17,4 +17,4 @@ helm upgrade --install otel-coralogix-agent-windows coralogix-charts-virtual/ope
 
 ## Docker image
 
-To build OpenTelemetry Collector Contrib use [the Dockerfile available in here](https://github.com/coralogix/telemetry-shippers/tree/collector-win-image/otel-agent/windows).
+To build OpenTelemetry Collector Contrib use [the Dockerfile available in here](https://github.com/coralogix/telemetry-shippers/tree/master/otel-agent/otel-collector-windows-image).

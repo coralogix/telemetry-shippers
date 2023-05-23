@@ -207,7 +207,7 @@ config:
           - zipkin
 image:
   # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
-  repository: quay.io/gmat90/otel-collector-contrib-windows
+  repository: coralogixrepo/opentelemetry-collector-contrib-windows
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
