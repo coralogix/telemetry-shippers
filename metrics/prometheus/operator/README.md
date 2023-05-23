@@ -242,6 +242,7 @@ This chart uses [kube-prometheus-stack](https://github.com/prometheus-community/
 
 <!---
 since version 0.0.2 the Chart was updated to use prometheus-kube-stack v45.30.0 due to deprecation of autoscaling/v1beta object in Kubernetes v1.23+
+Additionally in version 45.30.0 there is a bug with recording rules labels hack thus we needed to upgrade to 45.31.* to resolve this (https://github.com/prometheus-community/helm-charts/pull/3400)
 -->
 
 ## Example App with Pod Selector:
