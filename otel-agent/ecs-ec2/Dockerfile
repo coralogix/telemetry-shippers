@@ -1,4 +1,4 @@
-FROM otel/opentelemetry-collector-contrib:0.76.3 as src
+FROM otel/opentelemetry-collector-contrib:0.78.0 as src
 
 FROM alpine:latest
 
