@@ -26,8 +26,6 @@ exporters:
   logging:
   coralogix:
     domain: "$CORALOGIX_DOMAIN"
-    logs:
-      endpoint: "$LOGS_ENDPOINT"
     private_key: "$PRIVATE_KEY"
     application_name: "OTel"
     subsystem_name: "ECS"
