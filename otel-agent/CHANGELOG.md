@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.26 / 2023-05-12
+* [UPGRADE] coralogixrepo/otel-coralogix-ecs-ec2 container version updated to 0.78.0
+
 ### v0.0.25 / 2023-05-12
 
 * [FEATURE] Allow users to set distribution="openshift" for openshift clusters.
