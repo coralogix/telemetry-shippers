@@ -19,7 +19,7 @@ spec:
       serviceAccountName: fluentd-http
       containers:
         - name: fluentd
-          image: "coralogixrepo/coralogix-fluentd-multiarch:v0.0.9"
+          image: "coralogixrepo/coralogix-fluentd-multiarch:v1.15.2"
           imagePullPolicy: IfNotPresent
           env:
             - name: FLUENTD_CONF
