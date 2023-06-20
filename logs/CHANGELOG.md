@@ -42,3 +42,7 @@
 * [UPGRADE] Upgrade Fluent-Bit version to 1.9.3
 * [CHANGE] Set Retry_Limit to False [no limit] to keep retrying send the logs and not lose any data
   ([#48](https://github.com/coralogix/eng-integrations/pull/48))
+
+## Fluentd-http
+
+* [DOWNGRADE] Restoring the image version to 0.0.7 in the 'values.yaml' file
