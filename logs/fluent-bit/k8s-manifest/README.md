@@ -119,11 +119,11 @@ removed for brevity...
 To remove all resources created with manifest files use these commands:
 
 ```bash
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-cm.yaml
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-rbac.yaml
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-svc.yaml
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-ds.yaml
-kubectl delete -f fluentbit-env-cm.yaml
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-cm.yaml -n monitoring
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-rbac.yaml -n monitoring
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-svc.yaml -n monitoring
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-ds.yaml -n monitoring
+kubectl delete -f fluentbit-env-cm.yaml -n monitoring
 ```
 
 The output should be :
