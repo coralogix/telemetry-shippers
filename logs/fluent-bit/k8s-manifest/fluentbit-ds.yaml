@@ -21,7 +21,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: fluent-bit
-          image: "coralogixrepo/coralogix-fluent-bit-multiarch:v0.0.2"
+          image: "coralogixrepo/coralogix-fluent-bit-multiarch:v2.1.3"
           imagePullPolicy: Always
           env:
             - name: HOSTNAME
@@ -34,6 +34,8 @@ spec:
                 name: coralogix-keys
             - configMapRef:
                 name: fluent-bit
+            - configMapRef:
+                name: fluent-bit-env
           ports:
             - name: http
               containerPort: 2020

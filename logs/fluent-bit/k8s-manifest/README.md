@@ -28,19 +28,19 @@ Note: the configmap name is important and is being used by the daemonSet.
 
 change 'ENDPOINT' according to your logs endpoint from the table below.
 
-And apply it:
+And apply it to the monitoring namespace:
 
 ```bash
-kubectl apply -f fluentbit-env-cm.yaml
+kubectl apply -f fluentbit-env-cm.yaml -n monitoring
 ```
 
 Next apply the manifest files in this directory:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-cm.yaml
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-svc.yaml
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-ds.yaml
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-cm.yaml -n monitoring
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-rbac.yaml -n monitoring
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-svc.yaml -n monitoring
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-ds.yaml -n monitoring
 ```
 
 The output should be :
@@ -58,7 +58,7 @@ service/fluent-bit created
 If you have prometheus-operator installed you can also install this service monitor resource:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-svc-monitor.yaml
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluent-bit/k8s-manifest/fluentbit-svc-monitor.yaml -n monitoring
 ```
 
 ## Modifying applicationName and subsystemName
