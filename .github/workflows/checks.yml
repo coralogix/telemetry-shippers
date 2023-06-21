@@ -52,7 +52,7 @@ jobs:
         steps.filter.outputs.logs-fluent-bit-http == 'true' ||
         steps.filter.outputs.logs-fluentd-http == 'true' ||
         steps.filter.outputs.logs-fluentd-http == 'true'
-      run: scripts/changelog_check.sh --quiet logs
+      run: scripts/changelog_check.sh logs
     - name: OpenTelemetry Agent Changelog
       if: steps.filter.outputs.otel-agent == 'true'
       run: scripts/changelog_check.sh otel-agent
