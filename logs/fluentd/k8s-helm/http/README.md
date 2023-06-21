@@ -88,3 +88,32 @@ By default this chart installs additional dependent chart:
 ## Coralogix Fluentd Buffer Alert
 
 In order to create an alert on Fluentd buffer in Coralogix, please see [coralogix-alert doc](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/docs/coralogix-alerts.md)
+
+
+## Log Logs: containerd / CRI partial logs
+
+If your application is generating logs longer than 16k you should notice that docker dirver is splitting the log in multiple messages.
+To fix this we can use concat to fix this.
+
+First lets make sure that in the override file, that you use to deploy the helm, has logtag as one of the regex group keys, just like this.
+
+```yaml
+<pattern>
+  format /^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$/
+  time_format %Y-%m-%dT%H:%M:%S.%L%z
+  keep_time_key true
+</pattern>
+```
+If that is not the case please replace the existing one with this one.
+
+Then next to the source we will add the following filter that will concat the logs:
+
+```yaml
+<filter raw.containers.**>
+  @type concat
+  key message
+  use_partial_cri_logtag true
+  partial_cri_logtag_key logtag
+  partial_cri_stream_key stream
+</filter>
+```
