@@ -1,6 +1,10 @@
 # Changelog
 
-## Fluentd-http
+## Fluentd
+
+### v1.15.2 / 2023-06-20
+
+* [DOWNGRADE] Restoring the image version to 0.0.7 in the Fluentd Helm (Coralogix Plugin) 'values.yaml' file
 
 ### v1.15.2 / 2023-06-16
 
@@ -24,6 +28,15 @@
 
 ## Fluent-Bit
 
+### v2.1.3 / 2023-06-21
+
+* [UPGRADE] Upgrade Fluent-bit version to 2.1.3
+* [UPGRADE] Upgrade upstream Fluent-Bit helm chart dependency version to 0.30.4
+* [CHANGE] Updated version scheme to map to upstream version
+* [FIX] Updated Helm documentation to ensure deployment to "monitoring" namespace
+* [FIX] Updated kubernetes deployment luascript to avoid excessive errors in pod logs
+* [FIX] Updated kubernetes daemonset to consume fluent-bit-env configmap
+
 ### v0.1.0 / 2023-02-03
 
 * [UPGRADE] Upgrade Fluent-bit version to 2.0.8
@@ -42,7 +55,3 @@
 * [UPGRADE] Upgrade Fluent-Bit version to 1.9.3
 * [CHANGE] Set Retry_Limit to False [no limit] to keep retrying send the logs and not lose any data
   ([#48](https://github.com/coralogix/eng-integrations/pull/48))
-
-## Fluentd-http
-
-* [DOWNGRADE] Restoring the image version to 0.0.7 in the 'values.yaml' file
