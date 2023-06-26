@@ -36,6 +36,9 @@ opentelemetry-collector:
     logsCollection:
       enabled: true
       storeCheckpoints: true
+      maxRecombineLogSize: 1048576
+      extraFilelogOperators: []
+
     kubernetesAttributes:
       enabled: true
     hostMetrics:

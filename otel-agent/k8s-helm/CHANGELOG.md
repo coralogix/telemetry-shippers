@@ -2,11 +2,12 @@
 
 ## OpenTelemtry-Agent
 
-### v0.0.27 / 2023-05-24
-* [CHORE] Updated default otel agent config.yaml for ecs to support the new domain key for the Coralogix exporter
+### v0.0.26 / 2023-06-26
 
-### v0.0.26 / 2023-05-24
-* [UPGRADE] coralogixrepo/otel-coralogix-ecs-ec2 container version updated to 0.78.0
+* [CHORE] Update OpenTelemetry Collector to v0.77.0
+* [FEATURE] Change subchart to Coralogix
+* [FEATURE] logscollection preset support CRI multilog recombination
+* [FEATURE] logsCollection presets supports extra operators.
 
 ### v0.0.25 / 2023-05-12
 
