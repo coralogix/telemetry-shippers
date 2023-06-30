@@ -9,4 +9,4 @@ echo "${CONFIG_PATH}:"
 cat ${CONFIG_PATH}
 
 # run otel agent
-exec /otelcontribcol --config ${CONFIG_PATH}
+exec /cora-otel-ecs-ec2 --config ${CONFIG_PATH}
