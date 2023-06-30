@@ -11,6 +11,7 @@ receivers:
       - /hostfs/var/lib/docker/containers/*/*.log
     include_file_path: true
 
+    # add log.file.name to resource attributes
     operators:
       - type: move
         from: attributes["log.file.name"]
@@ -18,9 +19,11 @@ receivers:
 
 processors:
   resourcedetection:
-    detectors: [env, ec2, ecs, docker, system]
+    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecslogresourcedetection for logs
     timeout: 2s
     override: false
+
+  ecslogresourcedetection:
     
 exporters:
   logging:
@@ -46,5 +49,6 @@ service:
         - filelog
       processors:
         - resourcedetection
+        - ecslogresourcedetection
       exporters:
         - coralogix
