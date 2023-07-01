@@ -8,7 +8,7 @@ This guide shows the process for deploying Open Telemetry to ECS to fascilitate 
 
 ### Image
 
-This implementation utilises an image (**coralogixrepo/otel-coralogix-ecs-ec2**) which is a custom distribution based on the official Open Telemetry Contrib image. As of version 0.80.0, it also includes our [ecslogresourcedetection processor](./ecslogresourcedetectionprocessor/README.md).
+This implementation utilises an image [(**coralogixrepo/otel-coralogix-ecs-ec2**)](https://hub.docker.com/r/coralogixrepo/otel-coralogix-ecs-ec2/tags) which is a custom distribution based on the official Open Telemetry Contrib image. As of version 0.80.0, it also includes our [ecslogresourcedetection processor](./ecslogresourcedetectionprocessor/README.md).
 
 ### Required
 
@@ -61,5 +61,3 @@ Once the template is deployed successfully, you can verify if the container is r
 ```sh
 ecs-cli ps --region <region> -c <cluster name>
 ```
-<br>
-
