@@ -1,0 +1,3 @@
+{{- if and (eq .Values.global.domain "") (and (eq .Values.global.traces.endpoint "") (eq .Values.global.metrics.endpoint "") (eq .Values.global.logs.endpoint "")) }}
+{{- fail "[ERROR] Either domain or one of the traces.endpoint, metrics.endpoint or logs.endpoint must be specified." }}
+{{ end }}

@@ -2,9 +2,14 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.28 / 2023-07-03
+
+* [FEATURE] Add domain validation via `NOTES.txt`.
+* [FIX] Remove mistakenly added default domain in `values-crd.yaml` file.
+
 ### v0.0.27 / 2023-06-30
 
-* [FEATURE] Add support for deploying `otel-agent` as OpenTelemetry Operator CRD.
+* [FEATURE] Add support for deploying `otel-agent` as OpenTelemetry Operator
 
 ### v0.0.26 / 2023-06-26
 

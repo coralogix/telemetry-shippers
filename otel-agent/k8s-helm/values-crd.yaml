@@ -1,5 +1,5 @@
 global:
-  domain: "coralogix.com"
+  domain: ""
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
   fullnameOverride: otel-coralogix
