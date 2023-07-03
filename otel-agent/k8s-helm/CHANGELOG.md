@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.27 / 2023-06-30
+
+* [FEATURE] Add support for deploying `otel-agent` as OpenTelemetry Operator CRD.
+
 ### v0.0.26 / 2023-06-26
 
 * [CHORE] Update OpenTelemetry Collector to v0.77.0
