@@ -21,8 +21,7 @@ const (
 
 type metadataHandler struct {
 	sync.Mutex
-	endpoints  map[string][]string
-	socketPath string
+	endpoints map[string][]string
 }
 
 func (m *metadataHandler) get(key string) ([]string, bool) {
