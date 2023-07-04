@@ -58,7 +58,6 @@ func (f *factory) createLogsProcessor(
 	// create logger
 	logger := set.TelemetrySettings.Logger
 
-	// do something with comfig here
 	// TODO: add config validation
 	config, ok := cfg.(*Config)
 	if !ok {
