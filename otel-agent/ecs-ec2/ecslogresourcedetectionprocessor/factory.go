@@ -27,7 +27,6 @@ type factory struct{}
 
 // NewFactory creates a factory for the routing processor.
 func NewFactory() processor.Factory {
-	// fmt.Println("NewFactory for ecslogresourcedetectionprocessor")
 	f := &factory{}
 
 	return processor.NewFactory(
@@ -39,7 +38,6 @@ func NewFactory() processor.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		// HTTPClientSettings: confighttp.HTTPClientSettings{},
 		Attributes: []string{
 			// by default, we collect all tribute nameaå that start with:
 			// ecs, name, image or docker

@@ -78,7 +78,6 @@ func mockMetadataEndpoint(w http.ResponseWriter, r *http.Request) {
 	var m map[string]any
 	json.Unmarshal([]byte(payload), &m)
 	sc := http.StatusOK
-	// w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(sc)
 	json.NewEncoder(w).Encode(m)
 }
@@ -210,7 +209,6 @@ func TestProcessLogFunc(t *testing.T) {
 
 			var matches int
 			result.ResourceLogs().At(0).Resource().Attributes().Range(func(k string, v pcommon.Value) bool {
-				// fmt.Println(k, v.AsString())
 				if regexp.MustCompile(tt.match).MatchString(k) {
 					matches += 1
 				}
