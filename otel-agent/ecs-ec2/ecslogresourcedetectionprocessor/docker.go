@@ -97,8 +97,6 @@ func (m *metadataHandler) start(logger *zap.Logger) {
 	}()
 }
 
-func (m *metadataHandler) shutdown() {}
-
 func isECSAgent(containerID string) (isAgent bool, err error) {
 	// Initialize Docker client
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
