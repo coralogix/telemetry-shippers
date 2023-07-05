@@ -5,10 +5,6 @@ import (
 )
 
 type Config struct {
-	// // HTTP client settings for the detector
-	// // Timeout default is 5s
-	// confighttp.HTTPClientSettings `mapstructure:",squash"`
-
 	// Attributes is a list of attribute pattern to be added to the resource
 	Attributes []string `mapstructure:"attributes"`
 }
