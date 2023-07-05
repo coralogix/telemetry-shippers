@@ -2,7 +2,7 @@ dist:
   name: cora-otel-ecs-ec2
   output_path: ./cmd
   description: Coralogix ECS EC2 Open Telemetry Contrib binary.
-  version: 0.78.0
+  version: 0.80.0
 
 processors:
   # add ecslogresourcedetectionprocessor
