@@ -19,11 +19,11 @@ receivers:
 
 processors:
   resourcedetection:
-    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecslogresourcedetection for logs
+    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecslogattributes for logs
     timeout: 2s
     override: false
 
-  ecslogresourcedetection:
+  ecslogattributes:
     
 exporters:
   logging:
@@ -48,6 +48,6 @@ service:
         - filelog
       processors:
         - resourcedetection
-        - ecslogresourcedetection
+        - ecslogattributes
       exporters:
         - coralogix

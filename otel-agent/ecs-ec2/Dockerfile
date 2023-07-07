@@ -1,9 +1,9 @@
 FROM golang:1.19-alpine as builder
 
-ADD ./ecslogresourcedetectionprocessor /go/src/ecslogresourcedetectionprocessor
+ADD ./ecslogattributesprocessor /go/src/ecslogattributesprocessor
 RUN  go install go.opentelemetry.io/collector/cmd/builder@latest
 
-WORKDIR /go/src/ecslogresourcedetectionprocessor
+WORKDIR /go/src/ecslogattributesprocessor
 
 RUN apk update && apk add --no-cache gcc musl-dev linux-headers
 
@@ -16,7 +16,7 @@ RUN apk update && apk add --no-cache ca-certificates
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x entrypoint.sh
 
-COPY --from=builder /go/src/ecslogresourcedetectionprocessor/cmd/cora-otel-ecs-ec2 /cora-otel-ecs-ec2
+COPY --from=builder /go/src/ecslogattributesprocessor/cmd/cora-otel-ecs-ec2 /cora-otel-ecs-ec2
 EXPOSE 4318 4317 55679
 
 ENTRYPOINT [ "/entrypoint.sh" ]
