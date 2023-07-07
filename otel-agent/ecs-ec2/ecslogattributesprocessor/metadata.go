@@ -54,7 +54,7 @@ type Volume struct {
 	Source      string `json:"Source" flat:"source"`
 }
 
-// Flat - returns flat map representation of the metadata structure
+// Flat - returns flat map representation of the metadata structure, using the "flat" tag
 func (m *Metadata) Flat() map[string]interface{} {
 	result := make(map[string]interface{})
 	flattenType("", reflect.ValueOf(*m), result)
