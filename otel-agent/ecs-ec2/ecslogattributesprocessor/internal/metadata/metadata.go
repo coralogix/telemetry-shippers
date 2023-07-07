@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	Type = "ecslogresourcedetection"
+	Type = "ecslogattributes"
 	// TracesStability  = component.StabilityLevelBeta
 	// MetricsStability = component.StabilityLevelBeta
 	LogsStability = component.StabilityLevelBeta

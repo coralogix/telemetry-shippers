@@ -1,4 +1,4 @@
-package ecslogresourcedetectionprocessor
+package ecslogattributesprocessor
 
 import (
 	"context"
@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 
-	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogresourcedetectionprocessor/internal/metadata"
-	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogresourcedetectionprocessor/internal/utils"
+	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogattributesprocessor/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/processor/processorhelper"
@@ -47,53 +45,28 @@ func processLogsFunc(logger *zap.Logger, c *Config) processorhelper.ProcessLogsF
 				return ld, err
 			}
 
-			var data map[string]interface{}
-			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			var metadata Metadata
+			if err := json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
 				return ld, err
 			}
 
 			// flatten the data
-			flattened := make(map[string]interface{})
-			utils.Flatten(data, "", flattened)
+			flattened := metadata.Flat()
 
 			for k, v := range flattened {
-				formattedKey := formatLabel(k)
-				ok, err := c.allowAttr(formattedKey)
+				ok, err := c.allowAttr(k)
 				if err != nil {
 					return ld, err
 				}
 
 				if ok {
 					rlog.Resource().Attributes().
-						PutStr(formattedKey, fmt.Sprintf("%v", v))
+						PutStr(k, fmt.Sprintf("%v", v))
 				}
 			}
 		}
 		return ld, nil
 	}
-}
-
-func formatLabel(k string) (formatedKey string) {
-	formatedKey = k
-	reg := regexp.MustCompile(`Labels.com.amazonaws.|Labels.`)
-	if reg.MatchString(k) {
-		formatedKey = reg.ReplaceAllString(k, "")
-	}
-
-	reg = regexp.MustCompile(`(^[A-Z].*[a-z])([A-Z]{2,})`)
-	if reg.MatchString(k) {
-		formatedKey = reg.ReplaceAllString(k, "${1}.${2}")
-	}
-
-	reg = regexp.MustCompile(`(^[A-Z].*[a-z0-9])([A-Z]{1,}[a-z].*)`)
-	if reg.MatchString(k) {
-		formatedKey = reg.ReplaceAllString(k, "${1}.${2}")
-	}
-
-	// convert to lower case and replace all - with .
-	formatedKey = strings.ReplaceAll(formatedKey, "-", ".")
-	formatedKey = strings.ToLower(formatedKey)
-	return
 }
 
 func getContainerId(rlog *plog.ResourceLogs) (id string) {

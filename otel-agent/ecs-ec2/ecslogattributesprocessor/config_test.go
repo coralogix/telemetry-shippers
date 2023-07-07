@@ -1,4 +1,4 @@
-package ecslogresourcedetectionprocessor
+package ecslogattributesprocessor
 
 import (
 	"path/filepath"

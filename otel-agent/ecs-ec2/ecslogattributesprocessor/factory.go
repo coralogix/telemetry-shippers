@@ -1,10 +1,10 @@
-package ecslogresourcedetectionprocessor
+package ecslogattributesprocessor
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogresourcedetectionprocessor/internal/metadata"
+	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogattributesprocessor/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
@@ -15,7 +15,7 @@ import (
 
 const (
 	// The value of "type" key in configuration.
-	typeStr = "ecslogresourcedetectionprocessor"
+	typeStr = "ecslogattributesprocessor"
 )
 
 var (

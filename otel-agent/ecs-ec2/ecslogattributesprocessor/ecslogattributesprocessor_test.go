@@ -1,4 +1,4 @@
-package ecslogresourcedetectionprocessor
+package ecslogattributesprocessor
 
 import (
 	"context"
@@ -96,37 +96,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestFormatLabels(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    "Labels.com.amazonaws.ecs.cluster",
-			expected: "ecs.cluster",
-		},
-		{
-			input:    "ContainerARN",
-			expected: "container.arn",
-		},
-		{
-			input:    "Networks.0.IPv4Addresses.0",
-			expected: "networks.0.ipv4.addresses.0",
-		},
-		{
-			input:    "Image",
-			expected: "image",
-		},
-	}
-
-	for _, test := range tests {
-		result := formatLabel(test.input)
-		if result != test.expected {
-			t.Errorf("Input: %s\nExpected: %s\nGot: %s\n", test.input, test.expected, result)
-		}
-	}
-}
-
 func TestMetadataHandlerGet(t *testing.T) {
 	v, ok := ecsMetadataHandler.get("0123456789")
 	assert.True(t, ok)
@@ -165,7 +134,7 @@ func TestProcessLogFunc(t *testing.T) {
 		},
 		{
 			name: "fetch all attributes",
-			len:  33,
+			len:  31,
 			config: &Config{
 				Attributes: []string{
 					".*",
@@ -217,7 +186,7 @@ func TestProcessLogFunc(t *testing.T) {
 
 			assert.Equal(t, tt.len, matches)
 			numOfAttributes := result.ResourceLogs().At(0).Resource().Attributes().Len()
-			if numOfAttributes < 33 {
+			if numOfAttributes < 31 {
 				assert.Equal(t, tt.len+1, numOfAttributes)
 			}
 

@@ -1,4 +1,4 @@
-# The ecslogresourcedetection Processor
+# The ecslogattributes Processor
 
 ---
 
@@ -35,7 +35,7 @@ The coralogixrepo/otel-coralogix-ecs-ec2 docker image includes an Open Telemetry
 | `networks.*.ipv4.addresses.*` | An expression that matches the IP address(s) assigned to a container                |         |
 | `networks.*.network.mode`     | An expression that matches the network mode(s) associated with the container        |         |
 
-The ECS Agent container does not have a metadata endpoint. The ecslogresourcedetection processor will automatically detect ECS Agent container and assign the following attribute:
+The ECS Agent container does not have a metadata endpoint. The ecslogattributes processor will automatically detect ECS Agent container and assign the following attribute:
 
 | Attribute | Value |
 |-----------|-------|
@@ -43,7 +43,7 @@ The ECS Agent container does not have a metadata endpoint. The ecslogresourcedet
 
 ### Config
 
-The ecslogresourcedetection processor is enabled by adding the keyword `ecslogresourcedetection` to the `processors` section of the configuration file. The processor can be configured using the following options:
+The ecslogattributes processor is enabled by adding the keyword `ecslogattributes` to the `processors` section of the configuration file. The processor can be configured using the following options:
 
 | Config     | Description                                                              |
 |------------|--------------------------------------------------------------------------|
@@ -53,14 +53,14 @@ The following config, will collect all the [default attributes](#attributes).
 
 ```yaml
 processors:
-  ecslogresourcedetection:
+  ecslogattributes:
 ```
 
 You can specify which attributes should be collected by using the `attributes` option which represents a list of regex patterns that match specific or multiple attribute keys.
 
 ```yaml
 processors:
-  ecslogresourcedetection:
+  ecslogattributes:
     attributes:
       - '^ecs.*' # all attributes that start with ecs
       - '^docker.*' # all attributes that start with docker

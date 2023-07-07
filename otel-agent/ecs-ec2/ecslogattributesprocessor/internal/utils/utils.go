@@ -5,7 +5,7 @@ import (
 )
 
 // FlattenMap flattens a map[string]interface{} into a map[string]interface{}.
-func Flatten(input map[string]interface{}, currentPath string, output map[string]interface{}) {
+func Flatten(input map[string]any, currentPath string, output map[string]interface{}) {
 	for key, value := range input {
 		newKey := key
 		if currentPath != "" {

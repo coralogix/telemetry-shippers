@@ -1,4 +1,4 @@
-package ecslogresourcedetectionprocessor
+package ecslogattributesprocessor
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogresourcedetectionprocessor/internal/metadata"
+	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogattributesprocessor/internal/metadata"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"go.uber.org/zap"
