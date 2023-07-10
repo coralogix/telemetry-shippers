@@ -89,7 +89,6 @@ By default this chart installs additional dependent chart:
 
 In order to create an alert on Fluentd buffer in Coralogix, please see [coralogix-alert doc](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/docs/coralogix-alerts.md)
 
-
 ## Log Logs: containerd / CRI partial logs
 
 If your application is generating logs longer than 16k, you should note that the Docker driver will split the logs into multiple messages.
@@ -104,6 +103,7 @@ First ensure that in the override file used to deploy the Helm chart has `logtag
   keep_time_key true
 </pattern>
 ```
+
 If that is not the case please replace the existing one with this one.
 
 Then, next to the source, you'll need to add the following filter that will concat the logs:
