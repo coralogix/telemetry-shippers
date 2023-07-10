@@ -92,7 +92,7 @@ In order to create an alert on Fluentd buffer in Coralogix, please see [coralogi
 
 ## Log Logs: containerd / CRI partial logs
 
-If your application is generating logs longer than 16k you should notice that docker dirver is splitting the log in multiple messages.
+If your application is generating logs longer than 16k, you should note that the Docker driver will split the logs into multiple messages.
 To fix this we can use concat to fix this.
 
 First lets make sure that in the override file, that you use to deploy the helm, has logtag as one of the regex group keys, just like this.
