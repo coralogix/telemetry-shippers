@@ -106,7 +106,7 @@ First ensure that in the override file used to deploy the Helm chart has `logtag
 ```
 If that is not the case please replace the existing one with this one.
 
-Then next to the source we will add the following filter that will concat the logs:
+Then, next to the source, you'll need to add the following filter that will concat the logs:
 
 ```yaml
 <filter raw.containers.**>
