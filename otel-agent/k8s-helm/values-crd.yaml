@@ -17,21 +17,13 @@ global:
 distribution: ""
 opentelemetry-collector:
   mode: daemonset
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: ""
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
   fullnameOverride: "otel-coralogix"
-  clusterRole:
-    name: "otel-coralogix"
-    clusterRoleBinding:
-      name: "otel-coralogix"
   presets:
     logsCollection:
       enabled: true

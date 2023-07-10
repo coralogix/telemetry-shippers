@@ -33,7 +33,7 @@ prometheus:
       - new-service-discovery-manager
     image: 
       repository: quay.io/prometheus/prometheus
-      tag: v2.43.0-stringlabels
+      tag: v2.45.0
     enableAdminAPI: true
     logFormat: json
     logLevel: warn

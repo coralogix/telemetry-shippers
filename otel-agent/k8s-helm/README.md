@@ -41,6 +41,12 @@ metadata:
 type: Opaque 
 ```
 
+### OpenTelemetry Operator (for CRD users)
+
+If you wish to use the Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
+
+We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
+
 ## Installation
 
 First make sure to add our Helm charts repository to the local repos list with the following command:
@@ -60,6 +66,31 @@ Install the chart:
 ```bash
 helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralogix \
   -f values.yaml
+```
+
+### Generating OpenTelemetryCollector CRD for OpenTelemetry Operator users
+
+If you wish to deploy the `otel-agent` using the OpenTelemetry Operator, you can generate an `OpenTelemetryCollector` CRD. You might want to do this if you'd like to take advantage of some advanced features provided by the operator, such as automatic collector upgrade or CRD-defined auto-instrumentation.
+
+For full details on how to install and use the operator, please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md).
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the CRD `values.yaml` file:
+
+```bash
+helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemetry-coralogix \
+  -f values-crd.yaml
 ```
 
 # How to use it
