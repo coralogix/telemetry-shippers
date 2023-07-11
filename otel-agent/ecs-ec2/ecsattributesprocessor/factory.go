@@ -1,10 +1,10 @@
-package ecslogattributesprocessor
+package ecsattributesprocessor
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogattributesprocessor/internal/metadata"
+	"github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecsattributesprocessor/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
@@ -15,7 +15,7 @@ import (
 
 const (
 	// The value of "type" key in configuration.
-	typeStr = "ecslogattributesprocessor"
+	typeStr = "ecsattributesprocessor"
 )
 
 var (
@@ -41,7 +41,7 @@ func createDefaultConfig() component.Config {
 		Attributes: []string{
 			// by default, we collect all tribute nameaå that start with:
 			// ecs, name, image or docker
-			"^ecs.*|^image.*|^docker.*",
+			"^aws.ecs.*|^image.*|^docker.*",
 		},
 	}
 }
@@ -60,6 +60,10 @@ func (f *factory) createLogsProcessor(
 	config, ok := cfg.(*Config)
 	if !ok {
 		return nil, fmt.Errorf("invalid config for processor %s", typeStr)
+	}
+
+	if err := config.validate(); err != nil {
+		return nil, err
 	}
 
 	return processorhelper.NewLogsProcessor(
