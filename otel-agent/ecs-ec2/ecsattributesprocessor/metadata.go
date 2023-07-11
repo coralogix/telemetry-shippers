@@ -1,4 +1,4 @@
-package ecslogattributesprocessor
+package ecsattributesprocessor
 
 import (
 	"fmt"
@@ -8,14 +8,14 @@ import (
 )
 
 type Metadata struct {
-	ContainerARN  string    `json:"ContainerARN" flat:"container.arn"`
+	ContainerARN  string    `json:"ContainerARN" flat:"aws.ecs.container.arn"`
 	CreatedAt     time.Time `json:"CreatedAt" flat:"created.at"`
 	DesiredStatus string    `json:"DesiredStatus" flat:"desired.status"`
 	DockerID      string    `json:"DockerId" flat:"docker.id"`
 	DockerName    string    `json:"DockerName" flat:"docker.name"`
 	Image         string    `json:"Image" flat:"image"`
 	ImageID       string    `json:"ImageID" flat:"image.id"`
-	KnownStatus   string    `json:"KnownStatus" flat:"known.status"`
+	KnownStatus   string    `json:"KnownStatus" flat:"aws.ecs.task.known.status"`
 	Labels        Labels    `json:"Labels" flat:""`
 	Limits        struct {
 		CPU    int `json:"CPU" flat:"cpu"`
@@ -30,11 +30,11 @@ type Metadata struct {
 }
 
 type Labels struct {
-	ComAmazonawsEcsCluster               string `json:"com.amazonaws.ecs.cluster" flat:"ecs.cluster"`
-	ComAmazonawsEcsContainerName         string `json:"com.amazonaws.ecs.container-name" flat:"ecs.container.name"`
-	ComAmazonawsEcsTaskArn               string `json:"com.amazonaws.ecs.task-arn" flat:"ecs.task.arn"`
-	ComAmazonawsEcsTaskDefinitionFamily  string `json:"com.amazonaws.ecs.task-definition-family" flat:"ecs.task.definition.family"`
-	ComAmazonawsEcsTaskDefinitionVersion string `json:"com.amazonaws.ecs.task-definition-version" flat:"ecs.task.definition.version"`
+	ComAmazonawsEcsCluster               string `json:"com.amazonaws.ecs.cluster" flat:"aws.ecs.cluster"`
+	ComAmazonawsEcsContainerName         string `json:"com.amazonaws.ecs.container-name" flat:"aws.ecs.container.name"`
+	ComAmazonawsEcsTaskArn               string `json:"com.amazonaws.ecs.task-arn" flat:"aws.ecs.task.arn"`
+	ComAmazonawsEcsTaskDefinitionFamily  string `json:"com.amazonaws.ecs.task-definition-family" flat:"aws.ecs.task.definition.family"`
+	ComAmazonawsEcsTaskDefinitionVersion string `json:"com.amazonaws.ecs.task-definition-version" flat:"aws.ecs.task.definition.version"`
 }
 
 type Network struct {
