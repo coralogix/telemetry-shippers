@@ -5,8 +5,8 @@ dist:
   version: 0.80.0
 
 processors:
-  # add ecslogattributesprocessor
-  - gomod: "github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogattributesprocessor v0.0.0"
+  # add ecsattributesprocessor
+  - gomod: "github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecsattributesprocessor v0.0.0"
     path: "./"
 
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.78.0
