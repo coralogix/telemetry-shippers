@@ -8,7 +8,7 @@ This guide shows the process for deploying Open Telemetry to ECS to fascilitate 
 
 ### Image
 
-This implementation utilises an image [(**coralogixrepo/otel-coralogix-ecs-ec2**)](https://hub.docker.com/r/coralogixrepo/otel-coralogix-ecs-ec2/tags) which is a custom distribution based on the official Open Telemetry Contrib image. As of version 0.80.0, it also includes our [ecslogattributes processor](./ecslogattributesprocessor/README.md).
+This implementation utilises an image [(**coralogixrepo/otel-coralogix-ecs-ec2**)](https://hub.docker.com/r/coralogixrepo/otel-coralogix-ecs-ec2/tags) which is a custom distribution based on the official Open Telemetry Contrib image. As of version 0.80.0, it also includes our [ecsattributes processor](./ecsattributes/README.md).
 
 ### Required
 
