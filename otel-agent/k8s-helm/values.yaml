@@ -38,7 +38,10 @@ opentelemetry-collector:
       storeCheckpoints: true
       maxRecombineLogSize: 1048576
       extraFilelogOperators: []
-
+#     - type: recombine
+#       combine_field: body
+#       source_identifier: attributes["log.file.path"]
+#       is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
     kubernetesAttributes:
       enabled: true
     hostMetrics:
