@@ -3,7 +3,7 @@ receivers:
     start_at: beginning
     include_file_name: true
     include: 
-      - /Users/shauncoralogix/Projects/opentelemetry-collector-contrib/processor/ecslogattributesprocessor/testdata/*.log
+      - testdata/*.log
     operators:
       - type: move
         from: attributes["log.file.name"]
@@ -11,11 +11,16 @@ receivers:
 
 
 processors:
-  ecslogattributes:
+  ecsattributes:
     attributes:
-      - "ecs.*"
-      - "image*"
+      - "^aws.ecs.*"
+      - "^image*"
       - "^name"
+    container_id:
+      sources:
+        - "log.file.name"
+        - "container.id"
+
 
 exporters:
   logging:
@@ -42,7 +47,7 @@ service:
       receivers:
       - filelog
       processors:
-      - ecslogattributes
+      - ecsattributes
       exporters:
       - logging
       - coralogix
