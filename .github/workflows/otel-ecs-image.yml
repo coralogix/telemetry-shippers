@@ -36,7 +36,7 @@ jobs:
         id: set-image-version
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.dist.version' ./otel-agent/ecs-ec2/ecslogattributesprocessor/builder.yaml
+          cmd: yq -i '.dist.version' ./otel-agent/ecs-ec2/ecsattributesprocessor/builder.yaml
 
       - name: Build And Push otel Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
