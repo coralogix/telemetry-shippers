@@ -1,4 +1,4 @@
-package ecslogattributesprocessor
+package ecsattributesprocessor
 
 import (
 	"path/filepath"
