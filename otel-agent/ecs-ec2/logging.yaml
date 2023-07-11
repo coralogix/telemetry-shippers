@@ -4,10 +4,6 @@ receivers:
 
     # note that the host filesystem is mounted at /hostfs
     include:
-      - /hostfs/var/log/*.log
-      - /hostfs/var/log/messages
-      - /hostfs/var/log/dmesg
-      - /hostfs/var/log/xm/*.log
       - /hostfs/var/lib/docker/containers/*/*.log
     include_file_path: true
 
@@ -19,11 +15,16 @@ receivers:
 
 processors:
   resourcedetection:
-    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecslogattributes for logs
+    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecsattributes for logs
     timeout: 2s
     override: false
 
-  ecslogattributes:
+  ecsattributes:
+    # add container ID sources
+    container_id:
+      sources:
+        - "log.file.name"
+        - "container.id"
     
 exporters:
   logging:
@@ -48,6 +49,6 @@ service:
         - filelog
       processors:
         - resourcedetection
-        - ecslogattributes
+        - ecsattributes
       exporters:
         - coralogix
