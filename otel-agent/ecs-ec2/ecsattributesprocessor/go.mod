@@ -1,4 +1,4 @@
-module github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecslogattributesprocessor
+module github.com/coralogix/telemetry-shippers/otel-agent/ecs-ec2/ecsattributesprocessor
 
 go 1.19
 
