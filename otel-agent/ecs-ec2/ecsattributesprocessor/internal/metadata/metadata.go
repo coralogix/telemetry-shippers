@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	Type = "ecslogattributes"
+	Type = "ecsattributes"
 	// TracesStability  = component.StabilityLevelBeta
 	// MetricsStability = component.StabilityLevelBeta
 	LogsStability = component.StabilityLevelBeta
