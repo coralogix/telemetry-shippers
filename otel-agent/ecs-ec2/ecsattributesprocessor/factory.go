@@ -62,7 +62,8 @@ func (f *factory) createLogsProcessor(
 		return nil, fmt.Errorf("invalid config for processor %s", typeStr)
 	}
 
-	if err := config.validate(); err != nil {
+	// initialise config
+	if err := config.init(); err != nil {
 		return nil, err
 	}
 
@@ -74,5 +75,6 @@ func (f *factory) createLogsProcessor(
 		processLogsFunc(logger, config),
 		processorhelper.WithCapabilities(consumerCapabilities),
 		processorhelper.WithStart(startFn(logger)),
+		processorhelper.WithShutdown(shutdownFn()),
 	)
 }
