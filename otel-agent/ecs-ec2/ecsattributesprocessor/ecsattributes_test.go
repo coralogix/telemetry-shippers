@@ -17,18 +17,18 @@ import (
 )
 
 const payload = `{
-	"ContainerARN": "arn:aws:ecs:eu-west-1:035955823196:container/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33/cc1c133f-bd1f-4006-8dae-4cd8a3f54f19",
-	"CreatedAt": "2023-06-22T12:41:18.315883278Z",
+	"ContainerARN": "arn:aws:ecs:eu-west-1:035955823396:container/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33/cc1c133f-bd1f-4006-8dae-4cd8a3f54f19",
+	"CreatedAt": "2023-06-22T12:41:18.335883278Z",
 	"DesiredStatus": "RUNNING",
-	"DockerId": "196a0e6abfce1e31ee24b65e97875f089878dd7d1d7e9f15155d6094c8b908f5",
+	"DockerId": "196a0e6abfce1e33ee24b65e97875f089878dd7d1d7e9f15155d6094c8b908f5",
 	"DockerName": "ecs-cadvisor-task-definition-7-cadvisor-bae592b5e4c1a3bb3800",
 	"Image": "gcr.io/cadvisor/cadvisor:latest",
-	"ImageID": "sha256:68c29634fe49724f94ed34f18224316f776392f7a5a4014969ac5798a2ec96dc",
+	"ImageID": "sha256:68c29634fe49724f94ed34f18224336f776392f7a5a4014969ac5798a2ec96dc",
 	"KnownStatus": "RUNNING",
 	"Labels": {
 	  "com.amazonaws.ecs.cluster": "cds-305",
 	  "com.amazonaws.ecs.container-name": "cadvisor",
-	  "com.amazonaws.ecs.task-arn": "arn:aws:ecs:eu-west-1:035955823196:task/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33",
+	  "com.amazonaws.ecs.task-arn": "arn:aws:ecs:eu-west-1:035955823396:task/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33",
 	  "com.amazonaws.ecs.task-definition-family": "cadvisor-task-definition",
 	  "com.amazonaws.ecs.task-definition-version": "7"
 	},
@@ -78,36 +78,38 @@ var (
 	testcontainerID           = "0123456789"
 	testendpoints             = make(map[string][]string)
 	expectedFlattenedMetadata = map[string]interface{}{
+		"aws.ecs.cluster":                 "cds-305",
+		"aws.ecs.container.arn":           "arn:aws:ecs:eu-west-1:035955823396:container/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33/cc1c133f-bd1f-4006-8dae-4cd8a3f54f19",
+		"aws.ecs.container.name":          "cadvisor",
+		"aws.ecs.task.arn":                "arn:aws:ecs:eu-west-1:035955823396:task/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33",
+		"aws.ecs.task.definition.family":  "cadvisor-task-definition",
+		"aws.ecs.task.definition.version": "7",
+		"aws.ecs.task.known.status":       "RUNNING",
+		"created.at":                      "2023-06-22T12:41:18.335883278Z",
+		"desired.status":                  "RUNNING",
+		"docker.id":                       "196a0e6abfce1e33ee24b65e97875f089878dd7d1d7e9f15155d6094c8b908f5",
+		"docker.name":                     "ecs-cadvisor-task-definition-7-cadvisor-bae592b5e4c1a3bb3800",
+		"image":                           "gcr.io/cadvisor/cadvisor:latest",
+		"image.id":                        "sha256:68c29634fe49724f94ed34f18224336f776392f7a5a4014969ac5798a2ec96dc",
+		"limits.cpu":                      10,
+		"limits.memory":                   300,
+		"name":                            "cadvisor",
+		"networks.0.ipv4.addresses.0":     "172.17.0.2",
+		"networks.0.network.mode":         "bridge",
 		"ports.0.container.port":          8080,
+		"ports.0.host.ip":                 "0.0.0.0",
+		"ports.0.host.port":               32911,
+		"ports.0.protocol":                "tcp",
+		"ports.1.container.port":          8080,
+		"ports.1.host.ip":                 "::",
 		"ports.1.host.port":               32911,
+		"ports.1.protocol":                "tcp",
+		"started.at":                      "2023-06-22T12:41:18.713571182Z",
+		"type":                            "NORMAL",
+		"volumes.0.destination":           "/var",
+		"volumes.0.source":                "/var",
 		"volumes.1.destination":           "/etc",
 		"volumes.1.source":                "/etc",
-		"image":                           "gcr.io/cadvisor/cadvisor:latest",
-		"limits.cpu":                      10,
-		"ports.0.host.ip":                 "0.0.0.0",
-		"aws.ecs.container.arn":           "arn:aws:ecs:eu-west-1:035955823196:container/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33/cc1c133f-bd1f-4006-8dae-4cd8a3f54f19",
-		"aws.ecs.task.known.status":       "RUNNING",
-		"networks.0.network.mode":         "bridge",
-		"ports.0.protocol":                "tcp",
-		"volumes.0.source":                "/var",
-		"desired.status":                  "RUNNING",
-		"docker.id":                       "196a0e6abfce1e31ee24b65e97875f089878dd7d1d7e9f15155d6094c8b908f5",
-		"type":                            "NORMAL",
-		"aws.ecs.task.definition.family":  "cadvisor-task-definition",
-		"networks.0.ipv4.addresses.0":     "172.17.0.2",
-		"limits.memory":                   300,
-		"ports.1.protocol":                "tcp",
-		"volumes.0.destination":           "/var",
-		"aws.ecs.container.name":          "cadvisor",
-		"aws.ecs.task.arn":                "arn:aws:ecs:eu-west-1:035955823196:task/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33",
-		"ports.0.host.port":               32911,
-		"ports.1.host.ip":                 "::",
-		"aws.ecs.cluster":                 "cds-305",
-		"aws.ecs.task.definition.version": "7",
-		"name":                            "cadvisor",
-		"docker.name":                     "ecs-cadvisor-task-definition-7-cadvisor-bae592b5e4c1a3bb3800",
-		"image.id":                        "sha256:68c29634fe49724f94ed34f18224316f776392f7a5a4014969ac5798a2ec96dc",
-		"ports.1.container.port":          8080,
 	}
 )
 
@@ -144,8 +146,12 @@ func TestMetadataHandlerGet(t *testing.T) {
 	require.NoError(t, ecsMetadataHandler.syncMetadata(ctx, testendpoints))
 
 	v, ok := ecsMetadataHandler.get(testcontainerID)
+	flat := v.Flat()
+	for k, val := range expectedFlattenedMetadata {
+		assert.Equal(t, flat[k], val, "bad key: %s", k)
+	}
 	assert.True(t, ok)
-	assert.Equal(t, expectedFlattenedMetadata, v.Flat())
+	assert.Equal(t, len(expectedFlattenedMetadata), len(v.Flat()))
 }
 
 func TestProcessLogFunc(t *testing.T) {
@@ -180,7 +186,7 @@ func TestProcessLogFunc(t *testing.T) {
 		},
 		{
 			name: "fetch all attributes",
-			len:  31,
+			len:  33,
 			config: &Config{
 				Attributes: []string{
 					".*",
@@ -194,17 +200,29 @@ func TestProcessLogFunc(t *testing.T) {
 			record:  defaultRecord,
 		},
 		{
-			name:    "fetch default attributes",
+			name: "fetch default attributes",
+			len:  11,
+			config: func() *Config {
+				c := createDefaultConfig().(*Config)
+				c.ContainerID.Sources = append(c.ContainerID.Sources, "container.id")
+				return c
+			}(),
+			wantErr: false,
+			match:   "^aws.*|^image.*|^docker.*",
+			record:  defaultRecord,
+		},
+		{
+			name:    "no container id path",
 			len:     11,
 			config:  createDefaultConfig().(*Config),
-			wantErr: false,
+			wantErr: true,
 			match:   "^aws.*|^image.*|^docker.*",
 			record:  defaultRecord,
 		},
 
 		{
 			name: "specify container id as as log.file.name",
-			len:  31,
+			len:  33,
 			config: &Config{
 				Attributes: []string{
 					".*",
@@ -243,16 +261,19 @@ func TestProcessLogFunc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := processLogsFunc(logger, tt.config)(context.Background(), tt.record())
+			err := tt.config.validate()
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
+			require.NoError(t, err)
+
+			result, err := processLogsFunc(logger, tt.config)(context.Background(), tt.record())
+			require.NoError(t, err)
 
 			var matches int
 			result.ResourceLogs().At(0).Resource().Attributes().Range(func(k string, v pcommon.Value) bool {
 				if regexp.MustCompile(tt.match).MatchString(k) {
-
 					matches += 1
 				}
 				return true
@@ -260,7 +281,7 @@ func TestProcessLogFunc(t *testing.T) {
 
 			assert.Equal(t, tt.len, matches)
 			numOfAttributes := result.ResourceLogs().At(0).Resource().Attributes().Len()
-			if numOfAttributes < 31 {
+			if numOfAttributes < 33 {
 				assert.Equal(t, tt.len+1, numOfAttributes)
 			}
 
