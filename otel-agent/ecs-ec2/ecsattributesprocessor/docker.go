@@ -103,7 +103,6 @@ func (m *metadataHandler) start() error {
 
 			case <-m.stop:
 				m.logger.Debug("stopping metadata sync")
-				close(m.stop)
 				return
 			}
 		}
