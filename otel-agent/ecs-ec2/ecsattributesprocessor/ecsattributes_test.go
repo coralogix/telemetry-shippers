@@ -261,7 +261,7 @@ func TestProcessLogFunc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.config.validate()
+			err := tt.config.init()
 			if tt.wantErr {
 				require.Error(t, err)
 				return
