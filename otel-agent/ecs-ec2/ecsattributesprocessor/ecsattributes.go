@@ -14,6 +14,7 @@ import (
 
 // global variable used to store metadata endpoints within package
 var ecsMetadataHandler metadataHandler
+var idReg = regexp.MustCompile(`^[a-z0-9]+`)
 
 func processLogsFunc(logger *zap.Logger, c *Config) processorhelper.ProcessLogsFunc {
 	return func(ctx context.Context, ld plog.Logs) (plog.Logs, error) {
@@ -60,22 +61,28 @@ func getContainerId(rlog *plog.ResourceLogs, sources ...string) (id string) {
 	}
 
 	// strip any unneeed values for eg. file extension
-	id = regexp.MustCompile(`^[a-z0-9]+`).
-		FindString(id)
-
+	id = idReg.FindString(id)
 	return
 }
 
-func startFn(logger *zap.Logger) func(ctx context.Context, host component.Host) error {
-	return func(ctx context.Context, host component.Host) error {
+func startFn(logger *zap.Logger) component.StartFunc {
+	return func(ctx context.Context, _ component.Host) error {
 		ecsMetadataHandler = metadataHandler{
 			metadata:  make(map[string]Metadata),
 			logger:    logger,
 			endpoints: getEndpoints,
+			stop:      make(chan struct{}, 1),
 		}
 
-		ecsMetadataHandler.start()
-		logger.Info("started")
+		logger.Info("starting")
+		return ecsMetadataHandler.start()
+	}
+}
+
+func shutdownFn() component.ShutdownFunc {
+	return func(ctx context.Context) error {
+		ecsMetadataHandler.shutdown()
+		ecsMetadataHandler.logger.Info("shutdown")
 		return nil
 	}
 }
