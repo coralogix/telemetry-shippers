@@ -1,6 +1,7 @@
 package ecsattributesprocessor
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 )
@@ -15,7 +16,8 @@ type Config struct {
 	//   sources:
 	//     - "log.file.name"
 	// 	   - "container.id"
-	ContainerID `mapstructure:"container_id"`
+	ContainerID     `mapstructure:"container_id"`
+	attrExpressions []*regexp.Regexp // store compiled regexes
 }
 
 type ContainerID struct {
@@ -25,35 +27,32 @@ type ContainerID struct {
 func (c *Config) validate() error {
 	// check ContainerID sources
 	if len(c.ContainerID.Sources) == 0 {
-		return fmt.Errorf("atleast one container ID source must be specified. [container_id.sources]")
+		return errors.New("atleast one container ID source must be specified. [container_id.sources]")
 	}
 
 	// validate attribute regex
 	for _, expr := range c.Attributes {
-		if _, err := regexp.Compile(expr); err != nil {
+		r, err := regexp.Compile(expr)
+		if err != nil {
 			return fmt.Errorf("invalid expression found under attributes pattern %s - %s", expr, err)
 		}
+
+		c.attrExpressions = append(c.attrExpressions, r)
 	}
 	return nil
 }
 
-func (c *Config) allowAttr(k string) (ok bool, err error) {
+func (c *Config) allowAttr(k string) (bool, error) {
 	// if no attribue patterns are present, return true always
-	if len(c.Attributes) == 0 {
-		ok = true
+	if len(c.attrExpressions) == 0 {
+		return true, nil
 	}
 
-	for _, expr := range c.Attributes {
-		re, err := regexp.Compile(expr)
-		if err != nil {
-			return ok, err
-		}
-
+	for _, re := range c.attrExpressions {
 		if re.MatchString(k) {
-			ok = true
-			break
+			return true, nil
 		}
 
 	}
-	return
+	return false, nil
 }
