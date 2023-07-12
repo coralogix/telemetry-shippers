@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -34,14 +33,10 @@ type metadataHandler struct {
 	endpoints endpointsFn
 }
 
-func (m *metadataHandler) get(key string) (val Metadata, ok bool) {
+func (m *metadataHandler) get(key string) (Metadata, bool) {
 	// initial check for metadata
-	val, ok = m.metadata[key]
-	return
-}
-
-func (m *metadataHandler) add(key string, value Metadata) {
-	m.metadata[key] = value
+	val, ok := m.metadata[key]
+	return val, ok
 }
 
 func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string][]string) (err error) {
@@ -61,7 +56,7 @@ func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string
 			return fmt.Errorf("failed to decode metadata for [%s] - %s", k, err)
 		}
 
-		m.add(k, metadata)
+		m.metadata[k] = metadata
 	}
 
 	// remove keys that don't exist in current endpoint view
@@ -84,8 +79,8 @@ func (m *metadataHandler) start() {
 
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
-			fmt.Println("Unable to create Docker client", err)
-			os.Exit(1)
+			m.logger.Sugar().Errorf("failed to intial docker API client: %ss", err)
+			return
 		}
 
 		dockerEvents, errors := cli.Events(context.Background(), types.EventsOptions{})
