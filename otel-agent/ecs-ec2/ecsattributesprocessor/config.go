@@ -24,7 +24,8 @@ type ContainerID struct {
 	Sources []string `mapstructure:"sources"`
 }
 
-func (c *Config) validate() error {
+// init - initialise config, returns error
+func (c *Config) init() error {
 	// check ContainerID sources
 	if len(c.ContainerID.Sources) == 0 {
 		return errors.New("atleast one container ID source must be specified. [container_id.sources]")
