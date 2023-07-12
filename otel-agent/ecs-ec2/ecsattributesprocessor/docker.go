@@ -31,6 +31,8 @@ type metadataHandler struct {
 
 	// endpoints -  function used to fetch metadata endpoints
 	endpoints endpointsFn
+
+	stop chan struct{}
 }
 
 func (m *metadataHandler) get(key string) (Metadata, bool) {
@@ -39,7 +41,7 @@ func (m *metadataHandler) get(key string) (Metadata, bool) {
 	return val, ok
 }
 
-func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string][]string) (err error) {
+func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string][]string) error {
 
 	for k, v := range endpoints {
 		if _, ok := m.metadata[k]; ok {
@@ -49,11 +51,11 @@ func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string
 		var metadata Metadata
 		resp, err := http.Get(v[0]) // use the 1st available endpoint
 		if err != nil {
-			return fmt.Errorf("failed while calling metadata endpoint for [%s] - %s", k, err)
+			return fmt.Errorf("failed while calling metadata endpoint for [%s] - %w", k, err)
 		}
 
 		if err = json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
-			return fmt.Errorf("failed to decode metadata for [%s] - %s", k, err)
+			return fmt.Errorf("failed to decode metadata for [%s] - %w", k, err)
 		}
 
 		m.metadata[k] = metadata
@@ -69,19 +71,19 @@ func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string
 		}
 	}
 
-	return
+	return nil
 }
 
-func (m *metadataHandler) start() {
+func (m *metadataHandler) start() error {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		m.logger.Sugar().Errorf("failed to intial docker API client: %ss", err)
+		return err
+	}
+
 	go func() {
 		ctx := context.Background()
 		ticker := time.NewTicker(time.Second * 60)
-
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		if err != nil {
-			m.logger.Sugar().Errorf("failed to intial docker API client: %ss", err)
-			return
-		}
 
 		dockerEvents, errors := cli.Events(context.Background(), types.EventsOptions{})
 
@@ -98,10 +100,22 @@ func (m *metadataHandler) start() {
 
 			case err := <-errors:
 				m.logger.Sugar().Errorf("error received from docker container events: %s", err)
-			}
 
+			case <-m.stop:
+				m.logger.Debug("stopping metadata sync")
+				close(m.stop)
+				return
+			}
 		}
 	}()
+
+	return err
+}
+
+func (m *metadataHandler) shutdown() error {
+	m.stop <- struct{}{}
+	close(m.stop)
+	return nil
 }
 
 type endpointsFn func(ctx context.Context) (map[string][]string, error)
@@ -118,7 +132,7 @@ func getEndpoints(ctx context.Context) (map[string][]string, error) {
 	// Get the list of running containers
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
-		return m, fmt.Errorf("failed to fetch Docker containers: %s", err)
+		return m, fmt.Errorf("failed to fetch Docker containers: %w", err)
 	}
 
 	for _, container := range containers {
