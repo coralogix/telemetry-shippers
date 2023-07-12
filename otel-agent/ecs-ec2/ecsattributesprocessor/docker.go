@@ -117,7 +117,7 @@ func getEndpoints(ctx context.Context) (map[string][]string, error) {
 	// Initialize Docker client
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return m, fmt.Errorf("failed to create Docker client: %s", err)
+		return m, fmt.Errorf("failed to create Docker client: %w", err)
 	}
 
 	// Get the list of running containers
