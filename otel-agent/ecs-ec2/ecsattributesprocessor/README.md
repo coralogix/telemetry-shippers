@@ -4,7 +4,7 @@
 
 | Status    |            |                       |
 |-----------|------------|-----------------------|
-| Stability | beta: logs | WEP: metrics & traces |
+| Stability | alpha: logs | WEP: metrics & traces |
 
 The coralogixrepo/otel-coralogix-ecs-ec2 docker image includes an Open Telemetry distribution with a dedicated processor designed to handle metadata enrichment for logs collected at the Host level. This processor enables the collector to discover metadata endpoints for all active containers on an instance, utilizing container IDs to indentify metadata endpoints to enrich logs and establish correlations. It's important to note that the default resourcedetection processor does not offer this specific functionality.
 
