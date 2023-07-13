@@ -8,11 +8,13 @@ on:
       - 'otel-agent/ecs-ec2/Dockerfile'
       - 'otel-agent/ecs-ec2/entrypoint.sh'
       - '.github/workflows/otel-ecs-image.yml'
+      - 'otel-agent/ecs-ec2/ecsattributesprocessor/*'
   pull_request:
     paths:
       - 'otel-agent/ecs-ec2/Dockerfile'
       - 'otel-agent/ecs-ec2/entrypoint.sh'
       - '.github/workflows/otel-ecs-image.yml'
+      - 'otel-agent/ecs-ec2/ecsattributesprocessor/*'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/otel-coralogix-ecs-ec2
