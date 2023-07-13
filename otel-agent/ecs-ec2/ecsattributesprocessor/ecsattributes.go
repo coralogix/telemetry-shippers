@@ -36,12 +36,7 @@ func processLogsFunc(logger *zap.Logger, c *Config) processorhelper.ProcessLogsF
 			flattened := metadata.Flat()
 
 			for k, v := range flattened {
-				ok, err := c.allowAttr(k)
-				if err != nil {
-					return ld, err
-				}
-
-				if ok {
+				if c.allowAttr(k) {
 					rlog.Resource().Attributes().
 						PutStr(k, fmt.Sprintf("%v", v))
 				}

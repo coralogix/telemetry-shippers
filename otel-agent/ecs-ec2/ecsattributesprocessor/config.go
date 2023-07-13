@@ -43,17 +43,17 @@ func (c *Config) init() error {
 	return nil
 }
 
-func (c *Config) allowAttr(k string) (bool, error) {
+func (c *Config) allowAttr(k string) bool {
 	// if no attribue patterns are present, return true always
 	if len(c.attrExpressions) == 0 {
-		return true, nil
+		return true
 	}
 
 	for _, re := range c.attrExpressions {
 		if re.MatchString(k) {
-			return true, nil
+			return true
 		}
 
 	}
-	return false, nil
+	return false
 }
