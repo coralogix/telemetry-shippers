@@ -2,11 +2,19 @@ name: OpenTelemetry-ECS-EC2
 
 on:
   push:
-    branches: master
+    branches: 
+      - master
     paths:
-    - 'otel-agent/ecs-ec2/Dockerfile'
-    - 'otel-agent/ecs-ec2/entrypoint.sh'
-    - '.github/workflows/otel-ecs-image.yml'
+      - 'otel-agent/ecs-ec2/Dockerfile'
+      - 'otel-agent/ecs-ec2/entrypoint.sh'
+      - '.github/workflows/otel-ecs-image.yml'
+      - 'otel-agent/ecs-ec2/ecsattributesprocessor/*'
+  pull_request:
+    paths:
+      - 'otel-agent/ecs-ec2/Dockerfile'
+      - 'otel-agent/ecs-ec2/entrypoint.sh'
+      - '.github/workflows/otel-ecs-image.yml'
+      - 'otel-agent/ecs-ec2/ecsattributesprocessor/*'
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/otel-coralogix-ecs-ec2
@@ -36,14 +44,14 @@ jobs:
         id: set-image-version
         uses: mikefarah/yq@master
         with:
-          cmd: yq -i '.dist.version' ./otel-agent/ecs-ec2/ecsattributesprocessor/builder.yaml
+          cmd: yq '.dist.version' ./otel-agent/ecs-ec2/ecsattributesprocessor/builder.yaml
 
       - name: Build And Push otel Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
         with:
           context: ./otel-agent/ecs-ec2/
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}${{ steps.set-image-version.outputs.result }}
             ${{ env.DOCKERHUB_REGISTRY }}:latest
