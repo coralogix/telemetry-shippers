@@ -79,3 +79,10 @@ processors:
       - '^docker.*' # all attributes that start with docker
       - '^image.*|^network.*' # all attributes that start with image or network
 ```
+
+### Important
+
+- The `ecsattributesprocessor` uses the Docker API to collect metadata for each container. It refreshes the metadata every 60 seconds as well as everytime a new container is detected via Docker events. If the processor is unable to collect metadata for a container or if there are errors during the refresh process, the processor will log the error and continue processing the next log record. **It will not halt/crash the open telemetry process**. If you notice metadata not being added to your logs, please check the logs for the collector for any errors related to the `ecsattributesprocessor`.
+
+**TODO:**
+- Implement a configuration option that allows the user to specify what action to take on error. For example, `continue` or `halt`.
