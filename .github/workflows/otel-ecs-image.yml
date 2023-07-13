@@ -31,9 +31,12 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       # get upstream version from Dockerfile
+      # get upstream version from builder yaml file
       - name: set image version
         id: set-image-version
-        run: echo "version=$(grep -Eo '\:([0-9\.]+)' ./otel-agent/ecs-ec2/Dockerfile)" >> $GITHUB_OUTPUT
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.dist.version' ./otel-agent/ecs-ec2/ecsattributesprocessor/builder.yaml
 
       - name: Build And Push otel Image To Dockerhub
         uses: docker/build-push-action@v2.8.0
@@ -42,5 +45,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.DOCKERHUB_REGISTRY }}${{ steps.set-image-version.outputs.version }}
+            ${{ env.DOCKERHUB_REGISTRY }}${{ steps.set-image-version.outputs.result }}
             ${{ env.DOCKERHUB_REGISTRY }}:latest

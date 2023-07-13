@@ -4,13 +4,10 @@ receivers:
 
     # note that the host filesystem is mounted at /hostfs
     include:
-      - /hostfs/var/log/*.log
-      - /hostfs/var/log/messages
-      - /hostfs/var/log/dmesg
-      - /hostfs/var/log/xm/*.log
       - /hostfs/var/lib/docker/containers/*/*.log
     include_file_path: true
 
+    # add log.file.name to resource attributes
     operators:
       - type: move
         from: attributes["log.file.name"]
@@ -18,25 +15,31 @@ receivers:
 
 processors:
   resourcedetection:
-    detectors: [env, ec2, ecs, docker, system]
+    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecsattributes for logs
     timeout: 2s
     override: false
+
+  ecsattributes:
+    # add container ID sources
+    container_id:
+      sources:
+        - "log.file.name"
+        - "container.id"
     
 exporters:
   logging:
   coralogix:
     domain: "$CORALOGIX_DOMAIN"
     private_key: "$PRIVATE_KEY"
-    application_name: "OTel"
-    subsystem_name: "ECS"
+    application_name: "otel-collector"
+    subsystem_name: "ecs"
     application_name_attributes:
+    - "ecs.container.name"
     - "APP_NAME"
-    - "service.namespace"
     subsystem_name_attributes:
-    - "SUB_SYS"
-    - "aws.ecs.task.family"
+    - "ecs.task.definition.family"
     - "log.file.name"
-    - "service.name"
+    - "SUB_SYS"
     timeout: 30s
 
 service:
@@ -46,5 +49,6 @@ service:
         - filelog
       processors:
         - resourcedetection
+        - ecsattributes
       exporters:
         - coralogix
