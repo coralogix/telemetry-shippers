@@ -35,7 +35,7 @@ func (c *Config) init() error {
 	for _, expr := range c.Attributes {
 		r, err := regexp.Compile(expr)
 		if err != nil {
-			return fmt.Errorf("invalid expression found under attributes pattern %s - %s", expr, err)
+			return fmt.Errorf("invalid expression found under attributes pattern %s - %w", expr, err)
 		}
 
 		c.attrExpressions = append(c.attrExpressions, r)

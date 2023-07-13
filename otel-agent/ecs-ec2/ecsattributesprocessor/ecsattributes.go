@@ -51,8 +51,8 @@ func processLogsFunc(logger *zap.Logger, c *Config) processorhelper.ProcessLogsF
 	}
 }
 
-func getContainerId(rlog *plog.ResourceLogs, sources ...string) (id string) {
-
+func getContainerId(rlog *plog.ResourceLogs, sources ...string) string {
+	var id string
 	for _, s := range sources {
 		if v, ok := rlog.Resource().Attributes().Get(s); ok {
 			id = v.AsString()
@@ -62,7 +62,7 @@ func getContainerId(rlog *plog.ResourceLogs, sources ...string) (id string) {
 
 	// strip any unneeed values for eg. file extension
 	id = idReg.FindString(id)
-	return
+	return id
 }
 
 func startFn(logger *zap.Logger) component.StartFunc {

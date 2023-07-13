@@ -99,7 +99,7 @@ func (m *metadataHandler) start() error {
 				}
 
 			case err := <-errors:
-				m.logger.Sugar().Errorf("error received from docker container events: %s", err)
+				m.logger.Sugar().Errorf("error received from docker container events: %w", err)
 
 			case <-m.stop:
 				m.logger.Debug("stopping metadata sync")
@@ -138,7 +138,7 @@ func getEndpoints(ctx context.Context) (map[string][]string, error) {
 		// Fetch detailed container information
 		containerInfo, err := cli.ContainerInspect(ctx, container.ID)
 		if err != nil {
-			return m, fmt.Errorf("failed to inspect Docker container %s: %s", container.ID, err)
+			return m, fmt.Errorf("failed to inspect Docker container %s: %w", container.ID, err)
 		}
 		var endpoints []string
 		for _, env := range containerInfo.Config.Env {
@@ -171,14 +171,14 @@ func getEndpoints(ctx context.Context) (map[string][]string, error) {
 func syncMetadata(ctx context.Context, m *metadataHandler) {
 	endpoints, err := m.endpoints(ctx)
 	if err != nil {
-		m.logger.Sugar().Errorf("failed to fetch metadata endpoints: %s", err)
+		m.logger.Sugar().Errorf("failed to fetch metadata endpoints: %w", err)
 		return
 	}
 
 	m.Lock()
 	m.logger.Debug("updating endpoints", zap.String("processor", metadata.Type))
 	if err := m.syncMetadata(ctx, endpoints); err != nil {
-		m.logger.Sugar().Errorf("%s failed to update metadata endpoints: %s", metadata.Type, err)
+		m.logger.Sugar().Errorf("%s failed to update metadata endpoints: %w", metadata.Type, err)
 	}
 
 	m.Unlock()
