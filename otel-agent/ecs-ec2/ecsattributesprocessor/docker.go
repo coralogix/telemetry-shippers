@@ -77,7 +77,13 @@ func (m *metadataHandler) syncMetadata(ctx context.Context, endpoints map[string
 func (m *metadataHandler) start() error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		m.logger.Sugar().Errorf("failed to intial docker API client: %ss", err)
+		m.logger.Sugar().Errorf("failed to intial docker API client: %w", err)
+		return err
+	}
+
+	// initial sync
+	if err := syncMetadata(context.Background(), m); err != nil {
+		m.logger.Sugar().Errorf("failed to sync metadata: %w", err)
 		return err
 	}
 
@@ -90,12 +96,18 @@ func (m *metadataHandler) start() error {
 		for {
 			select {
 			case <-ticker.C:
-				syncMetadata(ctx, m)
+				if err := syncMetadata(ctx, m); err != nil {
+					m.logger.Sugar().Errorf("failed to sync metadata: %w", err)
+				}
 
 			case event := <-dockerEvents:
-				if event.Type == events.ContainerEventType && event.Action == "create" {
-					m.logger.Debug("new container id detected, re-syncing metadata", zap.String("id", event.ID))
-					syncMetadata(ctx, m)
+				if !(event.Type == events.ContainerEventType && event.Action == "create") {
+					continue
+				}
+
+				m.logger.Debug("new container id detected, re-syncing metadata", zap.String("id", event.ID))
+				if err := syncMetadata(ctx, m); err != nil {
+					m.logger.Sugar().Errorf("failed to sync metadata: %w", err)
 				}
 
 			case err := <-errors:
@@ -168,19 +180,19 @@ func getEndpoints(ctx context.Context) (map[string][]string, error) {
 	return m, nil
 }
 
-func syncMetadata(ctx context.Context, m *metadataHandler) {
+func syncMetadata(ctx context.Context, m *metadataHandler) error {
 	endpoints, err := m.endpoints(ctx)
 	if err != nil {
-		m.logger.Sugar().Errorf("failed to fetch metadata endpoints: %w", err)
-		return
+		return fmt.Errorf("failed to fetch metadata endpoints: %w", err)
 	}
 
 	m.Lock()
 	m.logger.Debug("updating endpoints", zap.String("processor", metadata.Type))
 	if err := m.syncMetadata(ctx, endpoints); err != nil {
-		m.logger.Sugar().Errorf("%s failed to update metadata endpoints: %w", metadata.Type, err)
+		return fmt.Errorf("%s failed to update metadata endpoints: %w", metadata.Type, err)
 	}
 
 	m.Unlock()
 	m.logger.Debug("number of containers with detected metadata endpoints", zap.Int("count", len(endpoints)))
+	return nil
 }
