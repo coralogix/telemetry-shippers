@@ -38,6 +38,17 @@ opentelemetry-collector:
     kubeletMetrics:
       enabled: true
 
+    mysql:
+      metrics:
+        enabled: false
+        instances:
+        - username: ""
+          password: ""
+      extraLogs:
+        enabled: false
+        volumeMountName: ""
+        mountPath: ""
+
   extraEnvs:
   - name: CORALOGIX_PRIVATE_KEY
     valueFrom:
