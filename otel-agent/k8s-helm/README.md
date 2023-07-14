@@ -124,6 +124,95 @@ env:
     value: "$(NODE):4317"
 ```
 
+# Integration presets
+
+The `otel-agent` chart also provides support to integrate with different applications. The following integration presets are available.
+
+## MySQL
+
+The MySQL preset is able to collect metrics and extra logs (slow query log, general query log) from your MySQL instances. **Extra logs collection is available only when running the `otel-agent` as CRD with the OpenTelemetry Operator.**
+
+### Prerequisites
+
+This preset supports MySQL version 8.0
+
+Collecting most metrics requires the ability of the database user to execute `SHOW GLOBAL STATUS`.
+
+### Configuration for metrics collection
+
+The metrics collection has to be enabled by setting the `metrics.enabled` to `true`.
+
+Each MySQL instance is configured in the `metrics.instances` section. You can configure multiple instances, if you have more than one instance you'd like to monitor.
+
+Required instance settings:
+- `username`: The username of the database user that will be used to collect metrics.
+- `password`: The password of the database user that will be used to collect metrics. We strongly recommend to provide this via a  Kuberetes secret as an environment variable, e.g `MYSQL_PASSWORD`, which should be provided in the `extraEnv` section of the chart. This parameter should be passed in format `${env:MYSQL_PASSWORD}` in order for the collector to be able to read it.
+
+Optional instance settings:
+- `port`: The port of the MySQL instance. Defaults to `3306`. Unless you use non-standard port, there is no need to set this parameter.
+- `labelSelectors`: A list of label selectors to select the pods that run the MySQL instances. If you wish to monitor mutiple instance, the selectors will determine which pods belong to a given instance.
+
+### Configuration for extra logs collection
+
+The extra logs collection has to be enabled by setting the `extraLogs.enabled` to `true`. Note that the extra logs have to enabled on your MySQL instance (please refer to https://dev.mysql.com/doc/refman/8.0/en/server-logs.html). Please also note that extra logs collection is only available when running `otel-agent` with OpenTelemetry Operator.
+
+**PLEASE NOTE:** In order for the collection to take effect, you need to annotate your MySQL instance(s) pod templates with the following:
+
+```bash
+kubectl patch sts <YOUR_MYSQL_INSTANCE_NAME> -p '{"spec": {"template":{"metadata":{"annotations":{"sidecar.opentelemetry.io/inject":"otel-coralogix-mysql-logs-sidecar"}}}} }'
+```
+
+Required settings:
+- `volumeMountName`: specifies the name of the volume mount. It should correspond to the volume name of the MySQL data volume.
+- `mountPath`: specifies the path at which to mount the volume. This should correspond the mount path of your MySQL data volume. Provide this parameter without trailing slash.
+
+Optional settings:
+- `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory,
+ such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
+- `logFilesExtension`: specifies which file extensions to watch for. Defaults to `.log`.
+
+### Common issues
+
+- Metrics collection is failing with error `"Error 1227 (42000): Access denied; you need (at least one of) the PROCESS privilege(s) for this operation"`
+  - This error indicates that the database user you provided does not have the required privileges to collect metrics. Provide the `PROCESS` privilege to the user, e.g. by running query 
+  `GRANT PROCESS ON *.* TO 'user'@'%'`
+
+### Example preset configuration for single instance
+
+```yaml
+  mysql:
+    metrics:
+      enabled: true 
+      instances:
+      - username: "otel-agent"
+        password: ${env:MYSQL_PASSWORD}
+    extraLogs:
+      enabled: true
+      volumeMountName: "data"
+      mountPath: "/var/log/mysql"
+```
+
+### Example preset configuration for multiple instance
+
+```yaml
+  mysql:
+    metrics:
+      enabled: true 
+      instances:
+      - username: "otel-agent"
+        password: ${env:MYSQL_PASSWORD_INSTANCE_A}
+        labelSelectors:
+          app.kubernetes.io/name: "mysql-a"
+      - username: "otel-agent"
+        password: ${env:MYSQL_PASSWORD_INSTANCE_B}
+        labelSelectors:
+          app.kubernetes.io/name: "mysql-b"
+    extraLogs:
+      enabled: true
+      volumeMountName: "data"
+      mountPath: "/var/log/mysql"
+```
+
 # Performance of the Collector
 
 ## Picking the right tracing SDK span processor
