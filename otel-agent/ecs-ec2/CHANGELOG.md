@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.28 / 2023-07-14
+* [FIX] fixed issue with ecsattributes processor not initialising correctly
+
 ### v0.0.28 / 2023-07-05
 * [UPGRADE] coralogixrepo/otel-coralogix-ecs-ec2 container version updated to 0.80.0
 * [UPGRADE] added custom ecsattributes processor to the container
