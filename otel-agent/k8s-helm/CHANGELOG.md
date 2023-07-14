@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.29 / 2023-07-14
+
+* [FEATURE] Add MySQL preset for metrics and extra logs.
+
 ### v0.0.28 / 2023-07-03
 
 * [FEATURE] Add domain validation via `NOTES.txt`.
