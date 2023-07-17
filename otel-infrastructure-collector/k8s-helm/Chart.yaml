@@ -8,8 +8,8 @@ keywords:
   - Coralogix
 dependencies:
   - name: opentelemetry-collector
-    version: "0.55.0"
-    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    version: "0.63.0"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 sources:
   - https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
