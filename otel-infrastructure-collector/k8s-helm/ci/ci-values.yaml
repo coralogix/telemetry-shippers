@@ -1,0 +1,156 @@
+global:
+  domain: "coralogix.com"
+  traces:
+    endpoint: ""
+  metrics:
+    endpoint: ""
+  logs:
+    endpoint: ""
+  defaultApplicationName: "default"
+  defaultSubsystemName: "nodes"
+
+opentelemetry-collector:
+  mode: deployment
+  fullnameOverride: otel-infrastructure-collector
+  clusterRole:
+    name: "otel-infrastructure-collector"
+    create: true
+    rules:
+      - apiGroups: ["", "events.k8s.io"]
+        resources: ["events"]
+        verbs: ["watch", "list"]
+    clusterRoleBinding:
+      name: "otel-infrastructure-collector"
+  replicaCount: 1
+  presets:
+    clusterMetrics:
+      enabled: true
+  ports:
+    otlp:
+      enabled: true
+    otlp-http:
+      enabled: false
+    jaeger-compact:
+      enabled: false
+    jaeger-thrift:
+      enabled: false
+    jaeger-grpc:
+      enabled: false
+    zipkin:
+      enabled: false
+
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+  config:
+    extensions:
+      zpages:
+        endpoint: localhost:55679
+    receivers:
+      k8sobjects:
+        objects:
+          - name: events
+            mode: pull
+            interval: 15s
+            group: events.k8s.io
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-infrastructure-collector
+              scrape_interval: 30s
+              static_configs:
+                - targets:
+                    - ${MY_POD_IP}:8888
+    exporters:
+      coralogix:
+        timeout: "1m"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{.Values.global.domain}}"
+        traces:
+          endpoint: "{{ .Values.global.traces.endpoint }}"
+        metrics:
+          endpoint: "{{ .Values.global.metrics.endpoint }}"
+        logs:
+          endpoint: "{{ .Values.global.logs.endpoint }}"
+        application_name_attributes:
+          - "k8s.namespace.name"
+          - "service.namespace"
+        subsystem_name_attributes:
+          - "k8s.deployment.name"
+          - "k8s.statefulset.name"
+          - "k8s.daemonset.name"
+          - "k8s.cronjob.name"
+          - "k8s.job.name"
+          - "k8s.container.name"
+          - "k8s.node.name"
+          - "service.name"
+        application_name: "{{.Values.global.defaultApplicationName }}"
+        subsystem_name: "{{.Values.global.defaultSubsystemName }}"
+    processors:
+      memory_limiter: null # Will get the k8s resource limits
+      transform/kube-events:
+        log_statements:
+          - context: log
+            statements:
+              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+      resource/kube-events:
+        attributes:
+          - key: service.name
+            value: "kube-events"
+            action: upsert
+    service:
+      extensions:
+        - zpages
+        - health_check
+        - memory_ballast
+      telemetry:
+        logs:
+          encoding: json
+        metrics:
+          address: ${MY_POD_IP}:8888
+      pipelines:
+        logs/kube-events:
+          exporters:
+            - coralogix
+          processors:
+            - memory_limiter
+            - batch
+            - transform/kube-events
+            - resource/kube-events
+          receivers:
+            - k8sobjects
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - memory_limiter
+            - batch
+          receivers:
+            - prometheus
+            - otlp
+  tolerations:
+    - operator: Exists
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 2G
+
+  # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
+  # ports:
+  #   metrics:
+  #     enabled: true
+
+  # serviceMonitor:
+  #   enabled: true
+
+  # prometheusRule:
+  #   enabled: true
+  #   defaultRules:
+  #     enabled: true
