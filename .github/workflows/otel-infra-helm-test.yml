@@ -3,7 +3,7 @@ name: Otel Infrastructure Collector Helm Install Test
 on:
   pull_request:
     paths:
-    - 'otel-infrastructure-collector/**'
+    - 'otel-infrastructure-collector/k8s-helm/**'
 
 jobs:
   collector-test:
