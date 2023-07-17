@@ -2,6 +2,13 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.3 / 2023-07-17
+
+* [FEATURE] Add support for deploying `otel-infrastructure-collector` with OpenTelemetry Operator
+* [FEATURE] Add MySQL preset for metrics and extra logs
+* [CHORE] Update OpenTelemetry Collector to v0.77.0
+* [CHORE] Use Coralogix fork for OpenTelemetry Collector Helm chart dependency
+
 ### v0.1.2 / 2023-05-08
 
 * [FEATURE] Allow users to configure Coralogix domain instead of endpoints
