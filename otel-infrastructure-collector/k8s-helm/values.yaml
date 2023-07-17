@@ -25,6 +25,20 @@ opentelemetry-collector:
   presets:
     clusterMetrics:
       enabled: true
+    kubernetesAttributes:
+      enabled: true
+    mysql:
+      metrics:
+        enabled: false
+        instances:
+        - username: ""
+          password: ""
+          port: 3306
+      extraLogs:
+        enabled: false
+        volumeMountName: ""
+        mountPath: ""
+
   ports:
     otlp:
       enabled: true
