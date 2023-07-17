@@ -2,6 +2,8 @@ name: Otel Agent Helm Install Test
 
 on:
   pull_request:
+    paths:
+    - 'otel-agent/k8s-helm/**'
 
 jobs:
   collector-test:
