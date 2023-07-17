@@ -113,6 +113,7 @@ processors:
 ```
 
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
+
 ## Cluster Receiver
 
 ## Alerts
@@ -139,7 +140,7 @@ Each MySQL instance is configured in the `metrics.instances` section. You can co
 
 Required instance settings:
 - `username`: The username of the database user that will be used to collect metrics.
-- `password`: The password of the database user that will be used to collect metrics. We strongly recommend to provide this via a  Kuberetes secret as an environment variable, e.g `MYSQL_PASSWORD`, which should be provided in the `extraEnv` section of the chart. This parameter should be passed in format `${env:MYSQL_PASSWORD}` in order for the collector to be able to read it.
+- `password`: The password of the database user that will be used to collect metrics. We strongly recommend to provide this via a Kuberetes secret as an environment variable, e.g `MYSQL_PASSWORD`, which should be provided in the `extraEnv` section of the chart. This parameter should be passed in format `${env:MYSQL_PASSWORD}` in order for the collector to be able to read it.
 
 Optional instance settings:
 - `port`: The port of the MySQL instance. Defaults to `3306`. Unless you use non-standard port, there is no need to set this parameter.
@@ -147,7 +148,7 @@ Optional instance settings:
 
 ### Configuration for extra logs collection
 
-The extra logs collection has to be enabled by setting the `extraLogs.enabled` to `true`. Note that the extra logs have to enabled on your MySQL instance (please refer to https://dev.mysql.com/doc/refman/8.0/en/server-logs.html). Please also note that extra logs collection is only available when running `otel-infrastructure-collector` with OpenTelemetry Operator.
+The extra logs collection has to be enabled by setting the `extraLogs.enabled` to `true`. Note that the extra logs have to enabled on your MySQL instance (please refer to [relevant documentation](https://dev.mysql.com/doc/refman/8.0/en/server-logs.html)). Please also note that extra logs collection is only available when running `otel-infrastructure-collector` with OpenTelemetry Operator.
 
 **PLEASE NOTE:** In order for the collection to take effect, you need to annotate your MySQL instance(s) pod templates with the following:
 
@@ -161,14 +162,14 @@ Required settings:
 
 Optional settings:
 - `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory,
- such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
+  such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
 - `logFilesExtension`: specifies which file extensions to watch for. Defaults to `.log`.
 
 ### Common issues
 
 - Metrics collection is failing with error `"Error 1227 (42000): Access denied; you need (at least one of) the PROCESS privilege(s) for this operation"`
-  - This error indicates that the database user you provided does not have the required privileges to collect metrics. Provide the `PROCESS` privilege to the user, e.g. by running query 
-  `GRANT PROCESS ON *.* TO 'user'@'%'`
+  - This error indicates that the database user you provided does not have the required privileges to collect metrics. Provide the `PROCESS` privilege to the user, e.g. by running query
+    `GRANT PROCESS ON *.* TO 'user'@'%'`
 
 ### Example preset configuration for single instance
 
