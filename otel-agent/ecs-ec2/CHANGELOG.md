@@ -4,6 +4,7 @@
 
 ### v0.0.30 / 2023-07-18
 * [FIX] fixed issue with ecsattributes processor adding empty labels/attributes
+* [UPGRADE] add feature to ecsattribute processor to record custom docker labels
 
 ### v0.0.29 / 2023-07-14
 * [FIX] fixed issue with ecsattributes processor not initialising correctly
