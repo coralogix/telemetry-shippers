@@ -26,6 +26,7 @@ const payload = `{
 	"ImageID": "sha256:68c29634fe49724f94ed34f18224336f776392f7a5a4014969ac5798a2ec96dc",
 	"KnownStatus": "RUNNING",
 	"Labels": {
+	  "com.custom.app": "go-test-app",
 	  "com.amazonaws.ecs.cluster": "cds-305",
 	  "com.amazonaws.ecs.container-name": "cadvisor",
 	  "com.amazonaws.ecs.task-arn": "arn:aws:ecs:eu-west-1:035955823396:task/cds-305/ec7ff82b7a3a44a5bbbe9bcf11daee33",
@@ -110,6 +111,7 @@ var (
 		"volumes.0.source":                "/var",
 		"volumes.1.destination":           "/etc",
 		"volumes.1.source":                "/etc",
+		"labels.com.custom.app":           "go-test-app",
 	}
 )
 
@@ -186,7 +188,7 @@ func TestProcessLogFunc(t *testing.T) {
 		},
 		{
 			name: "fetch all attributes",
-			len:  33,
+			len:  34,
 			config: &Config{
 				Attributes: []string{
 					".*",
@@ -201,14 +203,14 @@ func TestProcessLogFunc(t *testing.T) {
 		},
 		{
 			name: "fetch default attributes",
-			len:  11,
+			len:  12,
 			config: func() *Config {
 				c := createDefaultConfig().(*Config)
 				c.ContainerID.Sources = append(c.ContainerID.Sources, "container.id")
 				return c
 			}(),
 			wantErr: false,
-			match:   "^aws.*|^image.*|^docker.*",
+			match:   "^aws.*|^image.*|^docker.*|^labels.*",
 			record:  defaultRecord,
 		},
 		{
@@ -222,7 +224,7 @@ func TestProcessLogFunc(t *testing.T) {
 
 		{
 			name: "specify container id as as log.file.name",
-			len:  33,
+			len:  34,
 			config: &Config{
 				Attributes: []string{
 					".*",
@@ -281,7 +283,7 @@ func TestProcessLogFunc(t *testing.T) {
 
 			assert.Equal(t, tt.len, matches)
 			numOfAttributes := result.ResourceLogs().At(0).Resource().Attributes().Len()
-			if numOfAttributes < 33 {
+			if numOfAttributes < 34 {
 				assert.Equal(t, tt.len+1, numOfAttributes)
 			}
 
