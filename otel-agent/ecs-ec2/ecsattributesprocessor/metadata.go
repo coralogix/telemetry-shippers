@@ -2,19 +2,20 @@ package ecsattributesprocessor
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 )
 
 type Metadata struct {
-	ContainerARN  string    `json:"ContainerARN"`
-	CreatedAt     time.Time `json:"CreatedAt"`
-	DesiredStatus string    `json:"DesiredStatus"`
-	DockerID      string    `json:"DockerId"`
-	DockerName    string    `json:"DockerName"`
-	Image         string    `json:"Image"`
-	ImageID       string    `json:"ImageID"`
-	KnownStatus   string    `json:"KnownStatus"`
-	Labels        Labels    `json:"Labels"`
+	ContainerARN  string         `json:"ContainerARN"`
+	CreatedAt     time.Time      `json:"CreatedAt"`
+	DesiredStatus string         `json:"DesiredStatus"`
+	DockerID      string         `json:"DockerId"`
+	DockerName    string         `json:"DockerName"`
+	Image         string         `json:"Image"`
+	ImageID       string         `json:"ImageID"`
+	KnownStatus   string         `json:"KnownStatus"`
+	Labels        map[string]any `json:"Labels"`
 	Limits        struct {
 		CPU    int `json:"CPU"`
 		Memory int `json:"Memory"`
@@ -25,14 +26,6 @@ type Metadata struct {
 	StartedAt time.Time `json:"StartedAt"`
 	Type      string    `json:"Type"`
 	Volumes   []Volume  `json:"Volumes"`
-}
-
-type Labels struct {
-	ComAmazonawsEcsCluster               string `json:"com.amazonaws.ecs.cluster"`
-	ComAmazonawsEcsContainerName         string `json:"com.amazonaws.ecs.container-name"`
-	ComAmazonawsEcsTaskArn               string `json:"com.amazonaws.ecs.task-arn"`
-	ComAmazonawsEcsTaskDefinitionFamily  string `json:"com.amazonaws.ecs.task-definition-family"`
-	ComAmazonawsEcsTaskDefinitionVersion string `json:"com.amazonaws.ecs.task-definition-version"`
 }
 
 type Network struct {
@@ -52,16 +45,18 @@ type Volume struct {
 	Source      string `json:"Source"`
 }
 
+var ecslabelsRe = regexp.MustCompile(`^com\.amazonaws\.ecs.*`)
+
 func (m *Metadata) Flat() map[string]any {
 	flattened := make(map[string]any)
 
 	flattened["aws.ecs.container.arn"] = m.ContainerARN
 	flattened["aws.ecs.task.known.status"] = m.KnownStatus
-	flattened["aws.ecs.cluster"] = m.Labels.ComAmazonawsEcsCluster
-	flattened["aws.ecs.container.name"] = m.Labels.ComAmazonawsEcsContainerName
-	flattened["aws.ecs.task.arn"] = m.Labels.ComAmazonawsEcsTaskArn
-	flattened["aws.ecs.task.definition.family"] = m.Labels.ComAmazonawsEcsTaskDefinitionFamily
-	flattened["aws.ecs.task.definition.version"] = m.Labels.ComAmazonawsEcsTaskDefinitionVersion
+	flattened["aws.ecs.cluster"] = m.Labels["com.amazonaws.ecs.cluster"]
+	flattened["aws.ecs.container.name"] = m.Labels["com.amazonaws.ecs.container-name"]
+	flattened["aws.ecs.task.arn"] = m.Labels["com.amazonaws.ecs.task-arn"]
+	flattened["aws.ecs.task.definition.family"] = m.Labels["com.amazonaws.ecs.task-definition-family"]
+	flattened["aws.ecs.task.definition.version"] = m.Labels["com.amazonaws.ecs.task-definition-version"]
 	flattened["created.at"] = m.CreatedAt.Format(time.RFC3339Nano)
 	flattened["desired.status"] = m.DesiredStatus
 	flattened["docker.id"] = m.DockerID
@@ -94,6 +89,13 @@ func (m *Metadata) Flat() map[string]any {
 	for i, volume := range m.Volumes {
 		flattened[fmt.Sprintf("volumes.%d.destination", i)] = volume.Destination
 		flattened[fmt.Sprintf("volumes.%d.source", i)] = volume.Source
+	}
+
+	// add user/non-ecs labels
+	for key, value := range m.Labels {
+		if !ecslabelsRe.MatchString(key) {
+			flattened[fmt.Sprintf("labels.%s", key)] = value
+		}
 	}
 
 	return flattened
