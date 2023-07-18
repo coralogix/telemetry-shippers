@@ -35,6 +35,7 @@ The coralogixrepo/otel-coralogix-ecs-ec2 docker image includes an Open Telemetry
 | created.at                      | The time the container was created                                                  |         |
 | `networks.*.ipv4.addresses.*`   | An expression that matches the IP address(s) assigned to a container                |         |
 | `networks.*.network.mode`       | An expression that matches the network mode(s) associated with the container        |         |
+| labels.*                        | An expression that matches the docker labels associated with the container          |         |
 
 Only containers with a valid ECS metadata endpoint will have attributes assigned, all others will be ignored.
 
