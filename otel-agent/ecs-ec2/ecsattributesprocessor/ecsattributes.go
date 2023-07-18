@@ -30,6 +30,7 @@ func processLogsFunc(logger *zap.Logger, c *Config) processorhelper.ProcessLogsF
 				logger.Debug("metadata not found",
 					zap.String("container.id", containerID),
 					zap.String("processor", metadata.Type))
+				return ld, nil
 			}
 
 			// flatten the data
