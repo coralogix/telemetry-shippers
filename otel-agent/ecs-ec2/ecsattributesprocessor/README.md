@@ -84,5 +84,7 @@ processors:
 
 - The `ecsattributesprocessor` uses the Docker API to collect metadata for each container. It refreshes the metadata every 60 seconds as well as everytime a new container is detected via Docker events. If the processor is unable to collect metadata for a container or if there are errors during the refresh process, the processor will log the error and continue processing the next log record. **It will not halt/crash the open telemetry process**. If you notice metadata not being added to your logs, please check the logs for the collector for any errors related to the `ecsattributesprocessor`.
 
+- If logs are received with no attributes, it is possible that these logs are from the ECS Agent; the agent responsible for managing containers on an ECS Node. This container does not have a metadata endpoint. Also, logs from rogue containers that are run on ECS outside the control of the ECS Agent will not be assigned a metadata endpoint and will not have attributes added.
+
 **TODO:**
 - Implement a configuration option that allows the user to specify what action to take on error. For example, `continue` or `halt`.
