@@ -41,7 +41,7 @@ func createDefaultConfig() component.Config {
 		Attributes: []string{
 			// by default, we collect all tribute nameaå that start with:
 			// ecs, name, image or docker
-			"^aws.ecs.*|^image.*|^docker.*",
+			"^aws.ecs.*|^image.*|^docker.*|^labels.*",
 		},
 	}
 }
