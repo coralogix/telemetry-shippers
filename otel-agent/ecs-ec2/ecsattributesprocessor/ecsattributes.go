@@ -30,16 +30,21 @@ func processLogsFunc(logger *zap.Logger, c *Config) processorhelper.ProcessLogsF
 				logger.Debug("metadata not found",
 					zap.String("container.id", containerID),
 					zap.String("processor", metadata.Type))
+				return ld, nil
 			}
 
 			// flatten the data
 			flattened := metadata.Flat()
 
 			for k, v := range flattened {
-				if c.allowAttr(k) {
-					rlog.Resource().Attributes().
-						PutStr(k, fmt.Sprintf("%v", v))
+				val := fmt.Sprintf("%v", v)
+				// if not allowed or empty value, skip
+				if !c.allowAttr(k) || val == "" {
+					continue
 				}
+
+				rlog.Resource().Attributes().
+					PutStr(k, val)
 			}
 		}
 		return ld, nil
