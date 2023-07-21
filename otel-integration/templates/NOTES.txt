@@ -1,0 +1,7 @@
+{{- if eq .Values.global.domain "" }}
+{{ fail "[ERROR] 'global.domain' must be set. See https://coralogix.com/docs/coralogix-endpoints for instructions." }}
+{{ end }}
+
+{{- if eq .Values.global.clusterName "" }}
+{{ fail "[ERROR] 'global.clusterName' must be set with your Kubernetes cluster name." }}
+{{ end }}
