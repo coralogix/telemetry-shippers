@@ -31,15 +31,13 @@ exporters:
   coralogix:
     domain: "$CORALOGIX_DOMAIN"
     private_key: "$PRIVATE_KEY"
-    application_name: "otel-collector"
-    subsystem_name: "ecs"
+    application_name: "$APP_NAME"
+    subsystem_name: "$SUB_SYS"
     application_name_attributes:
-    - "ecs.container.name"
-    - "APP_NAME"
+      - "aws.ecs.container.name"
     subsystem_name_attributes:
-    - "ecs.task.definition.family"
-    - "log.file.name"
-    - "SUB_SYS"
+      - "aws.ecs.task.definition.family"
+      - "log.file.name"
     timeout: 30s
 
 service:
