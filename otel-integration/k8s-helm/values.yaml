@@ -1,9 +1,13 @@
 global:
-  domain: "coralogix.com"
-  clusterName: "otel-integration"
+  domain: ""
+  clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
-  logLevel: "debug"
+  logLevel: "warn"
+
+  extensions:
+    kubernetesDashboard:
+      enabled: true
 
 # set distribution to openshift for openshift clusters
 distribution: ""
@@ -193,7 +197,7 @@ opentelemetry-collector-agent:
           processors:
             - k8sattributes
             - resourcedetection/env
-            - resourcedetection/region
+            # - resourcedetection/region
             - metricstransform
             - memory_limiter
             - batch
@@ -331,6 +335,11 @@ opentelemetry-collector-infrastucture:
           - key: k8s.cluster.name
             value: "{{ .Values.global.clusterName }}"
             action: upsert
+      transform/kube-events:
+        log_statements:
+          - context: log
+            statements:
+              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
       metricstransform/kube-extra-metrics:
         transforms:
           include: .*
@@ -409,6 +418,7 @@ opentelemetry-collector-infrastucture:
             - memory_limiter
             - batch
             - resource/kube-events
+            - transform/kube-events
         metrics:
           exporters:
             - coralogix
@@ -416,7 +426,7 @@ opentelemetry-collector-infrastucture:
             - k8sattributes
             - metricstransform/kube-extra-metrics
             - resourcedetection/env
-            - resourcedetection/region
+            # - resourcedetection/region
             - memory_limiter
             - batch
           receivers:
