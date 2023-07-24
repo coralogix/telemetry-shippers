@@ -1,9 +1,9 @@
-name: Otel Integration Collector Helm Install Test
+name: Otel Integration Helm Install Test
 
 on:
   pull_request:
     paths:
-    - 'otel-integration-collector/k8s-helm/**'
+    - 'otel-integration/k8s-helm/**'
 
 jobs:
   collector-test:
@@ -20,5 +20,4 @@ jobs:
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Run chart-testing (install)
-        run: ct install --namespace default --charts otel-integration-collector/k8s-helm
-
+        run: ct install --namespace default --charts otel-integration/k8s-helm
