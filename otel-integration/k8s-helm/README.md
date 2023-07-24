@@ -1,15 +1,14 @@
 # OpenTelemetry Integration
 
-The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#OpenTelemetry-Agent) and [OpenTelemetry Infrastructure Collector](). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-collector-agent` or `opentelemetry-collector-infrastucture` sections in the `values.yaml` file.
+The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Infrastructure Collector](#opentelemetry-infrastructure-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-collector-agent` or `opentelemetry-collector-infrastucture` sections in the `values.yaml` file.
 
 Content:
-1. [Components](#Components)
-2. [Prerequisites](#Prerequisites)
-3. [Installation](#Installation)
-4. [How to use it](#How-to-use-it)
-5. [Performance of the Collector](#Performance-of-the-Collector)
-6. [Infrastructure Monitoring](#Infrastructure-Monitoring)
-
+1. [Components](#components)
+2. [Prerequisites](#prerequisites)
+3. [Installation](#installation)
+4. [How to use it](#how-to-use-it)
+5. [Performance of the Collector](#performance-of-the-collector)
+6. [Infrastructure Monitoring](#infrastructure-monitoring)
 
 # Components
 
@@ -35,8 +34,8 @@ This Infrastructure collector provides:
 
 - [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) - Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
 - [Cluster Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) - The Kubernetes Cluster receiver collects cluster-level metrics from the Kubernetes API server.
-- [Kubernetes Events Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8seventsreceiver) - The Kubernetes Events receiver collects events from the Kubernetes API server. See [Kubernetes Events](#Kubernetes-Events) for more information.
-- Kubernetes Extra Metrics - This preset enables collection of extra Kubernetes related metrics, such as node information, pod status or container I/O metrics. These metrics are collected in particular for the [Kubernetes Dashboard](#Kubernetes-Dashboard).
+- [Kubernetes Events Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8seventsreceiver) - The Kubernetes Events receiver collects events from the Kubernetes API server. See [Kubernetes Events](#kubernetes-events) for more information.
+- Kubernetes Extra Metrics - This preset enables collection of extra Kubernetes related metrics, such as node information, pod status or container I/O metrics. These metrics are collected in particular for the [Kubernetes Dashboard](#kubernetes-dashboard).
 
 ## Kubernetes Dashboard
 
@@ -182,6 +181,7 @@ processors:
 ```
 
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
+
 ## Dashboards
 
 Under the `dashboard` directory, there are:
@@ -193,4 +193,4 @@ Under the `dashboard` directory, there are:
 
 # Dependencies
 
-This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart. Also this chart currently depends on the [`kube-state-metrics`]() chart to collect extra Kubernetes metrics.
+This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart. Also this chart currently depends on the [`kube-state-metrics`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics) chart to collect extra Kubernetes metrics.

@@ -376,7 +376,7 @@ opentelemetry-collector-infrastucture:
       #         enabled: true
       #       cloud.availability_zone:
       #         enabled: true
-        memory_limiter: null # Will get the k8s resource limits
+      memory_limiter: null # Will get the k8s resource limits
 
     exporters:
       coralogix:

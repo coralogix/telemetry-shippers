@@ -1,0 +1,10 @@
+global:
+  domain: "coralogix.com"
+  clusterName: "ci-test"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+
+  extensions:
+    kubernetesDashboard:
+      enabled: true
