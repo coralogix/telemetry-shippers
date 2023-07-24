@@ -39,7 +39,7 @@ This Infrastructure collector provides:
 
 ## Kubernetes Dashboard
 
-This chart will also collect, out of the box, all the metrics necessary for [Coralogix Kubernetes Monitoring](https://coralogix.com/docs/apm-kubernetes/), which will allow you to monitor your Kubernetes cluster and applications.
+This chart will also collect, out of the box, all the metrics necessary for [Coralogix Kubernetes Monitoring](https://coralogix.com/docs/apm-kubernetes/), which will allow you to monitor your Kubernetes cluster and applications. To do this, it is necessary to deploy the [Kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics) component, which makes it possible to obtain some of these extra metrics.
 
 **Please be aware** that certain metrics collected by for the dashboard have high cardinality, which means that the number of unique values for a given metric is high and might result in higher costs connected with metrics ingestion and storage. This is applies in particular to the pod related metrics `kube_pod_status_reason`, `kube_pod_status_phase` and `kube_pod_status_qos_class`.
 
