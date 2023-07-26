@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.29 / 2023-07-26
+
+* [FEATURE] Add system.memory.utilization and system.cpu.utilization to hostmetrics preset. (v0.64.1)
+* [FEATURE] Extended kubelet metrics to include cAdvisor. (v0.64.0)
+
 ### v0.0.28 / 2023-07-03
 
 * [FEATURE] Add domain validation via `NOTES.txt`.
