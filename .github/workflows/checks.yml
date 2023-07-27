@@ -46,6 +46,8 @@ jobs:
             - 'otel-agent/k8s-helm/**'
           otel-infrastructure-collector:
             - 'otel-infrastructure-collector/k8s-helm/**'
+          otel-integration:
+            - 'otel-integration/k8s-helm/**'
           metrics-prometheus-agent:
             - 'metrics/prometheus-agent/**'
           metrics-prometheus-operator:
@@ -69,6 +71,9 @@ jobs:
     - name: OpenTelemetry Infrastructure Collector Changelog
       if: steps.filter.outputs.otel-infrastructure-collector == 'true'
       run: scripts/changelog_check.sh otel-infrastructure-collector
+    - name: OpenTelemetry Integration Changelog
+      if: steps.filter.outputs.otel-integration == 'true'
+      run: scripts/changelog_check.sh otel-integration
     - name: Prometheus Agent Changelog
       if: steps.filter.outputs.metrics-prometheus-agent == 'true'
       run: scripts/changelog_check.sh metrics/prometheus-agent

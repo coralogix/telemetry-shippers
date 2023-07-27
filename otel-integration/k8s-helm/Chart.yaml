@@ -1,0 +1,30 @@
+apiVersion: v2
+name: otel-ingegration
+description: OpenTelemetry Integration
+version: 0.0.1
+keywords:
+  - OpenTelemetry Collector
+  - OpenTelemetry Agent
+  - OpenTelemetry Integration
+  - Kubernetes
+  - Coralogix
+dependencies:
+  - name: opentelemetry-collector
+    alias: opentelemetry-agent
+    version: "0.65.0"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-agent.enabled
+  - name: opentelemetry-collector
+    alias: opentelemetry-cluster-collector
+    version: "0.65.0"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-cluster-collector.enabled
+  - name: kube-state-metrics
+    version: "5.8.1"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: global.extensions.kubernetesDashboard.enabled
+sources:
+  - https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
+maintainers:
+  - name: Coralogix
+    email: platform@coralogix.com

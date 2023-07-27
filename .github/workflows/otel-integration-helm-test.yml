@@ -1,0 +1,23 @@
+name: Otel Integration Helm Install Test
+
+on:
+  pull_request:
+    paths:
+    - 'otel-integration/k8s-helm/**'
+
+jobs:
+  collector-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+      - name: Setup Secret
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+      - name: Run chart-testing (install)
+        run: ct install --namespace default --charts otel-integration/k8s-helm

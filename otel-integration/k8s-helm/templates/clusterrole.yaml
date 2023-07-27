@@ -1,0 +1,15 @@
+{{- if eq ((.Values.distribution)) "openshift" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:openshift:scc:{{.Values.global.fullnameOverride }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - {{.Values.global.fullnameOverride }}
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+{{- end }}
