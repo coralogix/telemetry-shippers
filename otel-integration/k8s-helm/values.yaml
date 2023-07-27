@@ -11,7 +11,7 @@ global:
 
 # set distribution to openshift for openshift clusters
 distribution: ""
-opentelemetry-collector-agent:
+opentelemetry-agent:
   enabled: true
   mode: daemonset
   fullnameOverride: coralogix-opentelemetry
@@ -253,7 +253,7 @@ opentelemetry-collector-agent:
   #   defaultRules:
   #     enabled: true
 
-opentelemetry-collector-infrastucture:
+opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
   fullnameOverride: coralogix-opentelemetry-collector

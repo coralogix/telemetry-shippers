@@ -10,15 +10,15 @@ keywords:
   - Coralogix
 dependencies:
   - name: opentelemetry-collector
-    alias: opentelemetry-collector-agent
+    alias: opentelemetry-agent
     version: "0.65.0"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
-    condition: opentelemetry-collector-agent.enabled
+    condition: opentelemetry-agent.enabled
   - name: opentelemetry-collector
-    alias: opentelemetry-collector-infrastucture
+    alias: opentelemetry-cluster-collector
     version: "0.65.0"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
-    condition: opentelemetry-collector-infrastucture.enabled
+    condition: opentelemetry-cluster-collector.enabled
   - name: kube-state-metrics
     version: "5.8.1"
     repository: https://prometheus-community.github.io/helm-charts

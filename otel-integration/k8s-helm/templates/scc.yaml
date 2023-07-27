@@ -38,8 +38,8 @@ apiVersion: security.openshift.io/v1
 metadata:
   name: {{.Values.global.fullnameOverride }}
   labels:
-    app: {{ template "opentelemetry-collector-agent.name" . }}
-    chart: {{ template "opentelemetry-collector-agent.chart" . }}
+    app: {{ template "opentelemetry-agent.name" . }}
+    chart: {{ template "opentelemetry-agent.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 users:

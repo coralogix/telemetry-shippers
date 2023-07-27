@@ -1,6 +1,6 @@
 # OpenTelemetry Integration
 
-The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Infrastructure Collector](#opentelemetry-infrastructure-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-collector-agent` or `opentelemetry-collector-infrastucture` sections in the `values.yaml` file.
+The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
 
 Content:
 1. [Components](#components)
@@ -28,9 +28,9 @@ The included agent provides:
 - [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/spanmetricsprocessor) - Traces are converted to Requests, Duration and Error metrics using spanmetrics processor.
 - [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension) - You can investigate latency and error issues by navigating to Pod's localhost:55516 web server. Routes are desribed in [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes)
 
-## OpenTelemetry Infrastructure Collector
+## OpenTelemetry Cluster Collector
 
-This Infrastructure collector provides:
+This cluster collector provides:
 
 - [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) - Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
 - [Cluster Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) - The Kubernetes Cluster receiver collects cluster-level metrics from the Kubernetes API server.
