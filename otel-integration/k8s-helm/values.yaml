@@ -100,23 +100,22 @@ opentelemetry-collector-agent:
         detectors: ["system", "env"]
         timeout: 2s
         override: false
-      # TODO: Uncomment when upgrading to latest collector version is unblocked.
-      # resourcedetection/region:
-      #   detectors: ["gcp", "ec2"]
-      #   timeout: 2s
-      #   override: false
-      #   gcp:
-      #     resource_attributes:
-      #       cloud.region:
-      #         enabled: true
-      #       cloud.availability_zone:
-      #         enabled: true
-      #   ec2:
-      #     resource_attributes:
-      #       cloud.region:
-      #         enabled: true
-      #       cloud.availability_zone:
-      #         enabled: true
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: false
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
       metricstransform:
         transforms:
           include: .*
@@ -197,7 +196,7 @@ opentelemetry-collector-agent:
           processors:
             - k8sattributes
             - resourcedetection/env
-            # - resourcedetection/region
+            - resourcedetection/region
             - metricstransform
             - memory_limiter
             - batch
@@ -359,23 +358,22 @@ opentelemetry-collector-infrastucture:
         detectors: ["system", "env"]
         timeout: 2s
         override: false
-      # TODO: Uncomment when upgrading to latest collector version is unblocked.
-      # resourcedetection/region:
-      #   detectors: ["gcp", "ec2"]
-      #   timeout: 2s
-      #   override: false
-      #   gcp:
-      #     resource_attributes:
-      #       cloud.region:
-      #         enabled: true
-      #       cloud.availability_zone:
-      #         enabled: true
-      #   ec2:
-      #     resource_attributes:
-      #       cloud.region:
-      #         enabled: true
-      #       cloud.availability_zone:
-      #         enabled: true
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: false
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
       memory_limiter: null # Will get the k8s resource limits
 
     exporters:
@@ -426,7 +424,7 @@ opentelemetry-collector-infrastucture:
             - k8sattributes
             - metricstransform/kube-extra-metrics
             - resourcedetection/env
-            # - resourcedetection/region
+            - resourcedetection/region
             - memory_limiter
             - batch
           receivers:
