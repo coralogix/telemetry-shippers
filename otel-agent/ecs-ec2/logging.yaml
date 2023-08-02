@@ -1,10 +1,16 @@
 receivers:
-  filelog:
-    start_at: beginning
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
 
-    # note that the host filesystem is mounted at /hostfs
+  filelog:
+    start_at: end
     include:
       - /hostfs/var/lib/docker/containers/*/*.log
+
     include_file_path: true
 
     # add log.file.name to resource attributes
@@ -15,29 +21,50 @@ receivers:
 
 processors:
   resourcedetection:
-    detectors: [env, ec2, system] # ecs & docker detectors not required when using ecsattributes for logs
+    # ecs & docker detectors not required when using ecslogresourcedetection for logs
+    detectors: [env, ec2, system]
     timeout: 2s
     override: false
 
   ecsattributes:
-    # add container ID sources
+    attributes:
+      - ^image$
+      - ^aws.*
+      - ^labels.*
     container_id:
       sources:
         - "log.file.name"
-        - "container.id"
+
+  # only allow logs with container.name label
+  filter/ecslogs:
+    logs:
+      include:
+        match_type: regexp
+        resource_attributes:
+          - key: aws.ecs.container.name
+            value: .*
+
+  transform/logs:
+    error_mode: ignore
+    log_statements:
+      - context: resource
+        statements:
+          - set(attributes["cx_container_id"], attributes["docker.id"])
+          - set(attributes["aws_ecs_task_family"], attributes["aws.ecs.task.definition.family"])
     
 exporters:
   logging:
+    verbosity: detailed
   coralogix:
     domain: "$CORALOGIX_DOMAIN"
     private_key: "$PRIVATE_KEY"
     application_name: "$APP_NAME"
     subsystem_name: "$SUB_SYS"
     application_name_attributes:
-      - "aws.ecs.container.name"
+    - "aws.ecs.task.definition.family"
     subsystem_name_attributes:
-      - "aws.ecs.task.definition.family"
-      - "log.file.name"
+    - "docker.name"
+    - "log.file.name"
     timeout: 30s
 
 service:
@@ -48,5 +75,13 @@ service:
       processors:
         - resourcedetection
         - ecsattributes
+        - filter/ecslogs
+        - transform/logs
+      exporters:
+        - coralogix
+
+    traces:
+      receivers:
+        - otlp
       exporters:
         - coralogix
