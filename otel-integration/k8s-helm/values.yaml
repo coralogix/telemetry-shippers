@@ -103,7 +103,7 @@ opentelemetry-agent:
       resourcedetection/region:
         detectors: ["gcp", "ec2"]
         timeout: 2s
-        override: false
+        override: true
         gcp:
           resource_attributes:
             cloud.region:
@@ -263,19 +263,6 @@ opentelemetry-cluster-collector:
     clusterRoleBinding:
       name: "coralogix-opentelemetry-collector"
   replicaCount: 1
-  ports:
-    otlp:
-      enabled: true
-    otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
-      enabled: false
   
   presets:
     clusterMetrics:
@@ -291,6 +278,8 @@ opentelemetry-cluster-collector:
         secretKeyRef:
           name: coralogix-keys
           key: PRIVATE_KEY
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: "k8s.node.name=$(K8S_NODE_NAME)"
     - name: KUBE_NODE_NAME
       valueFrom:
         fieldRef:
@@ -361,7 +350,7 @@ opentelemetry-cluster-collector:
       resourcedetection/region:
         detectors: ["gcp", "ec2"]
         timeout: 2s
-        override: false
+        override: true
         gcp:
           resource_attributes:
             cloud.region:
@@ -442,10 +431,22 @@ opentelemetry-cluster-collector:
       cpu: 1
       memory: 2G
 
+  ports:
+    otlp:
+      enabled: true
+    otlp-http:
+      enabled: false
+    jaeger-compact:
+      enabled: false
+    jaeger-thrift:
+      enabled: false
+    jaeger-grpc:
+      enabled: false
+    zipkin:
+      enabled: false
     # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
-    # ports:
-    #   metrics:
-    #     enabled: true
+    # metrics:
+    #   enabled: true
 
   # serviceMonitor:
   #   enabled: true
