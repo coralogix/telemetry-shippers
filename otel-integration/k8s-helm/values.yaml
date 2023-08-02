@@ -442,10 +442,22 @@ opentelemetry-cluster-collector:
       cpu: 1
       memory: 2G
 
+  ports:
+    otlp:
+      enabled: true
+    otlp-http:
+      enabled: false
+    jaeger-compact:
+      enabled: false
+    jaeger-thrift:
+      enabled: false
+    jaeger-grpc:
+      enabled: false
+    zipkin:
+      enabled: false
     # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
-    # ports:
-    #   metrics:
-    #     enabled: true
+    # metrics:
+    #   enabled: true
 
   # serviceMonitor:
   #   enabled: true
