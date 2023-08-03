@@ -1,6 +1,6 @@
 global:
-  domain: ""
-  clusterName: ""
+  domain: "coralogix.com"
+  clusterName: "test"
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
   logLevel: "warn"
@@ -128,9 +128,6 @@ opentelemetry-agent:
             - action: add_label
               new_label: cx.otel_integration.name
               new_value: "{{ .Chart.Name }}"
-            - action: add_label
-              new_label: cx.otel_integration.version
-              new_value: "{{ .Chart.Version }}"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME     
@@ -293,6 +290,9 @@ opentelemetry-cluster-collector:
       pprof:
         endpoint: localhost:1777
     receivers:
+      k8s_cluster:
+        collection_interval: 10s
+        allocatable_types_to_report: [cpu, memory]
       prometheus:
         config:
           scrape_configs:
@@ -340,9 +340,6 @@ opentelemetry-cluster-collector:
             - action: add_label
               new_label: cx.otel_integration.name
               new_value: "{{ .Chart.Name }}"
-            - action: add_label
-              new_label: cx.otel_integration.version
-              new_value: "{{ .Chart.Version }}"
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
@@ -419,6 +416,7 @@ opentelemetry-cluster-collector:
           receivers:
             - otlp
             - prometheus
+            - k8s_cluster
   
   tolerations:
     - operator: Exists
@@ -457,7 +455,6 @@ opentelemetry-cluster-collector:
   #     enabled: true
 
 kube-state-metrics:
-  enabled: true
   prometheusScrape: false
   collectors:
     - pods
