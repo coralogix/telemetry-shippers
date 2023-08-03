@@ -1,6 +1,6 @@
 global:
-  domain: "coralogix.com"
-  clusterName: "test"
+  domain: ""
+  clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
   logLevel: "warn"
