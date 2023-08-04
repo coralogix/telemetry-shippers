@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.5 / 2023-08-04
+
+* [FIX] Fix `kube-event` transfrom processor configuration to correctly filter log body keys
+
 ### v0.0.4 / 2023-08-03
 
 * [FEATURE] Add cluster metrics related to allocatable resources (CPU, memory)
