@@ -81,5 +81,3 @@ Replace ‘fireLensConfiguration’ with:
     }
   },
 ```
-
-**Note:** To manage multiline logs you will need to build the fluentd image from [here](https://github.com/coralogix/eng-integrations/tree/master/fluentd/aws-ecs/image) while adding a [concat](https://github.com/fluent-plugins-nursery/fluent-plugin-concat) filter in the firelens.conf that match your needs.
