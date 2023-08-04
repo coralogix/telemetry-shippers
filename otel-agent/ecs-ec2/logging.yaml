@@ -1,11 +1,4 @@
 receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: "0.0.0.0:4317"
-      http:
-        endpoint: "0.0.0.0:4318"
-
   filelog:
     start_at: end
     include:
@@ -53,8 +46,6 @@ processors:
           - set(attributes["aws_ecs_task_family"], attributes["aws.ecs.task.definition.family"])
     
 exporters:
-  logging:
-    verbosity: detailed
   coralogix:
     domain: "$CORALOGIX_DOMAIN"
     private_key: "$PRIVATE_KEY"
@@ -80,8 +71,3 @@ service:
       exporters:
         - coralogix
 
-    traces:
-      receivers:
-        - otlp
-      exporters:
-        - coralogix
