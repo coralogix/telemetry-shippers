@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.31 / 2023-08-02
+* Remove `ecsattributes` processor from telemetryshippers repo
+* Updated default configurations in logging.yaml and config.yaml
+
 ### v0.0.30 / 2023-07-18
 * [FIX] fixed issue with ecsattributes processor adding empty labels/attributes
 * [UPGRADE] add feature to ecsattribute processor to record custom docker labels

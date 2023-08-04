@@ -6,25 +6,12 @@ Our Coralogix exporter allows us to use enrichments such as dynamic `application
 
 This guide shows the process for deploying Open Telemetry to ECS to fascilitate the collection of logs, metrics and traces.
 
-### Image
-
-This implementation utilises an image [(**coralogixrepo/otel-coralogix-ecs-ec2**)](https://hub.docker.com/r/coralogixrepo/otel-coralogix-ecs-ec2/tags) which is a custom distribution based on the official Open Telemetry Contrib image. As of version 0.80.0, it also includes our [ecsattributes processor](./ecsattributesprocessor/README.md).
-
 ### Required
 
 - [AWS credentials must be configured](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html)
 - [ecs-cli](https://github.com/aws/amazon-ecs-cli#installing)
 - [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- Coralogix Otel ECS Agent [cloudformation template](https://github.com/coralogix/cloudformation-corlaogix-aws/tree/master/opentelemetry/ecs-ec2)
-
-### Open Telemetry Configuration
-
-The Open Telemetry configuration for the agent is stored in a Base64 encoded environment variable and applied at runtime. This allows you to dynamically pass any configuration values you choose as a parameter to Cloudformation.
-
-This repo provides example of the following configuration files (you can create other configuration with combination for logs/metric/taces) which work directly with the *coralogixrepo/otel-coralogix-ecs-wrapper* docker image for ECS.
-
-- [logging](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/logging.yaml)
-- [traces & metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/config.yaml)
+- Coralogix Otel ECS [cloudformation template](https://github.com/coralogix/cloudformation-coralogix-aws/blob/master/opentelemetry/ecs-ec2/README.md)
 
 ### ECS Cluster
 
@@ -61,3 +48,20 @@ Once the template is deployed successfully, you can verify if the container is r
 ```sh
 ecs-cli ps --region <region> -c <cluster name>
 ```
+
+### Open Telemetry Configuration
+
+When deploying Open Telemetry in ECS, if you are using the standard Open Telemetry distribution, you will be required to create a custom image with your configuration files baked in. This is not ideal as it requires you to rebuild the image each time you want to make a change to the configuration.
+
+You also have the option of utilising the [coralogixrepo/coralogix-otel-collector](https://hub.docker.com/r/coralogixrepo/coralogix-otel-collector/tags) image. This is a custom distribution based on the official Open Telemetry Contrib image. It includes our custom [ecsattributes processor](https://github.com/coralogix/cloudformation-coralogix-aws/blob/master/opentelemetry/ecs-ec2/components.md#the-ecsattributes-processor) and our [awsecscontainermetrics](https://github.com/coralogix/cloudformation-coralogix-aws/blob/master/opentelemetry/ecs-ec2/components.md#aws-ecs-container-metrics-daemonset-receiver) receiver for ECS, which allow for better attribute and label correlation when running Open Telemetry as a daemonset on ECS.
+
+The image allows you to pass in your configuration files as a Base64 encoded environment variable. `OTEL_CONFIG`
+
+This repo provides example of the following configuration files (you can create other configuration with combination for logs/metric/taces) which work directly with the *coralogixrepo/coralogix-otel-collector* docker image for ECS and the cloudformation template provided [here](https://github.com/coralogix/cloudformation-coralogix-aws/blob/master/opentelemetry/ecs-ec2/README.md).
+
+- [logging](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/logging.yaml)
+- [traces & metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/config.yaml)
+
+### Deploying Open Telemetry
+
+Once you have your configuration files and ECS Cluster ready, you can deploy Open Telemetry to ECS using the cloudformation templates available [here](https://github.com/coralogix/cloudformation-coralogix-aws/blob/master/opentelemetry/ecs-ec2/README.md).
