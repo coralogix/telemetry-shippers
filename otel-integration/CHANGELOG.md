@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.4 / 2023-08-03
+
+* [FEATURE] Add cluster metrics related to allocatable resources (CPU, memory)
+* [CHORE] Remove unused `cx.otel_integration.version` attribute
+* [CHORE] Remove unused `enabled` parameter on `kube-state-metrics` config
+
 ### v0.0.3 / 2023-08-02
 
 * [CHORE] Bump Coralogix OpenTelemetry chart to `0.67.0`
