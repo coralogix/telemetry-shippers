@@ -372,6 +372,7 @@ opentelemetry-cluster-collector:
         application_name: "{{ .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
         application_name_attributes:
+          - "{{ .Values.global.defaultApplicationName }}"
           - "k8s.namespace.name"
           - "service.namespace"
         subsystem_name_attributes:
