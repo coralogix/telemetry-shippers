@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.6 / 2023-08-08
+
+* [CHORE] Bump Coralogix OpenTelemetry chart to `0.68.0`
+* [FEATURE] Make `k8s.node.name` label the target node for Kubernetes node info metric
+
 ### v0.0.5 / 2023-08-04
 
 * [FIX] Fix `kube-event` transfrom processor configuration to correctly filter log body keys
