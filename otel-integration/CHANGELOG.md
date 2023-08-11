@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.8 / 2023-08-11
+
+* [CHORE] Upgrading upstream chart. (v0.69.0)
+
 ### v0.0.7 / 2023-08-11
 
 * [FEATURE] Align `cx.otel_integration.name` with the new internal requirements
