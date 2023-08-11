@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.9 / 2023-08-11
+
+* [CHORE] Upgrading upstream chart. (v0.70.1)
+
 ### v0.0.8 / 2023-08-11
 
 * [CHORE] Upgrading upstream chart. (v0.69.0)

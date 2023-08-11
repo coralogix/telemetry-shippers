@@ -1,14 +1,14 @@
 apiVersion: v2
 name: opentelemetry-coralogix
 description: OpenTelemetry agent to which instrumentation libraries export their telemetry data
-version: 0.0.30
+version: 0.0.31
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry agent
   - Coralogix
 dependencies:
   - name: opentelemetry-collector
-    version: "0.69.0"
+    version: "0.70.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 sources:
   - https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
