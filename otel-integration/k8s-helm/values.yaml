@@ -14,7 +14,7 @@ distribution: ""
 opentelemetry-agent:
   enabled: true
   mode: daemonset
-  fullnameOverride: coralogix-opentelemetry
+  fullnameOverride: coralogix-opentelemetry-agent
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -38,9 +38,9 @@ opentelemetry-agent:
     # If not set and create is true, a name is generated using the fullname template
     name: ""
   clusterRole:
-    name: "coralogix-opentelemetry"
+    name: "coralogix-opentelemetry-agent"
     clusterRoleBinding:
-      name: "coralogix-opentelemetry"
+      name: "coralogix-opentelemetry-agent"
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
 
