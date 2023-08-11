@@ -127,7 +127,7 @@ opentelemetry-agent:
               new_value: "{{ .Values.global.clusterName }}"
             - action: add_label
               new_label: cx.otel_integration.name
-              new_value: "{{ .Chart.Name }}"
+              new_value: "coralogix-integration-helm"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME     
@@ -339,7 +339,7 @@ opentelemetry-cluster-collector:
               new_value: "{{ .Values.global.clusterName }}"
             - action: add_label
               new_label: cx.otel_integration.name
-              new_value: "{{ .Chart.Name }}"
+              new_value: "coralogix-integration-helm"
           # Replace node name for kube node info with the name of the target node.
         - include: kube_node_info
           match_type: strict
