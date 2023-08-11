@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.30 / 2023-08-11
+* [CHORE] Upgrading upstream chart. (v0.69.0)
+
 ### v0.0.29 / 2023-07-26
 
 * [FEATURE] Add system.memory.utilization and system.cpu.utilization to hostmetrics preset. (v0.64.1)

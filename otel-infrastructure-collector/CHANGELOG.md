@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.3 / 2023-08-11
+* [CHORE] Upgrading upstream chart. (v0.69.0)
+
 ### v0.1.2 / 2023-05-08
 
 * [FEATURE] Allow users to configure Coralogix domain instead of endpoints
