@@ -1,0 +1,282 @@
+# In statefulset container env:
+# update `ClusterName=YOUR-EKS-CLUSTER-NAME` in the env variable OTEL_RESOURCE_ATTRIBUTES
+# update `CORALOGIX_DOMAIN` to match your Coralogix Team domain.
+# update the default `CX_APPLICATION` and `CX_SUBSYSTEM`
+---
+# required to query the kubernetes API
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cx-otel-collector-admin-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - nodes/stats
+      - services
+      - endpoints
+      - pods
+      - pods/proxy
+      - configmaps
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs: ["patch"]
+  - nonResourceURLs: [ "/metrics/cadvisor"]
+    verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cx-otel-collector-admin-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: cx-otel-collector
+    namespace: cx-eks-fargate-otel
+roleRef:
+  kind: ClusterRole
+  name: cx-otel-collector-admin-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ConfigMap for script to label the node of the OTEL collector for targeted collection by self-monitoring pod.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: label-node-script
+  namespace: cx-eks-fargate-otel
+  labels:
+    app: eks-fargate-otel
+    component: cx-otel-collector-config
+data:
+  label-node-script: |
+    #!/bin/bash
+
+    # Download kubectl
+    # If the latest stable version is not compatible with your cluster, adjust accordingly.
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    # Give execute permissions to kubectl
+    chmod +x kubectl
+
+    # Run the command to label nodes
+    ./kubectl label nodes $K8S_NODE_NAME OTEL-collector-node=true
+---
+# ConfigMap for OTEL collector instance
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cx-otel-collector-config
+  namespace: cx-eks-fargate-otel
+  labels:
+    app: eks-fargate-otel
+    component: cx-otel-collector-config
+data:
+  cx-otel-collector-config: |
+    extensions:
+      k8s_observer:
+        auth_type: serviceAccount
+        observe_pods: true
+        observe_nodes: true
+      health_check:
+
+    receivers:
+      # Monitoring of OTEL performance metrics
+      prometheus/self:
+        config:
+          scrape_configs:
+            - job_name: otel-collector
+              scrape_interval: 5s
+              static_configs:
+                - targets: [localhost:8888]
+
+      # Monitoring all kubelets of the cluster (except that of the OTEL pod due to Fargate limitations)
+      receiver_creator:
+        watch_observers: [k8s_observer]
+        receivers:
+          kubeletstats:
+            config:
+              auth_type: serviceAccount
+              collection_interval: 10s
+              endpoint: '`endpoint`:`kubelet_endpoint_port`'
+              insecure_skip_verify: true
+              extra_metadata_labels:
+              - container.id
+              metric_groups:
+              - container
+              - pod
+              - node
+            rule: type == "k8s.node" && name contains "fargate" && name != "${env:K8S_NODE_NAME}"
+
+      # gRPC endoint for traces and metrics submission by cluster applications
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+    
+    processors:
+      # add cluster name from env variable and EKS metadata
+      resourcedetection:
+        detectors: [env, system, eks]
+        system:
+          hostname_sources: ["os"]
+
+      batch:
+        timeout: 60s
+
+    exporters:
+      prometheusremotewrite:
+        endpoint: https://ingress.${CORALOGIX_DOMAIN}/prometheus/v1
+        headers:
+          Authorization: "Bearer ${CORALOGIX_PRIVATE_KEY}"
+
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "${CORALOGIX_DOMAIN}"
+        application_name_attributes:
+        - "k8s.namespace.name" 
+        - "service.namespace"
+        subsystem_name_attributes:
+        - "k8s.deployment.name"
+        - "k8s.statefulset.name"
+        - "k8s.daemonset.name"
+        - "k8s.cronjob.name"
+        - "k8s.job.name"
+        - "k8s.container.name"
+        - "k8s.node.name"
+        - "service.name"
+        application_name: "${CX_APPLICATION}"
+        subsystem_name: "${CX_SUBSYSTEM}"
+
+      logging:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [resourcedetection, batch]
+          exporters: [coralogix]
+        metrics/otlp:
+          receivers: [otlp]
+          processors: [resourcedetection, batch]
+          exporters: [coralogix]
+        metrics/self:
+          receivers: [prometheus/self]
+          processors: [resourcedetection, batch]
+          exporters: [prometheusremotewrite]
+        metrics/kubeletstats:
+          receivers: [receiver_creator]
+          processors: [resourcedetection, batch]
+          exporters: [coralogix]
+
+      extensions: [health_check, k8s_observer]
+
+# configure the service and the collector as a StatefulSet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cx-otel-collector-service
+  namespace: cx-eks-fargate-otel
+  labels:
+    app: eks-fargate-otel
+    component: cx-otel-collector
+spec:
+  ports:
+    - name: metrics # default endpoint for querying metrics.
+      port: 8888
+    - name: traces
+      port: 4317
+  selector:
+    component: cx-otel-collector
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cx-otel-collector
+  namespace: cx-eks-fargate-otel
+  labels:
+    app: eks-fargate-otel
+    component: cx-otel-collector
+spec:
+  selector:
+    matchLabels:
+      app: eks-fargate-otel
+      component: cx-otel-collector
+  serviceName: cx-otel-collector-service
+  template:
+    metadata:
+      labels:
+        app: eks-fargate-otel
+        component: cx-otel-collector
+    spec:
+      serviceAccountName: cx-otel-collector
+      securityContext:
+        fsGroup: 65534
+      initContainers:
+        - name: node-labeler
+          image: public.ecr.aws/aws-cli/aws-cli:latest
+          command: ["/bin/sh", "-c", "/script/label_node.sh"]
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: script-volume
+              mountPath: /script
+      containers:
+        - image: otel/opentelemetry-collector-contrib:latest
+          name: cx-otel-collector
+          imagePullPolicy: Always
+          command:
+            - "/otelcol-contrib"
+            - "--config=/conf/cx-otel-collector-config.yaml"
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "ClusterName=fargate-lab"
+            - name: CORALOGIX_DOMAIN
+              value: "coralogix.com"
+            - name: CX_APPLICATION
+              value: "EKS"
+            - name: CX_SUBSYSTEM
+              value: "Fargate"
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: coralogix-keys
+                  key: PRIVATE_KEY
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 1
+              memory: 2Gi
+          volumeMounts:
+            - name: cx-otel-collector-config-volume
+              mountPath: /conf
+      volumes:
+        - name: cx-otel-collector-config-volume
+          configMap:
+            name: cx-otel-collector-config
+            items:
+              - key: cx-otel-collector-config
+                path: cx-otel-collector-config.yaml
+        - name: script-volume
+          configMap:
+            name: label-node-script
+            items:
+              - key: label-node-script
+                path: label_node.sh
+                mode: 0555

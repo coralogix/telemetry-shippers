@@ -1,3 +1,4 @@
 /tmp/bin
 .mdoxcache
 */ecs-ec2/ecsattributesprocessor/cmd*
+.DS_Store
