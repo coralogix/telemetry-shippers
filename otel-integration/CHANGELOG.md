@@ -2,6 +2,23 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.9 / 2023-08-11
+
+* [CHORE] Upgrading upstream chart. (v0.70.1)
+
+### v0.0.8 / 2023-08-11
+
+* [CHORE] Upgrading upstream chart. (v0.69.0)
+
+### v0.0.7 / 2023-08-11
+
+* [FEATURE] Align `cx.otel_integration.name` with the new internal requirements
+
+### v0.0.6 / 2023-08-08
+
+* [CHORE] Bump Coralogix OpenTelemetry chart to `0.68.0`
+* [FEATURE] Make `k8s.node.name` label the target node for Kubernetes node info metric
+
 ### v0.0.5 / 2023-08-04
 
 * [FIX] Fix `kube-event` transfrom processor configuration to correctly filter log body keys

@@ -127,7 +127,7 @@ opentelemetry-agent:
               new_value: "{{ .Values.global.clusterName }}"
             - action: add_label
               new_label: cx.otel_integration.name
-              new_value: "{{ .Chart.Name }}"
+              new_value: "coralogix-integration-helm"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME     
@@ -275,8 +275,6 @@ opentelemetry-cluster-collector:
         secretKeyRef:
           name: coralogix-keys
           key: PRIVATE_KEY
-    - name: OTEL_RESOURCE_ATTRIBUTES
-      value: "k8s.node.name=$(K8S_NODE_NAME)"
     - name: KUBE_NODE_NAME
       valueFrom:
         fieldRef:
@@ -332,7 +330,7 @@ opentelemetry-cluster-collector:
               - keep_keys(body["object"]["regarding"], ["kind", "name", "namespace"])
       metricstransform/kube-extra-metrics:
         transforms:
-          include: .*
+        - include: .*
           match_type: regexp
           action: update
           operations:
@@ -341,7 +339,15 @@ opentelemetry-cluster-collector:
               new_value: "{{ .Values.global.clusterName }}"
             - action: add_label
               new_label: cx.otel_integration.name
-              new_value: "{{ .Chart.Name }}"
+              new_value: "coralogix-integration-helm"
+          # Replace node name for kube node info with the name of the target node.
+        - include: kube_node_info
+          match_type: strict
+          action: update
+          operations:
+            - action: update_label
+              label: node
+              new_label: k8s.node.name
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
