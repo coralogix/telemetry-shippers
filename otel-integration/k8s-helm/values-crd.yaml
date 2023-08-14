@@ -1,0 +1,497 @@
+global:
+  domain: ""
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+
+  extensions:
+    kubernetesDashboard:
+      enabled: true
+
+# set distribution to openshift for openshift clusters
+distribution: ""
+opentelemetry-agent:
+  enabled: true
+  mode: daemonset
+  
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
+  
+  fullnameOverride: coralogix-opentelemetry-agent
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: "k8s.node.name=$(K8S_NODE_NAME)"
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+  clusterRole:
+    name: "coralogix-opentelemetry-agent"
+    clusterRoleBinding:
+      name: "coralogix-opentelemetry-agent"
+  hostNetwork: true
+  dnsPolicy: "ClusterFirstWithHostNet"
+
+  presets:
+    logsCollection:
+      enabled: true
+      storeCheckpoints: true
+      maxRecombineLogSize: 1048576
+      extraFilelogOperators: []
+#     - type: recombine
+#       combine_field: body
+#       source_identifier: attributes["log.file.path"]
+#       is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+    kubernetesAttributes:
+      enabled: true
+    hostMetrics:
+      enabled: true
+    kubeletMetrics:
+      enabled: true
+
+  config:
+    extensions:
+      zpages:
+        endpoint: localhost:55679
+      pprof:
+        endpoint: localhost:1777
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+          http:
+            endpoint: ${MY_POD_IP}:4318
+      zipkin:
+        endpoint: ${MY_POD_IP}:9411
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: ${MY_POD_IP}:14250
+          thrift_http:
+            endpoint: ${MY_POD_IP}:14268
+          thrift_compact:
+            endpoint: ${MY_POD_IP}:6831
+          thrift_binary:
+            endpoint: ${MY_POD_IP}:6832
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 30s
+            static_configs:
+              - targets:
+                  - ${MY_POD_IP}:8888
+    processors:
+      resourcedetection/env:
+        detectors: ["system", "env"]
+        timeout: 2s
+        override: false
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: true
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+      metricstransform:
+        transforms:
+          include: .*
+          match_type: regexp
+          action: update
+          operations:
+            - action: add_label
+              new_label: k8s.cluster.name
+              new_value: "{{ .Values.global.clusterName }}"
+            - action: add_label
+              new_label: cx.otel_integration.name
+              new_value: "{{ .Chart.Name }}"
+      k8sattributes:
+        filter:
+          node_from_env_var: KUBE_NODE_NAME     
+        extract:
+          metadata:
+            - "k8s.namespace.name"
+            - "k8s.deployment.name"
+            - "k8s.statefulset.name"
+            - "k8s.daemonset.name"
+            - "k8s.cronjob.name"
+            - "k8s.job.name"
+            - "k8s.pod.name"
+            - "k8s.node.name"
+      spanmetrics:
+        metrics_exporter: coralogix
+        dimensions:
+          - name: "k8s.deployment.name"
+          - name: "k8s.statefulset.name"
+          - name: "k8s.daemonset.name"
+          - name: "k8s.cronjob.name"
+          - name: "k8s.job.name"
+          - name: "k8s.container.name"
+          - name: "k8s.node.name"
+          - name: "k8s.namespace.name" 
+      memory_limiter: null # Will get the k8s resource limits
+
+    exporters:
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{ .Values.global.domain }}"
+        application_name: "{{ .Values.global.defaultApplicationName }}"
+        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
+        application_name_attributes:
+          - "k8s.namespace.name"
+          - "service.namespace"
+        subsystem_name_attributes:
+          - "k8s.deployment.name"
+          - "k8s.statefulset.name"
+          - "k8s.daemonset.name"
+          - "k8s.cronjob.name"
+          - "k8s.job.name"
+          - "k8s.container.name"
+          - "k8s.node.name"
+          - "service.name"
+
+    service:
+      telemetry:
+        logs:
+          level: "{{ .Values.global.logLevel }}"
+          encoding: json
+        metrics:
+          address: ${MY_POD_IP}:8888
+      extensions:
+      - zpages
+      - pprof
+      - health_check
+      - memory_ballast
+      pipelines:
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - k8sattributes
+            - resourcedetection/env
+            - resourcedetection/region
+            - metricstransform
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - prometheus
+            - hostmetrics
+        traces:
+          exporters:
+            - coralogix
+          processors:
+            - memory_limiter
+            - spanmetrics
+            - batch
+          receivers:
+            - otlp
+            - zipkin
+            - jaeger
+        logs:
+          exporters:
+            - coralogix
+          processors:
+            - batch
+          receivers:
+            - otlp
+      
+  tolerations: 
+    - operator: Exists
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 2G
+
+  ports:
+    jaeger-binary:
+      enabled: true
+      containerPort: 6832
+      servicePort: 6832
+      hostPort: 6832
+      protocol: TCP
+    # In order to enable podMonitor, following part must be enabled in order to expose the required port:
+    # metrics:
+    #   enabled: true
+
+  # podMonitor:
+  #   enabled: true
+
+  # prometheusRule:
+  #   enabled: true
+  #   defaultRules:
+  #     enabled: true
+
+opentelemetry-cluster-collector:
+  enabled: true
+  mode: deployment
+
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
+  
+  presets:
+    clusterMetrics:
+      enabled: true
+    kubernetesEvents:
+      enabled: true
+    kubernetesExtraMetrics:
+      enabled: true
+    mysql:
+      metrics:
+        enabled: false
+        instances:
+        - username: ""
+          password: ""
+          port: 3306
+      extraLogs:
+        enabled: false
+        volumeMountName: ""
+        mountPath: ""
+  
+  fullnameOverride: coralogix-opentelemetry-collector
+  clusterRole:
+    name: "coralogix-opentelemetry-collector"
+    create: true
+    clusterRoleBinding:
+      name: "coralogix-opentelemetry-collector"
+  replicaCount: 1
+  
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+
+  config:
+    extensions:
+      zpages:
+        endpoint: localhost:55679
+      pprof:
+        endpoint: localhost:1777
+    receivers:
+      k8s_cluster:
+        collection_interval: 10s
+        allocatable_types_to_report: [cpu, memory]
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-infrastructure-collector
+              scrape_interval: 30s
+              static_configs:
+                - targets:
+                    - ${MY_POD_IP}:8888
+    processors:
+      k8sattributes:
+        filter:
+          node_from_env_var: KUBE_NODE_NAME     
+        extract:
+          metadata:
+            - "k8s.namespace.name"
+            - "k8s.deployment.name"
+            - "k8s.statefulset.name"
+            - "k8s.daemonset.name"
+            - "k8s.cronjob.name"
+            - "k8s.job.name"
+            - "k8s.pod.name"
+            - "k8s.node.name"
+      resource/kube-events:
+        attributes:
+          - key: service.name
+            value: "kube-events"
+            action: upsert
+          - key: k8s.cluster.name
+            value: "{{ .Values.global.clusterName }}"
+            action: upsert
+      transform/kube-events:
+        log_statements:
+          - context: log
+            statements:
+              - keep_keys(body["object"], ["type", "eventTime", "reason", "regarding", "note", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+              - keep_keys(body["object"]["metadata"], ["creationTimestamp"])
+              - keep_keys(body["object"]["regarding"], ["kind", "name", "namespace"])
+      metricstransform/kube-extra-metrics:
+        transforms:
+        - include: .*
+          match_type: regexp
+          action: update
+          operations:
+            - action: add_label
+              new_label: k8s.cluster.name
+              new_value: "{{ .Values.global.clusterName }}"
+            - action: add_label
+              new_label: cx.otel_integration.name
+              new_value: "{{ .Chart.Name }}"
+          # Replace node name for kube node info with the name of the target node.
+        - include: kube_node_info
+          match_type: strict
+          action: update
+          operations:
+            - action: update_label
+              label: node
+              new_label: k8s.node.name
+      resourcedetection/env:
+        detectors: ["system", "env"]
+        timeout: 2s
+        override: false
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: true
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+      memory_limiter: null # Will get the k8s resource limits
+
+    exporters:
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{ .Values.global.domain }}"
+        application_name: "{{ .Values.global.defaultApplicationName }}"
+        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
+        application_name_attributes:
+          - "k8s.namespace.name"
+          - "service.namespace"
+        subsystem_name_attributes:
+          - "k8s.deployment.name"
+          - "k8s.statefulset.name"
+          - "k8s.daemonset.name"
+          - "k8s.cronjob.name"
+          - "k8s.job.name"
+          - "k8s.container.name"
+          - "k8s.node.name"
+          - "service.name"
+
+    service:
+      telemetry:
+        logs:
+          level: "{{ .Values.global.logLevel }}"
+          encoding: json
+        metrics:
+          address: ${MY_POD_IP}:8888
+      extensions:
+      - zpages
+      - pprof
+      - health_check
+      - memory_ballast
+      pipelines:
+        logs:
+          exporters:
+            - coralogix
+          processors:
+            - memory_limiter
+            - batch
+            - resource/kube-events
+            - transform/kube-events
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - k8sattributes
+            - metricstransform/kube-extra-metrics
+            - resourcedetection/env
+            - resourcedetection/region
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - prometheus
+            - k8s_cluster
+  
+  tolerations:
+    - operator: Exists
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 2G
+
+  ports:
+    otlp:
+      enabled: true
+    otlp-http:
+      enabled: false
+    jaeger-compact:
+      enabled: false
+    jaeger-thrift:
+      enabled: false
+    jaeger-grpc:
+      enabled: false
+    zipkin:
+      enabled: false
+    # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
+    # metrics:
+    #   enabled: true
+
+  # serviceMonitor:
+  #   enabled: true
+
+  # prometheusRule:
+  #   enabled: true
+  #   defaultRules:
+  #     enabled: true
+
+kube-state-metrics:
+  prometheusScrape: false
+  collectors:
+    - pods
+    - nodes
+  metricAllowlist:
+    - kube_node_info
+    - kube_pod_status_reason
+    - kube_pod_status_phase
+    - kube_pod_status_qos_class
