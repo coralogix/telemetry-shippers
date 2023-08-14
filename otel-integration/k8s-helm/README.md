@@ -2,6 +2,12 @@
 
 The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
 
+### OpenTelemetry Operator (for CRD users)
+
+If you wish to use this Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
+
+We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
+
 Content:
 1. [Components](#components)
 2. [Prerequisites](#prerequisites)
@@ -9,6 +15,8 @@ Content:
 4. [How to use it](#how-to-use-it)
 5. [Performance of the Collector](#performance-of-the-collector)
 6. [Infrastructure Monitoring](#infrastructure-monitoring)
+7. [Integration presets](#integration-presets)
+8. [Dependencies](#dependencies)
 
 # Components
 
@@ -36,6 +44,7 @@ This cluster collector provides:
 - [Cluster Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) - The Kubernetes Cluster receiver collects cluster-level metrics from the Kubernetes API server.
 - [Kubernetes Events Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8seventsreceiver) - The Kubernetes Events receiver collects events from the Kubernetes API server. See [Kubernetes Events](#kubernetes-events) for more information.
 - Kubernetes Extra Metrics - This preset enables collection of extra Kubernetes related metrics, such as node information, pod status or container I/O metrics. These metrics are collected in particular for the [Kubernetes Dashboard](#kubernetes-dashboard).
+- [Integrations presets](#integration-presets) - This chart provides support to integrate with various applications running on your cluster to monitor them out of the box.
 
 ## Kubernetes Dashboard
 
@@ -90,6 +99,31 @@ Install the chart:
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   -f values.yaml
+```
+
+### Generating OpenTelemetryCollector CRD for OpenTelemetry Operator users
+
+If you wish to deploy the `otel-integration` using the OpenTelemetry Operator, you can generate an `OpenTelemetryCollector` CRD. You might want to do this if you'd like to take advantage of some advanced features provided by the operator, such as automatic collector upgrade or CRD-defined auto-instrumentation.
+
+For full details on how to install and use the operator, please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md).
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the CRD `values-crd.yaml` file:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  -f values-crd.yaml
 ```
 
 # How to use it
@@ -190,6 +224,95 @@ Under the `dashboard` directory, there are:
 - Kubernetes Pod Dashboard
 - Span Metrics Dashboard
 - Otel-Agent Grafana dashboard
+
+# Integration presets
+
+The `otel-integration` chart also provides support to integrate with different applications. The following integration presets are available.
+
+## MySQL
+
+The MySQL preset is able to collect metrics and extra logs (slow query log, general query log) from your MySQL instances. **Extra logs collection is available only when running the `otel-integration` as CRD with the OpenTelemetry Operator.**
+
+### Prerequisites
+
+This preset supports MySQL version 8.0
+
+Collecting most metrics requires the ability of the database user to execute `SHOW GLOBAL STATUS`.
+
+### Configuration for metrics collection
+
+The metrics collection has to be enabled by setting the `metrics.enabled` to `true`.
+
+Each MySQL instance is configured in the `metrics.instances` section. You can configure multiple instances, if you have more than one instance you'd like to monitor.
+
+Required instance settings:
+- `username`: The username of the database user that will be used to collect metrics.
+- `password`: The password of the database user that will be used to collect metrics. We strongly recommend to provide this via a Kuberetes secret as an environment variable, e.g `MYSQL_PASSWORD`, which should be provided in the `extraEnv` section of the chart. This parameter should be passed in format `${env:MYSQL_PASSWORD}` in order for the collector to be able to read it.
+
+Optional instance settings:
+- `port`: The port of the MySQL instance. Defaults to `3306`. Unless you use non-standard port, there is no need to set this parameter.
+- `labelSelectors`: A list of label selectors to select the pods that run the MySQL instances. If you wish to monitor mutiple instance, the selectors will determine which pods belong to a given instance.
+
+### Configuration for extra logs collection
+
+The extra logs collection has to be enabled by setting the `extraLogs.enabled` to `true`. Note that the extra logs have to enabled on your MySQL instance (please refer to [relevant documentation](https://dev.mysql.com/doc/refman/8.0/en/server-logs.html)). Please also note that extra logs collection is only available when running `otel-integration` with OpenTelemetry Operator.
+
+**PLEASE NOTE:** In order for the collection to take effect, you need to annotate your MySQL instance(s) pod templates with the following:
+
+```bash
+kubectl patch sts <YOUR_MYSQL_INSTANCE_NAME> -p '{"spec": {"template":{"metadata":{"annotations":{"sidecar.opentelemetry.io/inject":"coralogix-opentelemetry-collector-mysql-logs-sidecar"}}}} }'
+```
+
+Required settings:
+- `volumeMountName`: specifies the name of the volume mount. It should correspond to the volume name of the MySQL data volume.
+- `mountPath`: specifies the path at which to mount the volume. This should correspond the mount path of your MySQL data volume. Provide this parameter without trailing slash.
+
+Optional settings:
+- `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory,
+  such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
+- `logFilesExtension`: specifies which file extensions to watch for. Defaults to `.log`.
+
+### Common issues
+
+- Metrics collection is failing with error `"Error 1227 (42000): Access denied; you need (at least one of) the PROCESS privilege(s) for this operation"`
+  - This error indicates that the database user you provided does not have the required privileges to collect metrics. Provide the `PROCESS` privilege to the user, e.g. by running query
+    `GRANT PROCESS ON *.* TO 'user'@'%'`
+
+### Example preset configuration for single instance
+
+```yaml
+  mysql:
+    metrics:
+      enabled: true 
+      instances:
+      - username: "otel-coralogix-collector"
+        password: ${env:MYSQL_PASSWORD}
+    extraLogs:
+      enabled: true
+      volumeMountName: "data"
+      mountPath: "/var/log/mysql"
+```
+
+### Example preset configuration for multiple instance
+
+```yaml
+  mysql:
+    metrics:
+      enabled: true 
+      instances:
+      - username: "otel-coralogix-collector"
+        password: ${env:MYSQL_PASSWORD_INSTANCE_A}
+        labelSelectors:
+          app.kubernetes.io/name: "mysql-a"
+      - username: "otel-coralogix-collector"
+        password: ${env:MYSQL_PASSWORD_INSTANCE_B}
+        labelSelectors:
+          app.kubernetes.io/name: "mysql-b"
+    extraLogs:
+      enabled: true
+      volumeMountName: "data"
+      mountPath: "/var/log/mysql"
+```
 
 # Dependencies
 
