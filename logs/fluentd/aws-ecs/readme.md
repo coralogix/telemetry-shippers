@@ -22,7 +22,6 @@ Scroll all the way down and click on the ‘Configure via JSON’ button.
 
 - Paste there the [predefined](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/aws-ecs/Json_TaskDefinition) file
 
-
 Replace inside the file these environment variables:
 
 - ENDPOINT- your team endpoint depending on the geo location
