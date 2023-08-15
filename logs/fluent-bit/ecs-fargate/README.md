@@ -15,6 +15,9 @@ Example container declaration within a Task Definition:
 ```
     "containerDefinitions": [
         {
+            <Existing Container Definitions>
+        },
+        {
             "name": "log_router",
             "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-2.31.12",
             "cpu": 0,
@@ -37,15 +40,6 @@ Example container declaration within a Task Definition:
             "mountPoints": [],
             "volumesFrom": [],
             "user": "0",
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-create-group": "true",
-                    "awslogs-group": "/ecs/instrumented-app",
-                    "awslogs-region": "us-east-1",
-                    "awslogs-stream-prefix": "log_router"
-                }
-            },
             "firelensConfiguration": {
                 "type": "fluentbit",
                 "options": {}
@@ -60,7 +54,8 @@ Full details can be found in the AWS documentation [here](https://github.com/aws
 
 In order to allow container access to the S3 object, you'll need to provide the s3:GetObject and s3:GetBucketLocation action permissions to the task:
 
-```{
+```
+{
 	"Version": "2012-10-17",
 	"Statement": [
 		{
@@ -76,7 +71,7 @@ In order to allow container access to the S3 object, you'll need to provide the 
 	]
 }
 ```
-Note: Don't confuse Task Execution Role for Task Role, this permission needs to be added to the Task Role.
+Note: Don't confuse Task Execution Role for Task Role, this permission needs to be added to the Task Role. (Contrary to the ADOT (OTEL) Metrics and Traces integration)
 
 After you've added the above container to your existing Task Definition, you need to adjust the logConfiguration for the containers you wish to forward to Coralogix.
 
