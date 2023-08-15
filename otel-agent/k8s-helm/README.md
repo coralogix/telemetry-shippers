@@ -17,6 +17,11 @@ The included agent provides:
 
 ## Prerequisites
 
+Make sure you have at least these version of the following installed:
+
+- Kubernetes 1.24+
+- Helm 3.9+
+
 ### Secret Key
 
 Follow the [private key docs](https://coralogix.com/docs/private-key/) tutorial to obtain your secret key tutorial to obtain your secret key.
