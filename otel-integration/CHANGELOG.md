@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.10 / 2023-08-14
+
+* [FEATURE] Add CRD generation feature
+* [FEATURE] Add MySQL preset
+
 ### v0.0.9 / 2023-08-11
 
 * [CHORE] Upgrading upstream chart. (v0.70.1)

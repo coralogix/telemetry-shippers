@@ -14,6 +14,12 @@ distribution: ""
 opentelemetry-agent:
   enabled: true
   mode: daemonset
+  
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
+  
   fullnameOverride: coralogix-opentelemetry-agent
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -127,7 +133,7 @@ opentelemetry-agent:
               new_value: "{{ .Values.global.clusterName }}"
             - action: add_label
               new_label: cx.otel_integration.name
-              new_value: "coralogix-integration-helm"
+              new_value: "{{ .Chart.Name }}"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME     
@@ -253,13 +259,11 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
-  fullnameOverride: coralogix-opentelemetry-collector
-  clusterRole:
-    name: "coralogix-opentelemetry-collector"
-    create: true
-    clusterRoleBinding:
-      name: "coralogix-opentelemetry-collector"
-  replicaCount: 1
+
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
   
   presets:
     clusterMetrics:
@@ -268,8 +272,6 @@ opentelemetry-cluster-collector:
       enabled: true
     kubernetesExtraMetrics:
       enabled: true
-    kubernetesAttributes:
-      enabled: true
     mysql:
       metrics:
         enabled: false
@@ -277,7 +279,19 @@ opentelemetry-cluster-collector:
         - username: ""
           password: ""
           port: 3306
-
+      extraLogs:
+        enabled: false
+        volumeMountName: ""
+        mountPath: ""
+  
+  fullnameOverride: coralogix-opentelemetry-collector
+  clusterRole:
+    name: "coralogix-opentelemetry-collector"
+    create: true
+    clusterRoleBinding:
+      name: "coralogix-opentelemetry-collector"
+  replicaCount: 1
+  
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -348,7 +362,7 @@ opentelemetry-cluster-collector:
               new_value: "{{ .Values.global.clusterName }}"
             - action: add_label
               new_label: cx.otel_integration.name
-              new_value: "coralogix-integration-helm"
+              new_value: "{{ .Chart.Name }}"
           # Replace node name for kube node info with the name of the target node.
         - include: kube_node_info
           match_type: strict
