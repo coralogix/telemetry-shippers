@@ -2,7 +2,7 @@
 
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 
-In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions.  We use an AWS customized OpenTelemetry image called AWS Distro for OpenTelemetry (ADOT), as it has several features that allow for more convenient management of the configuration.
+In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions.  We use an AWS customized OpenTelemetry image called AWS Distro for OpenTelemetry (ADOT), as it has several features that allow for more convenient management of the configuration. We also have an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
 
 The ADOT image, [maintained here by AWS](https://github.com/aws-observability/aws-otel-collector), allows for loading of the OpenTelemetry configuration via Systems Manager Parameter Stores. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
 
