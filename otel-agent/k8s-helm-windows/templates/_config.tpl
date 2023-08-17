@@ -20,10 +20,6 @@ Merge user supplied config into memory limiter config.
 {{- if not $processorsConfig.memory_limiter }}
 {{-   $_ := set $processorsConfig "memory_limiter" (include "opentelemetry-collector.memoryLimiter" . | fromYaml) }}
 {{- end }}
-{{- $memoryBallastConfig := get .Values.config.extensions "memory_ballast" }}
-{{- if or (not $memoryBallastConfig) (not $memoryBallastConfig.size_in_percentage) }}
-{{-   $_ := set $memoryBallastConfig "size_in_percentage" 40 }}
-{{- end }}
 {{- .Values.config | toYaml }}
 {{- end }}
 
@@ -192,7 +188,7 @@ receivers:
     exclude: []
     {{- else }}
     {{- if .Values.isWindows }}
-    exclude:[ "C:\\var\\log\\pods\\{{ .Release.Namespace }}_{{ include "opentelemetry-collector.fullname" . }}*_*\\{{ include "opentelemetry-collector.lowercase_chartname" . }}\\*.log" ]
+    exclude: [ "C:\\var\\log\\pods\\{{ .Release.Namespace }}_{{ include "opentelemetry-collector.fullname" . }}*_*\\{{ include "opentelemetry-collector.lowercase_chartname" . }}\\*.log" ]
     {{- else }}
     # Exclude collector container's logs. The file format is /var/log/pods/<namespace_name>_<pod_name>_<pod_uid>/<container_name>/<run_id>.log
     exclude: [ /var/log/pods/{{ .Release.Namespace }}_{{ include "opentelemetry-collector.fullname" . }}*_*/{{ include "opentelemetry-collector.lowercase_chartname" . }}/*.log ]
