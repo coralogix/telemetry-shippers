@@ -2,6 +2,9 @@
 
 ## OpenTelemtry Agent for Windows
 
+### v0.0.4 / 2023-08-17
+* Remove memory ballast extension due to extensive memory usage.
+
 ### v0.0.3 / 2023-05-23
 * Use image from Coralogix Docker Hub instead of the test image.
 
