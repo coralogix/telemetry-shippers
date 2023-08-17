@@ -104,7 +104,6 @@ config:
     # Without the health_check extension the collector will fail the readiness and liveliness probes.
     # The health_check extension can be modified, but should never be removed.
     health_check: {}
-    memory_ballast: {}
   processors:
     k8sattributes:
       filter:
@@ -162,8 +161,6 @@ config:
             static_configs:
               - targets:
                   - ${env:MY_POD_IP}:8888
-    zipkin:
-      endpoint: ${env:MY_POD_IP}:9411
   service:
     telemetry:
       logs:
@@ -174,7 +171,6 @@ config:
       - zpages
       - pprof
       - health_check
-      - memory_ballast
     pipelines:
       logs:
         exporters:
