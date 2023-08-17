@@ -40,8 +40,6 @@ jobs:
             - 'logs/fluentd/k8s-helm/http/**'
           ec2-otel-agent:
             - 'otel-agent/ecs-ec2/**'
-          windows-image:
-            - 'otel-agent/otel-collector-windows-image/**'
           k8s-otel-agent:
             - 'otel-agent/k8s-helm/**'
           otel-infrastructure-collector:
@@ -65,9 +63,6 @@ jobs:
     - name: OpenTelemetry Agent EC2 Changelog
       if: steps.filter.outputs.ec2-otel-agent == 'true'
       run: scripts/changelog_check.sh otel-agent/ecs-ec2
-    - name: OpenTelemetry Collector Windows Image
-      if: steps.filter.outputs.windows-image== 'true'
-      run: scripts/changelog_check.sh otel-agent/otel-collector-windows-image
     - name: OpenTelemetry Infrastructure Collector Changelog
       if: steps.filter.outputs.otel-infrastructure-collector == 'true'
       run: scripts/changelog_check.sh otel-infrastructure-collector
