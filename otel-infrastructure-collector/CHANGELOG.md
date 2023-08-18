@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.5 / 2023-08-18
+
+* [CHORE] Upgrading upstream chart. (v0.71.0)
+* [CHORE] Update Opentelemetry Collector 0.81.0 -> 0.83.0.
+* [CHORE] Merges changes from upstream.
+
 ### v0.1.4 / 2023-08-11
 * [CHORE] Upgrading upstream chart. (v0.70.1)
 
