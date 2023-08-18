@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.11 / 2023-08-18
+
+* [CHORE] Upgrading upstream chart. (v0.71.0).
+* [CHORE] Update Opentelemetry Collector 0.81.0 -> 0.83.0.
+* [CHORE] Merges changes from upstream.
+
 ### v0.0.10 / 2023-08-14
 
 * [FEATURE] Add CRD generation feature
