@@ -15,6 +15,23 @@ opentelemetry-agent:
   enabled: true
   mode: daemonset
   fullnameOverride: coralogix-opentelemetry-agent
+  extraVolumes:
+    - name: etcmachineid
+      hostPath:
+        path: /etc/machine-id
+    - name: varlibdbusmachineid
+      hostPath:
+        path: /var/lib/dbus/machine-id
+
+  extraVolumeMounts:
+    - mountPath: /etc/machine-id
+      mountPropagation: HostToContainer
+      name: etcmachineid
+      readOnly: true
+    - mountPath: /var/lib/dbus/machine-id
+      mountPropagation: HostToContainer
+      name: varlibdbusmachineid
+      readOnly: true
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -100,6 +117,10 @@ opentelemetry-agent:
         detectors: ["system", "env"]
         timeout: 2s
         override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
       resourcedetection/region:
         detectors: ["gcp", "ec2"]
         timeout: 2s
