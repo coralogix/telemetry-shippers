@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.12 / 2023-08-21
+
+* [FEATURE] Support host.id from system resource detector.
+
 ### v0.0.11 / 2023-08-18
 
 * [CHORE] Upgrading upstream chart. (v0.71.0).
