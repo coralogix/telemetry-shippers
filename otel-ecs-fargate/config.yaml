@@ -1,0 +1,54 @@
+receivers:
+  awsecscontainermetrics:
+    collection_interval: 10s
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  resource/traces:
+    attributes:
+    - key: cx.application.name
+      from_attribute: aws.ecs.task.family
+      action: upsert
+    - key: cx.subsystem.name
+      from_attribute: service.name
+      action: upsert
+  resource/metrics:
+    attributes:
+    - key: cx.application.name
+      from_attribute: aws.ecs.task.family
+      action: upsert
+    - key: cx.subsystem.name
+      from_attribute: aws.ecs.docker.name
+      action: upsert
+  batch:
+    timeout: 5s
+    send_batch_size: 256
+  resourcedetection:
+    detectors: [env, ec2, ecs]
+    timeout: 5s
+    override: true
+exporters:
+  logging:
+    verbosity: detailed
+  otlp:
+   endpoint: https://ingress.${CORALOGIX_DOMAIN}:443
+   headers:
+      Authorization: Bearer ${PRIVATE_KEY}
+service:
+  pipelines:
+    traces/otlp:
+      receivers: [otlp]
+      processors: [resourcedetection, resource/traces, batch]
+      exporters: [otlp]
+    metrics/otlp:
+      receivers: [otlp]
+      processors: [resourcedetection, resource/metrics, batch]
+      exporters: [otlp]
+    metrics/polled:
+      receivers: [awsecscontainermetrics]
+      processors: [resourcedetection, resource/metrics, batch]
+      exporters: [otlp]

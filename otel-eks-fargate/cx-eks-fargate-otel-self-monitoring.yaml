@@ -1,0 +1,150 @@
+# In Deployment container env:
+# update `ClusterName=YOUR-EKS-CLUSTER-NAME` in the env variable OTEL_RESOURCE_ATTRIBUTES
+# update `CORALOGIX_DOMAIN` to match your Coralogix Team domain.
+# update `CX_APPLICATION` and `CX_SUBSYSTEM`
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cx-otel-collector-monitor-config
+  namespace: cx-eks-fargate-otel
+  labels:
+    app: eks-fargate-otel
+    component: cx-otel-collector-monitor-config
+data:
+  cx-otel-collector-monitor-config: |
+    extensions:
+      k8s_observer:
+        auth_type: serviceAccount
+        observe_pods: true
+        observe_nodes: true
+      health_check:
+
+    receivers:
+      # Monitor just the missing OTEL collector's kubelet
+      receiver_creator:
+        watch_observers: [k8s_observer]
+        receivers:
+          kubeletstats:
+            config:
+              auth_type: serviceAccount
+              collection_interval: 10s
+              endpoint: '`endpoint`:`kubelet_endpoint_port`'
+              insecure_skip_verify: true
+              extra_metadata_labels:
+              - container.id
+              metric_groups:
+              - container
+              - pod
+              - node
+            rule: type == "k8s.node" && labels["OTEL-collector-node"] == "true"
+    
+    processors:
+      # add cluster name from env variable and EKS metadata
+      resourcedetection:
+        detectors: [env, system, eks]
+        system:
+          hostname_sources: ["os"]
+
+      batch:
+        timeout: 60s
+
+    exporters:
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "${CORALOGIX_DOMAIN}"
+        application_name_attributes:
+        - "k8s.namespace.name" 
+        - "service.namespace"
+        subsystem_name_attributes:
+        - "k8s.deployment.name"
+        - "k8s.statefulset.name"
+        - "k8s.daemonset.name"
+        - "k8s.cronjob.name"
+        - "k8s.job.name"
+        - "k8s.container.name"
+        - "k8s.node.name"
+        - "service.name"
+        application_name: "${CX_APPLICATION}"
+        subsystem_name: "${CX_SUBSYSTEM}"
+
+      logging:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        metrics/colmon:
+          receivers: [receiver_creator]
+          processors: [resourcedetection, batch]
+          exporters: [coralogix]
+
+      extensions: [k8s_observer, health_check]
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cx-otel-collector-monitor
+  namespace: cx-eks-fargate-otel
+  labels:
+    app: eks-fargate-otel-mon
+    component: cx-otel-collector-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eks-fargate-otel-mon
+      component: cx-otel-collector-monitor
+  template:
+    metadata:
+      labels:
+        app: eks-fargate-otel-mon
+        component: cx-otel-collector-monitor
+    spec:
+      serviceAccountName: cx-otel-collector
+      securityContext:
+        fsGroup: 65534
+      containers:
+        - image: otel/opentelemetry-collector-contrib:latest
+          name: cx-otel-collector-monitor
+          imagePullPolicy: Always
+          command:
+            - "/otelcol-contrib"
+            - "--config=/conf/cx-otel-collector-monitor-config.yaml"
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "ClusterName=fargate-lab"
+            - name: CORALOGIX_DOMAIN
+              value: "coralogix.com"
+            - name: CX_APPLICATION
+              value: "EKS"
+            - name: CX_SUBSYSTEM
+              value: "Fargate"
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: coralogix-keys
+                  key: PRIVATE_KEY
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 1
+              memory: 2Gi
+          volumeMounts:
+            - name: cx-otel-collector-monitor-config-volume
+              mountPath: /conf
+      volumes:
+        - configMap:
+            name: cx-otel-collector-monitor-config
+            items:
+              - key: cx-otel-collector-monitor-config
+                path: cx-otel-collector-monitor-config.yaml
+          name: cx-otel-collector-monitor-config-volume
