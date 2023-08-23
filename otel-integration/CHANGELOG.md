@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.13 / 2023-08-22
+
+* [FIX] Change `k8s.container.name` to `k8s.pod.name` attribute
+
 ### v0.0.12 / 2023-08-21
 
 * [FEATURE] Support host.id from system resource detector.
