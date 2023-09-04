@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-integration
 description: OpenTelemetry Integration
-version: 0.0.13
+version: 0.0.14
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent
@@ -11,12 +11,12 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.71.0"
+    version: "0.71.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-cluster-collector
-    version: "0.71.0"
+    version: "0.71.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-cluster-collector.enabled
   - name: kube-state-metrics

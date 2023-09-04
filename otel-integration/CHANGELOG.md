@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.14 / 2023-09-04
+
+* [CHORE] Upgrading upstream chart. (v0.71.1)
+
 ### v0.0.13 / 2023-08-22
 
 * [FIX] Change `k8s.container.name` to `k8s.pod.name` attribute
