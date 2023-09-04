@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.33 / 2023-09-04
+
+* [CHORE] Upgrading upstream chart. (v0.71.1)
+
 ### v0.0.32 / 2023-08-18
 
 * [CHORE] Upgrading upstream chart. (v0.71.0)
