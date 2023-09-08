@@ -321,4 +321,4 @@ Optional settings:
 
 # Dependencies
 
-This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) help chart. Also this chart currently depends on the [`kube-state-metrics`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics) chart to collect extra Kubernetes metrics.
+This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart. Also this chart currently depends on the [`kube-state-metrics`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics) chart to collect extra Kubernetes metrics.
