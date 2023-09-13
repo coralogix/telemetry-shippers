@@ -1,5 +1,6 @@
 global:
   domain: ""
+  clusterName: ""
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
   fullnameOverride: otel-coralogix
@@ -48,6 +49,10 @@ opentelemetry-collector:
       enabled: true
     kubeletMetrics:
       enabled: true
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-otel-agent-helm"
 
   extraEnvs:
   - name: CORALOGIX_PRIVATE_KEY

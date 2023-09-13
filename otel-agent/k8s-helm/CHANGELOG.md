@@ -2,6 +2,13 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.34 / 2023-09-13
+
+* [FEATURE] Allow setting clusterName in global variable
+* [FEATURE] Set integrationName as resource attribute
+* [CHORE] Upgrading upstream chart. (v0.71.2)
+
+
 ### v0.0.33 / 2023-09-04
 
 * [CHORE] Upgrading upstream chart. (v0.71.1)
