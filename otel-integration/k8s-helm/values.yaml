@@ -62,6 +62,10 @@ opentelemetry-agent:
   dnsPolicy: "ClusterFirstWithHostNet"
 
   presets:
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-helm"
     logsCollection:
       enabled: true
       storeCheckpoints: true
@@ -137,18 +141,6 @@ opentelemetry-agent:
               enabled: true
             cloud.availability_zone:
               enabled: true
-      metricstransform:
-        transforms:
-          include: .*
-          match_type: regexp
-          action: update
-          operations:
-            - action: add_label
-              new_label: k8s.cluster.name
-              new_value: "{{ .Values.global.clusterName }}"
-            - action: add_label
-              new_label: cx.otel_integration.name
-              new_value: "coralogix-integration-helm"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME     
@@ -215,7 +207,6 @@ opentelemetry-agent:
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
-            - metricstransform
             - memory_limiter
             - batch
           receivers:
@@ -298,6 +289,10 @@ opentelemetry-cluster-collector:
         - username: ""
           password: ""
           port: 3306
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-helm"
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -360,16 +355,6 @@ opentelemetry-cluster-collector:
               - keep_keys(body["object"]["regarding"], ["kind", "name", "namespace"])
       metricstransform/kube-extra-metrics:
         transforms:
-        - include: .*
-          match_type: regexp
-          action: update
-          operations:
-            - action: add_label
-              new_label: k8s.cluster.name
-              new_value: "{{ .Values.global.clusterName }}"
-            - action: add_label
-              new_label: cx.otel_integration.name
-              new_value: "coralogix-integration-helm"
           # Replace node name for kube node info with the name of the target node.
         - include: kube_node_info
           match_type: strict

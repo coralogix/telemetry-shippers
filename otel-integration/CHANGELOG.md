@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.15 / 2023-09-15
+
+* [FIX] Set k8s.cluster.name to all signals.
+* [CHORE] Upgrading upstream chart. (v0.71.2)
+
 ### v0.0.14 / 2023-09-04
 
 * [CHORE] Upgrading upstream chart. (v0.71.1)
