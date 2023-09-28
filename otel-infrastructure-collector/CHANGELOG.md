@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.7 / 2023-09-28
+
+* [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
+
 ### v0.1.6 / 2023-09-04
 
 * [CHORE] Upgrading upstream chart. (v0.71.1)
