@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.16 / 2023-09-28
+
+* [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
+
 ### v0.0.15 / 2023-09-15
 
 * [FIX] Set k8s.cluster.name to all signals.
