@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.35 / 2023-09-28
+
+* [FIX] Remove `k8s.job.name`, `k8s.container.name` and `k8s.node.name` from subsystem attribute list
+
 ### v0.0.34 / 2023-09-13
 
 * [FEATURE] Allow setting clusterName in global variable
