@@ -2,6 +2,10 @@
 
 ## OpenTelemtry Agent for Windows
 
+### v0.0.5 / 2023-09-28
+
+* [FIX] Remove `k8s.container.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
+
 ### v0.0.4 / 2023-08-17
 * Remove memory ballast extension due to extensive memory usage.
 

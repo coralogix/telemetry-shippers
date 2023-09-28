@@ -1,6 +1,6 @@
 apiVersion: v2
 name: opentelemetry-coralogix-windows
-version: 0.0.4
+version: 0.0.5
 description: Windows OpenTelemetry agent to which instrumentation libraries export their telemetry data
 type: application
 appVersion: 0.77.0
