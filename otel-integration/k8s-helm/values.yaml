@@ -14,7 +14,7 @@ distribution: ""
 opentelemetry-agent:
   enabled: true
   mode: daemonset
-  fullnameOverride: coralogix-opentelemetry-agent
+  fullnameOverride: coralogix-opentelemetry
   extraVolumes:
     - name: etcmachineid
       hostPath:
