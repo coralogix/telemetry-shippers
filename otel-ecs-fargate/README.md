@@ -74,7 +74,7 @@ Example container declaration within a Task Definition:
     ]
 ```
 
-In the example above, you'll need to set two instances each of <Coralogix PrivateKey> and <Coralogix Domain>. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform, as documented in our fluentbit log processing configuration instructions [here](../../logs/fluent-bit/ecs-fargate/README.md). If you don't want to have them submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
+In the example above, you'll need to set two instances each of <Coralogix PrivateKey> and <Coralogix Domain>. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform, as documented in our fluentbit log processing configuration instructions [here](../logs/fluent-bit/ecs-fargate/README.md). If you don't want to have them submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
 
 ```
 "logConfiguration": {
