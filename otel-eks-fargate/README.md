@@ -9,19 +9,19 @@ The Coralogix EKS Fargate integration for Metrics and Traces leverages OpenTelem
 ## Requirements:
 
 - `cx-eks-fargate-otel` namespace declared in your EKS cluster
-    - This namespace need not be hosted by a Fargate profile, but if it is desired, you’ll need to create one.
+  - This namespace need not be hosted by a Fargate profile, but if it is desired, you’ll need to create one.
 - A Secret containing your Coralogix API Key, in the `cx-eks-fargate-otel` namespace.
 
 ## Creating Secret
 
 1. Export your API key to a local variable:
-    1. `export PRIVATE_KEY=<Send-Your-Data API key>`
+   1. `export PRIVATE_KEY=<Send-Your-Data API key>`
 2. Set your namespace variable:
-    1. `export NAMESPACE=cx-eks-fargate-otel`
+   1. `export NAMESPACE=cx-eks-fargate-otel`
 3. Create the secret using kubectl:
-    1. `kubectl create secret generic coralogix-keys -n $NAMESPACE --from-literal=PRIVATE_KEY=$PRIVATE_KEY`
+   1. `kubectl create secret generic coralogix-keys -n $NAMESPACE --from-literal=PRIVATE_KEY=$PRIVATE_KEY`
 4. Confirm it’s been set
-    1. `kubectl get secret coralogix-keys -o yaml -n $NAMESPACE`
+   1. `kubectl get secret coralogix-keys -o yaml -n $NAMESPACE`
 
 ## Create ServiceAccount
 
@@ -52,7 +52,7 @@ eksctl create iamserviceaccount \
 
 ## Configure and Deploy OTEL Collector Service:
 
-The attached yaml manifest will deploy an OTEL collector, a clusterIP service for submission of application traces and metrics, and the cluster permissions required to query the Kubernetes API. 
+The attached yaml manifest will deploy an OTEL collector, a clusterIP service for submission of application traces and metrics, and the cluster permissions required to query the Kubernetes API.
 
 There are a few container environment variables that need to be set, detailed at the top of the yaml file.
 

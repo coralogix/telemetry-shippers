@@ -97,7 +97,7 @@ data:
         Time_Keep true
 ```
 
-Details on the workings of the AWS log router can be found in the configuration documentation on the AWS docs site here: 
+Details on the workings of the AWS log router can be found in the configuration documentation on the AWS docs site here:
 
 [Fargate logging - Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html)
 
@@ -105,5 +105,5 @@ Details on the workings of the AWS log router can be found in the configuration 
 
 - The log_router will only be attached to workloads started after the manifest has been applied. **You will need to restart your pods** in order for the log_router to start forwarding the logs to your Firehose.
 - You can add additional filters, but they are limited to the following types:
-`grep, parser, record_modifier, rewrite_tag, throttle, nest, modify, kubernetes`
+  `grep, parser, record_modifier, rewrite_tag, throttle, nest, modify, kubernetes`
 - If you wish to add a Cloudwatch output, you’ll have to add additional permissions to your Fargate profile. Please review the above linked AWS documentation for details.

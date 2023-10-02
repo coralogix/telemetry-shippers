@@ -2,7 +2,7 @@
 
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 
-In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions.  We use an AWS customized OpenTelemetry image called AWS Distro for OpenTelemetry (ADOT), as it has several features that allow for more convenient management of the configuration. We also have an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
+In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions. We use an AWS customized OpenTelemetry image called AWS Distro for OpenTelemetry (ADOT), as it has several features that allow for more convenient management of the configuration. We also have an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
 
 The ADOT image, [maintained here by AWS](https://github.com/aws-observability/aws-otel-collector), allows for loading of the OpenTelemetry configuration via Systems Manager Parameter Stores. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
 
@@ -74,7 +74,15 @@ Example container declaration within a Task Definition:
     ]
 ```
 
-In the example above, you'll need to set two instances each of <Coralogix PrivateKey> and <Coralogix Domain>. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform, as documented in our fluentbit log processing configuration instructions [here](../../logs/fluent-bit/ecs-fargate/README.md). If you don't want to have them submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
+In the example above, you'll need to set two instances each of
+
+<coralogix privatekey="">
+
+and
+
+<coralogix domain="">
+
+. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform, as documented in our fluentbit log processing configuration instructions [here](../logs/fluent-bit/ecs-fargate/README.md). If you don't want to have them submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
 
 ```
 "logConfiguration": {
@@ -106,6 +114,7 @@ In order to allow container access to the Systems Manager Parameter Store, you'l
   ]
 }
 ```
+
 Note: Don't confuse Task Role for Task Execution Role, this permission needs to be added to the Task Execution Role. (Contrary to the fluentbit Logs integration)
 
 After adding the above container to your existing Task Definition, your applications can submit their traces and metrics exports to http://localhost:4318/v1/traces and /v1/metrics. It will also collect container metrics from all containers in the Task Definition.

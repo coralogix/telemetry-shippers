@@ -12,7 +12,6 @@
 * [FEATURE] Set integrationName as resource attribute
 * [CHORE] Upgrading upstream chart. (v0.71.2)
 
-
 ### v0.0.33 / 2023-09-04
 
 * [CHORE] Upgrading upstream chart. (v0.71.1)
