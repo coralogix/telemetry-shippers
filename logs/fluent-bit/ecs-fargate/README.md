@@ -8,7 +8,7 @@ The aws-for-fluent-bit image, [maintained here by AWS](https://github.com/aws/aw
 
 The base_filters.conf file includes a set of filters to ensure proper ingestion by our backend. This should be included as the first configuration file for your instance deployment. Ensure you upload this to an S3 bucket in your AWS account.
 
-As I just alluded to, you can load multiple configuration files from S3 to build your final configuration. This is done by setting custom environment variables within the task definition. 
+As I just alluded to, you can load multiple configuration files from S3 to build your final configuration. This is done by setting custom environment variables within the task definition.
 
 Example container declaration within a Task Definition:
 
@@ -71,6 +71,7 @@ In order to allow container access to the S3 object, you'll need to provide the 
 	]
 }
 ```
+
 Note: Don't confuse Task Execution Role for Task Role, this permission needs to be added to the Task Role. (Contrary to the ADOT (OTEL) Metrics and Traces integration)
 
 After you've added the above container to your existing Task Definition, you need to adjust the logConfiguration for the containers you wish to forward to Coralogix.
