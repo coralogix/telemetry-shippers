@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.17 / 2023-09-29
+
+* [FIX] Remove redundant `-agent` from `fullnameOverride` field of `values.yaml`
+
 ### v0.0.16 / 2023-09-28
 
 * [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
