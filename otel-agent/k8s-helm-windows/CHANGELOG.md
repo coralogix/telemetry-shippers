@@ -2,9 +2,12 @@
 
 ## OpenTelemtry Agent for Windows
 
-### v0.0.5 / 2023-09-28
+### v0.0.6 / 2023-10-04
+* Use image version based on the `appVersion` parameter.
+* Bump image collector image version to `0.83.0`.
 
-* [FIX] Remove `k8s.container.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
+### v0.0.5 / 2023-09-28
+* Remove `k8s.container.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
 
 ### v0.0.4 / 2023-08-17
 * Remove memory ballast extension due to extensive memory usage.
