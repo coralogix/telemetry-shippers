@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.18 / 2023-10-04
+
+* [FIX] hostmetrics don't scrape /run/containerd/runc/* for filesystem metrics
+
 ### v0.0.17 / 2023-09-29
 
 * [FIX] Remove redundant `-agent` from `fullnameOverride` field of `values.yaml`
