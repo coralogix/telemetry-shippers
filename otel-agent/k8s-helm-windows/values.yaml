@@ -203,7 +203,7 @@ image:
   repository: coralogixrepo/opentelemetry-collector-contrib-windows
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: ""
   # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
   digest: ""
 imagePullSecrets: []

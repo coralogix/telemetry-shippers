@@ -3,4 +3,4 @@ name: opentelemetry-coralogix-windows
 version: 0.0.5
 description: Windows OpenTelemetry agent to which instrumentation libraries export their telemetry data
 type: application
-appVersion: 0.77.0
+appVersion: 0.83.0
