@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.36 / 2023-10-5
+
+* [CHORE] Update Collector to 0.84.0
+* [FIX] hostmetrics don't scrape /run/containerd/runc/* for filesystem metrics
+
 ### v0.0.35 / 2023-09-28
 
 * [FIX] Remove `k8s.job.name`, `k8s.container.name` and `k8s.node.name` from subsystem attribute list
