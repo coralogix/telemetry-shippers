@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.8 / 2023-10-05
+
+* [CHORE] Update Collector to 0.84.0
+
 ### v0.1.7 / 2023-09-28
 
 * [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
