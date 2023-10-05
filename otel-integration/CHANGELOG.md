@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.19 / 2023-10-05
+
+* [CHORE] Bump Collector to 0.84.0
+
 ### v0.0.18 / 2023-10-04
 
 * [FIX] hostmetrics don't scrape /run/containerd/runc/* for filesystem metrics
