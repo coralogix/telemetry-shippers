@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.20 / 2023-10-06
+
+* [CHORE] Bump Collector to 0.85.0
+
 ### v0.0.19 / 2023-10-05
 
 * [CHORE] Bump Collector to 0.84.0
