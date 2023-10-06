@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Infrastructure-Collector
 
+### v0.1.9 / 2023-10-06
+
+* [CHORE] Bump Collector to 0.85.0
+
 ### v0.1.8 / 2023-10-05
 
 * [CHORE] Update Collector to 0.84.0

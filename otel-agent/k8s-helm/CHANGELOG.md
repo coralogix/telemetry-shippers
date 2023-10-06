@@ -2,7 +2,11 @@
 
 ## OpenTelemtry-Agent
 
-### v0.0.36 / 2023-10-5
+### v0.0.37 / 2023-10-06
+
+* [CHORE] Bump Collector to 0.85.0
+
+### v0.0.36 / 2023-10-05
 
 * [CHORE] Update Collector to 0.84.0
 * [FIX] hostmetrics don't scrape /run/containerd/runc/* for filesystem metrics
