@@ -73,6 +73,8 @@ helm upgrade --install otel-coralogix-agent coralogix-charts-virtual/opentelemet
   -f values.yaml
 ```
 
+If you'd like to provide your own overrides for array values such as `extraEnvs`, `extraVolumes` or `extraVolumeMounts`, please beware that Helm does not support merging arrays, but instead the arrays will be nulled out (see this [issue](https://github.com/helm/helm/issues/3486) for more). In case you'd like to provide your own values for these arrays, make sure that you first **copy over any existing array values** from the provided `values.yaml` file.
+
 ### Generating OpenTelemetryCollector CRD for OpenTelemetry Operator users
 
 If you wish to deploy the `otel-agent` using the OpenTelemetry Operator, you can generate an `OpenTelemetryCollector` CRD. You might want to do this if you'd like to take advantage of some advanced features provided by the operator, such as automatic collector upgrade or CRD-defined auto-instrumentation.

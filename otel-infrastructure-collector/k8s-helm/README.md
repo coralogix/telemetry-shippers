@@ -57,6 +57,8 @@ helm upgrade --install otel-infrastructure-collector coralogix-charts-virtual/ot
   -f values.yaml
 ```
 
+If you'd like to provide your own overrides for array values such as `extraEnvs`, `extraVolumes` or `extraVolumeMounts`, please beware that Helm does not support merging arrays, but instead the arrays will be nulled out (see this [issue](https://github.com/helm/helm/issues/3486) for more). In case you'd like to provide your own values for these arrays, make sure that you first **copy over any existing array values** from the provided `values.yaml` file.
+
 # Infrastructure Monitoring
 
 ## Kubernetes Events
