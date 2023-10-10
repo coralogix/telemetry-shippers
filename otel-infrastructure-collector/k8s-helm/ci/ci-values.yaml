@@ -90,7 +90,8 @@ opentelemetry-collector:
         application_name: "{{.Values.global.defaultApplicationName }}"
         subsystem_name: "{{.Values.global.defaultSubsystemName }}"
     processors:
-      memory_limiter: null # Will get the k8s resource limits
+      # Will get the k8s resource limits
+      memory_limiter: null
       transform/kube-events:
         log_statements:
           - context: log

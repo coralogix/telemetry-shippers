@@ -3,8 +3,7 @@ global:
   defaultApplicationName: "default"
   defaultSubsystemName: "nodes"
   fullnameOverride: otel-coralogix
-
-  # Old endpoint based configuration, 
+  # Old endpoint based configuration,
   # please use domain instead.
   traces:
     endpoint: ""
@@ -12,4 +11,3 @@ global:
     endpoint: ""
   logs:
     endpoint: ""
-

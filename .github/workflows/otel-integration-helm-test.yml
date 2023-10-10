@@ -1,4 +1,4 @@
-name: Otel Integration Helm Install Test
+name: Otel Integration Helm Lint And Install Test
 
 on:
   pull_request:
@@ -20,4 +20,4 @@ jobs:
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Run chart-testing (install)
-        run: ct install --namespace default --charts otel-integration/k8s-helm
+        run: ct lint-and-install --namespace default --charts otel-integration/k8s-helm

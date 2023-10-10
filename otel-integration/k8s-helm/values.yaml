@@ -143,7 +143,7 @@ opentelemetry-agent:
               enabled: true
       k8sattributes:
         filter:
-          node_from_env_var: KUBE_NODE_NAME     
+          node_from_env_var: KUBE_NODE_NAME
         extract:
           metadata:
             - "k8s.namespace.name"
@@ -164,8 +164,9 @@ opentelemetry-agent:
           - name: "k8s.job.name"
           - name: "k8s.container.name"
           - name: "k8s.node.name"
-          - name: "k8s.namespace.name" 
-      memory_limiter: null # Will get the k8s resource limits
+          - name: "k8s.namespace.name"
+      # Will get the k8s resource limits
+      memory_limiter: null
 
     exporters:
       coralogix:
@@ -228,8 +229,7 @@ opentelemetry-agent:
             - batch
           receivers:
             - otlp
-      
-  tolerations: 
+  tolerations:
     - operator: Exists
 
   resources:
@@ -269,7 +269,6 @@ opentelemetry-cluster-collector:
     clusterRoleBinding:
       name: "coralogix-opentelemetry-collector"
   replicaCount: 1
-  
   presets:
     clusterMetrics:
       enabled: true
@@ -324,7 +323,7 @@ opentelemetry-cluster-collector:
     processors:
       k8sattributes:
         filter:
-          node_from_env_var: KUBE_NODE_NAME     
+          node_from_env_var: KUBE_NODE_NAME
         extract:
           metadata:
             - "k8s.namespace.name"
@@ -380,7 +379,8 @@ opentelemetry-cluster-collector:
               enabled: true
             cloud.availability_zone:
               enabled: true
-      memory_limiter: null # Will get the k8s resource limits
+      # Will get the k8s resource limits
+      memory_limiter: null
 
     exporters:
       coralogix:
@@ -434,7 +434,6 @@ opentelemetry-cluster-collector:
             - otlp
             - prometheus
             - k8s_cluster
-  
   tolerations:
     - operator: Exists
 
