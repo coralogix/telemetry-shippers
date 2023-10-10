@@ -1,4 +1,4 @@
-name: Otel Agent Helm Install Test
+name: Otel Agent Helm Lint and Install Test
 
 on:
   pull_request:
@@ -18,5 +18,5 @@ jobs:
         with:
           create-kind-cluster: "true"
       - name: Run chart-testing (install)
-        run: ct install --charts otel-agent/k8s-helm
+        run: ct lint-and-install --charts otel-agent/k8s-helm
 
