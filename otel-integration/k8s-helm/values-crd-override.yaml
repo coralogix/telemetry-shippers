@@ -1,0 +1,12 @@
+opentelemetry-agent:
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
+
+opentelemetry-cluster-collector:
+  collectorCRD:
+    generate: true
+  configMap:
+    create: false
+  

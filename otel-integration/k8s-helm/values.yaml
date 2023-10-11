@@ -286,6 +286,10 @@ opentelemetry-cluster-collector:
         - username: ""
           password: ""
           port: 3306
+      extraLogs:
+        enabled: false
+        volumeMountName: ""
+        mountPath: ""
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
