@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.21 / 2023-10-11
+
+* [FIX] Fix missing `hostNetwork` field for CRD-based deployment
+* [CHORE] Simplfy CRD override - put into a separate file
+
 ### v0.0.20 / 2023-10-06
 
 * [CHORE] Bump Collector to 0.85.0

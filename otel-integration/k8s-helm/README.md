@@ -103,7 +103,7 @@ Install the chart:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  -f values.yaml
+  --render-subchart-notes -f values.yaml
 ```
 
 If you'd like to provide your own overrides for array values such as `extraEnvs`, `extraVolumes` or `extraVolumeMounts`, please beware that Helm does not support merging arrays, but instead the arrays will be nulled out (see this [issue](https://github.com/helm/helm/issues/3486) for more). In case you'd like to provide your own values for these arrays, make sure that you first **copy over any existing array values** from the provided `values.yaml` file.
@@ -126,11 +126,11 @@ In order to get the updated Helm charts from the added repository, please run:
 helm repo update
 ```
 
-Install the chart with the CRD `values-crd.yaml` file:
+Install the chart with the CRD `values-crd-override.yaml` file:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  -f values-crd.yaml
+  --render-subchart-notes -f values-crd-override.yaml
 ```
 
 # How to use it
