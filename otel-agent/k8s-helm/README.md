@@ -1,5 +1,8 @@
 # OpenTelemetry Agent
 
+> [!IMPORTANT]
+> OpenTelemetry Agent is deprecated and in maintenance mode. Please use [OpenTelemetry Integration](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm) project, which provides full OpenTelemetry observability solution.
+
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 In this chart, the collector will be deployed as a daemonset, meaning the collector will run as an `agent` on each node. Agent runs in host network mode allowing you to easily send application telemetry data.
 
