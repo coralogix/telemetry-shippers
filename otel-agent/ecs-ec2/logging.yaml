@@ -55,7 +55,6 @@ exporters:
     - "aws.ecs.task.definition.family"
     subsystem_name_attributes:
     - "docker.name"
-    - "log.file.name"
     timeout: 30s
 
 service:

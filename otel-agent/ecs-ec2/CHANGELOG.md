@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.31 / 2023-10-17
+* [FIX] log.file.path removal from coralogix exporter subsystem attributes
+
 ### v0.0.31 / 2023-08-02
 * Remove `ecsattributes` processor from telemetryshippers repo
 * Updated default configurations in logging.yaml and config.yaml
