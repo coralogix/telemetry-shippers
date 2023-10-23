@@ -4,7 +4,7 @@ on:
   push:
     branches: master
     paths:
-    - 'otel-agent/otel-collector-windows-image/Dockerfile'
+    - 'otel-collector-windows-image/Dockerfile'
     - '.github/workflows/otel-collector-windows-image.yml'
 
 env:
@@ -32,12 +32,12 @@ jobs:
       # get upstream version from Dockerfile
       - name: Set image version
         id: set-image-version
-        run: echo "version=$(grep -Eo '\v([0-9\.]+)' ./otel-agent/otel-collector-windows-image/Dockerfile | cut -f2- -dv)" >> $GITHUB_OUTPUT
+        run: echo "version=$(grep -Eo '\v([0-9\.]+)' ./otel-collector-windows-image/Dockerfile | cut -f2- -dv)" >> $GITHUB_OUTPUT
 
       - name: Build And Push Collector Image To Dockerhub (Windows 2019)
         uses: docker/build-push-action@v2.8.0
         with:
-          context: ./otel-agent/otel-collector-windows-image/
+          context: ./otel-collector-windows-image/
           platforms: windows/amd64
           push: true
           build-args: |
@@ -49,7 +49,7 @@ jobs:
       - name: Build And Push Collector Image To Dockerhub (Windows 2022)
         uses: docker/build-push-action@v2.8.0
         with:
-          context: ./otel-agent/otel-collector-windows-image/
+          context: ./otel-collector-windows-image/
           platforms: windows/amd64
           push: true
           build-args: |
