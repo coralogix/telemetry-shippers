@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.22 / 2023-10-24
+* [FEATURE] Add support for Windows node agent
+
 ### v0.0.21 / 2023-10-11
 
 * [FIX] Fix missing `hostNetwork` field for CRD-based deployment
