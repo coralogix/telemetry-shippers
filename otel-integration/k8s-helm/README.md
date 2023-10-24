@@ -106,6 +106,8 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values.yaml
 ```
 
+### Providing own array values for `extraEnvs`, `extraVolumes` or `extraVolumeMounts`
+
 If you'd like to provide your own overrides for array values such as `extraEnvs`, `extraVolumes` or `extraVolumeMounts`, please beware that Helm does not support merging arrays, but instead the arrays will be nulled out (see this [issue](https://github.com/helm/helm/issues/3486) for more). In case you'd like to provide your own values for these arrays, make sure that you first **copy over any existing array values** from the provided `values.yaml` file.
 
 ### Generating OpenTelemetryCollector CRD for OpenTelemetry Operator users
@@ -131,6 +133,29 @@ Install the chart with the CRD `values-crd-override.yaml` file:
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values-crd-override.yaml
+```
+
+### Installing the chart on clusters with mixed operating systems (Linux and Windows)
+
+Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The `kube-state-metrics` and collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the CRD `values-windows.yaml` file:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-windows.yaml
 ```
 
 # How to use it
