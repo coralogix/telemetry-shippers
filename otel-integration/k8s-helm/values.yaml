@@ -474,6 +474,9 @@ opentelemetry-cluster-collector:
   #   defaultRules:
   #     enabled: true
 
+opentelemetry-agent-windows:
+  enabled: false
+
 kube-state-metrics:
   prometheusScrape: false
   collectors:
