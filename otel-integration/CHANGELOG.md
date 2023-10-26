@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.25 / 2023-10-26
+* [CHORE] Remove unnecessary cloud resource detector configuration.
+
 ### v0.0.24 / 2023-10-26
 * [FIX] service::pipelines::logs: references exporter "k8sattributes" which is not configured
 
