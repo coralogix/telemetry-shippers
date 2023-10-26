@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.24 / 2023-10-26
+* [CHORE] Remove unnecessary cloud resource detector configuration.
+
 ### v0.0.23 / 2023-10-26
 * [FEATURE] Add k8sattributes and resourcedetecion processor for logs and traces in agent.
 
