@@ -215,6 +215,9 @@ opentelemetry-agent:
           exporters:
             - coralogix
           processors:
+            - k8sattributes
+            - resourcedetection/env
+            - resourcedetection/region
             - memory_limiter
             - spanmetrics
             - batch
@@ -228,6 +231,9 @@ opentelemetry-agent:
           processors:
             - batch
           receivers:
+            - k8sattributes
+            - resourcedetection/env
+            - resourcedetection/region
             - otlp
   tolerations:
     - operator: Exists
