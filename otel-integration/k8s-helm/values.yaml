@@ -129,18 +129,6 @@ opentelemetry-agent:
         detectors: ["gcp", "ec2"]
         timeout: 2s
         override: true
-        gcp:
-          resource_attributes:
-            cloud.region:
-              enabled: true
-            cloud.availability_zone:
-              enabled: true
-        ec2:
-          resource_attributes:
-            cloud.region:
-              enabled: true
-            cloud.availability_zone:
-              enabled: true
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -377,18 +365,6 @@ opentelemetry-cluster-collector:
         detectors: ["gcp", "ec2"]
         timeout: 2s
         override: true
-        gcp:
-          resource_attributes:
-            cloud.region:
-              enabled: true
-            cloud.availability_zone:
-              enabled: true
-        ec2:
-          resource_attributes:
-            cloud.region:
-              enabled: true
-            cloud.availability_zone:
-              enabled: true
       # Will get the k8s resource limits
       memory_limiter: null
 

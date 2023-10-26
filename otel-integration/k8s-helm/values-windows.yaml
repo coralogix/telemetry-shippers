@@ -127,18 +127,6 @@ opentelemetry-agent-windows:
         detectors: ["gcp", "ec2"]
         timeout: 2s
         override: true
-        gcp:
-          resource_attributes:
-            cloud.region:
-              enabled: true
-            cloud.availability_zone:
-              enabled: true
-        ec2:
-          resource_attributes:
-            cloud.region:
-              enabled: true
-            cloud.availability_zone:
-              enabled: true
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
