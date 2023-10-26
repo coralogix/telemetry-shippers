@@ -229,11 +229,11 @@ opentelemetry-agent:
           exporters:
             - coralogix
           processors:
-            - batch
-          receivers:
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
+            - batch
+          receivers:
             - otlp
   tolerations:
     - operator: Exists
