@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.28 / 2023-10-30
+* [CHORE] Update Collector to 0.87.0 (v0.75.0)
+
 ### v0.0.27 / 2023-10-30
 * [CHORE] Update Collector to 0.86.0 (v0.74.0)
 

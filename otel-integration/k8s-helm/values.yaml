@@ -357,6 +357,12 @@ opentelemetry-cluster-collector:
             - action: update_label
               label: node
               new_label: k8s.node.name
+      transform/k8s-dashboard:
+        error_mode: ignore
+        metric_statements:
+          - context: metric
+            statements:
+              - set(unit, "1") where name == "k8s.pod.phase"
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
@@ -412,6 +418,7 @@ opentelemetry-cluster-collector:
           processors:
             - k8sattributes
             - metricstransform/kube-extra-metrics
+            - transform/k8s-dashboard
             - resourcedetection/env
             - resourcedetection/region
             - memory_limiter
