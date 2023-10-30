@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.26 / 2023-10-30
+* [CHORE] Upgrading upstream chart. (v0.71.7)
+
 ### v0.0.25 / 2023-10-26
 * [CHORE] Remove unnecessary cloud resource detector configuration.
 
