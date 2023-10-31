@@ -467,6 +467,7 @@ opentelemetry-agent-windows:
   enabled: false
 
 kube-state-metrics:
+  fullnameOverride: coralogix-opentelemetry-kube-state-metrics
   prometheusScrape: false
   collectors:
     - pods

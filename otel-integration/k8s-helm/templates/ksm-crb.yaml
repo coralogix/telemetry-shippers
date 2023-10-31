@@ -2,13 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:openshift:scc:{{.Values.global.fullnameOverride }}
+  name: system:openshift:scc:{{ index .Values "kube-state-metrics" "fullnameOverride" }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:openshift:scc:{{.Values.global.fullnameOverride }}
+  name: system:openshift:scc:{{ index .Values "kube-state-metrics" "fullnameOverride" }}
 subjects:
 - kind: ServiceAccount
-  name: {{.Values.global.fullnameOverride }}
+  name: {{ index .Values "kube-state-metrics" "fullnameOverride" }}
   namespace: {{ .Release.Namespace }}
 {{- end }}
