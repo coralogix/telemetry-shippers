@@ -28,6 +28,10 @@
 
 ## Fluent-Bit
 
+### v2.1.4 / 2023-06-21
+
+[CHANGE] Fixing SUB_SYSTEM_SYSTEMD value.
+
 ### v2.1.3 / 2023-06-21
 
 * [UPGRADE] Upgrade Fluent-bit version to 2.1.3
