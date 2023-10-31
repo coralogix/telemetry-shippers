@@ -75,7 +75,7 @@ fluent-bit:
   - name: APP_NAME_SYSTEMD
     value: systemd 
   - name: SUB_SYSTEM_SYSTEMD
-    value: SYSLOG_IDENTIFIER
+    value: kubelet
   - name: HOSTNAME
     valueFrom:
       fieldRef:  
