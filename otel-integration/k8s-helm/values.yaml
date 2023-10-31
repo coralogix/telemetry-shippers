@@ -58,6 +58,14 @@ opentelemetry-agent:
     name: "coralogix-opentelemetry-agent"
     clusterRoleBinding:
       name: "coralogix-opentelemetry-agent"
+  priorityClass:
+    # Specifies whether a priorityClass should be created.
+    create: false
+    # The name of the clusterRole to use.
+    # If not set a name is generated using the fullname template.
+    name: ""
+    # Sets the priority value of the priority class.
+    priorityValue: 1000000000
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
 
@@ -262,6 +270,14 @@ opentelemetry-cluster-collector:
     create: true
     clusterRoleBinding:
       name: "coralogix-opentelemetry-collector"
+  priorityClass:
+    # Specifies whether a priorityClass should be created.
+    create: false
+    # The name of the clusterRole to use.
+    # If not set a name is generated using the fullname template.
+    name: ""
+    # Sets the priority value of the priority class.
+    priorityValue: 1000000000
   replicaCount: 1
   presets:
     clusterMetrics:
