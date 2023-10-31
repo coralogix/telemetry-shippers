@@ -1,0 +1,14 @@
+{{- if eq ((.Values.distribution)) "openshift" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:openshift:scc:{{ index .Values "opentelemetry-agent" "fullnameOverride" }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:{{ index .Values "opentelemetry-agent" "fullnameOverride" }}
+subjects:
+- kind: ServiceAccount
+  name: {{ index .Values "opentelemetry-agent" "fullnameOverride" }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
