@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.31 / 2023-11-03
+
+* [FIX] Fix scraping Kube State Metrics
+* [CHORE] Update Collector to 0.88.0 (v0.76.0)
+* [FIX] Fix consistent k8s.deployment.name attribute
+
 ### v0.0.30 / 2023-10-31
 * [FEATURE] Add support for defining priority class
 
