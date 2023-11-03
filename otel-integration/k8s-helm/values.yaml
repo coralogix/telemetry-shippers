@@ -144,7 +144,7 @@ opentelemetry-agent:
           metadata:
             - "k8s.namespace.name"
             # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
-            - "k8s.replicaset.name" 
+            - "k8s.replicaset.name"
             - "k8s.statefulset.name"
             - "k8s.daemonset.name"
             - "k8s.cronjob.name"

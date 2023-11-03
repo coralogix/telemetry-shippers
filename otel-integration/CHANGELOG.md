@@ -2,8 +2,10 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.31 / 2023-11-03
+### v0.0.32 / 2023-11-03
+* [FIX] Ensure correct order of processors for k8s deployment attributes.
 
+### v0.0.31 / 2023-11-03
 * [FIX] Fix scraping Kube State Metrics
 * [CHORE] Update Collector to 0.88.0 (v0.76.0)
 * [FIX] Fix consistent k8s.deployment.name attribute
