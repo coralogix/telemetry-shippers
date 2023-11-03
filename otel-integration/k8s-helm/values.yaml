@@ -143,7 +143,8 @@ opentelemetry-agent:
         extract:
           metadata:
             - "k8s.namespace.name"
-            - "k8s.deployment.name"
+            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
+            - "k8s.replicaset.name" 
             - "k8s.statefulset.name"
             - "k8s.daemonset.name"
             - "k8s.cronjob.name"
@@ -153,7 +154,8 @@ opentelemetry-agent:
       spanmetrics:
         metrics_exporter: coralogix
         dimensions:
-          - name: "k8s.deployment.name"
+          # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
+          - name: "k8s.replicaset.name"
           - name: "k8s.statefulset.name"
           - name: "k8s.daemonset.name"
           - name: "k8s.cronjob.name"
@@ -342,7 +344,8 @@ opentelemetry-cluster-collector:
         extract:
           metadata:
             - "k8s.namespace.name"
-            - "k8s.deployment.name"
+            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
+            - "k8s.replicaset.name"
             - "k8s.statefulset.name"
             - "k8s.daemonset.name"
             - "k8s.cronjob.name"
