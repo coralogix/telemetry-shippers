@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.33 / 2023-11-08
+* [FIX] Remove Kube-State-Metrics, as K8s Cluster Receiver provides all the needed metrics.
+
 ### v0.0.32 / 2023-11-03
 * [FIX] Ensure correct order of processors for k8s deployment attributes.
 
