@@ -2,6 +2,10 @@
 
 ## Fluentd
 
+### v1.16.2 / 2023-11-09
+
+* [UPGRADE] Upgrade Fluentd version to v1.16.2
+
 ### v1.15.2 / 2023-06-20
 
 * [DOWNGRADE] Restoring the image version to 0.0.7 in the Fluentd Helm (Coralogix Plugin) 'values.yaml' file
