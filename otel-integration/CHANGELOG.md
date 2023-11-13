@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.34 / 2023-11-13
+* [FIX] Remove Kube-State-Metrics receive_creator, which generated unnecessary configuration.
+
 ### v0.0.33 / 2023-11-08
 * [FIX] Remove Kube-State-Metrics, as K8s Cluster Receiver provides all the needed metrics.
 
