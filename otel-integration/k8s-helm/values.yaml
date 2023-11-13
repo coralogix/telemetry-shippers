@@ -288,7 +288,6 @@ opentelemetry-cluster-collector:
       enabled: true
     kubernetesExtraMetrics:
       enabled: true
-      kubeStateMetricsName: "coralogix-opentelemetry-kube-state-metrics"
     kubernetesAttributes:
       enabled: true
     mysql:
