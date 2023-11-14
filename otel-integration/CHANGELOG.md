@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.35 / 2023-11-14
+* [FEATURE] Adds statsd receiver to listen for metrics on 8125 port.
+
 ### v0.0.34 / 2023-11-13
 * [FIX] Remove Kube-State-Metrics receive_creator, which generated unnecessary configuration.
 

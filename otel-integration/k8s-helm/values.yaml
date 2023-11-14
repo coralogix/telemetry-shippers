@@ -98,6 +98,8 @@ opentelemetry-agent:
         endpoint: localhost:1777
 
     receivers:
+      statsd:
+        endpoint: ${MY_POD_IP}:8127
       otlp:
         protocols:
           grpc:
@@ -209,6 +211,7 @@ opentelemetry-agent:
             - otlp
             - prometheus
             - hostmetrics
+            - statsd
         traces:
           exporters:
             - coralogix
@@ -245,6 +248,12 @@ opentelemetry-agent:
       memory: 2G
 
   ports:
+    statsd:
+      enabled: true
+      containerPort: 8125
+      servicePort: 8125
+      hostPort: 8125
+      protocol: UDP
     jaeger-binary:
       enabled: true
       containerPort: 6832
