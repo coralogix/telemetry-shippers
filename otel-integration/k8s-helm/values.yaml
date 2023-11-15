@@ -99,7 +99,7 @@ opentelemetry-agent:
 
     receivers:
       statsd:
-        endpoint: ${MY_POD_IP}:8127
+        endpoint: ${MY_POD_IP}:8125
       otlp:
         protocols:
           grpc:
