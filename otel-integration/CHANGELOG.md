@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.36 / 2023-11-15
+* [FIX] Change statsd receiver port to 8125 instead of 8127
+
 ### v0.0.35 / 2023-11-14
 * [FEATURE] Adds statsd receiver to listen for metrics on 8125 port.
 
