@@ -5,7 +5,7 @@ This folder contains the docker file for the image Coralogix promotes along with
 ## Image base
 
 This image is based on the open source image:
-`fluent/fluentd-kubernetes-daemonset:v1.16.2-debian-forward-1.1`
+`fluent/fluentd-kubernetes-daemonset:v1.16.3-debian-forward-1.0`
 
 Supported plugin List:
 
