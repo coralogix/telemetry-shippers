@@ -7,7 +7,6 @@
 * [UPGRADE] Upgrade Fluentd version to v1.16.3
 * [UPGRADE] Upgrade Fluentd Helm chart dependency to 0.5.0
 
-
 ### v1.16.2 / 2023-11-09
 
 * [UPGRADE] Upgrade Fluentd version to v1.16.2
@@ -42,7 +41,6 @@
 
 * [UPGRADE] Upgrade Fluentbit version to v2.2.0
 * [UPGRADE] Upgrade Fluentbit Helm chart dependency to 0.40.0
-
 
 ### v2.1.4 / 2023-06-21
 
