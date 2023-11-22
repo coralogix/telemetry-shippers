@@ -1,14 +1,14 @@
 apiVersion: v2
 name: fluentd-http
 description: Fluentd Chart with HTTP output plugin
-version: 0.0.13
-appVersion: v1.16.2
+version: 0.0.14
+appVersion: v1.16.3
 keywords:
   - Fluentd
   - HTTP output plugin
 dependencies:
   - name: fluentd
-    version: "0.4.3"
+    version: "0.5.0"
     repository: https://fluent.github.io/helm-charts
     tags:
       - fluentd with http output plugin
