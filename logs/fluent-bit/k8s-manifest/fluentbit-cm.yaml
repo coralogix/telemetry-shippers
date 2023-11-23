@@ -72,10 +72,10 @@ data:
         Match                 kube.*
         Host                  ${ENDPOINT}
         Port                  443
-        URI                   /logs/rest/singles
+        URI                   /logs/v1/singles
         Format                json_lines
         TLS                   On
-        Header                private_key ${PRIVATE_KEY}
+        Header                Authorization Bearer ${PRIVATE_KEY}
         compress              gzip
         Retry_Limit           False
         net.keepalive         off
@@ -121,10 +121,10 @@ data:
       Match                 host.*
       Host                  ${ENDPOINT}
       Port                  443
-      URI                   /logs/rest/singles
+      URI                   /logs/v1/singles
       Format                json_lines
       TLS                   On
-      Header                private_key ${PRIVATE_KEY}
+      Header                Authorization Bearer ${PRIVATE_KEY}
       compress              gzip
       Retry_Limit           False
       net.keepalive         off
