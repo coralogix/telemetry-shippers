@@ -83,13 +83,13 @@ To do so, you'd add this "logConfiguration" section to each of your application 
                 "logDriver": "awsfirelens",
                 "options": {
                     "Format": "json_lines",
-                    "Header": "private_key <Coralogix PrivateKey>",
+                    "Header": "Authorization Bearer <Coralogix APIKey>",
                     "Host": "ingress.<Coralogix Domain>",
                     "Name": "http",
                     "Port": "443",
                     "Retry_Limit": "10",
                     "TLS": "On",
-                    "URI": "/logs/rest/singles",
+                    "URI": "/logs/v1/singles",
                     "compress": "gzip"
                 }
             }
