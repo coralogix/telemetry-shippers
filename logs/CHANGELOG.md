@@ -2,6 +2,10 @@
 
 ## Fluentd
 
+### v1.16.3 / 2023-11-23
+
+* [CHANGE] Update the coralogix API
+  
 ### v1.16.3 / 2023-11-22
 
 * [UPGRADE] Upgrade Fluentd version to v1.16.3
@@ -36,6 +40,10 @@
   ([#41](https://github.com/coralogix/eng-integrations/pull/41))
 
 ## Fluent-Bit
+
+### v2.2.0 / 2023-11-23
+
+* [CHANGE] Update the coralogix API
 
 ### v2.2.0 / 2023-11-22
 
