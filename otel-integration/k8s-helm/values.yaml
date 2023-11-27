@@ -89,6 +89,8 @@ opentelemetry-agent:
       enabled: true
     kubeletMetrics:
       enabled: true
+    spanMetrics:
+      enabled: false
 
   config:
     extensions:
@@ -153,18 +155,6 @@ opentelemetry-agent:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
-      spanmetrics:
-        metrics_exporter: coralogix
-        dimensions:
-          # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
-          - name: "k8s.replicaset.name"
-          - name: "k8s.statefulset.name"
-          - name: "k8s.daemonset.name"
-          - name: "k8s.cronjob.name"
-          - name: "k8s.job.name"
-          - name: "k8s.container.name"
-          - name: "k8s.node.name"
-          - name: "k8s.namespace.name"
       # Will get the k8s resource limits
       memory_limiter: null
 
@@ -220,7 +210,6 @@ opentelemetry-agent:
             - resourcedetection/env
             - resourcedetection/region
             - memory_limiter
-            - spanmetrics
             - batch
           receivers:
             - otlp
