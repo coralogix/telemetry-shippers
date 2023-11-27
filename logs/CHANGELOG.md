@@ -41,6 +41,10 @@
 
 ## Fluent-Bit
 
+### v2.2.0 / 2023-11-23
+
+* [CHANGE] Update the coralogix API
+
 ### v2.2.0 / 2023-11-22
 
 * [UPGRADE] Upgrade Fluentbit version to v2.2.0
