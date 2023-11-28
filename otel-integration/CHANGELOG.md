@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.38 / 2023-11-28
+
+- [FIX] Fix k8s.deployment.name transformation, in case the attribute already exists.
+- [FIX] Kubelet Stats use Node IP instead of Node name.
+
 ### v0.0.37 / 2023-11-27
 * [:warning: BREAKING CHANGE] [FEATURE] Add support for span metrics preset. This replaces the deprecated `spanmetricsprocessor`
   with `spanmetricsconnector`. The new connector is disabled by default, as opposed the replaces processor.
