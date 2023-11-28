@@ -14,6 +14,7 @@ opentelemetry-agent:
     spanMetrics:
       enabled: true
 ```
+
 Please beware there are also breaking changes with regards to metric naming and labels. Please see the [this section of documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md#span-to-metrics-processor-to-span-to-metrics-connector) for more information.
 
 ## 0.0.32 to 0.0.33
