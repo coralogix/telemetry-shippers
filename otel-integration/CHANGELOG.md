@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.39 / 2023-11-30
+
+- [FIX] Fix cluster collector k8sattributes should not filter on node level.
+
 ### v0.0.38 / 2023-11-28
 
 - [FIX] Fix k8s.deployment.name transformation, in case the attribute already exists.
