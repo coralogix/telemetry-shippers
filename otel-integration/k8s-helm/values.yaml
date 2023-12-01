@@ -345,8 +345,6 @@ opentelemetry-cluster-collector:
                     - ${MY_POD_IP}:8888
     processors:
       k8sattributes:
-        filter:
-          node_from_env_var: KUBE_NODE_NAME
         extract:
           metadata:
             - "k8s.namespace.name"
