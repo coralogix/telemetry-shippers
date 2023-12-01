@@ -158,6 +158,39 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-windows.yaml
 ```
 
+### Installing the chart on GKE Autopilot clusters.
+
+GKE Autopilot has limited access to host filesystems, host netowkring and host ports, due to this some features of OpenTelemetry Collector doesn't work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
+
+Note important differences between regular otel-integration are:
+- Host metrics receiver is not available, though you still get some metrics about the host thru kubeletstats receiver.
+- Kubernetes Dashboard does not work, due to missing Host Metrics.
+- Host networking and host ports are not available, users need to send tracing spans thru
+  Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally
+  running agents.
+- Log Collection works, but does not store check points. Restarting the agent will collect logs from the beginning.
+
+To install otel-integration to GKE/Autopilot follow these steps:
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the CRD `gke-autopilot-values.yaml` file:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f gke-autopilot-values.yaml
+```
+
 # How to use it
 
 ## Available Endpoints
