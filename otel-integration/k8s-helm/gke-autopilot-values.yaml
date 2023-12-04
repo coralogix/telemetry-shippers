@@ -1,0 +1,71 @@
+global:
+  domain: ""
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+
+  extensions:
+    kubernetesDashboard:
+      enabled: true
+
+# set distribution to openshift for openshift clusters
+distribution: ""
+opentelemetry-agent:
+  enabled: true
+  distribution: "gke/autopilot"
+  extraVolumes: []
+  extraVolumeMounts: []
+  hostNetwork: false
+  presets:
+    logsCollection:
+      enabled: true
+      storeCheckpoints: false
+    hostMetrics:
+      # hostMetrics doesn't work because we cannot mount host
+      # /proc and /sys filesystems
+      enabled: false
+  config:
+    processors:
+      resourcedetection/env:
+        detectors: ["env"]
+        timeout: 2s
+        override: false
+      resourcedetection/region:
+        detectors: ["gcp"]
+        timeout: 2s
+        override: true
+    service:
+      pipelines:
+        metrics:
+          # get rid of host metrics here
+          receivers:
+            - otlp
+            - prometheus
+            - statsd
+  resources:
+    # slighly larger resource requests for gke/autopilot 
+    # since it was droping data
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 2G
+
+opentelemetry-cluster-collector:
+  config:
+    processors:
+      resourcedetection/env:
+        detectors: ["env"]
+        timeout: 2s
+        override: false
+      resourcedetection/region:
+        detectors: ["gcp"]
+        timeout: 2s
+        override: true
+
+  enabled: true
+
+opentelemetry-agent-windows:
+  enabled: false

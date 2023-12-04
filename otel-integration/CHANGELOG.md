@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.40 / 2023-12-01
+
+- [FEATURE] Add support for GKE Autopilot clusters.
+
 ### v0.0.39 / 2023-11-30
 
 - [FIX] Fix cluster collector k8sattributes should not filter on node level.
