@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.41 / 2023-12-06
+
+- [FIX] Enable Agent Service for GKE Autopilot clusters.
+
 ### v0.0.40 / 2023-12-01
 
 - [FEATURE] Add support for GKE Autopilot clusters.
