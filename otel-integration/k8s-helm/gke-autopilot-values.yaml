@@ -17,6 +17,8 @@ opentelemetry-agent:
   extraVolumes: []
   extraVolumeMounts: []
   hostNetwork: false
+  service:
+    enabled: true
   presets:
     logsCollection:
       enabled: true
