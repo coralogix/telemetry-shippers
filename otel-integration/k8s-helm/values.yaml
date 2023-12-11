@@ -46,6 +46,18 @@ opentelemetry-agent:
           apiVersion: v1
           fieldPath: spec.nodeName
 
+  targetAllocator:
+    enabled: true
+    allocationStrategy: "per-node"
+    prometheusCR:
+      enabled: true
+    image:
+      # Use custom image for target allocator until
+      # the official image is updated with the "per node" strategy
+      # https://github.com/open-telemetry/opentelemetry-operator/pull/2430
+      repository: coralogixrepo/target-allocator
+      tag: sha-9517bd6
+
   serviceAccount:
     # Specifies whether a service account should be created
     create: true
