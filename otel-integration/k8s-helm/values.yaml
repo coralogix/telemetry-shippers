@@ -47,7 +47,7 @@ opentelemetry-agent:
           fieldPath: spec.nodeName
 
   targetAllocator:
-    enabled: true
+    enabled: false
     allocationStrategy: "per-node"
     prometheusCR:
       enabled: true
