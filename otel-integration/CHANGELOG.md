@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.42 / 2023-12-11
+
+- [CHORE] Update collector to `v0.90.1`.
+- [FEATURE] Add feature to scrape Prometheus CR targets with target allocator.
+
 ### v0.0.41 / 2023-12-06
 
 - [FIX] Enable Agent Service for GKE Autopilot clusters.
