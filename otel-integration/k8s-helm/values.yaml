@@ -48,6 +48,7 @@ opentelemetry-agent:
 
   targetAllocator:
     enabled: false
+    replicas: 1
     allocationStrategy: "per-node"
     prometheusCR:
       enabled: true

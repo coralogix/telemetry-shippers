@@ -139,7 +139,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 If you're leveraging the Prometheus Operator custom resources (`ServiceMonitor` and `PodMonitor`) and you would like to keep using them with the OpenTelemetry collector, you can enable the scraping of these resources by a special, optional component called target allocator. This feature is disabled by default and can be enabled by setting the `opentelemetry-agent.targetAllocator.enabled` value to `true` in the `values.yaml` file.
 
-If enabled, the target allocator will be deployed as a separate deployment in the same namespace as the collector. It will be responsible for allocating targets for the agent collector on each node, to scrape targets that reside on the given node (a form of simple sharding).
+If enabled, the target allocator will be deployed as a separate deployment in the same namespace as the collector. It will be responsible for allocating targets for the agent collector on each node, to scrape targets that reside on the given node (a form of simple sharding). If needed, you can run multiple instances of the target allocator for high availability. This can be achieved by setting the `opentelemetry-agent.targetAllocator.replicas` value to a number greater than 1.
 
 For more details on Prometheus custom resources and target allocator see the documentation [here](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#discovery-of-prometheus-custom-resources).
 
