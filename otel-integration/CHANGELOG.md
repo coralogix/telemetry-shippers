@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.43 / 2023-12-12
+
+- [FIX] Use correct labels for target allocator components.
+- [CHORE] Specify replica parameter for target allocator.
+
 ### v0.0.42 / 2023-12-11
 
 - [CHORE] Update collector to `v0.90.1`.
