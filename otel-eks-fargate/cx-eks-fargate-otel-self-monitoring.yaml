@@ -148,3 +148,6 @@ spec:
               - key: cx-otel-collector-monitor-config
                 path: cx-otel-collector-monitor-config.yaml
           name: cx-otel-collector-monitor-config-volume
+      nodeSelector:
+        eks.amazonaws.com/compute-type: fargate
+        kubernetes.io/os: linux

@@ -53,15 +53,16 @@ metadata:
 data:
   label-node-script: |
     #!/bin/bash
-
+    set +x
     # Download kubectl
     # If the latest stable version is not compatible with your cluster, adjust accordingly.
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    curl -LOs "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
     # Give execute permissions to kubectl
     chmod +x kubectl
 
-    # Run the command to label nodes
+    # Remove any prior label from other nodes. Label only the current node as the single OTEL-collector-node.
+    ./kubectl label nodes --all OTEL-collector-node-
     ./kubectl label nodes $K8S_NODE_NAME OTEL-collector-node=true
 ---
 # ConfigMap for OTEL collector instance
@@ -280,3 +281,6 @@ spec:
               - key: label-node-script
                 path: label_node.sh
                 mode: 0555
+      nodeSelector:
+        eks.amazonaws.com/compute-type: fargate
+        kubernetes.io/os: linux

@@ -59,8 +59,8 @@ The image allows you to pass in your configuration files as a Base64 encoded env
 
 This repo provides example of the following configuration files (you can create other configuration with combination for logs/metric/taces) which work directly with the *coralogixrepo/coralogix-otel-collector* docker image for ECS and the cloudformation template provided [here](https://github.com/coralogix/cloudformation-coralogix-aws/blob/master/opentelemetry/ecs-ec2/README.md).
 
-- [logging](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/logging.yaml)
-- [traces & metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/ecs-ec2/config.yaml)
+- [logging](logging.yaml)
+- [traces & metrics](config.yaml)
 
 ### Deploying Open Telemetry
 
