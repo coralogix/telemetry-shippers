@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.44 / 2023-12-13
+
+- [CHORE] Update collector to `v0.91.0`.
+- [FEATURE] Remove memoryballast and enable GOMEMLIMIT instead. This should significantly reduce memory footprint. See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891. 
+
 ### v0.0.43 / 2023-12-12
 
 - [FIX] Use correct labels for target allocator components.

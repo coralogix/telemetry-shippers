@@ -4,6 +4,12 @@ These upgrade guidelines only contain instructions for version upgrades which re
 If the version you want to upgrade to is not listed here, then there is nothing to do for you.
 Just upgrade and enjoy.
 
+## 0.0.43 to 0.0.44
+
+Because 0.0.44 sets GOMEMLIMIT automatically for pods, it is recommended to remove memoryballast extension if you manually configured the pipeline. Removing memoryballast extension should reduce memory footprint for your pods. See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891 for more information/
+
+Additionally, logging exporter has been deprecated, we recommend to switch to debug exporter instead. See https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/debugexporter/README.md for more information.
+
 ## 0.0.36 to 0.0.37
 
 From version `0.0.37`, the deprecated `spanmetricsprocessor` has been removed and replaced by the `spanmetricsconnector` and is **disabled** by default. If you depend on the span metrics, please enable the `spanmetricsconnector` by setting the following in the `presets` section of your configuration:

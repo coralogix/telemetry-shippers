@@ -199,7 +199,6 @@ opentelemetry-agent:
       - zpages
       - pprof
       - health_check
-      - memory_ballast
       pipelines:
         metrics:
           exporters:
@@ -468,7 +467,6 @@ opentelemetry-cluster-collector:
       - zpages
       - pprof
       - health_check
-      - memory_ballast
       pipelines:
         logs:
           exporters:
