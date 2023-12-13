@@ -1,4 +1,19 @@
 receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: otel-collector-metrics
+        scrape_interval: 60s
+        static_configs:
+        - targets: ['localhost:8888']
+
   filelog:
     start_at: end
     include:
@@ -6,11 +21,11 @@ receivers:
 
     include_file_path: true
 
-    # add log.file.name to resource attributes
+    # add log.file.path to resource attributes
     operators:
       - type: move
-        from: attributes["log.file.name"]
-        to: resource["log.file.name"]
+        from: attributes["log.file.path"]
+        to: resource["log.file.path"]
 
 processors:
   resourcedetection:
@@ -20,22 +35,9 @@ processors:
     override: false
 
   ecsattributes:
-    attributes:
-      - ^image$
-      - ^aws.*
-      - ^labels.*
     container_id:
       sources:
-        - "log.file.name"
-
-  # only allow logs with container.name label
-  filter/ecslogs:
-    logs:
-      include:
-        match_type: regexp
-        resource_attributes:
-          - key: aws.ecs.container.name
-            value: .*
+        - "log.file.path"
 
   transform/logs:
     error_mode: ignore
@@ -44,20 +46,40 @@ processors:
         statements:
           - set(attributes["cx_container_id"], attributes["docker.id"])
           - set(attributes["aws_ecs_task_family"], attributes["aws.ecs.task.definition.family"])
-    
+          - set(attributes["image_id"], attributes["image.id"])
+          - delete_key(attributes, "image.id")
+
+  # otel-collector resource detection for collector
+  resourcedetection/otel-collector:
+    detectors: [ecs, ec2]
+    timeout: 2s
+    override: false
+
 exporters:
+  logging:
+    verbosity: detailed
   coralogix:
     domain: "$CORALOGIX_DOMAIN"
     private_key: "$PRIVATE_KEY"
     application_name: "$APP_NAME"
     subsystem_name: "$SUB_SYS"
     application_name_attributes:
+    - "aws.ecs.cluster"
+    - "aws.ecs.cluster.name"
     - "aws.ecs.task.definition.family"
     subsystem_name_attributes:
+    - "aws.ecs.container.name"
+    - "aws.ecs.docker.name"
     - "docker.name"
     timeout: 30s
 
+extensions:
+  health_check:
+
 service:
+  extensions:
+    - health_check
+
   pipelines:
     logs:
       receivers: 
@@ -65,8 +87,25 @@ service:
       processors:
         - resourcedetection
         - ecsattributes
-        - filter/ecslogs
         - transform/logs
       exporters:
         - coralogix
 
+    traces:
+      receivers:
+        - otlp
+      exporters:
+        - coralogix
+
+    metrics/otel-collector:
+      receivers:
+        - prometheus
+      processors:
+        - resourcedetection/otel-collector
+      exporters:
+        - coralogix
+
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+      level: detailed

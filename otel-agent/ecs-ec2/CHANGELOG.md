@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.31 / 2023-12-13
+* [FIX] fix config example files
+
 ### v0.0.31 / 2023-10-17
 * [FIX] log.file.path removal from coralogix exporter subsystem attributes
 
