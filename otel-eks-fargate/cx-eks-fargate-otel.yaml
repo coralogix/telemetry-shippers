@@ -61,7 +61,7 @@ data:
     # Give execute permissions to kubectl
     chmod +x kubectl
 
-    # Label only the current node as the OTEL-collector-node
+    # Remove any prior label from other nodes. Label only the current node as the single OTEL-collector-node.
     ./kubectl label nodes --all OTEL-collector-node-
     ./kubectl label nodes $K8S_NODE_NAME OTEL-collector-node=true
 ---
