@@ -1,5 +1,8 @@
 # OpenTelemetry Infrastructure Collector
 
+> [!IMPORTANT]
+> OpenTelemetry Infrastructure Collector is deprecated and in maintenance mode. Please use [OpenTelemetry Integration](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm) project, which provides full OpenTelemetry observability solution.
+
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 In this chart, the collector will be deployed as a single replica deployment.
 

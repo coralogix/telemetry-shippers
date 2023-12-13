@@ -1,5 +1,8 @@
 # OpenTelemetry Collector Helm Chart
 
+> [!IMPORTANT]
+> OpenTelemetry Agent is deprecated and in maintenance mode. Please use [OpenTelemetry Integration](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm) project, which provides full OpenTelemetry observability solution.
+
 ## Description
 
 Temporary fork of [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) to add support for Windows containers.
