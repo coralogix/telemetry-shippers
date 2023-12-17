@@ -227,7 +227,7 @@ env:
       fieldRef:
         fieldPath: status.hostIP
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
-    value: "$(NODE):4317"
+    value: "http://$(NODE):4317"
 ```
 
 ### About span metrics
