@@ -1,0 +1,112 @@
+name: Sync with integration-definitions
+
+on: 
+  pull_request:
+    types: [closed]
+    branches: [master]
+    paths:
+    - 'otel-integration/k8s-helm/Chart.yaml'
+jobs:
+  Get_vesrion:
+    runs-on: ubuntu-latest
+    name: Get the new version
+    outputs:
+      Chart_version: "${{ steps.New_version.outputs.Chart_version }}"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
+
+      - name: Get the new version
+        id: New_version
+        run: |
+          Chart_version=$(cat ./otel-integration/k8s-helm/Chart.yaml | grep "^version" | grep -oE '[^ ]+$')
+          echo "Chart_version=$Chart_version" >> $GITHUB_OUTPUT
+
+
+  create_pr:
+    runs-on: ubuntu-latest
+    needs: Get_vesrion
+    steps:
+
+      - name: Checkout destination repository
+        uses: actions/checkout@v3
+        with:
+          repository: coralogix/integration-definitions
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Check if version exists
+        id: version_exist
+        run: | 
+          branch_name="${{ github.event.pull_request.head.ref }}"
+          git fetch origin
+          template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
+          if [ -d "./integrations/otel-agent-k8s/v$template_version" ] || [ -n "$(git ls-remote origin $branch_name)" ]; then
+            echo "version exist"
+            echo "new_version_exist=true" >> $GITHUB_ENV
+          else
+            echo "new_version_exist=false" >> $GITHUB_ENV
+            echo "version Not exist"
+          fi
+
+
+      - name: Create files for the new version
+        if: "${{env.new_version_exist == 'false'}}"
+        run: |
+          branch_name="${{ github.event.pull_request.head.ref }}"
+          echo $branch_name
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull origin master
+          git fetch origin
+          git switch -c ${branch_name} --track origin/master 
+          git push --set-upstream origin ${branch_name}
+          sync_branch_exists=$(git ls-remote --heads origin "${branch_name}" | wc -l)
+
+          current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
+          mkdir -p integrations/otel-agent-k8s/v${template_version}
+          last_version=$(grep  "revision: " ./integrations/otel-agent-k8s/manifest.yaml | tail -n 1 | grep -oE '[^ ]+$')
+          cp integrations/otel-agent-k8s/v$last_version/commands.yaml integrations/otel-agent-k8s/v${template_version}/
+          cp integrations/otel-agent-k8s/v$last_version/fields.yaml integrations/otel-agent-k8s/v${template_version}/
+          cp integrations/otel-agent-k8s/v$last_version/integration_guide.yaml integrations/otel-agent-k8s/v${template_version}/
+          sed -i "s/--version=[^[:space:]]*/--version=$template_version/" integrations/otel-agent-k8s/v${template_version}/commands.yaml
+          if [ -f ./integrations/otel-agent-k8s/manifest.yaml ]; then
+            echo "  - revision: ${template_version}
+              template:
+                type: HelmChart
+                commands: v${template_version}/commands.yaml
+                integration_guide: v${template_version}/integration_guide.yaml
+              field_definitions: v${template_version}/fields.yaml
+              published_at: $current_time" >> integrations/otel-agent-k8s/manifest.yaml
+          fi
+          git add .
+          echo "branch_name=$branch_name" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: commit change
+        if: "${{env.new_version_exist == 'false'}}"
+        uses: planetscale/ghcommit-action@v0.1.19
+        with:
+          commit_message: "update version to the Chart.yaml"
+          repo: coralogix/integration-definitions
+          branch: ${{env.branch_name}}
+          file_pattern: '*.yaml *.md'
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+
+      - name: Create pull request
+        if: "${{env.new_version_exist == 'false'}}"
+        run: |
+          branch_name="${{ github.event.pull_request.head.ref }}"
+          Pr_name=$(echo "${{ github.event.pull_request.title }}")
+          # Pr_name="pe name"
+          pr_exists=$(gh pr list --base master --head "${branch_name}" --json number -q '.[].number')
+          if [[ -n "$pr_exists" ]]; then
+            echo "Pull request already exists: #$pr_exists"
+          else
+            gh pr create --base master --head "${branch_name}" --title "${Pr_name}" --body "This pull request syncs the changes from the cloudformation repo to this repo."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
