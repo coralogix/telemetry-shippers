@@ -61,7 +61,6 @@ jobs:
           git fetch origin
           git switch -c ${branch_name} --track origin/master 
           git push --set-upstream origin ${branch_name}
-          sync_branch_exists=$(git ls-remote --heads origin "${branch_name}" | wc -l)
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
@@ -101,12 +100,6 @@ jobs:
         run: |
           branch_name="${{ github.event.pull_request.head.ref }}"
           Pr_name=$(echo "${{ github.event.pull_request.title }}")
-          # Pr_name="pe name"
-          pr_exists=$(gh pr list --base master --head "${branch_name}" --json number -q '.[].number')
-          if [[ -n "$pr_exists" ]]; then
-            echo "Pull request already exists: #$pr_exists"
-          else
-            gh pr create --base master --head "${branch_name}" --title "${Pr_name}" --body "This pull request syncs the changes from the cloudformation repo to this repo."
-          fi
+          gh pr create --base master --head "${branch_name}" --title "${Pr_name}" --body "This pull request syncs the changes from the cloudformation repo to this repo."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
