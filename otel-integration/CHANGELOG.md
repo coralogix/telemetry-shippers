@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.45 / 2024-01-05
+
+- [FIX] Fix target allocator resources not being applied previously.
+- [FIX] Bump target allocator to fix issues with allocator not allocating targets on cluster scaling.
+
 ### v0.0.44 / 2023-12-13
 
 - [CHORE] Update collector to `v0.91.0`.
