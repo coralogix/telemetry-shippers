@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.46 / 2024-01-11
+
+- [CHORE] Update Windows collector image to `v0.91.0`
+- [FIX] Disable unsued tracing pipeline in cluster collector
+
 ### v0.0.45 / 2024-01-05
 
 - [FIX] Fix target allocator resources not being applied previously.
