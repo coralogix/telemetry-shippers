@@ -10,7 +10,7 @@ opentelemetry-agent-windows:
     repository: coralogixrepo/opentelemetry-collector-contrib-windows
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.85.0"
+    tag: "0.91.0"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
   extraVolumes:
@@ -250,9 +250,5 @@ opentelemetry-agent:
     kubernetes.io/os: linux
 
 opentelemetry-cluster-collector:
-  nodeSelector:
-    kubernetes.io/os: linux
-
-kube-state-metrics:
   nodeSelector:
     kubernetes.io/os: linux
