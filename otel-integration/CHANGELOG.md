@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.47 / 2024-01-16
+
+- [FIX] Suppress generation of `service.instance.id` from collector telemetry.
+
 ### v0.0.46 / 2024-01-11
 
 - [CHORE] Update Windows collector image to `v0.91.0`
