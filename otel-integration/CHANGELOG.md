@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.48 / 2024-01-17
+
+- [FEATURE] Add support for specifying histogram buckets for span metrics preset.
+- [CHORE] Update collector to `v0.92.0`.
+
 ### v0.0.47 / 2024-01-16
 
 - [FIX] Suppress generation of `service.instance.id` from collector telemetry.
