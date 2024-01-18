@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.49 / 2024-01-18
+
+- [CHORE] Update Windows collector image to `v0.92.0`.
+- [CHORE] Sync changes from main values file with Windows agent values file.
+
 ### v0.0.48 / 2024-01-17
 
 - [FEATURE] Add support for specifying histogram buckets for span metrics preset.
