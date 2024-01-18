@@ -128,11 +128,18 @@ In order to get the updated Helm charts from the added repository, please run:
 helm repo update
 ```
 
-Install the chart with the CRD `values-crd-override.yaml` file:
+Install the chart with the CRD `values-crd-override.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f values-crd-override.yaml
+  --render-subchart-notes -f values.yaml -f values-crd-override.yaml
+```
+
+Or you can provide the values directly in the command line by passing them with the `--set` flag:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
@@ -159,11 +166,18 @@ In order to get the updated Helm charts from the added repository, please run:
 helm repo update
 ```
 
-Install the chart with the CRD `values-windows.yaml` file:
+Install the chart with the CRD `values-windows.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f values-windows.yaml
+  --render-subchart-notes -f values.yaml -f values-windows.yaml
+```
+
+Or you can provide the values directly in the command line by passing them with the `--set` flag:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-windows.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
 ### Installing the chart on GKE Autopilot clusters.
@@ -192,11 +206,18 @@ In order to get the updated Helm charts from the added repository, please run:
 helm repo update
 ```
 
-Install the chart with the CRD `gke-autopilot-values.yaml` file:
+Install the chart with the CRD `gke-autopilot-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f gke-autopilot-values.yaml
+  --render-subchart-notes -f values.yaml -f gke-autopilot-values.yaml
+```
+
+Or you can provide the values directly in the command line by passing them with the `--set` flag:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
 # How to use it
