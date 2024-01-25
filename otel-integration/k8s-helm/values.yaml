@@ -4,6 +4,7 @@ global:
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
   logLevel: "warn"
+  collectionInterval: "30s"
 
   extensions:
     kubernetesDashboard:
@@ -100,10 +101,13 @@ opentelemetry-agent:
       enabled: true
     hostMetrics:
       enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
     kubeletMetrics:
       enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
       enabled: false
+      collectionInterval: "{{.Values.global.collectionInterval}}"
       histogramBuckets: [10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
 
   config:
@@ -341,7 +345,7 @@ opentelemetry-cluster-collector:
         endpoint: localhost:1777
     receivers:
       k8s_cluster:
-        collection_interval: 10s
+        collection_interval: "{{.Values.global.collectionInterval}}"
         allocatable_types_to_report: [cpu, memory]
         resource_attributes:
           k8s.kubelet.version:

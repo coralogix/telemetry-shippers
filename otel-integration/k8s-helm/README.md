@@ -251,6 +251,10 @@ env:
     value: "http://$(NODE):4317"
 ```
 
+### About global collection interval
+
+The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for _each_ component set internally by the collector, you can remove the collection interval parameter from presets completely. Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choise of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
+
 ### About span metrics
 
 The collector provides a possibility to synthesize R.E.D (Request, Error, Duration) metrics based on the incoming span data. This can be useful to obtain extra metrics about the operations you have instrumented for tracing. For more information, please refer to the [OpenTelemetry Collector documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md).
@@ -399,6 +403,7 @@ Optional settings:
       instances:
       - username: "otel-coralogix-collector"
         password: ${env:MYSQL_PASSWORD}
+        collectionInterval: 30s
     extraLogs:
       enabled: true
       volumeMountName: "data"
