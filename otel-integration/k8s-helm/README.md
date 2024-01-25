@@ -154,6 +154,8 @@ For more details on Prometheus custom resources and target allocator see the doc
 
 Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
 
+Depending on your Windows server version, you might need to adjust the image you are using with the Windows agent. The default image is `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>`. For Windows 2022 servers, please use `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>-windows2022` version. You can do this by adjusting the `opentelemetry-agent-windows.image.tag` value in the `values-windows.yaml` file.
+
 First make sure to add our Helm charts repository to the local repos list with the following command:
 
 ```bash
@@ -250,6 +252,12 @@ env:
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
     value: "http://$(NODE):4317"
 ```
+
+### About global collection interval
+
+The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
+
+Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choise of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
 
 ### About span metrics
 
@@ -399,6 +407,7 @@ Optional settings:
       instances:
       - username: "otel-coralogix-collector"
         password: ${env:MYSQL_PASSWORD}
+        collectionInterval: 30s
     extraLogs:
       enabled: true
       volumeMountName: "data"
