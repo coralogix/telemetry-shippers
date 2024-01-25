@@ -4,7 +4,7 @@
 
 ### v0.0.50 / 2024-01-18
 
-- [FEAT] Add global metric collection interval
+- [FEAT] Add global metric collection interval. This **changes** the default value of collection interval for all receivers to `30s` by default.
 - [FIX] Suppress generation of `service.name` from collector telemetry.
 
 ### v0.0.49 / 2024-01-18
