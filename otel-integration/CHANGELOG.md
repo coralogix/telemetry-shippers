@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.50 / 2024-01-18
+
+- [FEAT] Add global metric collection interval
+- [FIX] Suppress generation of `service.name` from collector telemetry.
+
 ### v0.0.49 / 2024-01-18
 
 - [CHORE] Update Windows collector image to `v0.92.0`.
