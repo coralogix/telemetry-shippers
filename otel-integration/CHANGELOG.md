@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.52 / 2024-02-05
+
+- [FEAT] Optionally allow users to use tail sampling for traces.
+
 ### v0.0.51 / 2024-02-05
 
 - [FIX] Fix Target allocator endpoint slices permission issue.

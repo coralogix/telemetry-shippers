@@ -1,0 +1,63 @@
+global:
+  domain: ""
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+  collectionInterval: "30s"
+
+opentelemetry-agent:
+  enabled: true
+  mode: daemonset
+  presets:
+    loadBalancing:
+      enabled: true
+      routingKey: "traceID"
+      hostname: coralogix-opentelemetry-gateway
+
+  config:
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - loadbalancing
+
+opentelemetry-gateway:
+  enabled: true
+  # For production use-cases please increase replicas
+  # and resource requests and limits
+  replicaCount: 3
+  # resources:
+  #   requests:
+  #     cpu: 0.5
+  #     memory: 256Mi
+  #   limits:
+  #     cpu: 2
+  #     memory: 2G
+
+  config:
+    processors:
+      tail_sampling:
+        # Update configuration here, with your tail sampling policies
+        # Docs: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor
+        decision_wait: 10s
+        num_traces: 100
+        expected_new_traces_per_sec: 10
+        policies:
+          [
+            {
+              name: errors-policy,
+              type: status_code,
+              status_code: {status_codes: [ERROR]}
+            },
+            {
+              name: randomized-policy,
+              type: probabilistic,
+              probabilistic: {sampling_percentage: 10}
+            },
+          ]
+
+opentelemetry-cluster-collector:
+  enabled: true
+opentelemetry-agent-windows:
+  enabled: false

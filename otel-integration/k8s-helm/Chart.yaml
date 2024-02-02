@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-integration
 description: OpenTelemetry Integration
-version: 0.0.51
+version: 0.0.52
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent
@@ -11,19 +11,24 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.79.3"
+    version: "0.79.4"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-agent-windows
-    version: "0.79.3"
+    version: "0.79.4"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent-windows.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-cluster-collector
-    version: "0.79.3"
+    version: "0.79.4"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-cluster-collector.enabled
+  - name: opentelemetry-collector
+    alias: opentelemetry-gateway
+    version: "0.79.4"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-gateway.enabled
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
