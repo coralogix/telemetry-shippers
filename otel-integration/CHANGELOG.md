@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.51 / 2024-02-05
+
+- [FIX] Fix Target allocator endpoint slices permission issue.
+
 ### v0.0.50 / 2024-01-18
 
 - [FEAT] Add global metric collection interval. This **changes** the default value of collection interval for all receivers to `30s` by default.
