@@ -2,6 +2,10 @@
 
 ## Prometheus-Agent
 
+### v0.0.18 / 2024-02-07
+* [FEATURE] Adding Prometheus Agent volumes and volumes mount
+* [FEATURE] Adding Prometheus Agent image registry
+
 ### v0.0.17 / 2024-02-07
 * [FEATURE] Adding Pod Metadata to Prometheus Agent
 

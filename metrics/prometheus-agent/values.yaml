@@ -1,6 +1,8 @@
 fullnameOverride: prometheus-agent
 
 global:
+  imagePullSecrets: []
+  imageRegistry: ""
   rbac:
     create: true
 
@@ -32,8 +34,9 @@ prometheus:
     enableFeatures:
       - memory-snapshot-on-shutdown
       - new-service-discovery-manager
-    image: 
-      repository: quay.io/prometheus/prometheus
+    image:
+      registry: quay.io
+      repository: prometheus/alertmanager
       tag: v2.45.0
     enableAdminAPI: true
     logFormat: json
@@ -103,4 +106,3 @@ prometheus:
     bearerTokenFile:
     metricRelabelings: []
     relabelings: []
-
