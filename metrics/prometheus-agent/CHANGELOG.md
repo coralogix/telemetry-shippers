@@ -2,7 +2,10 @@
 
 ## Prometheus-Agent
 
-### v0.0.16 / 2023-07-10
+### v0.0.17 / 2024-02-07
+* [FEATURE] Adding Pod Metadata to Prometheus Agent
+
+### v0.0.16 / 2024-02-07
 * [FEATURE] Adding Image Pull Secrets to Prometheus Agent
 
 ### v0.0.15 / 2023-07-10

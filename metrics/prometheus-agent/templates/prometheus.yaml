@@ -124,3 +124,7 @@ spec:
   imagePullSecrets:
 {{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 4 }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.podMetadata }}
+  podMetadata:
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.podMetadata | indent 4) . }}
+{{- end }}

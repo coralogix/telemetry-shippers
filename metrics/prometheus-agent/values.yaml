@@ -21,6 +21,7 @@ prometheus:
     sessionAffinity: ""
 
   prometheusSpec:
+    podMetadata: {}
     portName: "http-web"
     routePrefix: /
     startupProbe:
