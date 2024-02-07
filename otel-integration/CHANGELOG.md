@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.53 / 2024-02-07
+
+- [FIX] Fix warning about overwrite in traces pipeline in cluster collector sub-chart.
+
 ### v0.0.52 / 2024-02-05
 
 - [FEAT] Optionally allow users to use tail sampling for traces.

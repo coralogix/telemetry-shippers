@@ -506,7 +506,6 @@ opentelemetry-cluster-collector:
             - otlp
             - prometheus
             - k8s_cluster
-        traces: null
   tolerations:
     - operator: Exists
 
