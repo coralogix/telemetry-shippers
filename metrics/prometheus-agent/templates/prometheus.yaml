@@ -119,7 +119,19 @@ spec:
   externalLabels:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.externalLabels | indent 4) . }}
 {{- end }}
-  image: "{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ default .Chart.AppVersion .Values.prometheus.prometheusSpec.image.tag }}"
+{{- if .Values.prometheus.prometheusSpec.image }}
+  {{- $registry := .Values.global.imageRegistry | default .Values.prometheus.prometheusSpec.image.registry -}}
+  {{- if and .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.image.sha }}
+  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
+  {{- else if .Values.prometheus.prometheusSpec.image.sha }}
+  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
+  {{- else if .Values.prometheus.prometheusSpec.image.tag }}
+  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}"
+  {{- else }}
+  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
+  {{- end }}
+  version: {{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}
+{{- end }}
 {{- if .Values.global.imagePullSecrets }}
   imagePullSecrets:
 {{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 4 }}
@@ -127,4 +139,12 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.podMetadata }}
   podMetadata:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.podMetadata | indent 4) . }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.volumes }}
+  volumes:
+{{ toYaml .Values.prometheus.prometheusSpec.volumes | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.volumeMounts }}
+  volumeMounts:
+{{ toYaml .Values.prometheus.prometheusSpec.volumeMounts | indent 4 }}
 {{- end }}
