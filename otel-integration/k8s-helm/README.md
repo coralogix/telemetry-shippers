@@ -142,6 +142,19 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
+### Enabling Tail Sampling
+
+If you want to use [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) to reduce the amount of traces using [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) you can install `otel-integration` using `tail-sampling-values.yaml` values. For example:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f tail-sampling-values.yaml
+```
+
+This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor)  policies with your custom tail sampling policies.
+
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
 
 If you're leveraging the Prometheus Operator custom resources (`ServiceMonitor` and `PodMonitor`) and you would like to keep using them with the OpenTelemetry collector, you can enable the scraping of these resources by a special, optional component called target allocator. This feature is disabled by default and can be enabled by setting the `opentelemetry-agent.targetAllocator.enabled` value to `true` in the `values.yaml` file.
