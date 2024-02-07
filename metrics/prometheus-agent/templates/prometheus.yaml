@@ -120,3 +120,7 @@ spec:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.externalLabels | indent 4) . }}
 {{- end }}
   image: "{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ default .Chart.AppVersion .Values.prometheus.prometheusSpec.image.tag }}"
+{{- if .Values.global.imagePullSecrets }}
+  imagePullSecrets:
+{{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 4 }}
+{{- end }}

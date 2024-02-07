@@ -55,3 +55,17 @@ labelNameLengthLimit: {{ . }}
 labelValueLengthLimit: {{ . }}
 {{- end }}
 {{- end -}}
+
+# global:
+#   imagePullSecrets:
+#   - pullSecret1
+#   - pullSecret2
+{{- define "kube-prometheus-stack.imagePullSecrets" -}}
+{{- range .Values.global.imagePullSecrets }}
+  {{- if eq (typeOf .) "map[string]interface {}" }}
+- {{ toYaml . | trim }}
+  {{- else }}
+- name: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end -}}
