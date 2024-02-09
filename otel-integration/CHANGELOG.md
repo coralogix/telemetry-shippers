@@ -2,6 +2,13 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.54 / 2024-02-09
+
+- [CHORE] Pull upstream changes
+- [CHORE] Bump Collector to 0.93.0
+- [Fix] Go memory limit fixes
+- [Feat] Log Collector retry on failure enabled.
+
 ### v0.0.53 / 2024-02-07
 
 - [FIX] Fix warning about overwrite in traces pipeline in cluster collector sub-chart.
