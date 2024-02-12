@@ -90,6 +90,7 @@ opentelemetry-agent:
       integrationName: "coralogix-integration-helm"
     logsCollection:
       enabled: true
+      includeCollectorLogs: true
       storeCheckpoints: true
       maxRecombineLogSize: 1048576
       extraFilelogOperators: []

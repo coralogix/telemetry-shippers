@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.55 / 2024-02-12
+
+- [Feat] Change default to enable collector logs.
+
 ### v0.0.54 / 2024-02-09
 
 - [CHORE] Pull upstream changes
