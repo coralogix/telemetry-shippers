@@ -156,6 +156,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor)  policies with your custom tail sampling policies.
 
 When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`.
+When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
 
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
 
