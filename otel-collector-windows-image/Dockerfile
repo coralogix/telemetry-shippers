@@ -3,7 +3,7 @@ ARG WIN_BASE_IMAGE
 
 FROM --platform=$BUILDPLATFORM curlimages/curl AS build
 WORKDIR /src
-RUN curl -Lo otelcol.tar.gz https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.92.0/otelcol-contrib_0.92.0_windows_amd64.tar.gz
+RUN curl -Lo otelcol.tar.gz https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.93.0/otelcol-contrib_0.93.0_windows_amd64.tar.gz
 RUN tar -xzvf otelcol.tar.gz
 
 ##
