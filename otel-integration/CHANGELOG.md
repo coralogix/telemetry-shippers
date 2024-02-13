@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.56 / 2024-02-13
+
+- [CHORE] Bump windows image to 0.93.0 for windows values files.
+- [Feat] Add example of windows tail sampling.
+
 ### v0.0.55 / 2024-02-12
 
 - [Feat] Change default to enable collector logs.
