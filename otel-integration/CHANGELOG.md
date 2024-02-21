@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.57 / 2024-02-21
+
+- [Fix] Bump otel-gateway's otlp server grpc request size limit to 20 mib
+
 ### v0.0.56 / 2024-02-13
 
 - [CHORE] Bump windows image to 0.93.0 for windows values files.

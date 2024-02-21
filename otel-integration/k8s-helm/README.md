@@ -165,6 +165,28 @@ This change will configure otel-agent pods to send span data to coralogix-opente
 When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`.
 When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
 
+#### Why am I getting ResourceExhausted errors when using Tail Sampling?
+
+Typically, the errors look like this:
+```
+not retryable error: Permanent error: rpc error: code = ResourceExhausted desc = grpc: received message after decompression larger than max (5554999 vs. 4194304)
+```
+
+By default, OTLP Server has a single grpc request size 4MiB limit. This limit might breached when openetelemtry-agent sends the trace data using loadbalancing exporter to the gateway's OTLP Server. To fix this you should change the limit to a bigger value. For example:
+
+```
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        max_recv_msg_size_mib: 20
+```
+
+References:
+- OTLP Receiver config - https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md
+- GRPC settings for this config - https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md#server-configuration
+- Default msg size limit of GRPC servers - https://pkg.go.dev/google.golang.org/grpc#MaxRecvMsgSize
+
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
 
 If you're leveraging the Prometheus Operator custom resources (`ServiceMonitor` and `PodMonitor`) and you would like to keep using them with the OpenTelemetry collector, you can enable the scraping of these resources by a special, optional component called target allocator. This feature is disabled by default and can be enabled by setting the `opentelemetry-agent.targetAllocator.enabled` value to `true` in the `values.yaml` file.
