@@ -2,6 +2,14 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.58 / 2024-02-21
+
+- [Fix] Change default spanmetrics connector's buckets and extra dimensions.
+
+### v0.0.57 / 2024-02-21
+
+- [Fix] Bump otel-gateway's otlp server grpc request size limit to 20 mib
+
 ### v0.0.56 / 2024-02-13
 
 - [CHORE] Bump windows image to 0.93.0 for windows values files.
