@@ -33,7 +33,7 @@ The included agent provides:
 - [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) - Fetches running container metrics from the local Kubelet.
 - [OTLP Metrics](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) - Send application metrics via OpenTelemetry protocol.
 - Traces - You can send data in various format, such as [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver), [OpenTelemetry Protocol](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) or [Zipkin](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/zipkinreceiver).
-- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/spanmetricsprocessor) - Traces are converted to Requests, Duration and Error metrics using spanmetrics processor.
+- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md) - Optional Traces are converted to Requests, Duration and Error metrics using spanmetrics connector.
 - [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension) - You can investigate latency and error issues by navigating to Pod's localhost:55516 web server. Routes are desribed in [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes)
 
 ## OpenTelemetry Cluster Collector
@@ -321,6 +321,44 @@ spanNameReplacePattern:
 ```
 
 This will result in your spans having generalized name `user-{id}`.
+
+# Troubleshooting
+
+## Metrics
+
+You can enhance metrics telemetry level using `level` field. The following is a list of all possible values and their explanations.
+
+- "none" indicates that no telemetry data should be collected;
+- "basic" is the recommended and covers the basics of the service telemetry.
+- "normal" adds some other indicators on top of basic.
+- "detailed" adds dimensions and views to the previous levels.
+
+For example:
+```yaml
+service:
+  telemetry:
+    metrics:
+      level: detailed
+      address: ":8888"
+```
+
+This adds more metrics around exporter latency and various processors metrics.
+
+## Traces
+
+OpenTelemetry Collector has an ability to send it's own traces using OTLP exporter. You can send the traces to OTLP server running on the same OpenTelemetry Collector, so it goes through configured pipelines. For example:
+
+```
+service:
+  telemetry:
+    traces:
+      processors:
+        batch:
+          exporter:
+            otlp:
+              protocol: grpc/protobuf
+              endpoint: ${MY_POD_IP}:4317
+```
 
 # Performance of the Collector
 
