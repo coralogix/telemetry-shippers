@@ -33,7 +33,7 @@ The included agent provides:
 - [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) - Fetches running container metrics from the local Kubelet.
 - [OTLP Metrics](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) - Send application metrics via OpenTelemetry protocol.
 - Traces - You can send data in various format, such as [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver), [OpenTelemetry Protocol](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) or [Zipkin](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/zipkinreceiver).
-- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/spanmetricsprocessor) - Traces are converted to Requests, Duration and Error metrics using spanmetrics processor.
+- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md) - Optional Traces are converted to Requests, Duration and Error metrics using spanmetrics connector.
 - [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension) - You can investigate latency and error issues by navigating to Pod's localhost:55516 web server. Routes are desribed in [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes)
 
 ## OpenTelemetry Cluster Collector
@@ -87,12 +87,15 @@ type: Opaque
 
 # Installation
 
-> [!NOTE]  
+> [!NOTE]
 > As of latest Helm version (`v3.14.0`), users might experience warning multiple warning messages during the installation about following:
+>
 > ```
-> index.go:366: skipping loading invalid entry for chart "otel-integration" "<version>" from <path>: validation: more than one dependency with name or alias "opentelemetry-collector"
+> index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
+>
 > ```
->This is due to a recently introduced validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). This does not affect the installation process and the chart will be installed successfully. If you do not wish to see these warnings, we recommend downgrading your Helm version.
+>
+> This is due to a recently introduced validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). This does not affect the installation process and the chart will be installed successfully. If you do not wish to see these warnings, we recommend downgrading your Helm version.
 
 First make sure to add our Helm charts repository to the local repos list with the following command:
 
@@ -160,10 +163,33 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f tail-sampling-values.yaml
 ```
 
-This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor)  policies with your custom tail sampling policies.
+This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies with your custom tail sampling policies.
 
 When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`.
 When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
+
+#### Why am I getting ResourceExhausted errors when using Tail Sampling?
+
+Typically, the errors look like this:
+
+```
+not retryable error: Permanent error: rpc error: code = ResourceExhausted desc = grpc: received message after decompression larger than max (5554999 vs. 4194304)
+```
+
+By default, OTLP Server has a single grpc request size 4MiB limit. This limit might breached when openetelemtry-agent sends the trace data using loadbalancing exporter to the gateway's OTLP Server. To fix this you should change the limit to a bigger value. For example:
+
+```
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        max_recv_msg_size_mib: 20
+```
+
+References:
+- OTLP Receiver config - https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md
+- GRPC settings for this config - https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md#server-configuration
+- Default msg size limit of GRPC servers - https://pkg.go.dev/google.golang.org/grpc#MaxRecvMsgSize
 
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
 
@@ -299,6 +325,45 @@ spanNameReplacePattern:
 ```
 
 This will result in your spans having generalized name `user-{id}`.
+
+# Troubleshooting
+
+## Metrics
+
+You can enhance metrics telemetry level using `level` field. The following is a list of all possible values and their explanations.
+
+- "none" indicates that no telemetry data should be collected;
+- "basic" is the recommended and covers the basics of the service telemetry.
+- "normal" adds some other indicators on top of basic.
+- "detailed" adds dimensions and views to the previous levels.
+
+For example:
+
+```yaml
+service:
+  telemetry:
+    metrics:
+      level: detailed
+      address: ":8888"
+```
+
+This adds more metrics around exporter latency and various processors metrics.
+
+## Traces
+
+OpenTelemetry Collector has an ability to send it's own traces using OTLP exporter. You can send the traces to OTLP server running on the same OpenTelemetry Collector, so it goes through configured pipelines. For example:
+
+```
+service:
+  telemetry:
+    traces:
+      processors:
+        batch:
+          exporter:
+            otlp:
+              protocol: grpc/protobuf
+              endpoint: ${MY_POD_IP}:4317
+```
 
 # Performance of the Collector
 
