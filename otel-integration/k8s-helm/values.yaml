@@ -614,6 +614,8 @@ opentelemetry-gateway:
         protocols:
           grpc:
             endpoint: ${MY_POD_IP}:4317
+            # Default otlp grpc server message size limit is 4mib, which might be too low.
+            max_recv_msg_size_mib: 20
     service:
       telemetry:
         resource:
