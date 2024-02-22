@@ -87,12 +87,15 @@ type: Opaque
 
 # Installation
 
-> [!NOTE]  
+> [!NOTE]
 > As of latest Helm version (`v3.14.0`), users might experience warning multiple warning messages during the installation about following:
+>
 > ```
-> index.go:366: skipping loading invalid entry for chart "otel-integration" "<version>" from <path>: validation: more than one dependency with name or alias "opentelemetry-collector"
+> index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
+>
 > ```
->This is due to a recently introduced validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). This does not affect the installation process and the chart will be installed successfully. If you do not wish to see these warnings, we recommend downgrading your Helm version.
+>
+> This is due to a recently introduced validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). This does not affect the installation process and the chart will be installed successfully. If you do not wish to see these warnings, we recommend downgrading your Helm version.
 
 First make sure to add our Helm charts repository to the local repos list with the following command:
 
@@ -160,7 +163,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f tail-sampling-values.yaml
 ```
 
-This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor)  policies with your custom tail sampling policies.
+This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies with your custom tail sampling policies.
 
 When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`.
 When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
@@ -168,6 +171,7 @@ When running in Windows environments, please use `values-windows-tailsampling.ya
 #### Why am I getting ResourceExhausted errors when using Tail Sampling?
 
 Typically, the errors look like this:
+
 ```
 not retryable error: Permanent error: rpc error: code = ResourceExhausted desc = grpc: received message after decompression larger than max (5554999 vs. 4194304)
 ```
@@ -334,6 +338,7 @@ You can enhance metrics telemetry level using `level` field. The following is a 
 - "detailed" adds dimensions and views to the previous levels.
 
 For example:
+
 ```yaml
 service:
   telemetry:

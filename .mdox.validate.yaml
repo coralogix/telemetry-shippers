@@ -4,6 +4,9 @@ cache:
   type: 'SQLite'
 
 validators: 
+  # Ignore links to pr Labels.
+  - regex: '(^http[s]?:\/\/)(www\.)?(github\.com\/)coralogix\/telemetry-shippers(\/issues.*)'
+    type: 'ignore'
   # Ignore links that includes 'assets' because the generated content will resolve them correctly.
   - regex: '.+/assets/.+'
     type: ignore
