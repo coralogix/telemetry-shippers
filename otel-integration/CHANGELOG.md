@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.59 / 2024-03-01
+
+- [CHORE] Add otel-integration version header to coralogix exporter
+
 ### v0.0.58 / 2024-02-21
 
 - [Fix] Change default spanmetrics connector's buckets and extra dimensions.

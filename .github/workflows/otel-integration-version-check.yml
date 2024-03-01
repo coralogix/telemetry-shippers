@@ -1,0 +1,26 @@
+name: Otel Integration Version Check
+
+on:
+  pull_request:
+    paths:
+    - 'otel-integration/k8s-helm/**'
+
+jobs:
+  collector-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Compare versions
+        run: |
+          chart_version=$(yq '.version' otel-integration/k8s-helm/Chart.yaml)
+          values_version=$(yq '.global.version' otel-integration/k8s-helm/values.yaml)
+
+          if [[ "$chart_version" != "$values_version" ]]; then
+            echo "Chart.yaml version ($chart_version) does not match values.yaml version ($values_version)"
+            exit 1
+          fi
+
+          echo "Versions match!"
