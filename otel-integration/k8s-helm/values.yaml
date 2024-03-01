@@ -5,6 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
+  version: "0.0.59"
 
   extensions:
     kubernetesDashboard:
@@ -185,6 +186,15 @@ opentelemetry-agent:
         timeout: "30s"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         domain: "{{ .Values.global.domain }}"
+        logs:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        metrics:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        traces:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
         application_name: "{{ .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
         application_name_attributes:
@@ -458,6 +468,15 @@ opentelemetry-cluster-collector:
         timeout: "30s"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         domain: "{{ .Values.global.domain }}"
+        logs:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        metrics:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        traces:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
         application_name: "{{ .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
         application_name_attributes:
@@ -573,6 +592,15 @@ opentelemetry-gateway:
         timeout: "30s"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
         domain: "{{ .Values.global.domain }}"
+        logs:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        metrics:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        traces:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
         application_name: "{{ .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
         application_name_attributes:
