@@ -1,0 +1,20 @@
+# Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
+opentelemetry-agent:
+  config:
+    exporters:
+      otlp:
+        endpoint: 172.17.0.1:4317 # Use the default Docker host gateway IP
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp
+        traces:
+          exporters:
+            - otlp
+        logs:
+          exporters:
+            - debug
