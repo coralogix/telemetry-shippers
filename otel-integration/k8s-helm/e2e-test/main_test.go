@@ -76,7 +76,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	for name, expectedState := range expectedSchemaURL {
 		require.True(t, expectedState, "schema_url %v was not found in the actual metrics", name)
 	}
-	for name, expectedState := range expectedSchemaURL {
+	for name, expectedState := range expectedScopeNames {
 		require.True(t, expectedState, "scope %v was not found in the actual metrics", name)
 	}
 	for name, expectedState := range expectedMetrics {
