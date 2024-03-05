@@ -145,6 +145,10 @@ opentelemetry-agent-windows:
               - targets:
                   - ${MY_POD_IP}:8888
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s

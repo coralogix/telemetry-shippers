@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.60 / 2024-03-01
+
+- [FEAT] Configure batch processor sizes with hard limit 2048 units
+- [FIX] Ensure batch processors is always last in the pipeline
+
 ### v0.0.59 / 2024-03-01
 
 - [CHORE] Add otel-integration version header to coralogix exporter

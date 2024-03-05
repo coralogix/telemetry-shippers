@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.59"
+  version: "0.0.60"
 
   extensions:
     kubernetesDashboard:
@@ -152,6 +152,10 @@ opentelemetry-agent:
               - targets:
                   - ${MY_POD_IP}:8888
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
@@ -380,6 +384,10 @@ opentelemetry-cluster-collector:
                 - targets:
                     - ${MY_POD_IP}:8888
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       k8sattributes:
         extract:
           metadata:
@@ -510,10 +518,10 @@ opentelemetry-cluster-collector:
           exporters:
             - coralogix
           processors:
-            - memory_limiter
-            - batch
             - resource/kube-events
             - transform/kube-events
+            - memory_limiter
+            - batch
         metrics:
           exporters:
             - coralogix
@@ -613,6 +621,10 @@ opentelemetry-gateway:
           - "k8s.cronjob.name"
           - "service.name"
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       tail_sampling:
         # Update configuration here, with your tail sampling policies
         # Docs: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor
