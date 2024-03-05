@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.32 / 2024-03-05
+* [FEAT] Add batch size limits configuration
+
 ### v0.0.31 / 2023-12-13
 * [FIX] fix config example files
 
