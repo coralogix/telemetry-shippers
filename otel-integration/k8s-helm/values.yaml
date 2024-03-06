@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.60"
+  version: "0.0.61"
 
   extensions:
     kubernetesDashboard:
@@ -95,10 +95,24 @@ opentelemetry-agent:
       storeCheckpoints: true
       maxRecombineLogSize: 1048576
       extraFilelogOperators: []
-#     - type: recombine
-#       combine_field: body
-#       source_identifier: attributes["log.file.path"]
-#       is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+      # - type: recombine
+      #   combine_field: body
+      #   source_identifier: attributes["log.file.path"]
+      #   is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+
+      # Configure specific multline options for namespaces
+      # / pods / container names.
+      multilineConfigs: []
+      # multilineConfigs:
+      #   - namespaceName:
+      #       value: kube-system
+      #     podName:
+      #       value: app-.*
+      #       useRegex: true
+      #     containerName:
+      #       value: http
+      #     firstEntryRegex: ^[^\s].*
+      #     combineWith: ""
     kubernetesAttributes:
       enabled: true
     hostMetrics:
