@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.61 / 2024-03-06
+
+- [FEAT] Add support for multiline configs based on namespace name / pod name / container name.
+
 ### v0.0.60 / 2024-03-01
 
 - [FEAT] Configure batch processor sizes with hard limit 2048 units
