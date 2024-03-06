@@ -52,7 +52,10 @@ processors:
           - set(attributes["image_id"], attributes["image.id"])
           - delete_key(attributes, "image.id")
 
-  batch:
+    batch:
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+      timeout: "1s"
 
   # otel-collector resource detection for collector
   resourcedetection/otel-collector:
