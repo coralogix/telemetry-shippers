@@ -3,7 +3,7 @@
 ## OpenTelemtry-Integration
 
 ### v0.0.62 / 2024-03-07
-- [CHORE] Update collector to version `0.96.0`
+- [:warning: CHANGE] [CHORE] Update collector to version `0.96.0`. If you are using the deprecated `spanmetricsprocessor`, please note it is no longer available in version `0.96.0`. Please use `spanmetricsconnector` instead or use our [span metrics preset](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#about-span-metrics)
 - [CHORE] Update Windows collector image and version `0.96.0`
 - [CHORE] Use the upstream image of target allocator instead of custom fork
 
