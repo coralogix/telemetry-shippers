@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.61"
+  version: "0.0.62"
 
   extensions:
     kubernetesDashboard:
@@ -55,11 +55,8 @@ opentelemetry-agent:
     prometheusCR:
       enabled: true
     image:
-      # Use custom image for target allocator until
-      # the official image is updated with the "per node" strategy
-      # https://github.com/open-telemetry/opentelemetry-operator/pull/2430
-      repository: coralogixrepo/target-allocator
-      tag: sha-abe05c5
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
+      tag: v0.95.0
 
   serviceAccount:
     # Specifies whether a service account should be created
