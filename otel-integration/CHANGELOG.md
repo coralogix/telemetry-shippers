@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.62 / 2024-03-07
+- [CHORE] Update collector to version `0.96.0`
+- [CHORE] Update Windows collector image and version `0.96.0`
+- [CHORE] Use the upstream image of target allocator instead of custom fork
+
 ### v0.0.61 / 2024-03-06
 
 - [FEAT] Add support for multiline configs based on namespace name / pod name / container name.
