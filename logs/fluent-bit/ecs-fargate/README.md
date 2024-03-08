@@ -61,12 +61,16 @@ In order to allow container access to the S3 object, you'll need to provide the 
 		{
 			"Effect": "Allow",
 			"Action": [
-				"s3:GetObject",
 				"s3:GetBucketLocation"
 			],
 			"Resource": "<Your specific bucket ARN>"
-            #or
-            "Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"s3:GetObject"
+			],
+			"Resource": "<Your specific bucket ARN>/*"
 		}
 	]
 }
