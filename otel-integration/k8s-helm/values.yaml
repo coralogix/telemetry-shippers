@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.62"
+  version: "0.0.63"
 
   extensions:
     kubernetesDashboard:
@@ -636,25 +636,6 @@ opentelemetry-gateway:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      tail_sampling:
-        # Update configuration here, with your tail sampling policies
-        # Docs: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor
-        decision_wait: 10s
-        num_traces: 100
-        expected_new_traces_per_sec: 10
-        policies:
-          [
-            {
-              name: errors-policy,
-              type: status_code,
-              status_code: {status_codes: [ERROR]}
-            },
-            {
-              name: randomized-policy,
-              type: probabilistic,
-              probabilistic: {sampling_percentage: 10}
-            },
-          ]
     receivers:
       prometheus:
         config:

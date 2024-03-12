@@ -38,11 +38,8 @@ opentelemetry-gateway:
   config:
     processors:
       tail_sampling:
-        # Update configuration here, with your tail sampling policies
+        # Update configuration here, with your settings and tail sampling policies
         # Docs: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor
-        decision_wait: 10s
-        num_traces: 100
-        expected_new_traces_per_sec: 10
         policies:
           [
             {
