@@ -23,7 +23,7 @@ The section contains integrations of the Open Telemetry agent for various platfo
 
 **Agent Implementations:**
 
-1. [otel-ecs-ec2](../otel-ecs-ec2/)
+1. [otel-ecs-ec2](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/opentelemetry/ecs-ec2)
 2. [k8s helm](./k8s-helm/)
 
 ## Coralogix's Endpoints
