@@ -33,7 +33,7 @@ The included agent provides:
 - [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) - Fetches running container metrics from the local Kubelet.
 - [OTLP Metrics](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) - Send application metrics via OpenTelemetry protocol.
 - Traces - You can send data in various format, such as [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver), [OpenTelemetry Protocol](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) or [Zipkin](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/zipkinreceiver).
-- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md) - Optional Traces are converted to Requests, Duration and Error metrics using spanmetrics connector.
+- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/spanmetricsconnector/README.md) - Optional Traces are converted to Requests, Duration and Error metrics using spanmetrics connector.
 - [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension) - You can investigate latency and error issues by navigating to Pod's localhost:55516 web server. Routes are desribed in [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes)
 
 ## OpenTelemetry Cluster Collector
@@ -302,11 +302,28 @@ env:
     value: "http://$(NODE):4317"
 ```
 
-### About global collection interval
+### About global collection interval
 
 The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
 
 Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choise of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
+
+### About batch sizing
+
+[Batch processor](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) ensures that the telemetry being sent to Coralogix backend is batched into bigger requests, ensuring lower networking overhead and better performance. The batching processor is enabled by default and we strongly recommend to use it. By default, the `otel-integration` chart uses the following recommended settings for batch processors in all collectors:
+
+```yaml
+    batch:
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+      timeout: "1s"
+```
+
+These settings imposes a hard limit of 2048 units (spans, metrics, logs) on the batch size, ensuring a balance between the recommended size of the batches and networking overhead.
+
+You may adjust these settings according to your needs, but when configuring the batch processor by yourself, it is important to be mindful of the size limites imposed by the Coraloigx endpoints (currently **max. 10 MB** after decompression - see [documentation](https://coralogix.com/docs/opentelemetry/#limits--quotas)).
+
+More information on how to configure the batch processor can be found [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor).
 
 ### About span metrics
 
@@ -325,6 +342,55 @@ spanNameReplacePattern:
 ```
 
 This will result in your spans having generalized name `user-{id}`.
+
+### Multi-line log configuration
+
+This helm chart supports multi-line configurations for different namespace, pod, and/or container names. The following example configuration applies a specific firstEntryRegex for a container which is part of a x Pod in y namespace:
+
+```yaml
+  presets:
+    logsCollection:
+      enabled: true
+      multilineConfigs:
+        - namespaceName:
+            value: kube-system
+          podName:
+            value: app-a.*
+            useRegex: true
+          containerName:
+            value: http
+          firstEntryRegex: ^[^\s].*
+          combineWith: ""
+        - namespaceName:
+            value: kube-system
+          podName:
+            value: app-b.*
+            useRegex: true
+          containerName:
+            value: http
+          firstEntryRegex: ^[^\s].*
+          combineWith: ""
+        - namespaceName:
+            value: default
+          firstEntryRegex: ^[^\s].*
+          combineWith: ""
+
+```
+
+This feature uses [filelog receiver's](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/filelogreceiver/README.md) [router](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/router.md) and [recombine](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/recombine.md) operators.
+
+Alternatively, you can add a recombine filter at the end of log collection operators using `extraFilelogOperators` field. The following example adds a single recombine operator for all Kubernetes logs:
+
+```yaml
+  presets:
+    logsCollection:
+      enabled: true
+      extraFilelogOperators:
+        - type: recombine
+          combine_field: body
+          source_identifier: attributes["log.file.path"]
+          is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+```
 
 # Troubleshooting
 

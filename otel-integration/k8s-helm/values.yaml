@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.59"
+  version: "0.0.64"
 
   extensions:
     kubernetesDashboard:
@@ -55,11 +55,8 @@ opentelemetry-agent:
     prometheusCR:
       enabled: true
     image:
-      # Use custom image for target allocator until
-      # the official image is updated with the "per node" strategy
-      # https://github.com/open-telemetry/opentelemetry-operator/pull/2430
-      repository: coralogixrepo/target-allocator
-      tag: sha-abe05c5
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
+      tag: v0.95.0
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -95,10 +92,24 @@ opentelemetry-agent:
       storeCheckpoints: true
       maxRecombineLogSize: 1048576
       extraFilelogOperators: []
-#     - type: recombine
-#       combine_field: body
-#       source_identifier: attributes["log.file.path"]
-#       is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+      # - type: recombine
+      #   combine_field: body
+      #   source_identifier: attributes["log.file.path"]
+      #   is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+
+      # Configure specific multline options for namespaces
+      # / pods / container names.
+      multilineConfigs: []
+      # multilineConfigs:
+      #   - namespaceName:
+      #       value: kube-system
+      #     podName:
+      #       value: app-.*
+      #       useRegex: true
+      #     containerName:
+      #       value: http
+      #     firstEntryRegex: ^[^\s].*
+      #     combineWith: ""
     kubernetesAttributes:
       enabled: true
     hostMetrics:
@@ -152,6 +163,10 @@ opentelemetry-agent:
               - targets:
                   - ${MY_POD_IP}:8888
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
@@ -380,6 +395,10 @@ opentelemetry-cluster-collector:
                 - targets:
                     - ${MY_POD_IP}:8888
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       k8sattributes:
         extract:
           metadata:
@@ -510,10 +529,10 @@ opentelemetry-cluster-collector:
           exporters:
             - coralogix
           processors:
-            - memory_limiter
-            - batch
             - resource/kube-events
             - transform/kube-events
+            - memory_limiter
+            - batch
         metrics:
           exporters:
             - coralogix
@@ -613,25 +632,10 @@ opentelemetry-gateway:
           - "k8s.cronjob.name"
           - "service.name"
     processors:
-      tail_sampling:
-        # Update configuration here, with your tail sampling policies
-        # Docs: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor
-        decision_wait: 10s
-        num_traces: 100
-        expected_new_traces_per_sec: 10
-        policies:
-          [
-            {
-              name: errors-policy,
-              type: status_code,
-              status_code: {status_codes: [ERROR]}
-            },
-            {
-              name: randomized-policy,
-              type: probabilistic,
-              probabilistic: {sampling_percentage: 10}
-            },
-          ]
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
     receivers:
       prometheus:
         config:

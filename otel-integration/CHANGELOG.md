@@ -2,6 +2,30 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.64 / 2024-03-15
+
+- [FIX] Add logsCollection fix for empty log lines.
+
+### v0.0.63 / 2024-03-12
+
+- [FIX] Use default processing values for `tailsamplingprocessor`
+- [FIX] Remove duplicated `tailsamplingprocessor` configuration; keep it only in the `tail-sampling-values.yaml` file
+
+### v0.0.62 / 2024-03-07
+
+- [:warning: CHANGE] [CHORE] Update collector to version `0.96.0`. If you are using the deprecated `spanmetricsprocessor`, please note it is no longer available in version `0.96.0`. Please use `spanmetricsconnector` instead or use our [span metrics preset](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#about-span-metrics)
+- [CHORE] Update Windows collector image and version `0.96.0`
+- [CHORE] Use the upstream image of target allocator instead of custom fork
+
+### v0.0.61 / 2024-03-06
+
+- [FEAT] Add support for multiline configs based on namespace name / pod name / container name.
+
+### v0.0.60 / 2024-03-01
+
+- [FEAT] Configure batch processor sizes with hard limit 2048 units
+- [FIX] Ensure batch processors is always last in the pipeline
+
 ### v0.0.59 / 2024-03-01
 
 - [CHORE] Add otel-integration version header to coralogix exporter

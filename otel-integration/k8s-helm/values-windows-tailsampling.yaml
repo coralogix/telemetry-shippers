@@ -23,7 +23,7 @@ opentelemetry-agent-windows:
     repository: coralogixrepo/opentelemetry-collector-contrib-windows
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.93.0"
+    tag: "0.96.0"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
   extraVolumes:
@@ -145,6 +145,10 @@ opentelemetry-agent-windows:
               - targets:
                   - ${MY_POD_IP}:8888
     processors:
+      batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: "1s"
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
