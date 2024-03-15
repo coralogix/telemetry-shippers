@@ -5,6 +5,10 @@ inputs:
     description: 'Whether or not to create a kind cluster during setup'
     required: true
     default: "false"
+  cluster-name: # id of input
+    description: 'Name of the kind cluster to create'
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -25,6 +29,7 @@ runs:
       if: ${{ inputs.create-kind-cluster == 'true' }}
       with:
         node_image: kindest/node:v1.24.12
+        cluster_name: ${{ inputs.cluster-name }}
 
     - name: Add Dependencies
       shell: bash
