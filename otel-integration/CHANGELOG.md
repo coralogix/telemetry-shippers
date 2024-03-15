@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.64 / 2024-03-15
+
+- [FIX] Add logsCollection fix for empty log lines.
+
 ### v0.0.63 / 2024-03-12
 
 - [FIX] Use default processing values for `tailsamplingprocessor`
