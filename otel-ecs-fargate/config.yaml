@@ -25,8 +25,9 @@ processors:
       from_attribute: aws.ecs.docker.name
       action: upsert
   batch:
-    timeout: 5s
-    send_batch_size: 256
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+      timeout: "1s"
   resourcedetection:
     detectors: [env, ec2, ecs]
     timeout: 5s
