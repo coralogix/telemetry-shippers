@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.65 / 2024-03-19
+
+- [FIX] logsCollection preset make force_flush_period configurable and disable it by default.
+
 ### v0.0.64 / 2024-03-15
 
 - [FIX] Add logsCollection fix for empty log lines.
