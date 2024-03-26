@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.65"
+  version: "0.0.66"
 
   extensions:
     kubernetesDashboard:
@@ -126,6 +126,19 @@ opentelemetry-agent:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
+     # Configures the collector to export span metrics with different histogram bucket options
+     # for different applications. Applications are selected and routed to different pipelines
+     # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
+     # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
+    spanMetricsMulti:
+      enabled: false
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      defaultHistogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      configs: []
+      #  - selector: route() where attributes["service.name"] == "one"
+      #    histogramBuckets: [1s, 2s]
+      #  - selector: route() where attributes["service.name"] == "two"
+      #    histogramBuckets: [5s, 10s]
   config:
     extensions:
       zpages:

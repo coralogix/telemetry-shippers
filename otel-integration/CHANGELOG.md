@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.66 / 2024-03-26
+
+- [FEAT] add spanMetricsMulti preset, which allows to specify histogram buckets per application.
+
 ### v0.0.65 / 2024-03-19
 
 - [FIX] logsCollection preset make force_flush_period configurable and disable it by default.
