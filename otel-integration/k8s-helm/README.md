@@ -343,6 +343,24 @@ spanNameReplacePattern:
 
 This will result in your spans having generalized name `user-{id}`.
 
+#### Span metrics with different buckets per application
+
+If you want to use Span Metrics connector with different buckets per application you need to use `spanMetricsMulti` preset. For example:
+
+```yaml
+  presets:
+    spanMetricsMulti:
+      enabled: false
+      defaultHistogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      configs:
+        - selector: route() where attributes["service.name"] == "one"
+          histogramBuckets: [1s, 2s]
+        - selector: route() where attributes["service.name"] == "two"
+          histogramBuckets: [5s, 10s]
+```
+
+For selector you need to write a [OTTL](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) statement, more information is available in [routing connector docs](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector).
+
 ### Multi-line log configuration
 
 This helm chart supports multi-line configurations for different namespace, pod, and/or container names. The following example configuration applies a specific firstEntryRegex for a container which is part of a x Pod in y namespace:
