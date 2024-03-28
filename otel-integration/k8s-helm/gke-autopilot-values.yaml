@@ -19,6 +19,7 @@ opentelemetry-agent:
   hostNetwork: false
   service:
     enabled: true
+    internalTrafficPolicy: Local
   presets:
     logsCollection:
       enabled: true

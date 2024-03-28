@@ -239,8 +239,7 @@ Notable important differences from regular `otel-integration` are:
 - Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
 - Kubernetes Dashboard does not work, due to missing Host Metrics.
 - Host networking and host ports are not available, users need to send tracing spans through
-  Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally
-  running agents.
+  Kubernetes Service.
 - Log Collection works, but does not store check points. Restarting the agent will collect logs from the beginning.
 
 To install otel-integration to GKE/Autopilot follow these steps:
