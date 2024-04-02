@@ -3,6 +3,16 @@ opentelemetry-agent:
     generate: true
   configMap:
     create: false
+  # for some reason Operator automatically adds
+  # 4317, 6831, 14268 ports, which leads to duplicate errors
+  # Workaround - we remove them manually.
+  ports:
+    otlp:
+      enabled: false
+    jaeger-compact:
+      enabled: false
+    jaeger-thrift:
+      enabled: false
 
 opentelemetry-cluster-collector:
   collectorCRD:
