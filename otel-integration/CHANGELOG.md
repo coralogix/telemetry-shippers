@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.67 / 2024-04-02
+
+- [FIX] Operator generate CRD missing environment variables
+- [FEAT] Add new reduceResourceAttributes preset, which removes uids and other unnecessary resource attributes from metrics.
+
 ### v0.0.66 / 2024-03-26
 
 - [FEAT] add spanMetricsMulti preset, which allows to specify histogram buckets per application.

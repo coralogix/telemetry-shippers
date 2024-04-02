@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.66"
+  version: "0.0.67"
 
   extensions:
     kubernetesDashboard:
@@ -139,6 +139,10 @@ opentelemetry-agent:
       #    histogramBuckets: [1s, 2s]
       #  - selector: route() where attributes["service.name"] == "two"
       #    histogramBuckets: [5s, 10s]
+    # Removes uids and other uneeded attributes from metric resources.
+    # This reduces target_info cardinality.
+    reduceResourceAttributes:
+      enabled: false
   config:
     extensions:
       zpages:
