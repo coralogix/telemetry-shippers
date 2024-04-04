@@ -102,7 +102,13 @@ opentelemetry-agent-windows:
       enabled: true
     spanMetrics:
       enabled: false
-      histogramBuckets: [10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+      histogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      extraDimensions:
+        - name: http.method
+        - name: cgx.transaction
+        - name: cgx.transaction.root
 
   config:
     extensions:
