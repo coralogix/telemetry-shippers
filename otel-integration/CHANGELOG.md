@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.68 / 2024-04-04
+
+- [FEAT] Add config for metrics expiration in span metrics presets
+- [FEAT] Bump Collector to 0.97.0
+
 ### v0.0.67 / 2024-04-02
 
 - [FIX] Operator generate CRD missing environment variables

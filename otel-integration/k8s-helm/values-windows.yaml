@@ -23,7 +23,7 @@ opentelemetry-agent-windows:
     repository: coralogixrepo/opentelemetry-collector-contrib-windows
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.96.0"
+    tag: "0.97.0"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
   extraVolumes:
@@ -102,7 +102,13 @@ opentelemetry-agent-windows:
       enabled: true
     spanMetrics:
       enabled: false
-      histogramBuckets: [10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+      histogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      extraDimensions:
+        - name: http.method
+        - name: cgx.transaction
+        - name: cgx.transaction.root
 
   config:
     extensions:

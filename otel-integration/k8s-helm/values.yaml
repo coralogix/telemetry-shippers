@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.67"
+  version: "0.0.68"
 
   extensions:
     kubernetesDashboard:
@@ -121,6 +121,7 @@ opentelemetry-agent:
     spanMetrics:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
       histogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
       extraDimensions:
         - name: http.method
@@ -133,6 +134,7 @@ opentelemetry-agent:
     spanMetricsMulti:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
       defaultHistogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
       configs: []
       #  - selector: route() where attributes["service.name"] == "one"
