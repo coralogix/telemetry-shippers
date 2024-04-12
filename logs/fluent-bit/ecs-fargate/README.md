@@ -98,3 +98,14 @@ To do so, you'd add this "logConfiguration" section to each of your application 
                 }
             }
 ```
+
+**NOTE:** If you wish to store your Coralogix Privatekey in Secrets Manager, you can remove the `"Header"` from `"options"` and create one under `"secretOptions"` and reference the Secret's ARN. Store the secret as plaintext with the same format as above. You will also need to add the secretsmanager:GetSecretValue permission to your ecs Task Execution Role.
+
+```
+"secretOptions": [
+    {
+        "name": "Header",
+        "valueFrom": "arn:aws:secretsmanager:us-east-1:<redacted>:secret:<redacted>"
+    }
+]
+```
