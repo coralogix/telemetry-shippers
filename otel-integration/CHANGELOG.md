@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.69 / 2024-04-17
+
+- [Fix] When routing processor with batch is used make sure routing processor is last.
+
 ### v0.0.68 / 2024-04-04
 
 - [FEAT] Add config for metrics expiration in span metrics presets
