@@ -257,7 +257,6 @@ spec:
 
 This serviceMonitor will match any service that has label “app.kubernetes.io/name: prometheus-node-exporter”
 
-
 ## Example App with Pod Selector:
 
 For this example we are going to deploy an app that is exposing metrics
