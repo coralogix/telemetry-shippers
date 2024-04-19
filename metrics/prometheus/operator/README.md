@@ -78,6 +78,34 @@ helm upgrade --install prometheus-coralogix coralogix-charts-virtual/prometheus-
   -f values.yaml
 ```
 
+## Removal
+
+```bash
+helm uninstall prometheus-coralogix \
+--namespace=monitoring
+```
+
+# Dependencies
+
+This chart uses [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) chart.
+
+<!---
+since version 0.0.2 the Chart was updated to use prometheus-kube-stack v45.30.0 due to deprecation of autoscaling/v1beta object in Kubernetes v1.23+
+Additionally in version 45.30.0 there is a bug with recording rules labels hack thus we needed to upgrade to 45.31.* to resolve this (https://github.com/prometheus-community/helm-charts/pull/3400)
+-->
+
+## Metric Labels
+
+To add labels to metrics via the Prometheus configuration, you can use the `externalLabels` key in the values.yaml file as shown below:
+
+```yaml
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      externalLabels:
+        cluster: MyCluster
+```
+
 ## Example App with Pod Selector:
 
 For this example we are going to deploy an app that is exposing metrics
@@ -228,22 +256,6 @@ spec:
 ```
 
 This serviceMonitor will match any service that has label “app.kubernetes.io/name: prometheus-node-exporter”
-
-## Removal
-
-```bash
-helm uninstall prometheus-coralogix \
---namespace=monitoring
-```
-
-# Dependencies
-
-This chart uses [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) chart.
-
-<!---
-since version 0.0.2 the Chart was updated to use prometheus-kube-stack v45.30.0 due to deprecation of autoscaling/v1beta object in Kubernetes v1.23+
-Additionally in version 45.30.0 there is a bug with recording rules labels hack thus we needed to upgrade to 45.31.* to resolve this (https://github.com/prometheus-community/helm-charts/pull/3400)
--->
 
 ## Example App with Pod Selector:
 

@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.18 / 2024-04-19
+* [FIX] Add README example for externalLabels key
+
 ### v0.0.18 / 2024-02-07
 * [FEATURE] Adding Prometheus Agent volumes and volumes mount
 * [FEATURE] Adding Prometheus Agent image registry
