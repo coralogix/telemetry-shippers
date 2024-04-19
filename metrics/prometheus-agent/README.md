@@ -119,3 +119,14 @@ prometheus:
               storage: 50Gi
 
 ```
+
+## Metric Labels
+
+To add labels to metrics via the Prometheus configuration, you can use the `externalLabels` key in the values.yaml file as shown below:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    externalLabels:
+      cluster: MyCluster
+```

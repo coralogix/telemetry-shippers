@@ -5,7 +5,7 @@ kube-prometheus-stack:
   fullnameOverride: prometheus-coralogix
   prometheus:
     prometheusSpec:
-      ## disable the extra label added to the monitors
+      externalLabels: {}
       ## to allow monitors to be added outside of the chart
       podMonitorSelectorNilUsesHelmValues: false
       probeSelectorNilUsesHelmValues: false
