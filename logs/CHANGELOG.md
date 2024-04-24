@@ -44,6 +44,7 @@
 ### v3.0.2 / 2024-04-24
 
 * [UPGRADE] Upgrade Fluentbit version to v3.0.2
+* [UPGRADE] Upgrade Fluentbit Helm chart dependency to 0.46.2
 
 ### v2.2.0 / 2023-11-23
 
