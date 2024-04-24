@@ -2,6 +2,9 @@
 
 ## Fluentd
 
+### v1.16.5 / 2024-04-24
+* [UPGRADE] Upgrade Fluentd version to v1.16.5
+
 ### v1.16.3 / 2023-11-23
 
 * [CHANGE] Update the coralogix API
