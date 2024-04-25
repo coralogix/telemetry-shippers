@@ -177,6 +177,10 @@ configmap "fluentd-env" deleted
 | SG     | `ingress.coralogixsg.com`   |
 | IN     | `ingress.coralogix.in`      |
 
+## Deploy to different namespace
+
+If you wish to deploy the fluentd integration to a different namespace other than "monitoring" you'll need to change the fluentd-rbac.yaml file ClusterRoleBinding namespace accordingly.
+
 ## Disable Systemd Logs
 
 In order to disable the systemd logs, remove the `fluentd-systemd-conf` configmap:
