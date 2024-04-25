@@ -2,6 +2,9 @@
 
 ## Fluentd
 
+### v1.16.5 / 2024-04-25
+* [UPGRADE] Upgrade Fluentd Helm chart dependency to 0.5.2
+
 ### v1.16.5 / 2024-04-24
 * [UPGRADE] Upgrade Fluentd version to v1.16.5
 
