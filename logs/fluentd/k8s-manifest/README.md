@@ -31,16 +31,16 @@ change 'ENDPOINT' according to your logs endpoint from the table below.
 And apply it:
 
 ```bash
-kubectl apply -f fluentd-env-cm.yaml
+kubectl apply -f fluentd-env-cm.yaml -n monitoring
 ```
 
 Next apply the manifest files in this directory:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-cm.yaml
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc.yaml
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-ds.yaml
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-cm.yaml -n monitoring
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-rbac.yaml -n monitoring
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc.yaml -n monitoring
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-ds.yaml -n monitoring
 ```
 
 The output should be :
@@ -61,7 +61,7 @@ service/fluentd-http created
 If you have prometheus-operator installed you can also install this service monitor resource:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc-monitor.yaml
+kubectl apply -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc-monitor.yaml -n monitoring
 ```
 
 ## Modifying applicationName and subsystemName
@@ -144,11 +144,11 @@ To achive that we modify the 'record_transformer' filter:
 To remove all resources created with manifest files use these commands:
 
 ```bash
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-cm.yaml
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-rbac.yaml
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc.yaml
-kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-ds.yaml
-kubectl delete -f fluentd-env-cm.yaml
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-cm.yaml -n monitoring
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-rbac.yaml -n monitoring
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-svc.yaml -n monitoring
+kubectl delete -f https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/logs/fluentd/k8s-manifest/fluentd-ds.yaml -n monitoring
+kubectl delete -f fluentd-env-cm.yaml -n monitoring
 ```
 
 The output should be :
@@ -177,12 +177,16 @@ configmap "fluentd-env" deleted
 | SG     | `ingress.coralogixsg.com`   |
 | IN     | `ingress.coralogix.in`      |
 
+## Deploy to different namespace
+
+If you wish to deploy the fluentd integration to a different namespace other than "monitoring" you'll need to change the fluentd-rbac.yaml file ClusterRoleBinding namespace accordingly.
+
 ## Disable Systemd Logs
 
 In order to disable the systemd logs, remove the `fluentd-systemd-conf` configmap:
 
 ```yaml
-kubectl delete cm fluentd-systemd-conf  
+kubectl delete cm fluentd-systemd-conf -n monitoring
 ```
 
 ## Dashboard

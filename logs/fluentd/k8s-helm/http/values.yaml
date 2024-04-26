@@ -3,7 +3,7 @@ fluentd:
 
   image:
     repository: coralogixrepo/coralogix-fluentd-multiarch
-    tag: v1.16.3
+    tag: v1.16.5
 
   podSecurityPolicy:
     enabled: false
