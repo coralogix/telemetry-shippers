@@ -449,6 +449,59 @@ service:
               endpoint: ${MY_POD_IP}:4317
 ```
 
+# Filtering and reducing metrics cost.
+
+otel-integration has a couple of ways you can reduce the metric cost. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
+- container.id
+- k8s.pod.uid
+- k8s.replicaset.uid
+- k8s.daemonset.uid
+- k8s.deployment.uid
+- k8s.statefulset.uid
+- k8s.cronjob.uid
+- k8s.job.uid
+- k8s.hpa.uid
+- k8s.namespace.uid
+- k8s.node.uid
+- net.host.name
+- net.host.port
+
+Kubernetes resource attributes are typically coming from [Kubernetes Attributes Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md) and [Kubernetes Cluster receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver).
+
+While `net.host.name` and `net.host.port` is coming from Prometheus receiver, instead of using these attributes you can use the `service.instance.id` attribute, which has a combination of host and port.
+
+## Custom filtering
+
+Alternatively, you can also use include / exclude filters to collect only metrics about needed objects. For example, the following configuration allows you to exclude `kube-*` and `default` namespace Kubernetes metrics. This filtering is available on many [mdatagen](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/mdatagen) based receiver.
+
+For example:
+
+```yaml
+receivers:
+  k8s_cluster:
+    collection_interval: 10s
+    allocatable_types_to_report: [cpu, memory]
+    resource_attributes:
+      k8s.namespace.name:
+        metrics_exclude:
+          - regexp: kube-.*
+          - strict: default
+```
+
+## Dropping data using processors
+
+Alternatively you can use [OpenTelemetry Transformation Language](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) with [filter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor) processor to filter out unneeded data. The following example drops metrics named `my.metric` and any metrics with resource where attribute `my_label` equals `abc123`:
+
+```yaml
+processors:
+  filter/ottl:
+    error_mode: ignore
+    metrics:
+      metric:
+          - name == "my.metric" 
+          - resource.attributes["my_label"] == "abc123"
+```
+
 # Performance of the Collector
 
 ## Picking the right tracing SDK span processor
