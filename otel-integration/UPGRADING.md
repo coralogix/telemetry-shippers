@@ -4,6 +4,10 @@ These upgrade guidelines only contain instructions for version upgrades which re
 If the version you want to upgrade to is not listed here, then there is nothing to do for you.
 Just upgrade and enjoy.
 
+When upgrading to new collector version please check OpenTelemetry collector release notes here:
+- https://github.com/open-telemetry/opentelemetry-collector/releases
+- https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
+
 ## 0.0.43 to 0.0.44
 
 Because 0.0.44 sets GOMEMLIMIT automatically for pods, it is recommended to remove memoryballast extension if you manually configured the pipeline. Removing memoryballast extension should reduce memory footprint for your pods. See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891 for more information/

@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.70 / 2024-04-29
+- [FEAT] Bump Collector to 0.99.0.
+- [BREAKING] GRPC/HTTP client metrics are now reported only when using `detailed` level.
+
 ### v0.0.69 / 2024-04-17
 
 - [Fix] When routing processor with batch is used make sure routing processor is last.
