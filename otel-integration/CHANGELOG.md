@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.71 / 2024-05-06
+
+- [Fix] reduceResourceAttributes preset will now work when metadata preset is manually set in processors.
+
 ### v0.0.70 / 2024-04-29
 - [FEAT] Bump Collector to 0.99.0.
 - [BREAKING] GRPC/HTTP client metrics are now reported only when using `detailed` level.
