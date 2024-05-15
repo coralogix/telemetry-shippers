@@ -152,6 +152,15 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
+> [!NOTE]
+> Users might experience multiple warning messages during the installation about following:
+>
+> ```
+> Warning: missing the following rules for namespaces: [get,list,watch]
+> ```
+>
+> This is due to a bug in Opentelemetry (see this [issue](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)). This does not affect the installation process and the chart will be installed successfully.
+
 ### Enabling Tail Sampling
 
 If you want to use [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) to reduce the amount of traces using [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) you can install `otel-integration` using `tail-sampling-values.yaml` values. For example:
