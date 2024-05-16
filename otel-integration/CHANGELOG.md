@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.72 / 2024-05-16
+- [FEAT] Bump Collector to 0.100.0
+- [FEAT] Add container CPU throttling metrics
+- [FEAT] Add k8s_container_status_last_terminated_reason metric to track OOMKilled events.
+
 ### v0.0.71 / 2024-05-06
 
 - [Fix] reduceResourceAttributes preset will now work when metadata preset is manually set in processors.

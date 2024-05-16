@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.71"
+  version: "0.0.72"
 
   extensions:
     kubernetesDashboard:
@@ -401,6 +401,8 @@ opentelemetry-cluster-collector:
             enabled: true
           k8s.pod.qos_class:
             enabled: true
+          k8s.container.status.last_terminated_reason:
+            enabled: true
         metrics:
           k8s.pod.status_reason:
             enabled: true
@@ -459,6 +461,11 @@ opentelemetry-cluster-collector:
           match_type: strict
           action: insert
           new_name: kube_node_info
+        - include: k8s.container.ready
+          match_type: strict
+          action: insert
+          new_name: k8s.container.status.last_terminated_reason
+
       transform/k8s-dashboard:
         error_mode: ignore
         metric_statements:
@@ -468,6 +475,7 @@ opentelemetry-cluster-collector:
               # K8s Dashboard uses k8s_pod_phase_1 in their queries.
               - set(unit, "1") where name == "k8s.pod.phase"
               - set(unit, "") where name == "kube_node_info"
+              - set(unit, "") where name == "k8s.container.status.last_terminated_reason"
           - context: datapoint
             statements:
               # Transforming k8s.pod.phase to kube_pod_status_qos_class format.
@@ -485,8 +493,13 @@ opentelemetry-cluster-collector:
               # Transforming k8s.node.status_reason to kube-state-metrics format
               - set(value_int, 1) where metric.name == "kube_node_info"
               - set(attributes["kubelet_version"], resource.attributes["k8s.kubelet.version"]) where metric.name == "kube_node_info"
+              # Transform k8s.container.status.last_terminated_reason from resource attribute to metric
+              - set(value_int, 1) where metric.name == "k8s.container.status.last_terminated_reason"
+              - set(attributes["reason"], "") where metric.name == "k8s.container.status.last_terminated_reason"
+              - set(attributes["reason"], resource.attributes["k8s.container.status.last_terminated_reason"]) where metric.name == "k8s.container.status.last_terminated_reason"
           - context: resource
             statements:
+              - delete_key(attributes, "k8s.container.status.last_terminated_reason")
               - delete_key(attributes, "k8s.pod.qos_class")
               - delete_key(attributes, "k8s.kubelet.version")
 

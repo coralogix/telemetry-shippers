@@ -54,6 +54,77 @@ This chart will also collect, out of the box, all the metrics necessary for [Cor
 
 If you do not require to collect these metrics, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
 
+## Metrics
+
+OpenTelemetry integration collects metrics from various sources. You can see the list of metrics and their labels in OpenTelemetry Collector contrib receiver documentation:
+
+- Kubernetes Cluster Receiver - https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
+- Kubelet Stats Receiver - https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/metadata.yaml
+- Host Metrics Receiver - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver
+
+Additionally, we use [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) and [resource detection processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) to add more metadata labels.
+
+For Kubernetes Dashboard we also use [Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) to scrape Kubernetes API Server and [Kubelet cAdvisor](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/) endpoints.
+
+Note: OpenTelemetry metrics are converted to Prometheus format following [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/compatibility/prometheus_and_openmetrics/#otlp-metric-points-to-prometheus)
+
+## Custom Metrics
+
+OpenTelemetry Integration additionally adds these custom metrics:
+
+### kube_pod_status_qos_class
+
+Provides information about Pod QOS class.
+
+| Metric Type | Value | Labels |
+|-------------|-------|--------|
+| Gauge       | 1     | reason |
+
+### kube_pod_status_reason
+
+Provides information about Kubernetes Pod Status.
+
+| Metric Type | Value | Labels |
+|-------------|-------|--------|
+| Gauge       | 1     | reason |
+
+Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, UnexpectedAdmissionError
+
+### kube_node_info
+
+Provides information about Kubernetes Node.
+
+| Metric Type | Value | Labels              |
+|-------------|-------|---------------------|
+| Gauge       | 1     | k8s.kubelet.version |
+
+### k8s.container.status.last_terminated_reason
+
+Provides information about Pod's last termination.
+
+| Metric Type | Value | Labels |
+|-------------|-------|--------|
+| Gauge       | 1     | reason |
+
+Example reason label keys: OOMKilled
+
+### kubernetes_build_info
+
+Provides information about Kubernetes version.
+
+### Container Filesystem usage metrics
+
+- container_fs_writes_total
+- container_fs_reads_total
+- container_fs_writes_bytes_total
+- container_fs_reads_bytes_total
+- container_fs_usage_bytes
+
+### CPU throttling metrics
+
+- container_cpu_cfs_periods_total
+- container_cpu_cfs_throttled_periods_total
+
 # Prerequisites
 
 Make sure you have at least these version of the following installed:
