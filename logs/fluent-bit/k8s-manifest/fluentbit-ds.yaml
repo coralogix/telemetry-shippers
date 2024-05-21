@@ -21,7 +21,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: fluent-bit
-          image: "coralogixrepo/coralogix-fluent-bit-multiarch:v3.0.2"
+          image: "coralogixrepo/coralogix-fluent-bit-multiarch:v3.0.4"
           imagePullPolicy: Always
           env:
             - name: HOSTNAME
