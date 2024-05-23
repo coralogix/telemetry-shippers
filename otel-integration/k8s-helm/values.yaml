@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.74"
+  version: "0.0.75"
 
   extensions:
     kubernetesDashboard:
@@ -128,6 +128,7 @@ opentelemetry-agent:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
+        - name: status_code
       # Configures the collector to export span metrics with different histogram bucket options
       # for different applications. Applications are selected and routed to different pipelines
       # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
@@ -140,6 +141,7 @@ opentelemetry-agent:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
+        - name: status_code
       defaultHistogramBuckets:
         [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
       configs: []

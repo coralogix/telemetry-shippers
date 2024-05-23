@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.75 / 2024-06-03
+- [FEAT] Add status_code to spanmetrics preset
+
 ### v0.0.74 / 2024-05-28
 - [FEAT] Bump Collector to 0.101.0
 - [FEAT] Allow setting dimensions to spanMetricsMulti preset
