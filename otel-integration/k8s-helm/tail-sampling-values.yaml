@@ -14,6 +14,8 @@ opentelemetry-agent:
       enabled: true
       routingKey: "traceID"
       hostname: coralogix-opentelemetry-gateway
+      # dnsResolverInterval: 20s
+      # dnsResolverTimeout: 5s
 
   config:
     service:
