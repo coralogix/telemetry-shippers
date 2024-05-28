@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.73 / 2024-05-28
+- [FEAT] Bump Helm chart dependencies.
+- [FEAT] Allowing loadBalancing presets dns configs (timout and resolver interval).
+
 ### v0.0.72 / 2024-05-16
 - [FEAT] Bump Collector to 0.100.0
 - [FEAT] Add container CPU throttling metrics
