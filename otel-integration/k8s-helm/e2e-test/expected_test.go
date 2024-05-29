@@ -5,7 +5,7 @@ var expectedSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
-const expectedScopeVersion = "0.100.0"
+const expectedScopeVersion = "0.101.0"
 
 var expectedScopeNames = map[string]bool{
 	"otelcol/hostmetricsreceiver/network":    false,
@@ -127,7 +127,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_process_runtime_total_sys_memory_bytes": false,
 	"otelcol_process_uptime":                         false,
 	"otelcol_processor_accepted_metric_points":       false,
-	"otelcol_processor_batch_metadata_cardinality":   false,
+	"otelcol_processor_batch_":                       false,
 	"otelcol_receiver_refused_log_records":           false,
 	"otelcol_receiver_refused_metric_points":         false,
 	"otelcol_processor_dropped_metric_points":        false,

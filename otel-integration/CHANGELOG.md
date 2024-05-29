@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.74 / 2024-05-28
+- [FEAT] Bump Collector to 0.101.0
+- [FEAT] Allow setting dimensions to spanMetricsMulti preset
+
 ### v0.0.73 / 2024-05-28
 - [FEAT] Bump Helm chart dependencies.
 - [FEAT] Allowing loadBalancing presets dns configs (timout and resolver interval).
