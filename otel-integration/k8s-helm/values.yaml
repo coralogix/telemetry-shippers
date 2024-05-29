@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.73"
+  version: "0.0.74"
 
   extensions:
     kubernetesDashboard:
@@ -136,6 +136,10 @@ opentelemetry-agent:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
+      extraDimensions:
+        - name: http.method
+        - name: cgx.transaction
+        - name: cgx.transaction.root
       defaultHistogramBuckets:
         [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
       configs: []
@@ -375,6 +379,10 @@ opentelemetry-cluster-collector:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
+    # Removes uids and other uneeded attributes from metric resources.
+    # This reduces target_info cardinality.
+    reduceResourceAttributes:
+      enabled: false
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
