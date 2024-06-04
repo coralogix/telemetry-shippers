@@ -54,6 +54,11 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
 	"host.name":                "otel-integration-agent-e2e-control-plane",
 	"host.id":                  "",
+	"k8s.pod.ip":               "",
+	"k8s.pod.name":             "",
+	"k8s.deployment.name":      "",
+	"k8s.namespace.name":       "",
+	"k8s.daemonset.name":       "",
 	"os.type":                  "linux",
 }
 

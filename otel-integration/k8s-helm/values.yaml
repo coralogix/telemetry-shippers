@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.75"
+  version: "0.0.76"
 
   extensions:
     kubernetesDashboard:
@@ -206,6 +206,12 @@ opentelemetry-agent:
         detectors: ["gcp", "ec2"]
         timeout: 2s
         override: true
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -270,6 +276,7 @@ opentelemetry-agent:
           exporters:
             - coralogix
           processors:
+            - transform/prometheus
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
@@ -444,6 +451,12 @@ opentelemetry-cluster-collector:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-infrastructure-collector"
       resource/kube-events:
         attributes:
           - key: service.name
@@ -581,6 +594,7 @@ opentelemetry-cluster-collector:
           exporters:
             - coralogix
           processors:
+            - transform/prometheus
             - k8sattributes
             - metricstransform/k8s-dashboard
             - transform/k8s-dashboard
