@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.76 / 2024-06-03
+- [FEAT] Add Kubernetes metadata to otel collector metrics
+
 ### v0.0.75 / 2024-06-03
 - [FEAT] Add status_code to spanmetrics preset
 
