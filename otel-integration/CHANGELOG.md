@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.77 / 2024-06-05
+- [FIX] Fix target allocator add events and secrets permission
+
 ### v0.0.76 / 2024-06-03
 - [FEAT] Add Kubernetes metadata to otel collector metrics
 
