@@ -3,7 +3,7 @@
 ## OpenTelemtry-Integration
 
 ### v0.0.79 / 2024-06-06
-- [FEAT] Bump Target Allocator to 0.101.0
+- [FEAT] Update Target Allocator version to 0.101.0
 
 ### v0.0.78 / 2024-06-06
 - [FEAT] Bump Collector to 0.102.1
