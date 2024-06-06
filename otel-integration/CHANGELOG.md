@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.79 / 2024-06-06
+- [FEAT] Bump Target Allocator to 0.101.0
+
 ### v0.0.78 / 2024-06-06
 - [FEAT] Bump Collector to 0.102.1
 - [FIX] Important: This version contains fix for cve-2024-36129. For more information see https://opentelemetry.io/blog/2024/cve-2024-36129/
