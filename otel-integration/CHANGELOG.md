@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.78 / 2024-06-06
+- [FEAT] Bump Collector to 0.102.1
+- [FIX] Important: This version contains fix for cve-2024-36129. For more information see https://opentelemetry.io/blog/2024/cve-2024-36129/
+
 ### v0.0.77 / 2024-06-05
 - [FIX] Fix target allocator add events and secrets permission
 
