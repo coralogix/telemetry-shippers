@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.80 / 2024-06-20
+- [BREAKING] logging exporter is removed from default exporters list, since collector 0.103.0 removed it.
+
 ### v0.0.79 / 2024-06-06
 - [FEAT] Update Target Allocator version to 0.101.0
 
