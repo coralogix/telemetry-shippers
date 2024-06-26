@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.83 / 2024-06-26
+- [Fix] Add cluster.name and resource detection processors to gateway-collector metrics
+
 ### v0.0.82 / 2024-06-26
 - [Fix] Add k8s labels to gateway-collector metrics
 
