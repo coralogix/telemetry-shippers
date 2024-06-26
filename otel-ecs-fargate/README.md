@@ -1,10 +1,12 @@
-# ADOT (OTEL) ECS Fargate container
+# OTEL ECS Fargate container
+
+### Note: Previous versions of this integration used an ADOT (AWS Distribution for OpenTelemetry) collector image. If you are upgrading an existing deployment, make sure you upgrade both the configuration and the task definition.
 
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 
-In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions. We use an AWS customized OpenTelemetry image called AWS Distro for OpenTelemetry (ADOT), as it has several features that allow for more convenient management of the configuration. We also have an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
+In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions. We use the standard Opentelemetry Collector Contrib distribution but leverage the envprovider to generate the configuration from an AWS SSM Parameter Store. There is an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
 
-The ADOT image, [maintained here by AWS](https://github.com/aws-observability/aws-otel-collector), allows for loading of the OpenTelemetry configuration via Systems Manager Parameter Stores. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
+The envprovider is used for loading of the OpenTelemetry configuration via Systems Manager Parameter Stores. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
 
 Our config.yaml file includes a standard configuration that'll ensure proper ingestion by our backend. Make sure to create this parameter store in the same region as your ECS cluster. We've included a sample cloudformation template to deploy this parameter store to simplify this process.
 
@@ -19,7 +21,7 @@ Example container declaration within a Task Definition:
         },
         {
             "name": "otel-collector",
-            "image": "public.ecr.aws/aws-observability/aws-otel-collector",
+            "image": "otel/opentelemetry-collector-contrib",
             "cpu": 0,
             "portMappings": [
                 {
@@ -38,6 +40,10 @@ Example container declaration within a Task Definition:
                 }
             ],
             "essential": false,
+            "command": [
+                "--config",
+                "env:SSM_CONFIG"
+            ],
             "environment": [
                 {
                     "name": "PRIVATE_KEY",
@@ -52,8 +58,8 @@ Example container declaration within a Task Definition:
             "volumesFrom": [],
             "secrets": [
                 {
-                    "name": "AOT_CONFIG_CONTENT",
-                    "valueFrom": "config.yaml"
+                    "name": "SSM_CONFIG",
+                    "valueFrom": "/CX_OTEL/config.yaml"
                 }
             ],
             "logConfiguration": {
@@ -76,7 +82,7 @@ Example container declaration within a Task Definition:
 
 In the example above, you'll need to set two instances each of `<Coralogix PrivateKey>` and `<Coralogix Domain>`. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform, as documented in our fluentbit log processing configuration instructions [here](../logs/fluent-bit/ecs-fargate/README.md).
 
-**NOTE:** If you wish to store your Coralogix Privatekey in Secrets Manager, you can remove the `"Header"` from `"options"` and create one under `"secretOptions"` and reference the Secret's ARN. Store the secret as plaintext with the same format as above. You will also need to add the secretsmanager:GetSecretValue permission to your ecs Task Execution Role.
+**NOTE:** If you wish to store your Coralogix Privatekey in Secret Manager, you can remove the `"Header"` from `"options"` and create one under `"secretOptions"` and reference the Secret's ARN. Create the secret as plaintext with the same format as above. You will also need to add the secretsmanager:GetSecretValue permission to your ecs Task Execution Role.
 
 ```
 "secretOptions": [
