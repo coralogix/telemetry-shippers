@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.81"
+  version: "0.0.82"
 
   extensions:
     kubernetesDashboard:
@@ -659,6 +659,14 @@ opentelemetry-gateway:
         secretKeyRef:
           name: coralogix-keys
           key: PRIVATE_KEY
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+  presets:
+    kubernetesAttributes:
+      enabled: true
 
   config:
     extensions:
@@ -692,10 +700,31 @@ opentelemetry-gateway:
           - "k8s.cronjob.name"
           - "service.name"
     processors:
+      # needed for self-monitored otel colector metrics
+      k8sattributes:
+        filter:
+          node_from_env_var: KUBE_NODE_NAME
+        extract:
+          metadata:
+            - "k8s.namespace.name"
+            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
+            - "k8s.replicaset.name"
+            - "k8s.statefulset.name"
+            - "k8s.daemonset.name"
+            - "k8s.cronjob.name"
+            - "k8s.job.name"
+            - "k8s.pod.name"
+            - "k8s.node.name"
       batch:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
         config:
@@ -728,6 +757,8 @@ opentelemetry-gateway:
           exporters:
             - coralogix
           processors:
+            - transform/prometheus
+            - k8sattributes
             - memory_limiter
             - batch
           receivers:
