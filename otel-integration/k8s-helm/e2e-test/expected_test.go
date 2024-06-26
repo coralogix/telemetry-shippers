@@ -28,18 +28,34 @@ var expectedResourceAttributesKubeletstatreceiver = map[string]string{
 	"cx.otel_integration.name": "coralogix-integration-helm",
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
 	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
-	"host.name":                "otel-integration-agent-e2e-control-plane",
+	"host.name":                "",
 	"host.id":                  "",
 	"os.type":                  "linux",
+	"cloud.provider":           "azure",
+	"cloud.platform":           "",
+	"cloud.region":             "",
+	"cloud.account.id":         "",
+	"azure.vm.name":            "",
+	"azure.vm.size":            "",
+	"azure.vm.scaleset.name":   "",
+	"azure.resourcegroup.name": "",
 }
 
 var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"cx.otel_integration.name": "coralogix-integration-helm",
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
 	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
-	"host.name":                "otel-integration-agent-e2e-control-plane",
+	"host.name":                "",
 	"host.id":                  "",
 	"os.type":                  "linux",
+	"cloud.provider":           "azure",
+	"cloud.platform":           "",
+	"cloud.region":             "",
+	"cloud.account.id":         "",
+	"azure.vm.name":            "",
+	"azure.vm.size":            "",
+	"azure.vm.scaleset.name":   "",
+	"azure.resourcegroup.name": "",
 }
 
 var expectedResourceAttributesPrometheusreceiver = map[string]string{
@@ -52,7 +68,7 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"cx.otel_integration.name": "coralogix-integration-helm",
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
 	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
-	"host.name":                "otel-integration-agent-e2e-control-plane",
+	"host.name":                "",
 	"host.id":                  "",
 	"k8s.pod.ip":               "",
 	"k8s.pod.name":             "",
@@ -60,6 +76,14 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"k8s.namespace.name":       "",
 	"k8s.daemonset.name":       "",
 	"os.type":                  "linux",
+	"cloud.provider":           "azure",
+	"cloud.platform":           "",
+	"cloud.region":             "",
+	"cloud.account.id":         "",
+	"azure.vm.name":            "",
+	"azure.vm.size":            "",
+	"azure.vm.scaleset.name":   "",
+	"azure.resourcegroup.name": "",
 }
 
 var expectedMetrics map[string]bool = map[string]bool{

@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.84 / 2024-06-26
+- [Fix] Add azure to resource detection processor
+
 ### v0.0.83 / 2024-06-26
 - [Fix] Add cluster.name and resource detection processors to gateway-collector metrics
 
