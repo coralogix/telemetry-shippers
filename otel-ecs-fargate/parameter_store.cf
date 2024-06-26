@@ -5,10 +5,49 @@ Resources:
   OTELConfigParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /OTEL/config.yaml
-      Description: Configuration parameter for Coralogix ADOT (OTEL) Collector
+      Name: /CX_OTEL/config.yaml
+      Description: Configuration parameter for Coralogix OTEL Collector
       Type: String
       Value: |
+        exporters:
+          coralogix:
+            application_name: 'otel'
+            application_name_attributes:
+            - aws.ecs.task.family
+            - service.namespace
+            domain: ${CORALOGIX_DOMAIN}
+            logs:
+              headers:
+                X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
+            metrics:
+              headers:
+                X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
+            private_key: ${PRIVATE_KEY}
+            subsystem_name: 'integration'
+            subsystem_name_attributes:
+            - service.name
+            - aws.ecs.docker.name
+            timeout: 30s
+            traces:
+              headers:
+                X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
+        processors:
+          batch:
+            send_batch_max_size: 2048
+            send_batch_size: 1024
+            timeout: 1s
+          resource/metadata:
+            attributes:
+            - action: upsert
+              key: cx.otel_integration.name
+              value: coralogix-integration-ecs-fargate
+          resourcedetection:
+            detectors:
+            - env
+            - ec2
+            - ecs
+            override: true
+            timeout: 2s
         receivers:
           awsecscontainermetrics:
             collection_interval: 10s
@@ -18,50 +57,40 @@ Resources:
                 endpoint: 0.0.0.0:4317
               http:
                 endpoint: 0.0.0.0:4318
-        processors:
-          resource/traces:
-            attributes:
-            - key: cx.application.name
-              from_attribute: aws.ecs.task.family
-              action: upsert
-            - key: cx.subsystem.name
-              from_attribute: service.name
-              action: upsert
-          resource/metrics:
-            attributes:
-            - key: cx.application.name
-              from_attribute: aws.ecs.task.family
-              action: upsert
-            - key: cx.subsystem.name
-              from_attribute: aws.ecs.docker.name
-              action: upsert
-          batch:
-            timeout: 5s
-            send_batch_size: 256
-          resourcedetection:
-            detectors: [env, ec2, ecs]
-            timeout: 5s
-            override: true
-        exporters:
-          logging:
-            verbosity: detailed
-          otlp:
-           endpoint: https://ingress.${CORALOGIX_DOMAIN}:443
-           headers:
-              Authorization: Bearer ${PRIVATE_KEY}
+          prometheus:
+            config:
+              scrape_configs:
+              - job_name: opentelemetry-collector
+                scrape_interval: 30s
+                static_configs:
+                - targets:
+                  - 127.0.0.1:8888
         service:
           pipelines:
-            traces/otlp:
-              receivers: [otlp]
-              processors: [resourcedetection, resource/traces, batch]
-              exporters: [otlp]
-            metrics/otlp:
-              receivers: [otlp]
-              processors: [resourcedetection, resource/metrics, batch]
-              exporters: [otlp]
-            metrics/polled:
-              receivers: [awsecscontainermetrics]
-              processors: [resourcedetection, resource/metrics, batch]
-              exporters: [otlp]
+            metrics:
+              exporters:
+              - coralogix
+              processors:
+              - resource/metadata
+              - resourcedetection
+              - batch
+              receivers:
+              - otlp
+              - awsecscontainermetrics
+            traces:
+              exporters:
+              - coralogix
+              processors:
+              - resource/metadata
+              - resourcedetection
+              - batch
+              receivers:
+              - otlp
+          telemetry:
+            logs:
+              level: "warn"
+              encoding: json
+            metrics:
+              address: 0.0.0.0:8888
         
       Tier: Standard
