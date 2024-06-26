@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.83"
+  version: "0.0.84"
 
   extensions:
     kubernetesDashboard:
@@ -205,7 +205,7 @@ opentelemetry-agent:
             host.id:
               enabled: true
       resourcedetection/region:
-        detectors: ["gcp", "ec2"]
+        detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
       transform/prometheus:
@@ -535,7 +535,7 @@ opentelemetry-cluster-collector:
         timeout: 2s
         override: false
       resourcedetection/region:
-        detectors: ["gcp", "ec2"]
+        detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
       # Will get the k8s resource limits
@@ -728,7 +728,7 @@ opentelemetry-gateway:
             host.id:
               enabled: true
       resourcedetection/region:
-        detectors: ["gcp", "ec2"]
+        detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
       batch:
