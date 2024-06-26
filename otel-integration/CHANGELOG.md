@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.82 / 2024-06-26
+- [Fix] Add k8s labels to gateway-collector metrics
+
 ### v0.0.81 / 2024-06-26
 - [Fix] Allow configuring max_unmatched_batch_size in multilineConfigs. Default is changed to max_unmatched_batch_size=1.
 - [Fix] Fix spanMetrics.spanNameReplacePattern preset does not work
