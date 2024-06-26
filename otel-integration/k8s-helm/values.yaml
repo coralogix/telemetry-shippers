@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.82"
+  version: "0.0.83"
 
   extensions:
     kubernetesDashboard:
@@ -667,6 +667,10 @@ opentelemetry-gateway:
   presets:
     kubernetesAttributes:
       enabled: true
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-helm"
 
   config:
     extensions:
@@ -715,6 +719,18 @@ opentelemetry-gateway:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
+      resourcedetection/env:
+        detectors: ["system", "env"]
+        timeout: 2s
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: true
       batch:
         send_batch_size: 1024
         send_batch_max_size: 2048
@@ -759,6 +775,8 @@ opentelemetry-gateway:
           processors:
             - transform/prometheus
             - k8sattributes
+            - resourcedetection/env
+            - resourcedetection/region
             - memory_limiter
             - batch
           receivers:
