@@ -1,4 +1,6 @@
-# ADOT (OTEL) ECS Fargate container
+# OTEL ECS Fargate container
+
+### Note: Previous versions of this integration used an ADOT (AWS Distribution for OpenTelemetry) collector image. If you are upgrading an existing deployment, make sure you upgrade both the configuration and the task definition.
 
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 
