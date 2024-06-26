@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.81 / 2024-06-26
+- [Fix] Allow configuring max_unmatched_batch_size in multilineConfigs. Default is changed to max_unmatched_batch_size=1.
+- [Fix] Fix spanMetrics.spanNameReplacePattern preset does not work
+
 ### v0.0.80 / 2024-06-20
 - [BREAKING] logging exporter is removed from default exporters list, since collector 0.103.0 removed it.
 
