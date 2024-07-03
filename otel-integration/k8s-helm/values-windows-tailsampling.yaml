@@ -56,6 +56,10 @@ opentelemetry-agent-windows:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
+  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
+  command:
+    name: otelcol-contrib
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion"]
 
   serviceAccount:
     # Specifies whether a service account should be created
