@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.85 / 2024-07-03
+- [:warning: CHANGE] [FEAT] Bump collector version to `0.104.0`. If you are providing your own environemnt variables that are being expanded in the collector configuration, be sure to use the recommended syntax with the `env:` prefix (for example: `${env:ENV_VAR}` instead of just `${ENV_VAR}`). For more information see [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.104.0). The old way of setting environment variables will be removed in the near future.
+
 ### v0.0.84 / 2024-06-26
 - [Fix] Add azure to resource detection processor
 
