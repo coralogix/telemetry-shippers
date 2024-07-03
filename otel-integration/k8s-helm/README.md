@@ -526,7 +526,7 @@ service:
           exporter:
             otlp:
               protocol: grpc/protobuf
-              endpoint: ${MY_POD_IP}:4317
+              endpoint: ${env:MY_POD_IP}:4317
 ```
 
 # Filtering and reducing metrics cost.
