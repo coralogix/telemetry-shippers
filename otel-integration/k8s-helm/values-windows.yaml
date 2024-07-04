@@ -26,6 +26,11 @@ opentelemetry-agent-windows:
     tag: "0.97.0"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
+  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
+  command:
+    name: otelcol-contrib
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion"]
+  
   extraVolumes:
     - name: etcmachineid
       hostPath:
@@ -119,25 +124,25 @@ opentelemetry-agent-windows:
 
     receivers:
       statsd:
-        endpoint: ${MY_POD_IP}:8125
+        endpoint: ${env:MY_POD_IP}:8125
       otlp:
         protocols:
           grpc:
-            endpoint: ${MY_POD_IP}:4317
+            endpoint: ${env:MY_POD_IP}:4317
           http:
-            endpoint: ${MY_POD_IP}:4318
+            endpoint: ${env:MY_POD_IP}:4318
       zipkin:
-        endpoint: ${MY_POD_IP}:9411
+        endpoint: ${env:MY_POD_IP}:9411
       jaeger:
         protocols:
           grpc:
-            endpoint: ${MY_POD_IP}:14250
+            endpoint: ${env:MY_POD_IP}:14250
           thrift_http:
-            endpoint: ${MY_POD_IP}:14268
+            endpoint: ${env:MY_POD_IP}:14268
           thrift_compact:
-            endpoint: ${MY_POD_IP}:6831
+            endpoint: ${env:MY_POD_IP}:6831
           thrift_binary:
-            endpoint: ${MY_POD_IP}:6832
+            endpoint: ${env:MY_POD_IP}:6832
       prometheus:
         config:
           scrape_configs:
@@ -145,7 +150,7 @@ opentelemetry-agent-windows:
             scrape_interval: 30s
             static_configs:
               - targets:
-                  - ${MY_POD_IP}:8888
+                  - ${env:MY_POD_IP}:8888
     processors:
       batch:
         send_batch_size: 1024
@@ -183,7 +188,7 @@ opentelemetry-agent-windows:
     exporters:
       coralogix:
         timeout: "30s"
-        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
         domain: "{{ .Values.global.domain }}"
         application_name: "{{ .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
@@ -207,7 +212,7 @@ opentelemetry-agent-windows:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
         metrics:
-          address: ${MY_POD_IP}:8888
+          address: ${env:MY_POD_IP}:8888
       extensions:
       - zpages
       - pprof

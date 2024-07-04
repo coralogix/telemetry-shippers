@@ -5,7 +5,7 @@ var expectedSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
-const expectedScopeVersion = "0.102.1"
+const expectedScopeVersion = "0.104.0"
 
 var expectedScopeNames = map[string]bool{
 	"otelcol/hostmetricsreceiver/network":    false,
@@ -64,6 +64,9 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"service.instance.id":      "",
 	"net.host.port":            "",
 	"http.scheme":              "http",
+	"server.address":           "",
+	"server.port":              "",
+	"url.scheme":               "",
 	"service_version":          expectedScopeVersion,
 	"cx.otel_integration.name": "coralogix-integration-helm",
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
@@ -156,6 +159,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_process_runtime_total_sys_memory_bytes": false,
 	"otelcol_process_uptime":                         false,
 	"otelcol_processor_accepted_metric_points":       false,
+	"otelcol_processor_inserted_metric_points":       false,
 	"otelcol_processor_batch_metadata_cardinality":   false,
 	"otelcol_receiver_refused_log_records":           false,
 	"otelcol_receiver_refused_metric_points":         false,
