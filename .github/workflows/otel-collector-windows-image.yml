@@ -40,8 +40,11 @@ jobs:
           context: ./otel-collector-windows-image/
           platforms: windows/amd64
           push: true
-          build-args: |
-            WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:1809
+          # For Windows 2019, we need to pin to specific sha256, in order to work around
+          # issue https://github.com/microsoft/Windows-Containers/issues/493. Once it's fixed,
+          # it can be removed.
+          build-args: |    
+            WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:1809@sha256:6fdf140282a2f809dae9b13fe441635867f0a27c33a438771673b8da8f3348a4
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
             ${{ env.DOCKERHUB_REGISTRY }}:latest
