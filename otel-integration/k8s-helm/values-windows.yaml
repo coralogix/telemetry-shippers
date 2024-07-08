@@ -5,6 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
+  version: "0.0.86"
 
   extensions:
     kubernetesDashboard:
@@ -23,7 +24,7 @@ opentelemetry-agent-windows:
     repository: coralogixrepo/opentelemetry-collector-contrib-windows
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.97.0"
+    tag: "0.104.0"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
@@ -94,17 +95,35 @@ opentelemetry-agent-windows:
       enabled: true
       storeCheckpoints: true
       maxRecombineLogSize: 1048576
+      # The maximum number of consecutive entries that will be combined into a single entry before the match occurs
+      maxUnmatchedBatchSize: 1
       extraFilelogOperators: []
-#     - type: recombine
-#       combine_field: body
-#       source_identifier: attributes["log.file.path"]
-#       is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+      # - type: recombine
+      #   combine_field: body
+      #   source_identifier: attributes["log.file.path"]
+      #   is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+
+      # Configure specific multline options for namespaces
+      # / pods / container names.
+      multilineConfigs: []
+      # multilineConfigs:
+      #   - namespaceName:
+      #       value: kube-system
+      #     podName:
+      #       value: app-.*
+      #       useRegex: true
+      #     containerName:
+      #       value: http
+      #     firstEntryRegex: ^[^\s].*
+      #     combineWith: ""
     kubernetesAttributes:
       enabled: true
     hostMetrics:
       enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
     kubeletMetrics:
       enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
@@ -114,6 +133,30 @@ opentelemetry-agent-windows:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
+          # Configures the collector to export span metrics with different histogram bucket options
+      # for different applications. Applications are selected and routed to different pipelines
+      # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
+      # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
+    spanMetricsMulti:
+      enabled: false
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+      extraDimensions:
+        - name: http.method
+        - name: cgx.transaction
+        - name: cgx.transaction.root
+        - name: status_code
+      defaultHistogramBuckets:
+        [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      configs: []
+      #  - selector: route() where attributes["service.name"] == "one"
+      #    histogramBuckets: [1s, 2s]
+      #  - selector: route() where attributes["service.name"] == "two"
+      #    histogramBuckets: [5s, 10s]
+    # Removes uids and other uneeded attributes from metric resources.
+    # This reduces target_info cardinality.
+    reduceResourceAttributes:
+      enabled: false
 
   config:
     extensions:
@@ -165,9 +208,15 @@ opentelemetry-agent-windows:
             host.id:
               enabled: true
       resourcedetection/region:
-        detectors: ["gcp", "ec2"]
+        detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+          - context: resource
+            statements:
+              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -190,6 +239,15 @@ opentelemetry-agent-windows:
         timeout: "30s"
         private_key: "${env:CORALOGIX_PRIVATE_KEY}"
         domain: "{{ .Values.global.domain }}"
+        logs:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        metrics:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
+        traces:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
         application_name: "{{ .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
         application_name_attributes:
@@ -208,6 +266,7 @@ opentelemetry-agent-windows:
           # Supress this attribute, as we don't want the UUID of the collector to be sent,
           # instead we rely on instance label generated by Prometheus receiver.
           - service.instance.id:
+          - service.name:
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
