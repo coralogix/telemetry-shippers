@@ -120,6 +120,10 @@ opentelemetry-agent-windows:
       enabled: true
     hostMetrics:
       enabled: true
+      # Enables process metrics scraping.
+      # Disabled by default, requires privileged mode
+      process:
+        enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
     kubeletMetrics:
       enabled: true

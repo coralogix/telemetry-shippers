@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.87 / 2024-07-18
+- [FEAT] Add process option to hostmetrics preset to scrape process metrics.
+
 ### v0.0.86 / 2024-07-08
 - [FEAT] Update Windows collector image to `0.104.0`
 - [FEAT] Update values file to be in sync with Linux agents.

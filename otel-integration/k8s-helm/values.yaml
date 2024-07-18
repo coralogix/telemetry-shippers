@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.86"
+  version: "0.0.87"
 
   extensions:
     kubernetesDashboard:
@@ -121,6 +121,10 @@ opentelemetry-agent:
       enabled: true
     hostMetrics:
       enabled: true
+      # Enables process metrics scraping.
+      # Disabled by default, requires privilleged mode
+      process:
+        enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
     kubeletMetrics:
       enabled: true
