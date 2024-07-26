@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.87"
+  version: "0.0.88"
 
   extensions:
     kubernetesDashboard:
@@ -402,6 +402,9 @@ opentelemetry-cluster-collector:
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
     reduceResourceAttributes:
+      enabled: false
+    # Enables Kubernetes Resource collection for for resource catalog
+    kubernetesResources:
       enabled: false
 
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.

@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.88 / 2024-07-26
+- [Feat] add kubernetes resource preset
+
 ### v0.0.87 / 2024-07-18
 - [FEAT] Add process option to hostmetrics preset to scrape process metrics.
 
