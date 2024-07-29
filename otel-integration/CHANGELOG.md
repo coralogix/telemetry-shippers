@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.89 / 2024-07-29
+- [Feat] add host entity event preset
+
 ### v0.0.88 / 2024-07-26
 - [Feat] add kubernetes resource preset
 

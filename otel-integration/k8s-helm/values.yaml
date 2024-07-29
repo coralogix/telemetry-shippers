@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.88"
+  version: "0.0.89"
 
   extensions:
     kubernetesDashboard:
@@ -163,6 +163,9 @@ opentelemetry-agent:
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
     reduceResourceAttributes:
+      enabled: false
+     # Configures Host Metrics receiver to collect Entity Events.
+    hostEntityEvents:
       enabled: false
   config:
     extensions:
