@@ -5,7 +5,7 @@ var expectedSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
-const expectedScopeVersion = "0.104.0"
+const expectedScopeVersion = "0.106.1"
 
 var expectedScopeNames = map[string]bool{
 	"otelcol/hostmetricsreceiver/network":    false,
