@@ -54,6 +54,8 @@ opentelemetry-agent:
     allocationStrategy: "per-node"
     prometheusCR:
       enabled: true
+      # The interval at which the target allocator will scrape the Prometheus server
+      scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
       tag: v0.101.0
