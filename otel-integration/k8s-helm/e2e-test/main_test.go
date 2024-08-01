@@ -80,8 +80,16 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	for name, expectedState := range expectedScopeNames {
 		require.True(t, expectedState, "scope %v was not found in the actual metrics", name)
 	}
+
+	var missingMetrics []string
 	for name, expectedState := range expectedMetrics {
-		require.True(t, expectedState, "metric %v was not found in the actual metrics", name)
+		if !expectedState {
+			missingMetrics = append(missingMetrics, name)
+		}
+	}
+
+	if len(missingMetrics) > 0 {
+		t.Fatalf("metrics %v were not found in the actual metrics", missingMetrics)
 	}
 
 	return nil
