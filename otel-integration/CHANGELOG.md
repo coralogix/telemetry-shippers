@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+## v0.0.90 / 2024-07-31
+- [:warning: CHANGE] [FEAT] Bump collector version to `0.106.1`. If you're using your custom configuration that relies on implicit conversion of types, please see the note about change in behavior in the [`UPGRADING.md`](./UPGRADING.md)
+
 ### v0.0.89 / 2024-07-29
 - [Feat] add host entity event preset
 

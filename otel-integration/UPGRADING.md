@@ -8,6 +8,10 @@ When upgrading to new collector version please check OpenTelemetry collector rel
 - https://github.com/open-telemetry/opentelemetry-collector/releases
 - https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
 
+## 0.0.89 to 0.0.90
+
+If you are providing your own configuration that relies on implicit conversion of types, this behavior is now deprecated and will not be supported in one of the future release (might cause your collectors to fail during start). Please update your configuration accordingly - to see which type casting behaviors are affected see the list [here](https://github.com/open-telemetry/opentelemetry-collector/issues/9532).
+
 ## 0.0.84 to 0.0.85
 
 If you are providing your own environemnt variables that are being expanded in the collector configuration, be sure to use the recommended syntax with the `env:` prefix (for example: `${env:ENV_VAR}` instead of just `${ENV_VAR}`). For more information see [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.104.0). The old way of setting environment variables will be removed in the near future.
