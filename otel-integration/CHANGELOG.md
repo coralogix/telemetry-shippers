@@ -1,6 +1,8 @@
 # Changelog
 
 ## OpenTelemtry-Integration
+### v0.0.90 / 2024-08-01
+- [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
 
 ### v0.0.89 / 2024-07-29
 - [Feat] add host entity event preset
