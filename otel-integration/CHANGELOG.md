@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+## v0.0.91 / 2024-08-05
+- [Feat] add more attributes to host entity event preset
+
 ## v0.0.90 / 2024-07-31
 - [:warning: CHANGE] [FEAT] Bump collector version to `0.106.1`. If you're using your custom configuration that relies on implicit conversion of types, please see the note about change in behavior in the [`UPGRADING.md`](./UPGRADING.md)
 - [Fix] Mute process executable errors in host metrics
