@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.90"
+  version: "0.0.91"
 
   extensions:
     kubernetesDashboard:
