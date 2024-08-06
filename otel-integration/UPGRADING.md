@@ -27,8 +27,8 @@ You should change it to this instead:
 ```yaml
       telemetry:
         resource:
-          service.instance.id: ""
-          service.name: ""
+          service.instance.id:
+          service.name:
 ```
 
 ## 0.0.84 to 0.0.85
