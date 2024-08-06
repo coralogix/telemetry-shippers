@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+## v0.0.93 / 2024-08-06
+- [Feat] Add more defaults for fleet management preset
+
 ## v0.0.92 / 2024-08-05
 - [Feat] add more system attributes to host entity event preset
 - [Feat] Add fleet management preset
