@@ -158,8 +158,7 @@ type: Opaque
 
 # Installation
 
-> [!NOTE]
-> With some Helm version (< `v3.14.3`), users might experience multiple warning messages during the installation about following:
+> [!NOTE] With some Helm version (< `v3.14.3`), users might experience multiple warning messages during the installation about following:
 >
 > ```
 > index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
@@ -223,8 +222,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-> [!NOTE]
-> Users might experience multiple warning messages during the installation about following:
+> [!NOTE] Users might experience multiple warning messages during the installation about following:
 >
 > ```
 > Warning: missing the following rules for namespaces: [get,list,watch]
@@ -245,8 +243,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies with your custom tail sampling policies.
 
-When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`.
-When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
+When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`. When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
 
 #### Why am I getting ResourceExhausted errors when using Tail Sampling?
 
@@ -273,7 +270,7 @@ References:
 
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
 
-If you're leveraging the Prometheus Operator custom resources (`ServiceMonitor` and `PodMonitor`) and you would like to keep using them with the OpenTelemetry collector, you can enable the scraping of these resources by a special, optional component called target allocator. This feature is disabled by default and can be enabled by setting the `opentelemetry-agent.targetAllocator.enabled` value to `true` in the `values.yaml` file. 
+If you're leveraging the Prometheus Operator custom resources (`ServiceMonitor` and `PodMonitor`) and you would like to keep using them with the OpenTelemetry collector, you can enable the scraping of these resources by a special, optional component called target allocator. This feature is disabled by default and can be enabled by setting the `opentelemetry-agent.targetAllocator.enabled` value to `true` in the `values.yaml` file.
 
 If enabled, the target allocator will be deployed as a separate deployment in the same namespace as the collector. It will be responsible for allocating targets for the agent collector on each node, to scrape targets that reside on the given node (a form of simple sharding). If needed, you can run multiple instances of the target allocator for high availability. This can be achieved by setting the `opentelemetry-agent.targetAllocator.replicas` value to a number greater than 1.
 
@@ -320,9 +317,7 @@ GKE Autopilot has limited access to host filesystems, host networking and host p
 Notable important differences from regular `otel-integration` are:
 - Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
 - Kubernetes Dashboard does not work, due to missing Host Metrics.
-- Host networking and host ports are not available, users need to send tracing spans through
-  Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally
-  running agents.
+- Host networking and host ports are not available, users need to send tracing spans through Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally running agents.
 - Log Collection works, but does not store check points. Restarting the agent will collect logs from the beginning.
 
 To install otel-integration to GKE/Autopilot follow these steps:
@@ -371,8 +366,7 @@ Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the loc
 
 ### Example Application environment configuration
 
-The following code creates a new environment variable (`NODE`) containing the node's IP address and then uses that IP in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
-This ensures that each instrumented pod will send data to the local OTEL collector on the node it is currently running on.
+The following code creates a new environment variable (`NODE`) containing the node's IP address and then uses that IP in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable. This ensures that each instrumented pod will send data to the local OTEL collector on the node it is currently running on.
 
 ```yaml
 env:
@@ -588,19 +582,16 @@ processors:
 
 ## Picking the right tracing SDK span processor
 
-OpenTelemetry tracing SDK supports two strategies to create an application traces, a “SimpleSpanProcessor” and a “BatchSpanProcessor.”
-While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
+OpenTelemetry tracing SDK supports two strategies to create an application traces, a “SimpleSpanProcessor” and a “BatchSpanProcessor.” While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
-Picking the right tracing SDK span processor can have an impact on the performance of the collector.
-We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
+Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
 | Span Processor      | Agent Memory Usage | Agent CPU Usage | Latency Samples |
 |---------------------|--------------------|-----------------|-----------------|
 | SimpleSpanProcessor | 3.7 GB             | 0.5             | >1m40s          |
 | BatchSpanProcessor  | 600 MB             | 0.02            | >1s <10s        |
 
-In addition, it improved the buffer performance of the collector, when we used the SimpleSpanProcessor, the buffer queues were getting full very quickly,
-and after switching to the BatchSpanProcessor, it stopped becoming full all the time, therefore stopped dropping data.
+In addition, it improved the buffer performance of the collector, when we used the SimpleSpanProcessor, the buffer queues were getting full very quickly, and after switching to the BatchSpanProcessor, it stopped becoming full all the time, therefore stopped dropping data.
 
 #### Example
 
@@ -695,15 +686,13 @@ Required settings:
 - `mountPath`: specifies the path at which to mount the volume. This should correspond the mount path of your MySQL data volume. Provide this parameter without trailing slash.
 
 Optional settings:
-- `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory,
-  such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
+- `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory, such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
 - `logFilesExtension`: specifies which file extensions to watch for. Defaults to `.log`.
 
 ### Common issues
 
 - Metrics collection is failing with error `"Error 1227 (42000): Access denied; you need (at least one of) the PROCESS privilege(s) for this operation"`
-  - This error indicates that the database user you provided does not have the required privileges to collect metrics. Provide the `PROCESS` privilege to the user, e.g. by running query
-    `GRANT PROCESS ON *.* TO 'user'@'%'`
+  - This error indicates that the database user you provided does not have the required privileges to collect metrics. Provide the `PROCESS` privilege to the user, e.g. by running query `GRANT PROCESS ON *.* TO 'user'@'%'`
 
 ### Example preset configuration for single instance
 
