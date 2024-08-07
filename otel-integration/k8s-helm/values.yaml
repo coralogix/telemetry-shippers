@@ -58,7 +58,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.101.0
+      tag: v0.105.0
 
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
