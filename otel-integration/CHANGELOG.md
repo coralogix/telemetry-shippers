@@ -4,6 +4,7 @@
 
 ### v0.0.94 / 2024-08-07
 - [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
+- [CHORE] - Updated target allocator version to 0.105.0 in values.yaml
 
 ## v0.0.93 / 2024-08-06
 - [Feat] Add more defaults for fleet management preset
