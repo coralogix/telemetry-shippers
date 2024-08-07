@@ -2,7 +2,7 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.90 / 2024-08-01
+### v0.0.94 / 2024-08-07
 - [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
 
 ## v0.0.93 / 2024-08-06
