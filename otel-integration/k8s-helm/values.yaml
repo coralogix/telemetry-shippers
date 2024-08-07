@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "debug"
   collectionInterval: "30s"
-  version: "0.0.93"
+  version: "0.0.94"
 
   extensions:
     kubernetesDashboard:
@@ -54,9 +54,11 @@ opentelemetry-agent:
     allocationStrategy: "per-node"
     prometheusCR:
       enabled: true
+      # The interval at which the target allocator will scrape the Prometheus server
+      scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.101.0
+      tag: v0.105.0
 
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
