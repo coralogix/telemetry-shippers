@@ -3,9 +3,9 @@ global:
   clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
-  logLevel: "warn"
+  logLevel: "debug"
   collectionInterval: "30s"
-  version: "0.0.89"
+  version: "0.0.93"
 
   extensions:
     kubernetesDashboard:
@@ -63,7 +63,7 @@ opentelemetry-agent:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion,-confmap.strictlyTypedInput"]
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -93,6 +93,11 @@ opentelemetry-agent:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
+    fleetManagement:
+      enabled: false
+      agentType: "agent"
+      clusterName: "{{.Values.global.clusterName}}"
+
     logsCollection:
       enabled: true
       includeCollectorLogs: true
@@ -381,6 +386,10 @@ opentelemetry-cluster-collector:
     priorityValue: 1000000000
   replicaCount: 1
   presets:
+    fleetManagement:
+      enabled: false
+      agentType: "cluster-collector"
+      clusterName: "{{.Values.global.clusterName}}"
     clusterMetrics:
       enabled: true
     kubernetesEvents:
@@ -415,7 +424,7 @@ opentelemetry-cluster-collector:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion,-confmap.strictlyTypedInput"]
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -687,6 +696,10 @@ opentelemetry-gateway:
           apiVersion: v1
           fieldPath: spec.nodeName
   presets:
+    fleetManagement:
+      enabled: false
+      agentType: "gateway"
+      clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
       enabled: true
     metadata:
@@ -696,7 +709,7 @@ opentelemetry-gateway:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion,-confmap.strictlyTypedInput"]
 
   config:
     extensions:

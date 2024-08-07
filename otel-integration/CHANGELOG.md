@@ -4,6 +4,20 @@
 ### v0.0.90 / 2024-08-01
 - [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
 
+## v0.0.93 / 2024-08-06
+- [Feat] Add more defaults for fleet management preset
+
+## v0.0.92 / 2024-08-05
+- [Feat] add more system attributes to host entity event preset
+- [Feat] Add fleet management preset
+
+## v0.0.91 / 2024-08-05
+- [Feat] add more attributes to host entity event preset
+
+## v0.0.90 / 2024-07-31
+- [:warning: CHANGE] [FEAT] Bump collector version to `0.106.1`. If you're using your custom configuration that relies on implicit conversion of types, please see the note about change in behavior in the [`UPGRADING.md`](./UPGRADING.md)
+- [Fix] Mute process executable errors in host metrics
+
 ### v0.0.89 / 2024-07-29
 - [Feat] add host entity event preset
 
