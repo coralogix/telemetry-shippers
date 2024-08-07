@@ -1,6 +1,7 @@
 # Changelog
 
 ## OpenTelemtry-Integration
+
 ### v0.0.90 / 2024-08-01
 - [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
 
@@ -235,9 +236,7 @@
 - [FIX] Kubelet Stats use Node IP instead of Node name.
 
 ### v0.0.37 / 2023-11-27
-* [:warning: BREAKING CHANGE] [FEATURE] Add support for span metrics preset. This replaces the deprecated `spanmetricsprocessor`
-  with `spanmetricsconnector`. The new connector is disabled by default, as opposed the replaces processor.
-  To enable it, set `presets.spanMetrics.enabled` to `true`.
+* [:warning: BREAKING CHANGE] [FEATURE] Add support for span metrics preset. This replaces the deprecated `spanmetricsprocessor` with `spanmetricsconnector`. The new connector is disabled by default, as opposed the replaces processor. To enable it, set `presets.spanMetrics.enabled` to `true`.
 
 ### v0.0.36 / 2023-11-15
 * [FIX] Change statsd receiver port to 8125 instead of 8127
