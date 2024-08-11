@@ -6,13 +6,14 @@ on:
     - 'otel-integration/k8s-helm/Chart.yaml'
   workflow_dispatch:
 jobs:
+
   Get_vesrion:
     runs-on: ubuntu-latest
     name: Get the new version
     outputs:
       Chart_version: "${{ steps.New_version.outputs.Chart_version }}"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 
 
@@ -21,12 +22,13 @@ jobs:
         run: |
           Chart_version=$(cat ./otel-integration/k8s-helm/Chart.yaml | grep "^version" | grep -oE '[^ ]+$')
           echo "Chart_version=$Chart_version" >> $GITHUB_OUTPUT
-  create_pr:
+
+  commit_changes:
     runs-on: ubuntu-latest
     needs: Get_vesrion
     steps:
       - name: Checkout destination repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: coralogix/integration-definitions
           token: ${{ secrets.GH_TOKEN }}
@@ -34,10 +36,9 @@ jobs:
       - name: Check if version exists
         id: version_exist
         run: | 
-          branch_name="sync-telemetry-branch-$(date +"%m-%d-%H-%M")"
           git fetch origin
           template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
-          if [ -d "./integrations/otel-agent-k8s/v$template_version" ] || [ -n "$(git ls-remote origin $branch_name)" ]; then
+          if [ -d "./integrations/otel-agent-k8s/v$template_version" ]; then
             echo "version exist"
             echo "new_version_exist=true" >> $GITHUB_ENV
           else
@@ -45,18 +46,14 @@ jobs:
             echo "version Not exist"
           fi
 
-
       - name: Create files for the new version
         if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
         run: |
-          branch_name="sync-telemetry-branch-$(date +"%m-%d-%H-%M")"
-          echo $branch_name
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          git checkout master
           git pull origin master
           git fetch origin
-          git switch -c ${branch_name} --track origin/master 
-          git push --set-upstream origin ${branch_name}
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
@@ -76,34 +73,24 @@ jobs:
               published_at: $current_time" >> integrations/otel-agent-k8s/manifest.yaml
           fi
           git add .
-          echo "branch_name=$branch_name" >> $GITHUB_ENV
+
+          merged_pr_from_telemetry_shipper=$(curl -s \
+          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+          if [ "${{ github.event_name }}" == 'workflow_dispatch' ] || [ -z "$merged_pr_from_telemetry_shipper" ]; then
+            merged_pr_from_telemetry_shipper="sync-from-telemetry-shippers"
+          fi
+          echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: commit change
         if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
-        uses: planetscale/ghcommit-action@v0.1.19
+        uses: planetscale/ghcommit-action@v0.1.43
         with:
-          commit_message: "update version to the Chart.yaml"
+          commit_message: ${{env.commit_message}}
           repo: coralogix/integration-definitions
-          branch: ${{env.branch_name}}
+          branch: master
           file_pattern: '*.yaml *.md'
         env:
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
-
-      - name: Create pull request
-        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
-        run: |
-          branch_name="sync-telemetry-branch-$(date +"%m-%d-%H-%M")"
-          Pr_name=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
-          | jq -r '.[0].title')
-          if [ "${{ github.event_name }}" == 'workflow_dispatch' ] || [ -z "$Pr_name" ]; then
-            Pr_name="sync-from-telemetry-shippers"
-          fi
-          pr_url=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
-            | jq -r '.[0].html_url')
-          gh pr create --base master --head "${branch_name}" --title "${Pr_name}" --body "This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
