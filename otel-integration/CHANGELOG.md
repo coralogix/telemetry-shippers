@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.95 / 2024-08-14
+
+- [Feat] add k8s.cluster.name to entity events
+
 ### v0.0.94 / 2024-08-07
 - [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
 - [CHORE] - Updated target allocator version to 0.105.0 in values.yaml
