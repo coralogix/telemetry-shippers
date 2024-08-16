@@ -30,7 +30,7 @@ opentelemetry-agent-windows:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
   
   extraVolumes:
     - name: etcmachineid
