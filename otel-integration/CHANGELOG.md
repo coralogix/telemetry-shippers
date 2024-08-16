@@ -2,8 +2,11 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.95 / 2024-08-14
+### v0.0.96 / 2024-08-16
+- [:warning: CHANGE] [FEAT] Bump collector version to `0.107.0`. Old way of providing environment variables in the collector configuration has been removed. If you are providing your own environment variables that are being expanded in the collector configuration, be sure to use the recommended syntax (for example with `env` prefix - `${env:ENV_VAR}` or `${ENV_VAR}` instead of just `$ENV_VAR`). For more information see previous [upgrading guide](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/UPGRADING.md#0084-to-0085).
+- [FIX] Restore previously mistakenly changed default log level to `warn`.
 
+### v0.0.95 / 2024-08-14
 - [Feat] add k8s.cluster.name to entity events
 
 ### v0.0.94 / 2024-08-07

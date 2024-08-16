@@ -3,9 +3,9 @@ global:
   clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
-  logLevel: "debug"
+  logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.95"
+  version: "0.0.96"
 
   extensions:
     kubernetesDashboard:
@@ -63,7 +63,7 @@ opentelemetry-agent:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion,-confmap.strictlyTypedInput"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.strictlyTypedInput"]
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -424,7 +424,7 @@ opentelemetry-cluster-collector:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion,-confmap.strictlyTypedInput"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.strictlyTypedInput"]
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -709,7 +709,7 @@ opentelemetry-gateway:
   # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.unifyEnvVarExpansion,-confmap.strictlyTypedInput"]
+    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost,-confmap.strictlyTypedInput"]
 
   config:
     extensions:
