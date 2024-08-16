@@ -108,7 +108,7 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 
 		// We only need the relevant part of the scopr name to get receiver name.
 		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
-		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[1])
+		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
 
 		metrics := scope.Metrics()
 		for j := 0; j < metrics.Len(); j++ {
