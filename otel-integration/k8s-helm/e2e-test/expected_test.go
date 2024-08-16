@@ -8,14 +8,14 @@ var expectedSchemaURL = map[string]bool{
 const expectedScopeVersion = "0.106.1"
 
 var expectedScopeNames = map[string]bool{
-	"otelcol/hostmetricsreceiver/network":    false,
-	"otelcol/hostmetricsreceiver/cpu":        false,
-	"otelcol/hostmetricsreceiver/filesystem": false,
-	"otelcol/hostmetricsreceiver/memory":     false,
-	"otelcol/hostmetricsreceiver/load":       false,
-	"otelcol/hostmetricsreceiver/disk":       false,
-	"otelcol/kubeletstatsreceiver":           false,
-	"otelcol/prometheusreceiver":             false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/network":    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpu":        false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystem": false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memory":     false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/load":       false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/disk":       false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver":                            false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                              false,
 }
 
 var expectedResourceAttributesKubeletstatreceiver = map[string]string{
