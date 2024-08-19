@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.97 / 2024-08-19
+- [Fix] ignore process name not found errors for hostmetrics process preset
+
 ### v0.0.96 / 2024-08-16
 - [:warning: CHANGE] [FEAT] Bump collector version to `0.107.0`. Old way of providing environment variables in the collector configuration has been removed. If you are providing your own environment variables that are being expanded in the collector configuration, be sure to use the recommended syntax (for example with `env` prefix - `${env:ENV_VAR}` or `${ENV_VAR}` instead of just `$ENV_VAR`). For more information see previous [upgrading guide](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/UPGRADING.md#0084-to-0085).
 - [FIX] Restore previously mistakenly changed default log level to `warn`.
