@@ -49,11 +49,14 @@ jobs:
       - name: Create files for the new version
         if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
         run: |
+          branch_name="sync-telemetry-branch-$(date +"%m-%d-%H-%M")"
+          echo "branch_name=$branch_name" >> $GITHUB_ENV
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git checkout master
+          git checkout -b $branch_name
           git pull origin master
           git fetch origin
+          git push origin $branch_name
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
@@ -90,7 +93,82 @@ jobs:
         with:
           commit_message: ${{env.commit_message}}
           repo: coralogix/integration-definitions
-          branch: master
+          branch: ${{ env.branch_name }}
           file_pattern: '*.yaml *.md'
         env:
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+  
+      - name: Create pull request
+        if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
+        run: |
+          # Fetch the latest closed pull request title
+          Pr_name=$(curl -s "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+          
+          # Set a default title if running on workflow_dispatch or if no recent PR title is found
+          if [ -z "$Pr_name" ]; then
+            Pr_name="sync-from-telemetry-shippers"
+          fi
+          
+          # Fetch the URL of the latest closed pull request
+          pr_url=$(curl -s \
+            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].html_url')
+          
+          # Fetch the body of the latest closed pull request
+          pr_body=$(curl -s \
+            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].body')
+          
+          # Set a default body if no recent PR body is found
+          if [ -z "$pr_body" ]; then
+            pr_body="This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url"
+          else
+            pr_body="Link to the original PR: $pr_url $pr_body"
+          fi
+          
+          # Create the new pull request with the title and body
+          gh pr create --base master --head "${{ env.branch_name }}" --title "${Pr_name}" --body "$pr_body"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+
+      - name: Merge pull request
+        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        run: |
+          check_status() {
+            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+          }
+
+          # Initialize the timeout variables
+          max_wait_time=$((10 * 60)) # 10 minutes in seconds
+          elapsed_time=0
+          sleep_interval=10 # Interval between checks in seconds
+
+          # Loop until all status checks are successful or timeout occurs
+          echo "Waiting for all status checks to pass..."
+          # Wait for 5 seconds before checking the status
+          sleep 5
+          while true; do
+            status=$(check_status)
+            
+            if [ "$status" == "true" ]; then
+              echo "All status checks passed. Merging the pull request..."
+              break
+            fi
+            
+            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+              echo "Timeout reached: Status checks did not pass within 10 minutes."
+              exit 1
+            fi
+            
+            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+            sleep $sleep_interval
+            elapsed_time=$((elapsed_time + sleep_interval))
+          done
+
+          # Merge the pull request
+          gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
