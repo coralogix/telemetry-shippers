@@ -106,7 +106,7 @@ jobs:
           | jq -r '.[0].title')
           
           # Set a default title if running on workflow_dispatch or if no recent PR title is found
-          if [ "${{ github.event_name }}" == 'workflow_dispatch' ] || [ -z "$Pr_name" ]; then
+          if [ -z "$Pr_name" ]; then
             Pr_name="sync-from-telemetry-shippers"
           fi
           
