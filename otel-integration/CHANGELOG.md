@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.98 / 2024-08-29
+- [Feat] Add a way to deploy central collector cluster for tail sampling
+
 ### v0.0.97 / 2024-08-19
 - [Fix] ignore process name not found errors for hostmetrics process preset
 

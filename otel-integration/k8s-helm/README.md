@@ -245,6 +245,60 @@ This change will configure otel-agent pods to send span data to coralogix-opente
 
 When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`. When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
 
+### Deploying Central Collector Cluster for Tail Sampling
+
+If you want to deploy OpenTelemetry Collector in a seperate "central" Kubernetes Cluster, that receives telemetry data via OTLP receivers and does [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) you can install `otel-integration` using `central-tail-sampling-values.yaml` values file. Check the values file for configuration.
+
+This will deploy two deployments:
+- opentelemetry-receiver - responsible for receiving otlp data, pushing metrics and logs to Coralogix and loadbalancing spans to opentelemetry-gateway deployment.
+- opentelemetry-gateway - a service that receives span data and does Tail Sampling decisions.
+
+The opentelemetry-receiver will need to be exposed to other Kubernetes Clusters for sending data. You can do that by using service of type LoadBalancer, configuring Ingress object, or manually configuring your load balancer. Also, make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies with your custom tail sampling policies.
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+
+helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f central-tail-sampling-values.yaml
+```
+
+Once you deploy it, you can validate by sending some otlp data to opentelemetry-receiver Service and checking Coralogix for spans. This can be done via telemetrygen:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetrygen-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetrygen
+  template:
+    metadata:
+      labels:
+        app: telemetrygen
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+        args:
+          - "traces"
+          - "--otlp-endpoint=coralogix-opentelemetry-receiver:4317"
+          - "--otlp-insecure"
+          - "--rate=10"
+          - "--duration=120s"
+EOF
+```
+
+Next, you will need to configure regular `otel-integration` deployment to send data to Central Collector Cluster:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f central-agent-values.yaml
+```
+
 #### Why am I getting ResourceExhausted errors when using Tail Sampling?
 
 Typically, the errors look like this:

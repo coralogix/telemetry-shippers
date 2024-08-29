@@ -1,0 +1,38 @@
+global:
+  domain: ""
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "debug"
+  collectionInterval: "30s"
+  version: "0.0.97"
+
+  extensions:
+    kubernetesDashboard:
+      enabled: true
+
+# set distribution to openshift for openshift clusters
+distribution: ""
+opentelemetry-agent:
+  enabled: true
+  config:
+    exporters:
+      otlp:
+        # configure the public endpoint here
+        endpoint: coralogix-opentelemetry-receiver:4317
+        # this is not needed if you have valid tls certificate fronting receivers
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - otlp
+
+opentelemetry-cluster-collector:
+  enabled: true
+opentelemetry-agent-windows:
+  enabled: false
+opentelemetry-gateway:
+  enabled: false
+
