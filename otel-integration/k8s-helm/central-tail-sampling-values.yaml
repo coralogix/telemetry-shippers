@@ -1,0 +1,100 @@
+global:
+  domain: ""
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+  collectionInterval: "30s"
+
+opentelemetry-receiver:
+  enabled: true
+  # Receiver needs to be exposed either via Service of type LoadBalancer or Ingress
+  service:
+    enabled: true
+    type: ClusterIP
+    # type: LoadBalancer
+    # loadBalancerIP: 1.2.3.4
+    # loadBalancerSourceRanges: []
+  
+    # By default, Service of type 'LoadBalancer' will be created setting 'externalTrafficPolicy: Cluster'
+    # unless other value is explicitly set.
+    # Possible values are Cluster or Local (https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip)
+  # externalTrafficPolicy: Cluster
+  ingress:
+    enabled: false
+    # annotations: {}
+    # ingressClassName: nginx
+    # hosts:
+    #   - host: collector.example.com
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         port: 4318
+    # tls:
+    #   - secretName: collector-tls
+    #     hosts:
+    #       - collector.example.com
+  # For production use-cases please increase replicas
+  # and resource requests and limits
+  replicaCount: 3
+  # resources:
+  #   requests:
+  #     cpu: 0.5
+  #     memory: 256Mi
+  #   limits:
+  #     cpu: 2
+  #     memory: 2G
+
+  presets:
+    loadBalancing:
+      enabled: true
+      routingKey: "traceID"
+      hostname: coralogix-opentelemetry-gateway
+      # dnsResolverInterval: 20s
+      # dnsResolverTimeout: 5s
+
+  config:
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - loadbalancing
+
+opentelemetry-gateway:
+  enabled: true
+  # For production use-cases please increase replicas
+  # and resource requests and limits
+  replicaCount: 3
+  # resources:
+  #   requests:
+  #     cpu: 0.5
+  #     memory: 256Mi
+  #   limits:
+  #     cpu: 2
+  #     memory: 2G
+
+  config:
+    processors:
+      tail_sampling:
+        # Update configuration here, with your settings and tail sampling policies
+        # Docs: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor
+        policies:
+          [
+            #{
+            #  name: errors-policy,
+            #  type: status_code,
+            #  status_code: {status_codes: [ERROR]}
+            #},
+            {
+              name: randomized-policy,
+              type: probabilistic,
+              probabilistic: {sampling_percentage: 10}
+            },
+          ]
+
+opentelemetry-agent:
+  enabled: false
+opentelemetry-cluster-collector:
+  enabled: false
+opentelemetry-agent-windows:
+  enabled: false
