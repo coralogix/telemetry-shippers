@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.98"
+  version: "0.0.99"
 
   extensions:
     kubernetesDashboard:
@@ -684,6 +684,21 @@ opentelemetry-gateway:
   service:
     enabled: true
     clusterIP: "None"
+  clusterRole:
+    name: "coralogix-opentelemetry-gateway"
+    create: true
+    clusterRoleBinding:
+      name: "coralogix-opentelemetry-gateway"
+    rules:
+    - apiGroups: [""]
+      resources: ["pods", "namespaces"]
+      verbs: ["get", "watch", "list"]
+    - apiGroups: ["apps"]
+      resources: ["replicasets"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["extensions"]
+      resources: ["replicasets"]
+      verbs: ["get", "list", "watch"]
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -701,7 +716,7 @@ opentelemetry-gateway:
       agentType: "gateway"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
-      enabled: true
+      enabled: false
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
@@ -852,6 +867,21 @@ opentelemetry-receiver:
   fullnameOverride: coralogix-opentelemetry-receiver
   service:
     enabled: true
+  clusterRole:
+    name: "coralogix-opentelemetry-gateway"
+    create: true
+    clusterRoleBinding:
+      name: "coralogix-opentelemetry-gateway"
+    rules:
+    - apiGroups: [""]
+      resources: ["pods", "namespaces"]
+      verbs: ["get", "watch", "list"]
+    - apiGroups: ["apps"]
+      resources: ["replicasets"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["extensions"]
+      resources: ["replicasets"]
+      verbs: ["get", "list", "watch"]
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -869,7 +899,7 @@ opentelemetry-receiver:
       agentType: "gateway"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
-      enabled: true
+      enabled: false
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"

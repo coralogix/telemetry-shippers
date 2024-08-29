@@ -12,6 +12,7 @@ opentelemetry-receiver:
   service:
     enabled: true
     type: ClusterIP
+    # Cloud Load balancer: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
     # type: LoadBalancer
     # loadBalancerIP: 1.2.3.4
     # loadBalancerSourceRanges: []

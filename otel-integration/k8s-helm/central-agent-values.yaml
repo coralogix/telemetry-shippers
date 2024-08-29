@@ -3,7 +3,7 @@ global:
   clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
-  logLevel: "debug"
+  logLevel: "warn"
   collectionInterval: "30s"
   version: "0.0.97"
 

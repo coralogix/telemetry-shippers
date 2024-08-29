@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.99 / 2024-08-29
+- [Fix] Change central-agent-values.yaml log level to warn
+- [Fix] Turn off k8sattributes preset for central collector cluster
+
 ### v0.0.98 / 2024-08-29
 - [Feat] Add a way to deploy central collector cluster for tail sampling
 
