@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.100 / 2024-08-30
+- [Feat] Bump collector version to `0.108.0`
+
 ### v0.0.99 / 2024-08-29
 - [Fix] Change central-agent-values.yaml log level to warn
 - [Fix] Turn off k8sattributes preset for central collector cluster
