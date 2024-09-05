@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.100"
+  version: "0.0.101"
 
   extensions:
     kubernetesDashboard:
@@ -767,6 +767,13 @@ opentelemetry-gateway:
           - "service.name"
     processors:
       # needed for self-monitored otel colector metrics
+      transform/k8s_attributes:
+        metric_statements:
+        - context: resource
+          statements:
+          - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+          - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+          - delete_key(attributes, "k8s.replicaset.name")
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -841,6 +848,7 @@ opentelemetry-gateway:
           processors:
             - transform/prometheus
             - k8sattributes
+            - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
             - memory_limiter
@@ -880,10 +888,10 @@ opentelemetry-receiver:
   service:
     enabled: true
   clusterRole:
-    name: "coralogix-opentelemetry-gateway"
+    name: "coralogix-opentelemetry-receiver"
     create: true
     clusterRoleBinding:
-      name: "coralogix-opentelemetry-gateway"
+      name: "coralogix-opentelemetry-receiver"
     rules:
     - apiGroups: [""]
       resources: ["pods", "namespaces"]
@@ -954,6 +962,13 @@ opentelemetry-receiver:
           - "service.name"
     processors:
       # needed for self-monitored otel colector metrics
+      transform/k8s_attributes:
+        metric_statements:
+        - context: resource
+          statements:
+          - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+          - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+          - delete_key(attributes, "k8s.replicaset.name")
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -1028,6 +1043,7 @@ opentelemetry-receiver:
           processors:
             - transform/prometheus
             - k8sattributes
+            - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
             - memory_limiter
