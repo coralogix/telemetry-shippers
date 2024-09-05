@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.101 / 2024-09-05
+- [Fix] Fix Tail sampling gateway / receiver k8s attribute collection
+
 ### v0.0.100 / 2024-08-30
 - [Feat] Bump collector version to `0.108.0`
 
