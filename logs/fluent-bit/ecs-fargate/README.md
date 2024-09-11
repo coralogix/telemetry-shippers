@@ -1,5 +1,7 @@
 # fluentbit ECS Fargate container
 
+# Note: This integration is for logs only. You can now collect logs from ECS fargate tasks through OTEL using our otel-ecs-fargate integration. Only use this integration if you only intend to ingest logs.
+
 fluentbit is a lightweight data shipper that we are using as a logs shipper for AWS ECS Fargate workloads.
 
 Here we explain how to deploy the fluentbit log_router into an existing AWS ECS Fargate task definition. We use an AWS customized fluentbit image called aws-for-fluent-bit, init version, as it has several features that allow for more convenient management of the configuration. We also have an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
@@ -76,7 +78,7 @@ In order to allow container access to the S3 object, you'll need to provide the 
 }
 ```
 
-Note: Don't confuse Task Execution Role for Task Role, this permission needs to be added to the Task Role. (Contrary to the ADOT (OTEL) Metrics and Traces integration)
+Note: Don't confuse Task Execution Role for Task Role, this permission needs to be added to the Task Role.
 
 After you've added the above container to your existing Task Definition, you need to adjust the logConfiguration for the containers you wish to forward to Coralogix.
 
