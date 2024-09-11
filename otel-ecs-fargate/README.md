@@ -89,6 +89,7 @@ In the example above, you'll need to set `<Coralogix PrivateKey>` and `<Coralogi
     }
 },
 ```
+
 If you don't want to have logs submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
 
 ```
