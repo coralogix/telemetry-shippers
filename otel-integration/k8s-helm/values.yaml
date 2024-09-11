@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.101"
+  version: "0.0.102"
 
   extensions:
     kubernetesDashboard:
@@ -137,7 +137,7 @@ opentelemetry-agent:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
-      enabled: false
+      enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
       histogramBuckets:
