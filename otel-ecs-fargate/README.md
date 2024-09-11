@@ -2,15 +2,17 @@
 
 ### Note: Previous versions of this integration used an ADOT (AWS Distribution for OpenTelemetry) collector image. If you are upgrading an existing deployment, make sure you upgrade both the configuration and the task definition.
 
+### Note: Previous versions of this integration required logs to be processed using fluentbit logrouter. This is no longer necessary and logs can be collected by OTEL along with the metrics and traces.
+
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 
 In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions. We use the standard Opentelemetry Collector Contrib distribution but leverage the envprovider to generate the configuration from an AWS SSM Parameter Store. There is an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
 
 The envprovider is used for loading of the OpenTelemetry configuration via Systems Manager Parameter Stores. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
 
-Our config.yaml file includes a standard configuration that'll ensure proper ingestion by our backend. Make sure to create this parameter store in the same region as your ECS cluster. We've included a sample cloudformation template to deploy this parameter store to simplify this process.
+Our config.yaml file includes a standard configuration that'll ensure proper ingestion of logs, metrics and traces by our backend. Make sure to create this parameter store in the same region as your ECS cluster. We've included a sample cloudformation template to deploy this parameter store to simplify this process.
 
-Once the Parameter Store has been created, you'll need to add the container to your existing Task Definition.
+Once the Parameter Store has been created, you'll need to add the OTEL container to your existing Task Definition(s).
 
 Example container declaration within a Task Definition:
 
@@ -62,38 +64,32 @@ Example container declaration within a Task Definition:
                     "valueFrom": "/CX_OTEL/config.yaml"
                 }
             ],
+            "user": "0",
             "logConfiguration": {
                 "logDriver": "awsfirelens",
                 "options": {
-                    "Format": "json_lines",
-                    "Header": "Authorization Bearer <Coralogix PrivateKey>",
-                    "Host": "ingress.<Coralogix Domain>",
-                    "Name": "http",
-                    "Port": "443",
-                    "Retry_Limit": "10",
-                    "TLS": "On",
-                    "URI": "/logs/v1/singles",
-                    "compress": "gzip"
+                    "Name": "OpenTelemetry"
                 }
+            },
+            "systemControls": [],
+            "firelensConfiguration": {
+                "type": "fluentbit"
             }
         }
     ]
 ```
 
-In the example above, you'll need to set two instances each of `<Coralogix PrivateKey>` and `<Coralogix Domain>`. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform, as documented in our fluentbit log processing configuration instructions [here](../logs/fluent-bit/ecs-fargate/README.md).
-
-**NOTE:** If you wish to store your Coralogix Privatekey in Secret Manager, you can remove the `"Header"` from `"options"` and create one under `"secretOptions"` and reference the Secret's ARN. Create the secret as plaintext with the same format as above. You will also need to add the secretsmanager:GetSecretValue permission to your ecs Task Execution Role.
+In the example above, you'll need to set `<Coralogix PrivateKey>` and `<Coralogix Domain>`. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform. Make sure you set all your existing containers' logConfiguration to the same.
 
 ```
-"secretOptions": [
-    {
-        "name": "Header",
-        "valueFrom": "arn:aws:secretsmanager:us-east-1:<redacted>:secret:<redacted>"
+"logConfiguration": {
+    "logDriver": "awsfirelens",
+    "options": {
+        "Name": "OpenTelemetry"
     }
-]
+},
 ```
-
-If you don't want to have them submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
+If you don't want to have logs submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
 
 ```
 "logConfiguration": {
@@ -105,6 +101,17 @@ If you don't want to have them submitted to the Coralogix platform, you can repl
                     "awslogs-stream-prefix": "<Stream Prefix>"
                 }
             }
+```
+
+**NOTE:** If you wish to store your Coralogix Privatekey in Secret Manager, you can remove the `"Header"` from `"options"` and create one under `"secretOptions"` and reference the Secret's ARN. Create the secret as plaintext with the same format as above. You will also need to add the secretsmanager:GetSecretValue permission to your ecs Task Execution Role.
+
+```
+"secretOptions": [
+    {
+        "name": "Header",
+        "valueFrom": "arn:aws:secretsmanager:us-east-1:<redacted>:secret:<redacted>"
+    }
+]
 ```
 
 In order to allow container access to the Systems Manager Parameter Store, you'll need to provide the ssm:GetParameters action permissions to the task execution role:
@@ -126,6 +133,6 @@ In order to allow container access to the Systems Manager Parameter Store, you'l
 }
 ```
 
-Note: Don't confuse Task Role for Task Execution Role, this permission needs to be added to the Task Execution Role. (Contrary to the fluentbit Logs integration)
+Note: This permission needs to be added to the Task Execution Role.
 
 After adding the above container to your existing Task Definition, your applications can submit their traces and metrics exports to http://localhost:4318/v1/traces and /v1/metrics. It will also collect container metrics from all containers in the Task Definition.

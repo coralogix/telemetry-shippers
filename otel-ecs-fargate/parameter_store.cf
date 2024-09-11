@@ -27,11 +27,42 @@ Resources:
             subsystem_name_attributes:
             - service.name
             - aws.ecs.docker.name
+            - container_name
             timeout: 30s
             traces:
               headers:
                 X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
         processors:
+          transform/firelens:
+            log_statements:
+              - context: log
+                statements:
+                  # parse json logs
+                  - merge_maps(cache, ParseJSON(body), "insert") where IsMatch(body, "^\\{")
+                  # set message
+                  - set(body, cache["message"]) where cache["message"] != nil
+
+                  # set trace/span id
+                  - set(trace_id.string, cache["trace_id"]) where cache["trace_id"] != nil
+                  - set(span_id.string, cache["span_id"]) where cache["span_id"] != nil
+
+                  # set severity when available
+                  - set(severity_number, SEVERITY_NUMBER_INFO) where IsMatch(cache["level"], "(?i)info")
+                  - set(severity_number, SEVERITY_NUMBER_WARN) where IsMatch(cache["level"], "(?i)warn")
+                  - set(severity_number, SEVERITY_NUMBER_ERROR) where IsMatch(cache["level"], "(?i)err")
+                  - set(severity_number, SEVERITY_NUMBER_DEBUG) where IsMatch(cache["level"], "(?i)debug")
+                  - set(severity_number, SEVERITY_NUMBER_TRACE) where IsMatch(cache["level"], "(?i)trace")
+                  - set(severity_number, cache["severity_number"])  where cache["severity_number"] != nil
+
+                  # move log_record attributes to resource
+                  - set(resource.attributes["container_name"], attributes["container_name"])
+                  - set(resource.attributes["container_id"], attributes["container_id"])
+                  - delete_key(attributes, "container_id")
+                  - delete_key(attributes, "container_name")
+
+                  - delete_matching_keys(cache, "^(message|trace_id|span_id|severity_number)$")
+
+                  - merge_maps(attributes,cache, "insert")
           batch:
             send_batch_max_size: 2048
             send_batch_size: 1024
@@ -49,6 +80,9 @@ Resources:
             override: true
             timeout: 2s
         receivers:
+          fluentforward/socket:
+            # ECS will send logs to this socket
+            endpoint: unix:///var/run/fluent.sock
           awsecscontainermetrics:
             collection_interval: 10s
           otlp:
@@ -67,6 +101,16 @@ Resources:
                   - 127.0.0.1:8888
         service:
           pipelines:
+            logs:
+              exporters:
+              - coralogix
+              processors:
+              - transform/firelens
+              - resource/metadata
+              - resourcedetection
+              - batch
+              receivers:
+              - fluentforward/socket
             metrics:
               exporters:
               - coralogix
