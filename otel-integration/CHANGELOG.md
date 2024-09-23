@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.103 / 2024-09-23
+- [Fix] agent_description.non_identifying_attributes expected a map, got 'slice'
+- [Fix] Change opamp poll interval to 2 minutes
+
 ### v0.0.102 / 2024-09-10
 - [Feat] Bump collector version to `0.109.0`
 - [Feat] Allow TA to pass static config
