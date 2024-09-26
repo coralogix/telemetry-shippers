@@ -5,7 +5,7 @@ var expectedSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
-const expectedScopeVersion = "0.109.0"
+const expectedScopeVersion = "0.110.0"
 
 var expectedScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper":    false,
@@ -87,6 +87,7 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"k8s_node_name":            "",
 }
 
 var expectedMetrics map[string]bool = map[string]bool{
@@ -151,7 +152,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_process_memory_rss":                     false,
 	"otelcol_processor_refused_metric_points":        false,
 	"otelcol_receiver_accepted_metric_points":        false,
-	"otelcol_processor_inserted_metric_points":       false,
 	"scrape_duration_seconds":                        false,
 	"otelcol_exporter_queue_capacity":                false,
 	"otelcol_otelsvc_k8s_ip_lookup_miss":             false,
@@ -184,8 +184,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_batch_batch_send_size":        false,
 	"otelcol_fileconsumer_open_files":                false,
 	"otelcol_fileconsumer_reading_files":             false,
-	"otelcol_processor_incoming_log_records":         false,
-	"otelcol_processor_outgoing_log_records":         false,
-	"otelcol_processor_incoming_metric_points":       false,
-	"otelcol_processor_outgoing_metric_points":       false,
+	"otelcol_processor_outgoing_items":               false,
+	"otelcol_processor_incoming_items":               false,
 }
