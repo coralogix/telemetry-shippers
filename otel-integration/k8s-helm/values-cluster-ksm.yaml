@@ -1,0 +1,40 @@
+global:
+  domain: ""
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+  collectionInterval: "30s"
+
+opentelemetry-cluster-collector:
+  config:
+    receivers:
+      prometheus/ksm:
+        config:
+          scrape_configs:
+            - job_name: kube-state-metrics
+              scrape_interval: 30s
+              static_configs:
+                - targets:
+                    # Change to your kube-state-metrics endpoint
+                    - kube-state-metrics.default.svc.cluster.local:8080
+
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - transform/prometheus
+            - k8sattributes
+            - metricstransform/k8s-dashboard
+            - transform/k8s-dashboard
+            - resourcedetection/env
+            - resourcedetection/region
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - prometheus
+            - k8s_cluster
+            - prometheus/ksm
