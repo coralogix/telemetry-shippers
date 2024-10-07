@@ -540,6 +540,43 @@ Alternatively, you can add a recombine filter at the end of log collection opera
           is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
 ```
 
+### Integrating Kube State Metrics
+
+You can configure otel-integration to collect Kube State Metrics metrics. Using Kube State Metrics is useful when missing metrics or labels in the Kubernetes Cluster Receiver. Kube State Metrics collects Kubernetes cluster-level metrics that are crucial for monitoring resource states, like pods, deployments, and HorizontalPodAutoscalers (HPAs). To integrate with Kube State Metrics, create a file called `values-ksm.yaml`, and there configure the metrics and labels that you wish to collect:
+
+```yaml
+metricAllowlist:
+  - kube_horizontalpodautoscaler_labels
+  - kube_horizontalpodautoscaler_spec_max_replicas
+  - kube_horizontalpodautoscaler_status_current_replicas
+  - kube_pod_info
+  - kube_pod_labels
+  - kube_pod_container_status_waiting
+  - kube_pod_container_status_waiting_reason
+metricLabelsAllowlist:
+  - pods=[app,environment]
+  - horizontalpodautoscalers=[app,environment]
+```
+
+Then install Kube State Metrics:
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm install kube-state-metrics prometheus-community/kube-state-metrics --values values-ksm.yaml
+```
+
+This command adds the Prometheus community's Helm repository and installs Kube State Metrics using the values you've configured.
+
+Next, configure opentelemetry-cluster-collector to scrape Kube State Metrics via Prometheus receiver.
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration . --values values-cluster-ksm.yaml
+```
+
+Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
+
 # Troubleshooting
 
 ## Metrics
