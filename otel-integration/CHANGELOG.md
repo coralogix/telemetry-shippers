@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.106 / 2024-10-08
+- [Feat] Bump collector version to `0.111.0`
+
 ### v0.0.105 / 2024-09-30
 - [Breaking] Change spanmetrics to disabled by default, which was enabled by mistake in v0.0.102
 
