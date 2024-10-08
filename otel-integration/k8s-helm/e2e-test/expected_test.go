@@ -5,7 +5,7 @@ var expectedSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
-const expectedScopeVersion = "0.110.0"
+const expectedScopeVersion = "0.111.0"
 
 var expectedScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper":    false,
@@ -150,7 +150,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"container.memory.usage":                         false,
 	"container.memory.working_set":                   false,
 	"otelcol_process_memory_rss":                     false,
-	"otelcol_processor_refused_metric_points":        false,
 	"otelcol_receiver_accepted_metric_points":        false,
 	"scrape_duration_seconds":                        false,
 	"otelcol_exporter_queue_capacity":                false,
@@ -163,7 +162,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_batch_metadata_cardinality":   false,
 	"otelcol_receiver_refused_log_records":           false,
 	"otelcol_receiver_refused_metric_points":         false,
-	"otelcol_processor_dropped_metric_points":        false,
 	"scrape_samples_post_metric_relabeling":          false,
 	"otelcol_exporter_queue_size":                    false,
 	"otelcol_exporter_send_failed_metric_points":     false,
