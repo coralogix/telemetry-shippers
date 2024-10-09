@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.107 / 2024-10-08
+- [Feat] Upgrading base otel chart to 0.95.1
+
 ### v0.0.106 / 2024-10-08
 - [Feat] Bump collector version to `0.111.0`
 
