@@ -114,6 +114,7 @@ In order to allow container access to the Systems Manager Parameter Store, you'l
 ```
 
 ## Alternative log drivers (CloudWatch)
+
 If you don't want all containers to submit their logs to Coralogix, you can set their logConfiguration with whichever logDriver configuration you would prefer. To submit them to Cloudwatch, you can configure as so:
 
 ```
