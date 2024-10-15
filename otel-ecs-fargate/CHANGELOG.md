@@ -7,6 +7,9 @@
 <!-- ### version / full date -->
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
+### 0.0.1 / 2024-10-15
+
+* [DOCS] Update Documentation with optional Secrets Manager for Private Key
 
 ### 0.0.1 / 2024-09-11
 

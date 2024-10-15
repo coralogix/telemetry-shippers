@@ -90,30 +90,9 @@ In the example above, you'll need to set `<Coralogix PrivateKey>` and `<Coralogi
 },
 ```
 
-If you don't want to have logs submitted to the Coralogix platform, you can replace the logConfiguration with whichever logDriver configuration you would prefer. To submit to Cloudwatch, you can configure as so:
+After adding the above container to your existing Task Definition, your applications can submit their traces and metrics exports to http://localhost:4318/v1/traces and /v1/metrics. It will also collect container metrics from all containers in the Task Definition.
 
-```
-"logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-create-group": "true",
-                    "awslogs-group": "<Log Group Name>",
-                    "awslogs-region": "<Your Region>",
-                    "awslogs-stream-prefix": "<Stream Prefix>"
-                }
-            }
-```
-
-**NOTE:** If you wish to store your Coralogix Privatekey in Secret Manager, you can remove the `"Header"` from `"options"` and create one under `"secretOptions"` and reference the Secret's ARN. Create the secret as plaintext with the same format as above. You will also need to add the secretsmanager:GetSecretValue permission to your ecs Task Execution Role.
-
-```
-"secretOptions": [
-    {
-        "name": "Header",
-        "valueFrom": "arn:aws:secretsmanager:us-east-1:<redacted>:secret:<redacted>"
-    }
-]
-```
+## Granting permissions for parameter store access
 
 In order to allow container access to the Systems Manager Parameter Store, you'll need to provide the ssm:GetParameters action permissions to the task execution role:
 
@@ -134,6 +113,59 @@ In order to allow container access to the Systems Manager Parameter Store, you'l
 }
 ```
 
-Note: This permission needs to be added to the Task Execution Role.
+## Alternative log drivers (CloudWatch)
+If you don't want all containers to submit their logs to Coralogix, you can set their logConfiguration with whichever logDriver configuration you would prefer. To submit them to Cloudwatch, you can configure as so:
 
-After adding the above container to your existing Task Definition, your applications can submit their traces and metrics exports to http://localhost:4318/v1/traces and /v1/metrics. It will also collect container metrics from all containers in the Task Definition.
+```
+"logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-create-group": "true",
+                    "awslogs-group": "<Log Group Name>",
+                    "awslogs-region": "<Your Region>",
+                    "awslogs-stream-prefix": "<Stream Prefix>"
+                }
+            }
+```
+
+## Using Secrets Manager for your private key
+
+If you prefer to store your Coralogix private key in AWS Secrets Manager, remove the `"PRIVATE_KEY"` config from the `"environment"` section and instead add it to `"secrets"`, referencing the Secret's ARN.
+
+```json
+"secrets": [
+    {
+        "name": "SSM_CONFIG",
+        "valueFrom": "/CX_OTEL/config.yaml"
+    },
+    {
+        "name": "PRIVATE_KEY",
+        "valueFrom": "arn:aws:secretsmanager:region:aws_account_id:secret:secret_name-AbCdEf"
+    }
+],
+
+```
+
+You will also need to add the `secretsmanager:GetSecretValue` permission to your ECS Task Execution Role.
+
+## Granting permissions for Secrets Manager Secret access
+
+To allow your container to access the Secrets Manager Secret, you need to provide `secretsmanager:GetSecretValue` action permission to the ECS Task Execution Role. Here’s an example of the required permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+  	  "Effect": "Allow",
+	  "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+	  "Resource": [
+        "arn:aws:secretsmanager:region:aws_account_id:secret:secret_name-AbCdEf"
+      ]
+    }
+  ]
+}
+
+```
