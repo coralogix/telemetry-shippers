@@ -147,7 +147,7 @@ If you prefer to store your Coralogix private key in AWS Secrets Manager, remove
 
 ```
 
-You will also need to add the `secretsmanager:GetSecretValue` permission to your ECS Task Execution Role.
+Create the Secret as "Plaintext" with only the API key with no quotation marks. You will also need to add the `secretsmanager:GetSecretValue` permission to your ECS Task Execution Role.
 
 ## Granting permissions for Secrets Manager Secret access
 
