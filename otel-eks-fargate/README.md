@@ -62,9 +62,13 @@ Once you’ve adjusted the manifests appropriately, deploy using the kubectl app
 
 `kubectl apply -f cx-eks-fargate-otel.yaml`
 
-This manifest is all that is required to collect metrics from your EKS Fargate Cluster and process application metrics and traces from gRPC sources. The OTLP gRPC endpoint is:
+This manifest is all that is required to collect metrics from your EKS Fargate Cluster and process application metrics and traces from gRPC sources.
 
+The OTLP gRPC endpoint is:
 `http://cx-otel-collector-service.cx-eks-fargate-otel.svc.cluster.local:4317`
+
+The OTLP HTTP endpoint is:
+`http://cx-otel-collector-service.cx-eks-fargate-otel.svc.cluster.local:4318`
 
 ## Configure and Deploy Self Monitoring Pod:
 
