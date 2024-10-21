@@ -1,11 +1,29 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Deploy a Systems Manager Parameter Store parameter
 
+Parameters:
+  StorageType:
+    Type: String
+    Default: ParameterStore
+    Description: 'The storage used for the OTEL config.yaml. Can be one of: ParameterStore, ParameterStoreAdvanced'
+    AllowedValues:
+      - ParameterStore
+      - ParameterStoreAdvanced
+  ParameterName:
+    Type: String
+    Default: '/CX_OTEL/config.yaml'
+    Description: 'The name of the Parameter Store you intend to create and use.'
+    AllowedPattern: '^([\/]?[a-zA-Z0-9_.-]+)?(\/[a-zA-Z0-9_.-]+){0,14}$'
+    MaxLength: 300
+
+Conditions:
+  UseParameterStoreAdvanced: !Equals [!Ref StorageType, "ParameterStoreAdvanced"]
+
 Resources:
   OTELConfigParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /CX_OTEL/config.yaml
+      Name: !Ref ParameterName
       Description: Configuration parameter for Coralogix OTEL Collector
       Type: String
       Value: |
@@ -137,4 +155,7 @@ Resources:
             metrics:
               address: 0.0.0.0:8888
         
-      Tier: Standard
+      Tier: !If
+        - UseParameterStoreAdvanced   # If it's "ParameterStoreAdvanced", set Tier to Advanced
+        - Advanced
+        - Standard                    # Else, set Tier to Standard
