@@ -69,7 +69,7 @@ data:
         application_name: "${CX_APPLICATION}"
         subsystem_name: "${CX_SUBSYSTEM}"
 
-      logging:
+      debug:
         verbosity: detailed
 
     service:

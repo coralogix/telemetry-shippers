@@ -116,6 +116,8 @@ data:
         protocols:
           grpc:
             endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
     
     processors:
       # add cluster name from env variable and EKS metadata
