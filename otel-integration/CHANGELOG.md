@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.108 / 2024-10-22
+- [Feat] add dbMetrics option to spanMetrics preset, which is enabled when spanMetrics enabled. You can disable it using spanMetrics.dbMetrics.enabled=false.
+
 ### v0.0.107 / 2024-10-08
 - [Feat] Upgrading base otel chart to 0.95.1
 
