@@ -1,5 +1,13 @@
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
 opentelemetry-agent:
+  presets:
+    hostMetrics:
+      enabled: true
+      # Enables process metrics scraping.
+      # Disabled by default, requires privilleged mode
+      process:
+        enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
   config:
     exporters:
       otlp:
