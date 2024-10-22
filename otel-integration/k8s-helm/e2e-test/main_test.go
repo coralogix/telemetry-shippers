@@ -142,6 +142,9 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
+		if scopeName == "hostmetricsreceiver" && k == "host.name" {
+			t.Log("hostmetricsreceiver attribute ", k)
+		}
 		require.True(t, ok, "unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
 			require.Equal(t, val, v.AsString(), "unexpected value for attribute %v", k)
