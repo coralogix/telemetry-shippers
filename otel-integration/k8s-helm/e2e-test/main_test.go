@@ -114,6 +114,8 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 		for j := 0; j < metrics.Len(); j++ {
 			metric := metrics.At(j)
 
+			t.Logf("metrics %s", metric.Name)
+
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
 				expectedMetrics[metric.Name()] = true
@@ -143,7 +145,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
 		if scopeName == "hostmetricsreceiver" {
-			t.Log("hostmetricsreceiver attribute ", k)
+			t.Logf("hostmetricsreceiver attribute %s %s", k, v.AsString())
 		}
 		require.True(t, ok, "unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
