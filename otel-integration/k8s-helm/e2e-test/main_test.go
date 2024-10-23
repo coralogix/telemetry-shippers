@@ -114,7 +114,7 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 		for j := 0; j < metrics.Len(); j++ {
 			metric := metrics.At(j)
 
-			t.Logf("metrics %s", metric.Name())
+			t.Logf("metrics %s %t", metric.Name(), expectedMetrics[metric.Name()])
 
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
