@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.108 / 2024-10-23
+- [Feat] E2E Testing: Populated hostmetrics maps and enable process metrics
+
 ### v0.0.107 / 2024-10-08
 - [Feat] Upgrading base otel chart to 0.95.1
 
