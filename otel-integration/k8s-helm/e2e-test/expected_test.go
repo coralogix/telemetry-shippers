@@ -198,4 +198,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"process.disk.io_time":                           false,
 	"process.memory.usage":                           false,
 	"process.memory.virtual":                         false,
+	"process.memory.utilization":                     false,
+	"process.threads":                                false,
 }
