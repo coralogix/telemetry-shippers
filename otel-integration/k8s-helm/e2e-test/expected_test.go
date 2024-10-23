@@ -58,6 +58,7 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
 	"process.pid":              "",
+	"process.parent_pid":       "",
 }
 
 var expectedResourceAttributesPrometheusreceiver = map[string]string{
