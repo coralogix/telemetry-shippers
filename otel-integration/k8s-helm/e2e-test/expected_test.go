@@ -59,6 +59,11 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"azure.resourcegroup.name": "",
 	"process.pid":              "",
 	"process.parent_pid":       "",
+	"process.executable.name":  "",
+	"process.executable.path":  "",
+	"process.command":          "",
+	"process.command_line":     "",
+	"process.owner":            "",
 }
 
 var expectedResourceAttributesPrometheusreceiver = map[string]string{
