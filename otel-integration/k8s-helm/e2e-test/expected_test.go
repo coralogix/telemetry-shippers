@@ -14,6 +14,7 @@ var expectedScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper":     false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper":       false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper":       false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper":    false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver":                                   false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                     false,
 }
@@ -49,8 +50,8 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"host.id":                  "",
 	"os.type":                  "linux",
 	"cloud.provider":           "azure",
-	"cloud.platform":           "",
-	"cloud.region":             "",
+	"cloud.platform":           "azure_vm",
+	"cloud.region":             "northcentralus",
 	"cloud.account.id":         "",
 	"azure.vm.name":            "",
 	"azure.vm.size":            "",
