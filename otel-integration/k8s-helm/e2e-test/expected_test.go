@@ -193,4 +193,5 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"scrape_duration_seconds":                        false,
 	"up":                                             false,
 	"process.cpu.time":                               false,
+	"process.cpu.utilization":                        false,
 }
