@@ -51,12 +51,13 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"os.type":                  "linux",
 	"cloud.provider":           "azure",
 	"cloud.platform":           "azure_vm",
-	"cloud.region":             "northcentralus",
+	"cloud.region":             "",
 	"cloud.account.id":         "",
 	"azure.vm.name":            "",
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"process.pid":              "",
 }
 
 var expectedResourceAttributesPrometheusreceiver = map[string]string{
