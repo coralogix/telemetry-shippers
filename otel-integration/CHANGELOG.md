@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.110 / 2024-10-24
+- [Feat] Bump collector version to `0.112.0`
+
 ### v0.0.109 / 2024-10-23
 - [Feat] E2E Testing: Populated hostmetrics maps and enable process metrics
 
