@@ -332,6 +332,8 @@ You can specify the preferred scrape interval for the Prometheus Custom Resource
 
 For more details on Prometheus custom resources and target allocator see the documentation [here](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#discovery-of-prometheus-custom-resources).
 
+Note: OpenTelemetry Collector self-monitoring is currently not working due to Prometheus Receiver bug (https://github.com/open-telemetry/opentelemetry-operator/issues/3034), for now make sure to enable PodMonitor and metrics port to collect Collector metrics.
+
 ### Installing the chart on clusters with mixed operating systems (Linux and Windows)
 
 Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
@@ -472,6 +474,54 @@ spanNameReplacePattern:
 ```
 
 This will result in your spans having generalized name `user-{id}`.
+
+#### SpanMetrics Database Monitoring
+
+Once you enable the Span Metrics preset, the dbMetrics configuration will automatically be enabled. The DbMetrics option generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
+
+This is needed to enable the [Database Monitoring](https://coralogix.com/docs/user-guides/apm/features/database-monitoring/) feature inside Coralogix APM.
+
+This is how you can disable the dbMetrics option:
+
+```
+presets:
+    spanMetrics:
+      enabled: true
+      dbMetrics:
+        enabled: false
+```
+
+Note: DbMetrics only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.25.0. If you are using older versions, you might need to transform some attributes, such as:
+
+```
+db.sql.table => db.collection.name
+db.mongodb.collection => db.collection.name
+db.cosmosdb.container => db.collection.name
+db.cassandra.table => db.collection.name
+```
+
+To do that, you can add the following configuration:
+
+```
+    spanMetrics:
+      enabled: false
+      dbMetrics:
+        enabled: true
+        transformStatements:
+        - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+        - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
+        - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
+        - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+        - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+        - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+        - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+        - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+        - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+        - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+        - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+        - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+        - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
+```
 
 #### Span metrics with different buckets per application
 
