@@ -34,7 +34,7 @@ jobs:
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
-          kubectl apply -f ./e2e-test/testdata/values-e2e-test.yaml
+          kubectl apply -f ./e2e-test/testdata/telemetrygen-deployment.yaml
           kubectl wait --all --for=condition=ready --timeout=300s pod -l app=telemetrygen
           kubectl get pods
       - name: Run E2E test
