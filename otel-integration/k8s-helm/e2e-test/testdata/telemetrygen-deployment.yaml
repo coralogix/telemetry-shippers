@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetrygen-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetrygen
+  template:
+    metadata:
+      labels:
+        app: telemetrygen
+    spec:
+      containers:
+      - name: telemetrygen
+        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+        env:
+          - name: NODE
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "$(NODE):4317"
+        args:
+          - "traces"
+          - "--otlp-endpoint=172.18.0.2:4317"  # Use environment variable to dynamically set endpoint
+          - "--otlp-insecure"
+          - "--rate=100"  # Set the desired RPS
+          - "--duration=300s"

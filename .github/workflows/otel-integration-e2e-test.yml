@@ -33,6 +33,10 @@ jobs:
           --set global.domain="coralogix.com"  \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
+      - name: Setup Telemetrygen
+        run: |
+          kubectl apply -f ./otel-integration/k8s-helm/e2e-test/testdata/telemetrygen.yaml
+          kubectl wait --for=condition=ready --timeout=300s pod -l component=telemetrygen
       - name: Run E2E test
         run: |
           kubectl wait --for=condition=ready --timeout=300s pod -l component=agent-collector
