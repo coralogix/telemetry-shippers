@@ -166,6 +166,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_process_runtime_total_sys_memory_bytes": false,
 	"otelcol_process_uptime":                         false,
 	"otelcol_processor_accepted_metric_points":       false,
+	"otelcol_processor_accepted_spans":               false,
 	"otelcol_processor_batch_metadata_cardinality":   false,
 	"otelcol_receiver_refused_log_records":           false,
 	"otelcol_receiver_refused_metric_points":         false,
