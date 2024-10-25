@@ -1,6 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    component: telemetrygen
   name: telemetrygen-deployment
 spec:
   replicas: 1
