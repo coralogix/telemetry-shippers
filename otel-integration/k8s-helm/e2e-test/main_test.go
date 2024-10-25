@@ -23,7 +23,8 @@ import (
 
 func TestE2E_Agent(t *testing.T) {
 	metricsConsumer := new(consumertest.MetricsSink)
-	shutdownSink := startUpSink(t, metricsConsumer)
+	tracesConsumer := new(consumertest.TracesSink)
+	shutdownSink := startUpSink(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
 	waitTime := 2 * time.Minute
@@ -32,15 +33,19 @@ func TestE2E_Agent(t *testing.T) {
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 }
 
-func startUpSink(t *testing.T, mc *consumertest.MetricsSink) func() {
+func startUpSink(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
 
-	rcvr, err := f.CreateMetricsReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, mc)
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	metricsRcvr, err := f.CreateMetricsReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, mc)
+	require.NoError(t, metricsRcvr.Start(context.Background(), componenttest.NewNopHost()))
 	require.NoError(t, err, "failed creating metrics receiver")
+
+	spansRcvr, err := f.CreateTracesReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, tc)
+	require.NoError(t, spansRcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.NoError(t, err, "failed creating traces receiver")
 	return func() {
-		assert.NoError(t, rcvr.Shutdown(context.Background()))
+		assert.NoError(t, metricsRcvr.Shutdown(context.Background()))
 	}
 }
 
