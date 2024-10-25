@@ -188,6 +188,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_outgoing_items":               false,
 	"otelcol_processor_incoming_items":               false,
 	"otelcol_processor_accepted_spans":               false,
+	"otelcol_receiver_accepted_spans":                false,
 	"otelcol_receiver_refused_spans":                 false,
 	"scrape_samples_scraped":                         false,
 	"scrape_samples_post_metric_relabeling":          false,
