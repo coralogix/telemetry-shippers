@@ -24,7 +24,7 @@ jobs:
           cluster-name: "otel-integration-agent-e2e"
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
-      - name: Install chart for testing
+      - name: Install chart & telemetrygen for testing
         run: |
           cd ./otel-integration/k8s-helm
           helm dependency build
@@ -33,14 +33,12 @@ jobs:
           --set global.domain="coralogix.com"  \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
-      - name: Setup Telemetrygen
-        run: |
+          kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
           kubectl apply -f ./otel-integration/k8s-helm/e2e-test/testdata/telemetrygen-deployment.yaml
-          kubectl wait --for=condition=ready --timeout=300s pod -l app=telemetrygen
+          kubectl wait --all --for=condition=ready --timeout=300s pod -l app=telemetrygen
           kubectl get pods
       - name: Run E2E test
         run: |
-          kubectl wait --for=condition=ready --timeout=300s pod -l component=agent-collector
           cd ./otel-integration/k8s-helm/e2e-test/
           go test -v -run=TestE2E_Agent ./...
 
