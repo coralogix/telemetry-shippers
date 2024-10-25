@@ -5,6 +5,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -111,6 +112,11 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
 
 		metrics := scope.Metrics()
+
+		for j := 0; j < metrics.Len(); j++ {
+			metric := metrics.At(j)
+			fmt.Printf("full current metrics: %v\n", metric.Name())
+		}
 		for j := 0; j < metrics.Len(); j++ {
 			metric := metrics.At(j)
 
