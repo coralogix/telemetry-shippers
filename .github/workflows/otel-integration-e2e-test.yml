@@ -36,7 +36,7 @@ jobs:
       - name: Setup Telemetrygen
         run: |
           kubectl apply -f ./otel-integration/k8s-helm/e2e-test/testdata/telemetrygen-deployment.yaml
-          kubectl wait --for=condition=ready --timeout=300s pod -l component=telemetrygen
+          kubectl wait --for=condition=ready --timeout=300s pod -l app=telemetrygen
           kubectl get pods
       - name: Run E2E test
         run: |
