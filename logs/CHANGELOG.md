@@ -1,6 +1,7 @@
 # Changelog
 
 ## Fluentd
+
 ### v1.17.1 / 2024-11-1
 * [UPGRADE] Upgrade Fluentd version to v1.17.1
 
