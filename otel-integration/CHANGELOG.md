@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.110 / 2024-11-04
+- [Feat] logsCollection preset allow changing max_batch_size
+
 ### v0.0.109 / 2024-10-23
 - [Feat] E2E Testing: Populated hostmetrics maps and enable process metrics
 
