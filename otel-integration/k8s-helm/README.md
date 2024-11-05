@@ -491,7 +491,7 @@ presets:
         enabled: false
 ```
 
-Note: DbMetrics only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.25.0. If you are using older versions, you might need to transform some attributes, such as:
+Note: DbMetrics only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
 
 ```
 db.sql.table => db.collection.name
