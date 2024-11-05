@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.111 / 2024-11-05
+- [Feat] add aks/eks/gcp resource detecion for kubernetes resource collection.
+
 ### v0.0.110 / 2024-11-04
 - [Feat] logsCollection preset allow changing max_batch_size
 
