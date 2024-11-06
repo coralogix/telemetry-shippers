@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.112 / 2024-11-06
+- [Feat] add ec2/azure resource detecion for kubernetes resource collection.
+- [Feat] Add support for scraping cadvisor metrics per node on daemonset
+
 ### v0.0.111 / 2024-11-05
 - [Feat] add aks/eks/gcp resource detecion for kubernetes resource collection.
 
