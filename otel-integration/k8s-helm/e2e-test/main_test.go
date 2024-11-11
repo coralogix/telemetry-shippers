@@ -5,7 +5,6 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
@@ -31,6 +31,8 @@ func TestE2E_Agent(t *testing.T) {
 	waitForData(waitTime)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
+	checkGeneratedTraces(t, tracesConsumer.AllTraces())
+
 }
 
 func startUpSink(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
@@ -120,10 +122,6 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 
 		for j := 0; j < metrics.Len(); j++ {
 			metric := metrics.At(j)
-			fmt.Printf("full current metrics: %v\n", metric.Name())
-		}
-		for j := 0; j < metrics.Len(); j++ {
-			metric := metrics.At(j)
 
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
@@ -159,6 +157,31 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		}
 		return true
 	})
+
+	return nil
+}
+
+func checkGeneratedTraces(t *testing.T, actual []ptrace.Traces) error {
+	if len(actual) == 0 {
+		t.Fatal("No traces received")
+	}
+
+	for _, current := range actual {
+		actualTraces := ptrace.NewTraces()
+		current.CopyTo(actualTraces)
+
+		for i := 0; i < actualTraces.ResourceSpans().Len(); i++ {
+			rspans := actualTraces.ResourceSpans().At(i)
+
+			_, ok := expectedSchemaURL[rspans.SchemaUrl()]
+			require.True(t, ok, "resource %v does not match one of the expected values", rspans.SchemaUrl())
+			if ok {
+				expectedSchemaURL[rspans.SchemaUrl()] = true
+			}
+
+			// checkResourceSpans(t, rspans)
+		}
+	}
 
 	return nil
 }
