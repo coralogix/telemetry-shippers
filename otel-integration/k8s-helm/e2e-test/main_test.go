@@ -27,7 +27,7 @@ func TestE2E_Agent(t *testing.T) {
 	shutdownSink := startUpSink(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
-	waitTime := 4 * time.Minute
+	waitTime := 3 * time.Minute
 	waitForData(waitTime)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())

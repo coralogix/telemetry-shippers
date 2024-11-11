@@ -14,9 +14,11 @@ spec:
       labels:
         app: telemetrygen
     spec:
+      restartPolicy: Always
       containers:
       - name: telemetrygen
         image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+        imagePullPolicy: IfNotPresent
         env:
           - name: NODE
             valueFrom:
@@ -28,5 +30,5 @@ spec:
           - "traces"
           - "--otlp-endpoint=172.18.0.2:4317"  # Use environment variable to dynamically set endpoint
           - "--otlp-insecure"
-          - "--rate=100"  # Set the desired RPS
-          - "--duration=300s"
+          - "--rate=1000"  # Set the desired RPS
+          - "--duration=900s"
