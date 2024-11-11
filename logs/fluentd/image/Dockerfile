@@ -1,10 +1,10 @@
-ARG IMAGE_VERSION=v1.16.5-debian-forward-1.0
-FROM fluent/fluentd-kubernetes-daemonset:${IMAGE_VERSION}
+            ARG IMAGE_VERSION=v1.17.1-debian-forward-1.2
+            FROM fluent/fluentd-kubernetes-daemonset:${IMAGE_VERSION}
 
 # Image description labels
 LABEL Description="Multi-Arch FluentD image for Coralogix integration" \
       Vendor="Coralogix Inc." \
-      Version="1.16.5" \
+      Version="1.17.1" \
       Maintainer="Coralogix Inc. <info@coralogix.com>"
 
 # Change user

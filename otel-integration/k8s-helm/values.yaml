@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.109"
+  version: "0.0.112"
 
   extensions:
     kubernetesDashboard:
@@ -105,6 +105,8 @@ opentelemetry-agent:
       maxRecombineLogSize: 1048576
       # The maximum number of consecutive entries that will be combined into a single entry before the match occurs
       maxUnmatchedBatchSize: 1
+      # The maximum number of consecutive entries that will be combined into a single entry.
+      maxBatchSize: 1000
       extraFilelogOperators: []
       # - type: recombine
       #   combine_field: body
