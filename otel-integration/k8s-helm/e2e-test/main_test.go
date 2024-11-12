@@ -4,60 +4,35 @@
 package e2e
 
 import (
-	"context"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
 func TestE2E_Agent(t *testing.T) {
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
-	shutdownSink := startUpSink(t, metricsConsumer, tracesConsumer)
+	// shutdownSink := startUpSink(t, metricsConsumer, tracesConsumer)
+
+	shutdownSink := StartUpSinks(t, ReceiverSinks{
+		MetricsConsumer: metricsConsumer,
+		TracesConsumer:  tracesConsumer,
+	})
+
 	defer shutdownSink()
 
-	waitTime := 3 * time.Minute
-	waitForData(waitTime)
+	WaitForMetrics(t, 10, metricsConsumer)
+	WaitForTraces(t, 10, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkGeneratedTraces(t, tracesConsumer.AllTraces())
 
-}
-
-func startUpSink(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
-	f := otlpreceiver.NewFactory()
-	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
-
-	metricsRcvr, err := f.CreateMetricsReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, mc)
-	require.NoError(t, metricsRcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.NoError(t, err, "failed creating metrics receiver")
-
-	spansRcvr, err := f.CreateTracesReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, tc)
-	require.NoError(t, spansRcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.NoError(t, err, "failed creating traces receiver")
-	return func() {
-		assert.NoError(t, metricsRcvr.Shutdown(context.Background()))
-	}
-}
-
-func waitForData(wait time.Duration) {
-	deadline := time.Now().Add(wait)
-	for {
-		if time.Now().After(deadline) {
-			break
-		}
-	}
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
