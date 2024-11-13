@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,6 +25,7 @@ func TestE2E_Agent(t *testing.T) {
 	k8sDir := filepath.Join("k8s")
 
 	kubeconfig := os.Getenv("KUBECONFIG")
+	fmt.Println("kubeconfig: ", kubeconfig)
 	k8sClient, err := k8stest.NewK8sClient(kubeconfig)
 	require.NoError(t, err)
 
