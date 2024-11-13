@@ -4,6 +4,8 @@
 package e2e
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,16 +15,36 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8stest"
 )
 
 func TestE2E_Agent(t *testing.T) {
+
+	k8sDir := filepath.Join("k8s")
+
+	k8sClient, err := k8stest.NewK8sClient()
+	require.NoError(t, err)
+
+	// Create the namespace specific for the test
+	nsFile := filepath.Join(k8sDir, "namespace.yaml")
+	buf, err := os.ReadFile(nsFile)
+	require.NoErrorf(t, err, "failed to read namespace object file %s", nsFile)
+	nsObj, err := k8stest.CreateObject(k8sClient, buf)
+	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
+
+	testNs := nsObj.GetName()
+	defer func() {
+		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
+	}()
+
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
 
 	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
-	WaitForData(t, 1, metricsConsumer, tracesConsumer)
+	WaitForData(t, 30, metricsConsumer, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	// checkGeneratedTraces(t, tracesConsumer.AllTraces())

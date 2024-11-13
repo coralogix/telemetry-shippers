@@ -4,6 +4,7 @@ metadata:
   labels:
     app: telemetrygen
   name: telemetrygen-deployment
+  namespace: e2e-test
 spec:
   replicas: 1
   selector:
