@@ -26,6 +26,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	kubeconfig := os.Getenv("KUBECONFIG")
 	fmt.Println("kubeconfig: ", kubeconfig)
+
 	k8sClient, err := k8stest.NewK8sClient(kubeconfig)
 	require.NoError(t, err)
 
