@@ -33,7 +33,6 @@ jobs:
           --set global.domain="coralogix.com"  \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
-          kubectl apply -f ./e2e-test/k8s/telemetrygen-deployment.yaml
       - name: Run E2E test
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
