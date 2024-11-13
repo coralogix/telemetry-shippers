@@ -24,10 +24,10 @@ func TestE2E_Agent(t *testing.T) {
 
 	k8sDir := filepath.Join("k8s")
 
-	kubeconfig := os.Getenv("KUBECONFIG")
-	fmt.Println("kubeconfig: ", kubeconfig)
+	kubeconfigpath := os.Getenv("KUBECONFIG_PATH")
+	fmt.Println("kubeconfigpath: ", kubeconfigpath)
 
-	k8sClient, err := k8stest.NewK8sClient(kubeconfig)
+	k8sClient, err := k8stest.NewK8sClient(kubeconfigpath)
 	require.NoError(t, err)
 
 	// Create the namespace specific for the test

@@ -23,7 +23,7 @@ jobs:
           create-kind-cluster: "true"
           cluster-name: "otel-integration-agent-e2e"
       - name: Display KUBECONFIG path
-        run: echo "KUBECONFIG is set to $KUBECONFIG"
+        run: cat /tmp/kind-config-otel-integration-agent-e2e
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Install chart & telemetrygen for testing
@@ -38,7 +38,7 @@ jobs:
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
       - name: Run E2E test
         env:
-          KUBECONFIG: ${{ env.KUBECONFIG }}
+          KUBECONFIG_PATH: /tmp/kind-config-otel-integration-agent-e2e
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go test -v -run=TestE2E_Agent ./...
