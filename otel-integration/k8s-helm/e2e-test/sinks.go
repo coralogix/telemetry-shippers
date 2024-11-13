@@ -13,57 +13,27 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
-type ReceiverSinks struct {
-	MetricsConsumer *consumertest.MetricsSink
-	TracesConsumer  *consumertest.TracesSink
-}
+func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
+	f := otlpreceiver.NewFactory()
+	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
+	// cfg.HTTP = nil
+	// cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
 
-func StartUpSinks(t *testing.T, sinks ReceiverSinks) func() {
-	shutDownFuncs := []func(){}
-
-	if sinks.MetricsConsumer != nil {
-		fMetric := otlpreceiver.NewFactory()
-		cfg := fMetric.CreateDefaultConfig().(*otlpreceiver.Config)
-		metricsRcvr, err := fMetric.CreateMetricsReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, sinks.MetricsConsumer)
-		require.NoError(t, metricsRcvr.Start(context.Background(), componenttest.NewNopHost()))
-		require.NoError(t, err, "failed creating metrics receiver")
-		shutDownFuncs = append(shutDownFuncs, func() {
-			assert.NoError(t, metricsRcvr.Shutdown(context.Background()))
-		})
-	}
-
-	if sinks.TracesConsumer != nil {
-		fTrace := otlpreceiver.NewFactory()
-		cfg := fTrace.CreateDefaultConfig().(*otlpreceiver.Config)
-		traceRcvr, err := fTrace.CreateTracesReceiver(context.Background(), receivertest.NewNopCreateSettings(), cfg, sinks.TracesConsumer)
-		require.NoError(t, traceRcvr.Start(context.Background(), componenttest.NewNopHost()))
-		require.NoError(t, err, "failed creating traces receiver")
-		shutDownFuncs = append(shutDownFuncs, func() {
-			assert.NoError(t, traceRcvr.Shutdown(context.Background()))
-		})
-	}
-
+	_, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
+	require.NoError(t, err, "failed creating metrics receiver")
+	rcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
+	require.NoError(t, err, "failed creating traces receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
 	return func() {
-		for _, f := range shutDownFuncs {
-			f()
-		}
+		assert.NoError(t, rcvr.Shutdown(context.Background()))
 	}
 }
 
-func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
-	timeoutMinutes := 5
-	require.Eventually(t, func() bool {
-		return len(mc.AllMetrics()) >= entriesNum
-	}, time.Duration(timeoutMinutes)*time.Minute, time.Second,
-		"failed to receive %d entries,  received %d metrics in %d minutes",
-		entriesNum, len(mc.AllMetrics()), timeoutMinutes)
-}
-
-func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-	timeoutMinutes := 5
-	require.Eventually(t, func() bool {
-		return len(tc.AllTraces()) >= entriesNum
-	}, time.Duration(timeoutMinutes)*time.Minute, time.Second,
-		"failed to receive %d entries,  received %d traces in %d minutes",
-		entriesNum, len(tc.AllTraces()), timeoutMinutes)
+func WaitForData(t *testing.T, entriesNum int, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) {
+	timeoutMinutes := 3
+	require.Eventuallyf(t, func() bool {
+		return len(mc.AllMetrics()) > entriesNum && len(tc.AllTraces()) > entriesNum
+	}, time.Duration(timeoutMinutes)*time.Minute, 1*time.Second,
+		"failed to receive %d entries,  received %d metrics, %d traces in %d minutes",
+		entriesNum, len(mc.AllMetrics()), len(tc.AllTraces()), timeoutMinutes)
 }
