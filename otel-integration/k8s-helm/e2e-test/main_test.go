@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
+	"coralogix.com/otel-integration/e2e/testcommon/k8stest"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8stest"
 )
 
 func TestE2E_Agent(t *testing.T) {
