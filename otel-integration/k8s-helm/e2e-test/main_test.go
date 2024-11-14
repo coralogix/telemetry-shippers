@@ -49,7 +49,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
-		ManifestsDir: filepath.Join(k8sDir, "k8s", "telemetrygen"),
+		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
 		TestID:       testID,
 		OtlpEndpoint: fmt.Sprintf("otelcol-%s.%s:4317", testID, testNs),
 		// `telemetrygen` doesn't support profiles
