@@ -24,9 +24,8 @@ jobs:
           cluster-name: "otel-integration-agent-e2e"
       - name: Save kubeconfig to file
         run: |
-          mkdir -p $HOME/.kube
-          kubectl config view --raw > $HOME/.kube/config
-          echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+          kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
+          echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Install chart & telemetrygen for testing
