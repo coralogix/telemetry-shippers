@@ -32,6 +32,7 @@ jobs:
         env:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
+          cat /tmp/kind-otel-integration-agent-e2e
           cd ./otel-integration/k8s-helm
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
