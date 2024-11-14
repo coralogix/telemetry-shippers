@@ -48,7 +48,6 @@ func TestE2E_Agent(t *testing.T) {
 	defer shutdownSink()
 
 	testID := uuid.NewString()[:8]
-	// collectorObjs := k8stest.CreateCollectorObjects(t, k8sClient, testID, filepath.Join(testDir, "collector"))
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(k8sDir, "k8s", "telemetrygen"),
 		TestID:       testID,
