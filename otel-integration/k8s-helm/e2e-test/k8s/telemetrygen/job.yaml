@@ -11,18 +11,25 @@ spec:
       labels:
         app: {{ .Name }}-{{ .DataType }}-job
     spec:
-      containers:
-      - command:
-        - /telemetrygen
-        - {{ .DataType }}
-        - --otlp-insecure
-        - --otlp-endpoint={{ .OTLPEndpoint }}
-        - --rate=1
-        - --duration=36000s
-        - --otlp-attributes=service.name="test-{{ .DataType }}-job"
-{{- if eq .DataType "traces" }}
-        - --status-code=
-{{- end }}
-        image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
-        name: telemetrygen
       restartPolicy: OnFailure
+      containers:
+      - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+        imagePullPolicy: IfNotPresent
+        name: telemetrygen
+        env:
+        - name: NODE
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP    
+        args:
+          - |
+          {{ .DataType }} \
+          --otlp-insecure \
+          --otlp-endpoint=${NODE}:4317 \
+          --duration=36000s \
+          --rate=1 \
+          --otlp-attributes=service.name="test-{{ .DataType }}-job" \
+          {{- if eq .DataType "traces" }}
+          --status-code= \
+          {{- end }}
+          ;
