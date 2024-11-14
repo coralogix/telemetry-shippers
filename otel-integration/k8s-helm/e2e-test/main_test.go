@@ -4,7 +4,6 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,14 +19,13 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
+const testKubeConfig = "/tmp/kube-config-otelcol-e2e-testing"
+
 func TestE2E_Agent(t *testing.T) {
 
 	k8sDir := filepath.Join("k8s")
 
-	kubeconfigpath := os.Getenv("KUBECONFIG_PATH")
-	fmt.Println("kubeconfigpath: ", kubeconfigpath)
-
-	k8sClient, err := k8stest.NewK8sClient(kubeconfigpath)
+	k8sClient, err := k8stest.NewK8sClient(testKubeConfig)
 	require.NoError(t, err)
 
 	// Create the namespace specific for the test

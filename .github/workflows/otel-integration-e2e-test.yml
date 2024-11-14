@@ -23,7 +23,7 @@ jobs:
           create-kind-cluster: "true"
           cluster-name: "otel-integration-agent-e2e"
       - name: Display KUBECONFIG path
-        run: ls /tmp/
+        run: cat /tmp/kube-config-otelcol-e2e-testing
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Install chart & telemetrygen for testing
