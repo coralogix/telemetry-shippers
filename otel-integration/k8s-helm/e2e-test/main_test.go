@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"coralogix.com/otel-integration/e2e/testcommon/k8stest"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -44,6 +46,28 @@ func TestE2E_Agent(t *testing.T) {
 
 	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
+
+	testID := uuid.NewString()[:8]
+	// collectorObjs := k8stest.CreateCollectorObjects(t, k8sClient, testID, filepath.Join(testDir, "collector"))
+	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
+		ManifestsDir: filepath.Join(k8sDir, "k8s", "telemetrygen"),
+		TestID:       testID,
+		OtlpEndpoint: fmt.Sprintf("otelcol-%s.%s:4317", testID, testNs),
+		// `telemetrygen` doesn't support profiles
+		// https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/36127
+		// TODO: add "profiles" to DataTypes once #36127 is resolved
+		DataTypes: []string{"metrics", "logs", "traces"},
+	}
+	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
+	defer func() {
+		for _, obj := range telemetryGenObjs {
+			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
+		}
+	}()
+
+	for _, info := range telemetryGenObjInfos {
+		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
+	}
 
 	WaitForData(t, 30, metricsConsumer, tracesConsumer)
 
