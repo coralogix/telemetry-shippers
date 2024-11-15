@@ -23,9 +23,9 @@ spec:
         name: telemetrygen
         env:
         - name: NODE
-            valueFrom:
-              fieldRef:
-                fieldPath: status.hostIP    
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP    
         args:
           - |
           {{ .DataType }} \
