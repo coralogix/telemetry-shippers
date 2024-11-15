@@ -24,15 +24,14 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP    
-        args:
-          - |
-          {{ .DataType }} \
-          --otlp-insecure \
-          --otlp-endpoint=${NODE}:4317 \
-          --duration=36000s \
-          --rate=1 \
-          --otlp-attributes=service.name="test-{{ .DataType }}-daemonset" \
-          {{- if eq .DataType "traces" }}
-          --status-code= \
-          {{- end }}
-          ;
+        command:
+        - /telemetrygen
+        - {{ .DataType }}
+        - --otlp-insecure
+        - --otlp-endpoint={{ .OTLPEndpoint }}
+        - --duration=36000s
+        - --rate=1
+        - --otlp-attributes=service.name="test-{{ .DataType }}-daemonset"
+{{- if eq .DataType "traces" }}
+        - --status-code=
+{{- end }}

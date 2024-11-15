@@ -47,15 +47,13 @@ func TestE2E_Agent(t *testing.T) {
 	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
+	nodeIP := os.Getenv("NODE")
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
 		TestID:       testID,
-		OtlpEndpoint: fmt.Sprintf("otelcol-%s.%s:4317", testID, testNs),
-		// `telemetrygen` doesn't support profiles
-		// https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/36127
-		// TODO: add "profiles" to DataTypes once #36127 is resolved
-		DataTypes: []string{"metrics", "logs", "traces"},
+		OtlpEndpoint: fmt.Sprintf("%s:4317", nodeIP),
+		DataTypes:    []string{"metrics", "traces"},
 	}
 	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
 	defer func() {
