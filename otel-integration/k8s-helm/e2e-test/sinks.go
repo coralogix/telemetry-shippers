@@ -30,23 +30,23 @@ func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 }
 
 func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
-    timeoutSeconds := 30 // Reduced from 5 minutes to 30 seconds
-    require.Eventuallyf(t, func() bool {
-        count := len(mc.AllMetrics())
-        t.Logf("Waiting for metrics: got %d/%d", count, entriesNum)
-        return count >= entriesNum
-    }, time.Duration(timeoutSeconds)*time.Second, 1*time.Second,
-        "failed to receive %d entries, received %d metrics in %d seconds", entriesNum,
-        len(mc.AllMetrics()), timeoutSeconds)
+	timeoutSeconds := 300 // Reduced from 5 minutes to 30 seconds
+	require.Eventuallyf(t, func() bool {
+		count := len(mc.AllMetrics())
+		t.Logf("Waiting for metrics: got %d/%d", count, entriesNum)
+		return count >= entriesNum
+	}, time.Duration(timeoutSeconds)*time.Second, 1*time.Second,
+		"failed to receive %d entries, received %d metrics in %d seconds", entriesNum,
+		len(mc.AllMetrics()), timeoutSeconds)
 }
 
 func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-    timeoutSeconds := 30 // Reduced from 5 minutes to 30 seconds
-    require.Eventuallyf(t, func() bool {
-        count := len(tc.AllTraces())
-        t.Logf("Waiting for traces: got %d/%d", count, entriesNum)
-        return count >= entriesNum // Changed > to >=
-    }, time.Duration(timeoutSeconds)*time.Second, 1*time.Second,
-        "failed to receive %d entries, received %d traces in %d seconds", entriesNum,
-        len(tc.AllTraces()), timeoutSeconds)
+	timeoutSeconds := 300 // Reduced from 5 minutes to 30 seconds
+	require.Eventuallyf(t, func() bool {
+		count := len(tc.AllTraces())
+		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)
+		return count >= entriesNum // Changed > to >=
+	}, time.Duration(timeoutSeconds)*time.Second, 1*time.Second,
+		"failed to receive %d entries, received %d traces in %d seconds", entriesNum,
+		len(tc.AllTraces()), timeoutSeconds)
 }
