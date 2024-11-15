@@ -23,6 +23,8 @@ import (
 
 func TestE2E_Agent(t *testing.T) {
 
+	fmt.Println("HostEndpoint: " + k8stest.HostEndpoint(t))
+
 	k8sDir := filepath.Join("k8s")
 
 	kubeConfigPath := os.Getenv("KUBECONFIG")
@@ -48,7 +50,6 @@ func TestE2E_Agent(t *testing.T) {
 	defer shutdownSink()
 
 	nodeIP := os.Getenv("NODE")
-	fmt.Println("Node address: ", fmt.Sprintf("%s:4317", nodeIP))
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
@@ -72,7 +73,6 @@ func TestE2E_Agent(t *testing.T) {
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	// checkGeneratedTraces(t, tracesConsumer.AllTraces())
-
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {

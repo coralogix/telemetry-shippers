@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,11 +15,31 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
+type MetricSinkConfig struct {
+	Ports    *ReceiverPorts
+	Consumer *consumertest.MetricsSink
+}
+
+type TraceSinkConfig struct {
+	Ports    *ReceiverPorts
+	Consumer *consumertest.TracesSink
+}
+
+type LogSinkConfig struct {
+	Ports    *ReceiverPorts
+	Consumer *consumertest.LogsSink
+}
+
+type ReceiverPorts struct {
+	Grpc int
+	Http int
+}
+
 func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
-	// cfg.HTTP = nil
-	// cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
+	cfg.HTTP = nil
+	cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
 
 	_, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
 	require.NoError(t, err, "failed creating metrics receiver")
@@ -29,8 +51,18 @@ func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 	}
 }
 
+func setupReceiverPorts(cfg *otlpreceiver.Config, ports *ReceiverPorts) {
+	if ports != nil {
+		cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:" + strconv.Itoa(ports.Grpc)
+		cfg.HTTP.Endpoint = "0.0.0.0:" + strconv.Itoa(ports.Http)
+	} else {
+		cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
+		cfg.HTTP.Endpoint = "0.0.0.0:4318"
+	}
+}
+
 func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
-	timeoutSeconds := 300 // Reduced from 5 minutes to 30 seconds
+	timeoutSeconds := 30 // Reduced from 5 minutes to 30 seconds
 	require.Eventuallyf(t, func() bool {
 		count := len(mc.AllMetrics())
 		t.Logf("Waiting for metrics: got %d/%d", count, entriesNum)
@@ -41,7 +73,7 @@ func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) 
 }
 
 func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-	timeoutSeconds := 300 // Reduced from 5 minutes to 30 seconds
+	timeoutSeconds := 30 // Reduced from 5 minutes to 30 seconds
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())
 		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)
