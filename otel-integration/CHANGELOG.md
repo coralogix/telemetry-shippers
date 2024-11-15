@@ -2,7 +2,11 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.117 / 2024-12-03
+### v0.0.118 / 2024-11-25
+
+- [Feat] Add ebpf tracing agent subchart.
+
+- ### v0.0.117 / 2024-12-03
 
 - [Feat] Adding new configs to the Target Allocator.
 

@@ -98,3 +98,5 @@ opentelemetry-cluster-collector:
   enabled: false
 opentelemetry-agent-windows:
   enabled: false
+coralogix-ebpf-agent:
+  enabled: false
