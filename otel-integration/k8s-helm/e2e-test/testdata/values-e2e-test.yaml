@@ -11,7 +11,7 @@ opentelemetry-agent:
   config:
     exporters:
       otlp:
-        endpoint: 172.17.0.1:4317 # Use the default Docker host gateway IP
+        endpoint: host.docker.internal:4317 # Use the default Docker host gateway IP
         tls:
           insecure: true
 
