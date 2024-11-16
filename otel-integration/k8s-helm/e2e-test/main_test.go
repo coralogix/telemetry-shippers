@@ -23,6 +23,7 @@ import (
 
 func TestE2E_Agent(t *testing.T) {
 
+	//Print the HostEndpoint for debugging purposes
 	fmt.Println("HostEndpoint: " + k8stest.HostEndpoint(t))
 
 	k8sDir := filepath.Join("k8s")

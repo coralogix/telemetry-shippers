@@ -26,14 +26,12 @@ jobs:
         run: |
           kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
           echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
-          cat /tmp/kind-otel-integration-agent-e2e
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Install chart & telemetrygen for testing
         env:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
-          cat /tmp/kind-otel-integration-agent-e2e
           cd ./otel-integration/k8s-helm
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
