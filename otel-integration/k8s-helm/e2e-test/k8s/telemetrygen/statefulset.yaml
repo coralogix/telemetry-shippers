@@ -34,6 +34,3 @@ spec:
         - --duration=36000s
         - --rate=1
         - --otlp-attributes=service.name="test-{{ .DataType }}-statefulset"
-{{- if eq .DataType "traces" }}
-        - --status-code=
-{{- end }}

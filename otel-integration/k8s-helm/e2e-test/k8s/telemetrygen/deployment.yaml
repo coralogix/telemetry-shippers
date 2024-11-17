@@ -33,6 +33,3 @@ spec:
         - --duration=36000s
         - --rate=1
         - --otlp-attributes=service.name="test-{{ .DataType }}-deployment"
-{{- if eq .DataType "traces" }}
-        - --status-code=
-{{- end }}
