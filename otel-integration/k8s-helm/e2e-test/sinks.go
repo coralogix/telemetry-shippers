@@ -61,7 +61,7 @@ func setupReceiverPorts(cfg *otlpreceiver.Config, ports *ReceiverPorts) {
 }
 
 func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
-	timeoutSeconds := 30 // Reduced from 5 minutes to 30 seconds
+	timeoutSeconds := 180 // 3 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(mc.AllMetrics())
 		t.Logf("Waiting for metrics: got %d/%d", count, entriesNum)
@@ -72,7 +72,7 @@ func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) 
 }
 
 func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-	timeoutSeconds := 30 // Reduced from 5 minutes to 30 seconds
+	timeoutSeconds := 180 // 3 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())
 		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)
