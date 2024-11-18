@@ -71,10 +71,11 @@ func TestE2E_Agent(t *testing.T) {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
-	WaitForData(t, 5, metricsConsumer, tracesConsumer)
+	WaitForMetrics(t, 5, metricsConsumer)
+	WaitForTraces(t, 5, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
-	// checkGeneratedTraces(t, tracesConsumer.AllTraces())
+	checkGeneratedTraces(t, tracesConsumer.AllTraces())
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
