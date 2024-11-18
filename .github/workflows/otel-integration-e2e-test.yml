@@ -29,20 +29,9 @@ jobs:
       - name: Get and set Kind Host Endpoint
         shell: bash
         run: |
-          docker network inspect kind
-          if [[ "$(uname)" == "Darwin" ]]; then
-              HOSTENDPOINT="host.docker.internal"
-          else
-              set +e  # Disable exit on error temporarily
-              HOSTENDPOINT=$(docker network inspect kind | grep -A 5 '"Config": \[' | grep '"Gateway":' | grep -Eo '"Gateway": "[0-9.]+"' | grep -Eo '[0-9.]+')
-              set -e  # Re-enable exit on error
-              if [[ -z "$HOSTENDPOINT" ]]; then
-                  echo "Failed to find host endpoint via docker network inspect"
-              fi
-          fi
-          # Set the HOSTENDPOINT environment variable for GitHub Actions
-          echo "HOSTENDPOINT=$HOSTENDPOINT" >> $GITHUB_ENV
-          echo "HOSTENDPOINT is set to $HOSTENDPOINT"
+          cd ./otel-integration/k8s-helm/e2e-test/testcommon
+          chmod +x ./get_host_endpoint.sh
+          ./get_host_endpoint.sh
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Install chart & telemetrygen for testing
@@ -58,7 +47,6 @@ jobs:
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
-
       - name: Run E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
