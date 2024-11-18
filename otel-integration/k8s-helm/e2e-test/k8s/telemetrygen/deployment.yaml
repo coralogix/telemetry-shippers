@@ -24,7 +24,7 @@ spec:
         - name: NODE
           valueFrom:
             fieldRef:
-              fieldPath: status.hostIP    
+              fieldPath: status.hostIP
         command:
         - /telemetrygen
         - {{ .DataType }}
