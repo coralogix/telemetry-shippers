@@ -26,6 +26,20 @@ jobs:
         run: |
           kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
           echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
+      - name: Get and set Kind Host Endpoint
+        shell: bash
+        run: |
+          if [[ "$(uname)" == "Darwin" ]]; then
+              HOSTENDPOINT="host.docker.internal"
+          else
+              HOSTENDPOINT=$(docker network inspect kind --format='{{range .IPAM.Config}}{{if .Gateway}}{{.Gateway}}{{end}}{{end}}')
+              if [[ -z "$HOSTENDPOINT" ]]; then
+                  echo "Failed to find host endpoint" >&2
+              fi
+          fi
+          # Set the HOSTENDPOINT environment variable for GitHub Actions
+          echo "HOSTENDPOINT=$HOSTENDPOINT" >> $GITHUB_ENV
+          echo "HOSTENDPOINT is set to $HOSTENDPOINT"
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
       - name: Install chart & telemetrygen for testing
@@ -41,7 +55,6 @@ jobs:
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
-          kubectl get configmap coralogix-opentelemetry-agent -o yaml
       - name: Run E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
