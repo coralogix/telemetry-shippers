@@ -53,6 +53,7 @@ jobs:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
+          kubectl get pods --all-namespaces
           cd ./otel-integration/k8s-helm/e2e-test/
           go test -v -run=TestE2E_Agent ./...
 
