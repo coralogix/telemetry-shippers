@@ -1,3 +1,5 @@
+hostEndpoint: ""
+
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
 opentelemetry-agent:
   presets:
@@ -11,7 +13,7 @@ opentelemetry-agent:
   config:
     exporters:
       otlp:
-        endpoint: "${env:HOSTENDPOINT}:4317" # inject the host endpoint via env
+        endpoint: "{{ .Values.hostEndpoint }}:4317" # inject the host endpoint via env
         tls:
           insecure: true
 
