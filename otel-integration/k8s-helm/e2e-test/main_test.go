@@ -25,8 +25,8 @@ func TestE2E_Agent(t *testing.T) {
 
 	//Check if the HOST_ENDPOINT is set
 	fmt.Println("Detected HostEndpoint: " + k8stest.HostEndpoint(t))
-	fmt.Println("Env HostEndpoint: " + os.Getenv("HOST_ENDPOINT"))
-	require.Equal(t, k8stest.HostEndpoint(t), os.Getenv("HOST_ENDPOINT"), "HostEndpoints does not match env and detected")
+	fmt.Println("Env HostEndpoint: " + os.Getenv("HOSTENDPOINT"))
+	require.Equal(t, k8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
 
 	k8sDir := filepath.Join("k8s")
 
