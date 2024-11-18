@@ -11,7 +11,7 @@ opentelemetry-agent:
   config:
     exporters:
       otlp:
-        endpoint: ${env:HOSTENDPOINT}:4317 # inject the host endpoint via env
+        endpoint: "${env:HOSTENDPOINT}:4317" # inject the host endpoint via env
         tls:
           insecure: true
 
