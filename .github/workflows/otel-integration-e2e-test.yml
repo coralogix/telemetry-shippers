@@ -34,7 +34,7 @@ jobs:
           else
               HOSTENDPOINT=$(docker network inspect kind | grep -A 5 '"Config": \[' | grep '"Gateway":' | grep -Eo '"Gateway": "[0-9.]+"' | grep -Eo '[0-9.]+')
               if [[ -z "$HOSTENDPOINT" ]]; then
-                  echo "Failed to find host endpoint" >&2
+                  echo "Failed to find host endpoint via docker network inspect"
               fi
           fi
           # Set the HOSTENDPOINT environment variable for GitHub Actions
