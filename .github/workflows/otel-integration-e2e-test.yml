@@ -44,11 +44,11 @@ jobs:
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
           --set global.domain="coralogix.com"  \
-          --set hostEndpoint=${{ env.HOSTENDPOINT }} \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
-          kubectl get configmap coralogix-opentelemetry-agent -o yaml
+          kubectl set env daemonset/coralogix-opentelemetry-agent HOSTENDPOINT=${HOSTENDPOINT}
+          kubectl describe daemonset/coralogix-opentelemetry-agent
       - name: Run E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
