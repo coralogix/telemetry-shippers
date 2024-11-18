@@ -32,9 +32,12 @@ jobs:
           if [[ "$(uname)" == "Darwin" ]]; then
               HOSTENDPOINT="host.docker.internal"
           else
+              set +e  # Disable exit on error temporarily
               HOSTENDPOINT=$(docker network inspect kind | grep -A 5 '"Config": \[' | grep '"Gateway":' | grep -Eo '"Gateway": "[0-9.]+"' | grep -Eo '[0-9.]+')
+              set -e  # Re-enable exit on error
               if [[ -z "$HOSTENDPOINT" ]]; then
                   echo "Failed to find host endpoint via docker network inspect"
+                  exit 1
               fi
           fi
           # Set the HOSTENDPOINT environment variable for GitHub Actions
