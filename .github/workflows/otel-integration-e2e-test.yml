@@ -26,7 +26,7 @@ jobs:
         run: |
           kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
           echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
-      - name: Get and set Kind Host Endpoint
+      - name: Get and Set Kind HostEndpoint as env variable
         shell: bash
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/testcommon
@@ -46,9 +46,8 @@ jobs:
           --set global.domain="coralogix.com"  \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
-          kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
           kubectl set env daemonset/coralogix-opentelemetry-agent HOSTENDPOINT=${HOSTENDPOINT}
-          kubectl describe daemonset/coralogix-opentelemetry-agent
+          kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
       - name: Run E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
