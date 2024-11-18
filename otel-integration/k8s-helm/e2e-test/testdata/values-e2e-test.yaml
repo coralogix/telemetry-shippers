@@ -11,10 +11,10 @@ opentelemetry-agent:
   config:
     exporters:
       otlp:
-        endpoint: ${env:HOSTENDPOINT}:4317 # Use the default Docker host gateway IP
+        endpoint: ${env:HOSTENDPOINT}:4317 # inject the host endpoint via env
         tls:
           insecure: true
-          
+
     service:
       pipelines:
         metrics:
