@@ -7,7 +7,7 @@ opentelemetry-agent:
       # Disabled by default, requires privilleged mode
       process:
         enabled: true
-      collectionInterval: "5"
+      collectionInterval: "30s"
   config:
     exporters:
       otlp:
