@@ -34,7 +34,7 @@ jobs:
           ./get_host_endpoint.sh
       - name: Setup Secret
         run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
-      - name: Install chart & telemetrygen for testing
+      - name: Install chart for testing
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
@@ -47,6 +47,8 @@ jobs:
           --set global.domain="coralogix.com"  \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
+          kubectl get configmap otel-hostendpoint-configmap -o yaml
+          kubectl describe daemonsets coralogix-opentelemetry-agent
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
       - name: Verbose Debugging
         env:
