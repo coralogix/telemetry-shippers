@@ -40,7 +40,7 @@ jobs:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
           cd ./otel-integration/k8s-helm
-          kubectl create configmap otel-hostendpoint-configmap --from-literal=hostendpoint=$HOSTENDPOINT
+          kubectl create configmap otel-hostendpoint-configmap --from-literal=HOSTENDPOINT=$HOSTENDPOINT
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
