@@ -48,14 +48,10 @@ func TestE2E_Agent(t *testing.T) {
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
-	shutdownSinks := StartUpSinks(t, ReceiverSinks{
-		Traces: &TraceSinkConfig{
-			Consumer: tracesConsumer,
-		},
-	})
-	defer shutdownSinks()
+	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
+	defer shutdownSink()
 
-	nodeIP := os.Getenv("K8S_NODE_IP")
+	nodeIP := os.Getenv("NODE_IP")
 	fmt.Print("Node IP: ", nodeIP)
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{

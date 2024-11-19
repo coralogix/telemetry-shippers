@@ -70,36 +70,20 @@ type ReceiverPorts struct {
 	Http int
 }
 
-func StartUpSinks(t *testing.T, sinks ReceiverSinks) func() {
-	shutDownFuncs := []func(){}
+func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
+	f := otlpreceiver.NewFactory()
+	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
+	// cfg.HTTP = nil
+	// cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
 
-	if sinks.Metrics != nil {
-		fMetric := otlpreceiver.NewFactory()
-		cfg := fMetric.CreateDefaultConfig().(*otlpreceiver.Config)
-		setupReceiverPorts(cfg, sinks.Metrics.Ports)
-		metricsRcvr, err := fMetric.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, sinks.Metrics.Consumer)
-		require.NoError(t, err, "failed creating metrics receiver")
-		require.NoError(t, metricsRcvr.Start(context.Background(), componenttest.NewNopHost()))
-		shutDownFuncs = append(shutDownFuncs, func() {
-			assert.NoError(t, metricsRcvr.Shutdown(context.Background()))
-		})
-	}
-	if sinks.Traces != nil {
-		fTrace := otlpreceiver.NewFactory()
-		cfg := fTrace.CreateDefaultConfig().(*otlpreceiver.Config)
-		setupReceiverPorts(cfg, sinks.Traces.Ports)
-		tracesRcvr, err := fTrace.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, sinks.Traces.Consumer)
-		require.NoError(t, err, "failed creating traces receiver")
-		require.NoError(t, tracesRcvr.Start(context.Background(), componenttest.NewNopHost()))
-		shutDownFuncs = append(shutDownFuncs, func() {
-			assert.NoError(t, tracesRcvr.Shutdown(context.Background()))
-		})
-	}
+	_, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
+	require.NoError(t, err, "failed creating metrics receiver")
+	rcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
+	require.NoError(t, err, "failed creating traces receiver")
+	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
 
 	return func() {
-		for _, f := range shutDownFuncs {
-			f()
-		}
+		assert.NoError(t, rcvr.Shutdown(context.Background()))
 	}
 }
 
@@ -108,6 +92,7 @@ func setupReceiverPorts(cfg *otlpreceiver.Config, ports *ReceiverPorts) {
 		cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:" + strconv.Itoa(ports.Grpc)
 		cfg.HTTP.Endpoint = "0.0.0.0:" + strconv.Itoa(ports.Http)
 	} else {
+		fmt.Println("Receiver ports not set, using default ports")
 		cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
 		cfg.HTTP.Endpoint = "0.0.0.0:4318"
 	}
