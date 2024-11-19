@@ -60,12 +60,13 @@ func TestE2E_Agent(t *testing.T) {
 		OtlpEndpoint: fmt.Sprintf("%s:4317", nodeIP),
 		DataTypes:    []string{"traces"},
 	}
-	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
-	defer func() {
-		for _, obj := range telemetryGenObjs {
-			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
-		}
-	}()
+	//defer delete and check
+	_, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
+	// defer func() {
+	// 	for _, obj := range 	 {
+	// 		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
+	// 	}
+	// }()
 
 	for _, info := range telemetryGenObjInfos {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
