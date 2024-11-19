@@ -30,7 +30,7 @@ spec:
         - /telemetrygen
         - {{ .DataType }}
         - --otlp-insecure
-        - --otlp-endpoint={{ .OTLPEndpoint }}
+        - --otlp-endpoint=${K8S_NODE_IP}:4317
         - --duration=36000s
         - --rate=1
         - --otlp-attributes=service.name="test-{{ .DataType }}-deployment"

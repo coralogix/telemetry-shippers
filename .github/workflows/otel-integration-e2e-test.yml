@@ -40,13 +40,13 @@ jobs:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
           cd ./otel-integration/k8s-helm
+          kubectl create configmap otel-hostendpoint-configmap --from-literal=hostendpoint=$HOSTENDPOINT
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
           --set global.domain="coralogix.com"  \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
-          kubectl set env daemonset/coralogix-opentelemetry-agent HOSTENDPOINT=${HOSTENDPOINT}
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
       - name: Verbose Debugging
         env:
@@ -55,6 +55,7 @@ jobs:
         run: |
           kubectl get nodes -o wide
           kubectl get pods -A -o wide
+          kubectl get configmap otel-hostendpoint-configmap -o yaml
           kubectl describe daemonsets coralogix-opentelemetry-agent
           kubectl logs -l app.kubernetes.io/name=opentelemetry-agent
       - name: Run E2E test
