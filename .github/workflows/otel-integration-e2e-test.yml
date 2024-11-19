@@ -53,8 +53,8 @@ jobs:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
-          kubectl get nodes
-          kubectl get pods -A
+          kubectl get nodes -o wide
+          kubectl get pods -A -o wide
           kubectl describe daemonsets coralogix-opentelemetry-agent
           kubectl logs -l app.kubernetes.io/name=opentelemetry-agent
       - name: Run E2E test

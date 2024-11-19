@@ -55,7 +55,8 @@ func TestE2E_Agent(t *testing.T) {
 	})
 	defer shutdownSinks()
 
-	nodeIP := os.Getenv("NODE")
+	nodeIP := os.Getenv("K8S_NODE_IP")
+	fmt.Print("Node IP: ", nodeIP)
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
