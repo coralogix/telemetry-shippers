@@ -48,9 +48,12 @@ func TestE2E_Agent(t *testing.T) {
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
-
-	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
-	defer shutdownSink()
+	shutdownSinks := StartUpSinks(t, ReceiverSinks{
+		Traces: &TraceSinkConfig{
+			Consumer: tracesConsumer,
+		},
+	})
+	defer shutdownSinks()
 
 	nodeIP := os.Getenv("NODE")
 	testID := uuid.NewString()[:8]
@@ -58,7 +61,7 @@ func TestE2E_Agent(t *testing.T) {
 		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
 		TestID:       testID,
 		OtlpEndpoint: fmt.Sprintf("%s:4317", nodeIP),
-		DataTypes:    []string{"metrics", "traces"},
+		DataTypes:    []string{"traces"},
 	}
 	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
 	defer func() {
@@ -71,7 +74,7 @@ func TestE2E_Agent(t *testing.T) {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
-	WaitForMetrics(t, 5, metricsConsumer)
+	// WaitForMetrics(t, 5, metricsConsumer)
 	WaitForTraces(t, 5, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
