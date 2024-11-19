@@ -4,7 +4,6 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,8 +23,6 @@ import (
 func TestE2E_Agent(t *testing.T) {
 
 	//Check if the HOST_ENDPOINT is set
-	fmt.Println("Detected HostEndpoint: " + k8stest.HostEndpoint(t))
-	fmt.Println("Env HostEndpoint: " + os.Getenv("HOSTENDPOINT"))
 	require.Equal(t, k8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
 
 	k8sDir := filepath.Join("k8s")
@@ -51,28 +48,26 @@ func TestE2E_Agent(t *testing.T) {
 	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
-	nodeIP := os.Getenv("NODE_IP")
-	fmt.Print("Node IP: ", nodeIP)
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
 		TestID:       testID,
-		OtlpEndpoint: fmt.Sprintf("%s:4317", nodeIP),
+		OtlpEndpoint: "", //unused
 		DataTypes:    []string{"traces"},
 	}
-	//defer delete and check
-	_, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
-	// defer func() {
-	// 	for _, obj := range 	 {
-	// 		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
-	// 	}
-	// }()
+
+	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
+	defer func() {
+		for _, obj := range telemetryGenObjs {
+			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
+		}
+	}()
 
 	for _, info := range telemetryGenObjInfos {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
-	// WaitForMetrics(t, 5, metricsConsumer)
+	WaitForMetrics(t, 5, metricsConsumer)
 	WaitForTraces(t, 5, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
-	"strconv"
 	"testing"
 	"time"
 
@@ -44,32 +43,6 @@ func NewExpectedValue(mode ExpectedValueMode, value string) ExpectedValue {
 	}
 }
 
-type ReceiverSinks struct {
-	Metrics *MetricSinkConfig
-	Traces  *TraceSinkConfig
-	Logs    *LogSinkConfig
-}
-
-type MetricSinkConfig struct {
-	Ports    *ReceiverPorts
-	Consumer *consumertest.MetricsSink
-}
-
-type TraceSinkConfig struct {
-	Ports    *ReceiverPorts
-	Consumer *consumertest.TracesSink
-}
-
-type LogSinkConfig struct {
-	Ports    *ReceiverPorts
-	Consumer *consumertest.LogsSink
-}
-
-type ReceiverPorts struct {
-	Grpc int
-	Http int
-}
-
 func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
@@ -84,17 +57,6 @@ func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 
 	return func() {
 		assert.NoError(t, rcvr.Shutdown(context.Background()))
-	}
-}
-
-func setupReceiverPorts(cfg *otlpreceiver.Config, ports *ReceiverPorts) {
-	if ports != nil {
-		cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:" + strconv.Itoa(ports.Grpc)
-		cfg.HTTP.Endpoint = "0.0.0.0:" + strconv.Itoa(ports.Http)
-	} else {
-		fmt.Println("Receiver ports not set, using default ports")
-		cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
-		cfg.HTTP.Endpoint = "0.0.0.0:4318"
 	}
 }
 
