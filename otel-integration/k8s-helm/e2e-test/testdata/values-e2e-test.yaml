@@ -35,7 +35,6 @@ opentelemetry-agent:
         endpoint: ${env:HOSTENDPOINT}:4317
         tls:
           insecure: true
-
     service:
       pipelines:
         metrics:
