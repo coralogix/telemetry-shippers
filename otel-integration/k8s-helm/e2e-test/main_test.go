@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -162,6 +163,13 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	case "prometheusreceiver":
 		compareMap = expectedResourceAttributesPrometheusreceiver
 	}
+
+	//DEBUG
+	fmt.Println("ScopeName: ", scopeName)
+	attributes.Range(func(k string, v pcommon.Value) bool {
+		fmt.Println(k, " : ", v)
+		return true
+	})
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
