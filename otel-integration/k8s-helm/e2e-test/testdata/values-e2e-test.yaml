@@ -1,4 +1,7 @@
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
+global:
+  logLevel: "debug"
+
 opentelemetry-agent:
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
