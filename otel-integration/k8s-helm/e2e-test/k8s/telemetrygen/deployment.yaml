@@ -35,3 +35,6 @@ spec:
         - --otlp-attributes=service.name="test-{{ .DataType }}-deployment"
         args:
         - "--otlp-endpoint=$(K8S_NODE_IP):4317"
+{{- if eq .DataType "traces" }}
+        - --status-code=
+{{- end }}

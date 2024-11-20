@@ -6,7 +6,6 @@ package k8stest // import "github.com/open-telemetry/opentelemetry-collector-con
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -42,7 +41,6 @@ func CreateTelemetryGenObjects(t *testing.T, client *K8sClient, createOpts *Tele
 		tmpl := template.Must(template.New(manifestFile.Name()).ParseFiles(filepath.Join(createOpts.ManifestsDir, manifestFile.Name())))
 		for _, dataType := range createOpts.DataTypes {
 			manifest := &bytes.Buffer{}
-			fmt.Println("Creating telemetrygen object for datatype: ", dataType, createOpts.OtlpEndpoint)
 			require.NoError(t, tmpl.Execute(manifest, map[string]string{
 				"Name":         "telemetrygen-" + createOpts.TestID,
 				"DataType":     dataType,
