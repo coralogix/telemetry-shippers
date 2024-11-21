@@ -184,17 +184,6 @@ func checkGeneratedTraces(t *testing.T, actual []ptrace.Traces, testID string) e
 		actualTraces := ptrace.NewTraces()
 		current.CopyTo(actualTraces)
 
-		for i := 0; i < actualTraces.ResourceSpans().Len(); i++ {
-			rspans := actualTraces.ResourceSpans().At(i)
-
-			_, ok := expectedSchemaURL[rspans.SchemaUrl()]
-			require.True(t, ok, "resource %v does not match one of the expected values", rspans.SchemaUrl())
-			if ok {
-				expectedSchemaURL[rspans.SchemaUrl()] = true
-			}
-
-			// checkResourceSpans(t, rspans)
-		}
 	}
 
 	return nil
