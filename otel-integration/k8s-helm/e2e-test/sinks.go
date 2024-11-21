@@ -61,25 +61,25 @@ func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 }
 
 func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
-	timeoutSeconds := 300 // 5 minutes
+	timeoutSeconds := 180 // 3 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(mc.AllMetrics())
 		t.Logf("Waiting for metrics: got %d/%d", count, entriesNum)
 		return count >= entriesNum
 	}, time.Duration(timeoutSeconds)*time.Second, 1*time.Second,
-		"failed to receive %d entries, received %d metrics in %d seconds", entriesNum,
-		len(mc.AllMetrics()), timeoutSeconds)
+		"failed to receive %d entries in %d seconds",
+		entriesNum, timeoutSeconds)
 }
 
 func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-	timeoutSeconds := 300 // 5 minutes
+	timeoutSeconds := 180 // 3 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())
 		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)
 		return count >= entriesNum // Changed > to >=
 	}, time.Duration(timeoutSeconds)*time.Second, 1*time.Second,
-		"failed to receive %d entries, received %d traces in %d seconds", entriesNum,
-		len(tc.AllTraces()), timeoutSeconds)
+		"failed to receive %d entries in %d seconds",
+		entriesNum, timeoutSeconds)
 }
 
 func ScanTracesForAttributes(t *testing.T, ts *consumertest.TracesSink, expectedService string, kvs map[string]ExpectedValue, scopeSpanAttrs []map[string]ExpectedValue) {

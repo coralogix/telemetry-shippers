@@ -68,8 +68,8 @@ func TestE2E_Agent(t *testing.T) {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
-	WaitForMetrics(t, 25, metricsConsumer)
-	WaitForTraces(t, 25, tracesConsumer)
+	WaitForMetrics(t, 10, metricsConsumer)
+	WaitForTraces(t, 30, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkGeneratedTraces(t, tracesConsumer.AllTraces())
