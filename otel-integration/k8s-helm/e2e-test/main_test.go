@@ -4,7 +4,6 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -162,19 +161,6 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesKubeletstatreceiver
 	case "prometheusreceiver":
 		compareMap = expectedResourceAttributesPrometheusreceiver
-	}
-
-	//DEBUG
-	var findUniqueMap = make(map[string]string) // Initialize the map
-	attributes.Range(func(k string, v pcommon.Value) bool {
-		if _, exists := findUniqueMap[k]; !exists {
-			findUniqueMap[k] = scopeName
-		}
-		return true
-	})
-
-	for k, v := range findUniqueMap {
-		fmt.Println(k, ":", v)
 	}
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
