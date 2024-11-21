@@ -71,7 +71,7 @@ func TestE2E_Agent(t *testing.T) {
 	WaitForTraces(t, 30, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
-	checkGeneratedTraces(t, tracesConsumer.AllTraces())
+	checkGeneratedTraces(t, tracesConsumer.AllTraces(), testID)
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -175,7 +175,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	return nil
 }
 
-func checkGeneratedTraces(t *testing.T, actual []ptrace.Traces) error {
+func checkGeneratedTraces(t *testing.T, actual []ptrace.Traces, testID string) error {
 	if len(actual) == 0 {
 		t.Fatal("No traces received")
 	}

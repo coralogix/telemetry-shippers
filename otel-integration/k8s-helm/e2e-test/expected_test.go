@@ -1,6 +1,7 @@
 package e2e
 
 var expectedSchemaURL = map[string]bool{
+	"https://opentelemetry.io/schemas/1.4.0": false,
 	"https://opentelemetry.io/schemas/1.6.1": false,
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
