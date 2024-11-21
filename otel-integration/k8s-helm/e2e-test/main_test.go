@@ -165,7 +165,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	}
 
 	//DEBUG
-	var findUniqueMap map[string]string
+	var findUniqueMap map[string]string = make(map[string]string)
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		if _, exists := findUniqueMap[k]; !exists {
 			findUniqueMap[k] = scopeName
