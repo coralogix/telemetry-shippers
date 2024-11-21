@@ -27,6 +27,7 @@ var expectedResourceAttributesKubeletstatreceiver = map[string]string{
 	"k8s.daemonset.name":       "",
 	"k8s.deployment.name":      "",
 	"k8s.statefulset.name":     "",
+	"k8s.job.name":             "",
 	"cx.otel_integration.name": "coralogix-integration-helm",
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
 	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
