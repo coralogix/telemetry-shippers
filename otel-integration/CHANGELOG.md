@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.113 / 2024-11-21
+
+- [Fix] Setting max_batch_size for logsCollection preset now works on all recombine operators.
+
 ### v0.0.112 / 2024-11-06
 - [Feat] add ec2/azure resource detecion for kubernetes resource collection.
 - [Feat] Add support for scraping cadvisor metrics per node on daemonset
