@@ -1,8 +1,9 @@
 package e2e
 
 var expectedResourceSchemaURL = map[string]bool{
-	"https://opentelemetry.io/schemas/1.6.1": false,
-	"https://opentelemetry.io/schemas/1.9.0": false,
+	"https://opentelemetry.io/schemas/1.6.1":  false,
+	"https://opentelemetry.io/schemas/1.9.0":  false,
+	"https://opentelemetry.io/schemas/1.13.0": false,
 }
 
 const expectedScopeVersion = "0.111.0"
