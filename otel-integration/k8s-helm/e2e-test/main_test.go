@@ -25,23 +25,19 @@ func TestE2E_Agent(t *testing.T) {
 	//Check if the HOST_ENDPOINT is set
 	require.Equal(t, k8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
 
-	k8sDir := filepath.Join("k8s")
+	testDataDir := filepath.Join("testdata")
 
-	kubeConfigPath := os.Getenv("KUBECONFIG")
-	k8sClient, err := k8stest.NewK8sClient(kubeConfigPath)
+	k8sClient, err := k8stest.NewK8sClient()
 	require.NoError(t, err)
 
 	// Create the namespace specific for the test
-	nsFile := filepath.Join(k8sDir, "namespace.yaml")
+	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
 	require.NoErrorf(t, err, "failed to read namespace object file %s", nsFile)
 	nsObj, err := k8stest.CreateObject(k8sClient, buf)
 	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
 
 	testNs := nsObj.GetName()
-	defer func() {
-		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
-	}()
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
@@ -50,19 +46,12 @@ func TestE2E_Agent(t *testing.T) {
 
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
-		ManifestsDir: filepath.Join(k8sDir, "telemetrygen"),
+		ManifestsDir: filepath.Join(testDataDir, "telemetrygen"),
 		TestID:       testID,
-		OtlpEndpoint: "", //unused
-		DataTypes:    []string{"traces"},
+		DataTypes:    []string{"metrics", "traces"},
 	}
 
 	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
-	defer func() {
-		for _, obj := range telemetryGenObjs {
-			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
-		}
-	}()
-
 	for _, info := range telemetryGenObjInfos {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
@@ -71,7 +60,14 @@ func TestE2E_Agent(t *testing.T) {
 	WaitForTraces(t, 30, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
-	checkGeneratedTraces(t, tracesConsumer.AllTraces(), testID)
+	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID)
+
+	t.Cleanup(func() {
+		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
+		for _, obj := range telemetryGenObjs {
+			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
+		}
+	})
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -86,20 +82,20 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 		for i := 0; i < actualMetrics.ResourceMetrics().Len(); i++ {
 			rmetrics := actualMetrics.ResourceMetrics().At(i)
 
-			_, ok := expectedSchemaURL[rmetrics.SchemaUrl()]
+			_, ok := expectedResourceSchemaURL[rmetrics.SchemaUrl()]
 			require.True(t, ok, "schema_url %v does not match one of the expected values", rmetrics.SchemaUrl())
 			if ok {
-				expectedSchemaURL[rmetrics.SchemaUrl()] = true
+				expectedResourceSchemaURL[rmetrics.SchemaUrl()] = true
 			}
 
 			checkScopeMetrics(t, rmetrics)
 		}
 	}
 
-	for name, expectedState := range expectedSchemaURL {
+	for name, expectedState := range expectedResourceSchemaURL {
 		require.True(t, expectedState, "schema_url %v was not found in the actual metrics", name)
 	}
-	for name, expectedState := range expectedScopeNames {
+	for name, expectedState := range expectedResourceScopeNames {
 		require.True(t, expectedState, "scope %v was not found in the actual metrics", name)
 	}
 
@@ -122,9 +118,9 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 		scope := rmetrics.ScopeMetrics().At(k)
 
 		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v")
-		_, ok := expectedScopeNames[scope.Scope().Name()]
+		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
 		if ok {
-			expectedScopeNames[scope.Scope().Name()] = true
+			expectedResourceScopeNames[scope.Scope().Name()] = true
 		}
 		require.True(t, ok, "scope %v does not match one of the expected values", scope.Scope().Name())
 
@@ -175,7 +171,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	return nil
 }
 
-func checkGeneratedTraces(t *testing.T, actual []ptrace.Traces, testID string) error {
+func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string) error {
 	if len(actual) == 0 {
 		t.Fatal("No traces received")
 	}
@@ -184,6 +180,17 @@ func checkGeneratedTraces(t *testing.T, actual []ptrace.Traces, testID string) e
 		actualTraces := ptrace.NewTraces()
 		current.CopyTo(actualTraces)
 
+		for i := 0; i < actualTraces.ResourceSpans().Len(); i++ {
+			rspans := actualTraces.ResourceSpans().At(i)
+
+			_, ok := expectedResourceSchemaURL[rspans.SchemaUrl()]
+			require.True(t, ok, "resource %v does not match one of the expected values", rspans.SchemaUrl())
+			if ok {
+				expectedResourceSchemaURL[rspans.SchemaUrl()] = true
+			}
+
+			// checkResourceSpans(t, rspans)
+		}
 	}
 
 	return nil

@@ -1,13 +1,13 @@
 package e2e
 
-var expectedSchemaURL = map[string]bool{
+var expectedResourceSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.6.1": false,
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
 const expectedScopeVersion = "0.111.0"
 
-var expectedScopeNames = map[string]bool{
+var expectedResourceScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper":    false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":        false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper": false,
