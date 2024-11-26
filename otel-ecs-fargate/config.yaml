@@ -1,4 +1,6 @@
 exporters:
+  debug:
+    verbosity: detailed
   coralogix:
     application_name: 'otel'
     application_name_attributes:
@@ -7,10 +9,13 @@ exporters:
     domain: ${CORALOGIX_DOMAIN}
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
+        X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
+        X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
+    traces:
+      headers:
+        X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
     private_key: ${PRIVATE_KEY}
     subsystem_name: 'integration'
     subsystem_name_attributes:
@@ -18,9 +23,16 @@ exporters:
     - aws.ecs.docker.name
     - container_name
     timeout: 30s
-    traces:
-      headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
+  # coralogix/resource_catalog:
+  #   application_name: resource
+  #   domain: ${CORALOGIX_DOMAIN}
+  #   private_key: ${PRIVATE_KEY}
+  #   logs:
+  #     headers:
+  #       X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
+  #       x-coralogix-ingress: metadata-as-otlp-logs/v1alpha1
+  #   subsystem_name: catalog
+  #   timeout: 30s
 processors:
   transform/firelens:
     log_statements:
@@ -63,11 +75,44 @@ processors:
       value: coralogix-integration-ecs-fargate
   resourcedetection:
     detectors:
+    - system
     - env
     - ec2
     - ecs
-    override: true
+    override: false
     timeout: 2s
+    system:
+      resource_attributes:
+        host.id:
+          enabled: false
+        host.cpu.cache.l2.size:
+          enabled: true
+        host.cpu.stepping:
+          enabled: true
+        host.cpu.model.name:
+          enabled: true
+        host.cpu.model.id:
+          enabled: true
+        host.cpu.family:
+          enabled: true
+        host.cpu.vendor.id:
+          enabled: true
+        host.mac:
+          enabled: true
+        host.ip:
+          enabled: true
+        os.description:
+          enabled: true
+  # transform/entity-event:
+  #   error_mode: ignore
+  #   log_statements:
+  #   - context: log
+  #     statements:
+  #     - set(attributes["otel.entity.id"]["host.id"], resource.attributes["aws.ecs.task.id"])
+  #     - merge_maps(attributes, resource.attributes, "insert")
+  #   - context: resource
+  #     statements:
+  #     - keep_keys(attributes, [""])
 receivers:
   fluentforward/socket:
     # ECS will send logs to this socket
@@ -80,6 +125,69 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+  hostmetrics:
+    root_path: /
+    collection_interval: 10s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk: null
+      filesystem:
+        exclude_fs_types:
+          fs_types:
+          - autofs
+          - binfmt_misc
+          - bpf
+          - cgroup2
+          - configfs
+          - debugfs
+          - devpts
+          - devtmpfs
+          - fusectl
+          - hugetlbfs
+          - iso9660
+          - mqueue
+          - nsfs
+          - overlay
+          - proc
+          - procfs
+          - pstore
+          - rpc_pipefs
+          - securityfs
+          - selinuxfs
+          - squashfs
+          - sysfs
+          - tracefs
+          match_type: strict
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+          - /dev/*
+          - /proc/*
+          - /sys/*
+          - /run/k3s/containerd/*
+          - /run/containerd/runc/*
+          - /var/lib/docker/*
+          - /var/lib/kubelet/*
+          - /snap/*
+      load: null
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network: null
+      process:
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.threads:
+            enabled: true
+        mute_process_exe_error: true
+        mute_process_user_error: true
   prometheus:
     config:
       scrape_configs:
@@ -90,6 +198,14 @@ receivers:
           - 127.0.0.1:8888
 service:
   pipelines:
+    # logs/resource_catalog:
+    #   exporters:
+    #   - coralogix/resource_catalog
+    #   processors:
+    #   - resourcedetection
+    #   - transform/entity-event
+    #   receivers:
+    #   - hostmetrics
     logs:
       exporters:
       - coralogix
@@ -110,6 +226,8 @@ service:
       receivers:
       - otlp
       - awsecscontainermetrics
+      - prometheus
+      - hostmetrics
     traces:
       exporters:
       - coralogix
@@ -125,3 +243,6 @@ service:
       encoding: json
     metrics:
       address: 0.0.0.0:8888
+    resource:
+      service.instance.id: ""
+      service.name: ""

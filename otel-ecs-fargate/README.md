@@ -38,7 +38,6 @@ Example container declaration within a Task Definition:
                     "containerPort": 4318,
                     "hostPort": 4318,
                     "protocol": "tcp",
-                    "appProtocol": "grpc"
                 }
             ],
             "essential": false,
@@ -61,7 +60,7 @@ Example container declaration within a Task Definition:
             "secrets": [
                 {
                     "name": "SSM_CONFIG",
-                    "valueFrom": "/CX_OTEL/config.yaml"
+                    "valueFrom": "CX_OTEL_ECS_Fargate_config.yaml"
                 }
             ],
             "user": "0",
@@ -137,7 +136,7 @@ If you prefer to store your Coralogix private key in AWS Secrets Manager, remove
 "secrets": [
     {
         "name": "SSM_CONFIG",
-        "valueFrom": "/CX_OTEL/config.yaml"
+        "valueFrom": "CX_OTEL_ECS_Fargate_config.yaml"
     },
     {
         "name": "PRIVATE_KEY",
