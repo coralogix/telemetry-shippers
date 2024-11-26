@@ -63,8 +63,8 @@ func TestE2E_Agent(t *testing.T) {
 		}
 	})
 
-	WaitForMetrics(t, 5, metricsConsumer)
-	WaitForTraces(t, 10, tracesConsumer)
+	WaitForMetrics(t, 10, metricsConsumer)
+	WaitForTraces(t, 20, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID)
