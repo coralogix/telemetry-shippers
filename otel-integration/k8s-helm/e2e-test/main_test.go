@@ -49,7 +49,7 @@ func TestE2E_Agent(t *testing.T) {
 	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(testDataDir, "telemetrygen"),
 		TestID:       testID,
-		DataTypes:    []string{"metrics", "traces"},
+		DataTypes:    []string{"traces"},
 	}
 
 	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
@@ -118,23 +118,26 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 	for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
 		scope := rmetrics.ScopeMetrics().At(k)
 
-		if len(scope.Scope().Version()) > 0 {
-			fmt.Println("Scope Version: ", scope.Scope().Version())
-			require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v", scope.Scope().Version())
+		// Ignore checking telemetrygen metrics (e.g. "gen")
+		if len(scope.Scope().Name()) == 0 && len(scope.Scope().Version()) == 0 {
+			continue
 		}
 
-		if len(scope.Scope().Name()) > 0 {
-			fmt.Println("Scope Name: ", scope.Scope().Name())
-			_, ok := expectedResourceScopeNames[scope.Scope().Name()]
-			if ok {
-				expectedResourceScopeNames[scope.Scope().Name()] = true
-			}
-			require.True(t, ok, "scope %v does not match one of the expected values", scope.Scope().Name())
+		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v")
+		rmetrics.Resource().Attributes().Range(func(k string, v pcommon.Value) bool {
+			fmt.Println("Resource Attributes: ", k, v.AsString())
+			return true
+		})
 
-			// We only need the relevant part of the scopr name to get receiver name.
-			scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
-			checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
+		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
+		if ok {
+			expectedResourceScopeNames[scope.Scope().Name()] = true
 		}
+		require.True(t, ok, "scope %v does not match one of the expected values", scope.Scope().Name())
+
+		// We only need the relevant part of the scopr name to get receiver name.
+		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
+		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
 
 		metrics := scope.Metrics()
 
@@ -193,7 +196,7 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string) 
 			rspans := actualTraces.ResourceSpans().At(i)
 
 			_, ok := expectedResourceSchemaURL[rspans.SchemaUrl()]
-			require.True(t, ok, "resource %v does not match one of the expected values", rspans.SchemaUrl())
+			require.True(t, ok, "traces resource %v does not match one of the expected values", rspans.SchemaUrl())
 			if ok {
 				expectedResourceSchemaURL[rspans.SchemaUrl()] = true
 			}

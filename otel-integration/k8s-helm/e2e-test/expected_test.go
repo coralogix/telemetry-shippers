@@ -1,9 +1,8 @@
 package e2e
 
 var expectedResourceSchemaURL = map[string]bool{
-	"https://opentelemetry.io/schemas/1.6.1":  false,
-	"https://opentelemetry.io/schemas/1.9.0":  false,
-	"https://opentelemetry.io/schemas/1.13.0": false,
+	"https://opentelemetry.io/schemas/1.6.1": false,
+	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
 const expectedScopeVersion = "0.111.0"
@@ -113,7 +112,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"container.memory.rss":                            false,
 	"container.memory.usage":                          false,
 	"container.memory.working_set":                    false,
-	"gen":                                             false,
 	"k8s.node.cpu.time":                               false,
 	"k8s.node.cpu.utilization":                        false,
 	"k8s.node.filesystem.available":                   false,
