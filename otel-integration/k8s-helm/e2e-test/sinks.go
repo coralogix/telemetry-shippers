@@ -20,9 +20,11 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
-type ExpectedValueMode int
-
 const (
+	equal = iota
+	regex
+	exist
+
 	AttributeMatchTypeEqual ExpectedValueMode = iota
 	AttributeMatchTypeRegex
 	AttributeMatchTypeExist
@@ -30,6 +32,14 @@ const (
 
 	ServiceNameAttribute = "service.name"
 )
+
+type ExpectedValueMode int
+
+type ExpectedTrace struct {
+	name    string
+	service string
+	attrs   map[string]ExpectedValue
+}
 
 type ExpectedValue struct {
 	Mode  ExpectedValueMode
@@ -127,25 +137,24 @@ func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]ExpectedValue) e
 		foundAttrs[k] = false
 	}
 
-	attrs.Range(
-		func(k string, v pcommon.Value) bool {
-			if val, ok := kvs[k]; ok {
-				switch val.Mode {
-				case AttributeMatchTypeEqual:
-					if val.Value == v.AsString() {
-						foundAttrs[k] = true
-					}
-				case AttributeMatchTypeRegex:
-					matched, _ := regexp.MatchString(val.Value, v.AsString())
-					if matched {
-						foundAttrs[k] = true
-					}
-				case AttributeMatchTypeExist:
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		if val, ok := kvs[k]; ok {
+			switch val.Mode {
+			case AttributeMatchTypeEqual:
+				if val.Value == v.AsString() {
 					foundAttrs[k] = true
 				}
+			case AttributeMatchTypeRegex:
+				matched, _ := regexp.MatchString(val.Value, v.AsString())
+				if matched {
+					foundAttrs[k] = true
+				}
+			case AttributeMatchTypeExist:
+				foundAttrs[k] = true
 			}
-			return true
-		},
+		}
+		return true
+	},
 	)
 
 	var err error

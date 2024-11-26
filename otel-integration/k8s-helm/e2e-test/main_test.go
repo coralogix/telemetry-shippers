@@ -4,7 +4,6 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,21 +82,21 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 		for i := 0; i < actualMetrics.ResourceMetrics().Len(); i++ {
 			rmetrics := actualMetrics.ResourceMetrics().At(i)
 
-			_, ok := expectedResourceSchemaURL[rmetrics.SchemaUrl()]
+			_, ok := expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()]
 			require.True(t, ok, "schema_url %v does not match one of the expected values", rmetrics.SchemaUrl())
 			if ok {
-				expectedResourceSchemaURL[rmetrics.SchemaUrl()] = true
+				expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()] = true
 			}
 
 			checkScopeMetrics(t, rmetrics)
 		}
 	}
 
-	for name, expectedState := range expectedResourceSchemaURL {
-		require.True(t, expectedState, "schema_url %v was not found in the actual metrics", name)
+	for name, expectedState := range expectedResourceMetricsSchemaURL {
+		require.True(t, expectedState, "metrics schema_url %v was not found in the actual metrics", name)
 	}
 	for name, expectedState := range expectedResourceScopeNames {
-		require.True(t, expectedState, "scope %v was not found in the actual metrics", name)
+		require.True(t, expectedState, "metrics scope %v was not found in the actual metrics", name)
 	}
 
 	var missingMetrics []string
@@ -118,22 +117,17 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 	for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
 		scope := rmetrics.ScopeMetrics().At(k)
 
-		// Ignore checking telemetrygen metrics (e.g. "gen")
+		// Ignore checking telemetrygen resource metrics (e.g. "gen")
 		if len(scope.Scope().Name()) == 0 && len(scope.Scope().Version()) == 0 {
 			continue
 		}
 
-		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v")
-		rmetrics.Resource().Attributes().Range(func(k string, v pcommon.Value) bool {
-			fmt.Println("Resource Attributes: ", k, v.AsString())
-			return true
-		})
-
+		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "metrics unexpected scope version %v")
 		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
 		if ok {
 			expectedResourceScopeNames[scope.Scope().Name()] = true
 		}
-		require.True(t, ok, "scope %v does not match one of the expected values", scope.Scope().Name())
+		require.True(t, ok, "metrics scope %v does not match one of the expected values", scope.Scope().Name())
 
 		// We only need the relevant part of the scopr name to get receiver name.
 		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
@@ -144,7 +138,6 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 		for j := 0; j < metrics.Len(); j++ {
 			metric := metrics.At(j)
 
-			fmt.Println("Metric Name: ", metric.Name())
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
 				expectedMetrics[metric.Name()] = true
@@ -195,10 +188,10 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string) 
 		for i := 0; i < actualTraces.ResourceSpans().Len(); i++ {
 			rspans := actualTraces.ResourceSpans().At(i)
 
-			_, ok := expectedResourceSchemaURL[rspans.SchemaUrl()]
+			_, ok := expectedTracesSchemaURL[rspans.SchemaUrl()]
 			require.True(t, ok, "traces resource %v does not match one of the expected values", rspans.SchemaUrl())
 			if ok {
-				expectedResourceSchemaURL[rspans.SchemaUrl()] = true
+				expectedTracesSchemaURL[rspans.SchemaUrl()] = true
 			}
 
 			// checkResourceSpans(t, rspans)
