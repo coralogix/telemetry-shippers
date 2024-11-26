@@ -56,18 +56,18 @@ func TestE2E_Agent(t *testing.T) {
 		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
-	WaitForMetrics(t, 10, metricsConsumer)
-	WaitForTraces(t, 30, tracesConsumer)
-
-	checkResourceMetrics(t, metricsConsumer.AllMetrics())
-	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID)
-
 	t.Cleanup(func() {
 		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
 		for _, obj := range telemetryGenObjs {
 			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
 		}
 	})
+
+	WaitForMetrics(t, 5, metricsConsumer)
+	WaitForTraces(t, 10, tracesConsumer)
+
+	checkResourceMetrics(t, metricsConsumer.AllMetrics())
+	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID)
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -117,7 +117,7 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 	for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
 		scope := rmetrics.ScopeMetrics().At(k)
 
-		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v")
+		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v", scope.Scope().Version())
 		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
 		if ok {
 			expectedResourceScopeNames[scope.Scope().Name()] = true
