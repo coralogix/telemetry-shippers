@@ -2,10 +2,6 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
@@ -13,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
