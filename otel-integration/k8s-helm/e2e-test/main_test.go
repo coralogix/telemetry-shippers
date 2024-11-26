@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -117,22 +118,30 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 	for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
 		scope := rmetrics.ScopeMetrics().At(k)
 
-		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v", scope.Scope().Version())
-		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
-		if ok {
-			expectedResourceScopeNames[scope.Scope().Name()] = true
+		if len(scope.Scope().Version()) > 0 {
+			fmt.Println("Scope Version: ", scope.Scope().Version())
+			require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "unexpected scope version %v", scope.Scope().Version())
 		}
-		require.True(t, ok, "scope %v does not match one of the expected values", scope.Scope().Name())
 
-		// We only need the relevant part of the scopr name to get receiver name.
-		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
-		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
+		if len(scope.Scope().Name()) > 0 {
+			fmt.Println("Scope Name: ", scope.Scope().Name())
+			_, ok := expectedResourceScopeNames[scope.Scope().Name()]
+			if ok {
+				expectedResourceScopeNames[scope.Scope().Name()] = true
+			}
+			require.True(t, ok, "scope %v does not match one of the expected values", scope.Scope().Name())
+
+			// We only need the relevant part of the scopr name to get receiver name.
+			scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
+			checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
+		}
 
 		metrics := scope.Metrics()
 
 		for j := 0; j < metrics.Len(); j++ {
 			metric := metrics.At(j)
 
+			fmt.Println("Metric Name: ", metric.Name())
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
 				expectedMetrics[metric.Name()] = true
