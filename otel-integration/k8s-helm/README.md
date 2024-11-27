@@ -507,7 +507,6 @@ presets:
        enabled: true
 ```
 
-
 #### SpanMetrics Database Monitoring
 
 Once you enable the Span Metrics preset, the dbMetrics configuration will automatically be enabled. The DbMetrics option generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
