@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.114 / 2024-11-27
+
+- [Feat] Add the `errorTracking` preset. It's enabled by default when `spanMetrics` is also enabled.
+
 ### v0.0.113 / 2024-11-21
 
 - [Fix] Setting max_batch_size for logsCollection preset now works on all recombine operators.

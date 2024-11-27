@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.113"
+  version: "0.0.114"
 
   extensions:
     kubernetesDashboard:
@@ -140,6 +140,10 @@ opentelemetry-agent:
       collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
       enabled: false
+      # transformStatements:
+      # - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+      errorTracking:
+        enabled: true
       dbMetrics:
         enabled: true
         # transformStatements:
