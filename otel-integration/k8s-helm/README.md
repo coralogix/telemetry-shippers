@@ -475,6 +475,38 @@ spanNameReplacePattern:
 
 This will result in your spans having generalized name `user-{id}`.
 
+#### SpanMetrics Error Tracking
+
+Once you enable the Span Metrics preset, the errorTracking configuration will automatically be enabled.
+
+This is how you can disable the errorTracking option:
+
+```
+presets:
+    spanMetrics:
+      enabled: true
+      errorTracking:
+        enabled: false
+```
+
+Note: errorTracking only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+
+```
+http.status_code => http.response.status_code
+```
+
+To do that, you can add the following configuration:
+
+```
+presets:
+  spanMetrics:
+     enabled: true
+       transformStatements:
+       - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+     errorTracking:
+       enabled: true
+```
+
 #### SpanMetrics Database Monitoring
 
 Once you enable the Span Metrics preset, the dbMetrics configuration will automatically be enabled. The DbMetrics option generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
