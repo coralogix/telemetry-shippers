@@ -54,11 +54,11 @@ processors:
           - delete_matching_keys(cache, "^(message|trace_id|span_id|severity_number)$")
           - merge_maps(attributes, cache, "insert")
   batch: { send_batch_max_size: 2048, send_batch_size: 1024, timeout: 1s }
-  # resource/metadata:
-  #   attributes:
-  #     - action: upsert
-  #       key: cx.otel_integration.name
-  #       value: coralogix-integration-ecs-fargate
+  resource/metadata:
+    attributes:
+      - action: upsert
+        key: cx.otel_integration.name
+        value: coralogix-integration-ecs-fargate
   resourcedetection:
     detectors: [system, env, ec2, ecs]
     override: false
