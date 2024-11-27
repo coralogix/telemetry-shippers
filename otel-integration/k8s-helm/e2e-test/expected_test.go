@@ -213,62 +213,54 @@ var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.4.0": false,
 }
 
-func expectedTraces(testID string, testNs string) []struct {
+func expectedTraces(testID string, testNs string) map[string]struct {
 	name    string
 	service string
 	attrs   map[string]ExpectedValue
 } {
-	return []struct {
+	return map[string]struct {
 		name    string
 		service string
 		attrs   map[string]ExpectedValue
 	}{
-		{
+		"test-traces-job": {
 			name:    "traces-job",
 			service: "test-traces-job",
 			attrs: map[string]ExpectedValue{
 				"k8s.pod.name":       NewExpectedValue(AttributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-job-[a-z0-9]*"),
-				"k8s.pod.uid":        NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 				"k8s.job.name":       NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-job"),
 				"k8s.namespace.name": NewExpectedValue(AttributeMatchTypeEqual, testNs),
-				"k8s.node.name":      NewExpectedValue(exist, ""),
-				"k8s.cluster.uid":    NewExpectedValue(AttributeMatchTypeRegex, UidRe),
+				"k8s.node.name":      NewExpectedValue(AttributeMatchTypeExist, ""),
 			},
 		},
-		{
+		"test-traces-statefulset": {
 			name:    "traces-statefulset",
 			service: "test-traces-statefulset",
 			attrs: map[string]ExpectedValue{
 				"k8s.pod.name":         NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset-0"),
-				"k8s.pod.uid":          NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 				"k8s.statefulset.name": NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset"),
 				"k8s.namespace.name":   NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":        NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.cluster.uid":      NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 			},
 		},
-		{
+		"test-traces-deployment": {
 			name:    "traces-deployment",
 			service: "test-traces-deployment",
 			attrs: map[string]ExpectedValue{
 				"k8s.pod.name":        NewExpectedValue(AttributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-deployment-[a-z0-9]*-[a-z0-9]*"),
-				"k8s.pod.uid":         NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 				"k8s.deployment.name": NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-deployment"),
 				"k8s.namespace.name":  NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":       NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.cluster.uid":     NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 			},
 		},
-		{
+		"test-traces-daemonset": {
 			name:    "traces-daemonset",
 			service: "test-traces-daemonset",
 			attrs: map[string]ExpectedValue{
 				"k8s.pod.name":       NewExpectedValue(AttributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-daemonset-[a-z0-9]*"),
-				"k8s.pod.uid":        NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 				"k8s.daemonset.name": NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-daemonset"),
 				"k8s.namespace.name": NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":      NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.cluster.uid":    NewExpectedValue(AttributeMatchTypeRegex, UidRe),
 			},
 		},
 	}

@@ -4,8 +4,12 @@
 package e2e
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -13,6 +17,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -67,12 +72,12 @@ func TestE2E_Agent(t *testing.T) {
 	WaitForTraces(t, 20, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
-	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID)
+	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	if len(actual) == 0 {
-		t.Fatal("No resource metrics received")
+		t.Fatal("metrics: No resource metrics received")
 	}
 
 	for _, current := range actual {
@@ -83,7 +88,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 			rmetrics := actualMetrics.ResourceMetrics().At(i)
 
 			_, ok := expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()]
-			require.True(t, ok, "schema_url %v does not match one of the expected values", rmetrics.SchemaUrl())
+			require.True(t, ok, "metrics: schema_url %v does not match one of the expected values", rmetrics.SchemaUrl())
 			if ok {
 				expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()] = true
 			}
@@ -93,10 +98,10 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	}
 
 	for name, expectedState := range expectedResourceMetricsSchemaURL {
-		require.True(t, expectedState, "metrics schema_url %v was not found in the actual metrics", name)
+		require.True(t, expectedState, "metrics: schema_url %v was not found in the actual metrics", name)
 	}
 	for name, expectedState := range expectedResourceScopeNames {
-		require.True(t, expectedState, "metrics scope %v was not found in the actual metrics", name)
+		require.True(t, expectedState, "metrics: scope %v was not found in the actual metrics", name)
 	}
 
 	var missingMetrics []string
@@ -127,7 +132,7 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 		if ok {
 			expectedResourceScopeNames[scope.Scope().Name()] = true
 		}
-		require.True(t, ok, "metrics scope %v does not match one of the expected values", scope.Scope().Name())
+		require.True(t, ok, "metrics: scope %v does not match one of the expected values", scope.Scope().Name())
 
 		// We only need the relevant part of the scopr name to get receiver name.
 		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
@@ -166,9 +171,9 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
-		require.True(t, ok, "unexpected attribute %v - scopeName: %s", k, scopeName)
+		require.True(t, ok, "metrics: unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
-			require.Equal(t, val, v.AsString(), "unexpected value for attribute %v", k)
+			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v", k)
 		}
 		return true
 	})
@@ -176,27 +181,78 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	return nil
 }
 
-func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string) error {
+func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, testNs string) error {
 	if len(actual) == 0 {
 		t.Fatal("No traces received")
 	}
 
 	for _, current := range actual {
-		actualTraces := ptrace.NewTraces()
-		current.CopyTo(actualTraces)
+		trace := ptrace.NewTraces()
+		current.CopyTo(trace)
 
-		for i := 0; i < actualTraces.ResourceSpans().Len(); i++ {
-			rspans := actualTraces.ResourceSpans().At(i)
+		for i := 0; i < trace.ResourceSpans().Len(); i++ {
+			rspans := trace.ResourceSpans().At(i)
 
 			_, ok := expectedTracesSchemaURL[rspans.SchemaUrl()]
-			require.True(t, ok, "traces resource %v does not match one of the expected values", rspans.SchemaUrl())
+			require.True(t, ok, "traces: resource %v does not match one of the expected values", rspans.SchemaUrl())
 			if ok {
 				expectedTracesSchemaURL[rspans.SchemaUrl()] = true
 			}
 
-			// checkResourceSpans(t, rspans)
+			resource := trace.ResourceSpans().At(i).Resource()
+			service, exist := resource.Attributes().Get(ServiceNameAttribute)
+
+			expectedTrace := expectedTraces(testID, testNs)[service.AsString()]
+			assert.NotEmpty(t, expectedTrace, "traces: unexpected service name %v", service.AsString())
+			assert.True(t, exist, "traces: resource does not have the 'service.name' attribute")
+			assert.NoError(t, assertExpectedAttributes(resource.Attributes(), expectedTrace.attrs))
+
+			assert.NotZero(t, trace.ResourceSpans().At(i).ScopeSpans().Len())
+			assert.NotZero(t, trace.ResourceSpans().At(i).ScopeSpans().At(0).Spans().Len())
 		}
 	}
-
 	return nil
+}
+
+func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]ExpectedValue) error {
+	foundAttrs := make(map[string]bool)
+	for k := range kvs {
+		foundAttrs[k] = false
+	}
+	var notFoundAttrs []string
+
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		if val, ok := kvs[k]; ok {
+			switch val.Mode {
+			case AttributeMatchTypeEqual:
+				if val.Value == v.AsString() {
+					foundAttrs[k] = true
+				}
+			case AttributeMatchTypeRegex:
+				matched, _ := regexp.MatchString(val.Value, v.AsString())
+				if matched {
+					foundAttrs[k] = true
+				}
+			case AttributeMatchTypeExist:
+				foundAttrs[k] = true
+			}
+		} else {
+			notFoundAttrs = append(notFoundAttrs, k)
+		}
+		return true
+	})
+
+	var err error
+	for k, v := range foundAttrs {
+		if !v {
+			err = errors.Join(err, fmt.Errorf("attribute '%v' not found", k))
+		}
+	}
+	if err != nil {
+		expectedJson, _ := json.MarshalIndent(kvs, "", "  ")
+		actualJson, _ := json.MarshalIndent(attrs.AsRaw(), "", "  ")
+		err = errors.Join(err, fmt.Errorf("one or more attributes were not found.\nExpected attributes:\n %s \nActual attributes: \n%s", expectedJson, actualJson))
+	}
+
+	return err
 }
