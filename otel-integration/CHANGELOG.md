@@ -2,8 +2,10 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.114 / 2024-11-27
+### v0.0.115 / 2024-11-27
+- [Feat] Add Traces and Telemetrygen to e2e tests
 
+### v0.0.114 / 2024-11-27
 - [Feat] Add the `errorTracking` preset. It's enabled by default when `spanMetrics` is also enabled.
 
 ### v0.0.113 / 2024-11-21
