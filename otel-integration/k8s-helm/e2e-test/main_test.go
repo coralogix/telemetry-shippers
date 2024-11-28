@@ -112,8 +112,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	}
 
 	if len(missingMetrics) > 0 {
-		// Difficult to enfoce this check as the metrics are dynamic
-		t.Logf("expected metrics %v were not found in the actual metrics", missingMetrics)
+		t.Fatalf("expected metrics %v were not found in the actual metrics", missingMetrics)
 	}
 
 	return nil

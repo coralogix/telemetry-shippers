@@ -138,7 +138,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"k8s.pod.memory.working_set":                      false,
 	"k8s.pod.network.errors":                          false,
 	"k8s.pod.network.io":                              false,
-	"otelcol_exporter_enqueue_failed_metric_points":   false,
 	"otelcol_exporter_queue_capacity":                 false,
 	"otelcol_exporter_queue_size":                     false,
 	"otelcol_exporter_send_failed_log_records":        false,
@@ -230,6 +229,7 @@ func expectedTraces(testID string, testNs string) map[string]struct {
 			service: "test-traces-job",
 			attrs: map[string]ExpectedValue{
 				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
 				"k8s.job.name":             NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-job"),
 				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
@@ -241,6 +241,7 @@ func expectedTraces(testID string, testNs string) map[string]struct {
 			service: "test-traces-statefulset",
 			attrs: map[string]ExpectedValue{
 				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
 				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
 				"k8s.pod.name":             NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset-0"),
@@ -252,6 +253,7 @@ func expectedTraces(testID string, testNs string) map[string]struct {
 			service: "test-traces-deployment",
 			attrs: map[string]ExpectedValue{
 				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
 				"k8s.deployment.name":      NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-deployment"),
 				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
@@ -263,7 +265,7 @@ func expectedTraces(testID string, testNs string) map[string]struct {
 			service: "test-traces-daemonset",
 			attrs: map[string]ExpectedValue{
 				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
-				"k8s.cluster.uid":          NewExpectedValue(AttributeMatchTypeRegex, "asdasqw"),
+				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
 				"k8s.daemonset.name":       NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-daemonset"),
 				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
 				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
