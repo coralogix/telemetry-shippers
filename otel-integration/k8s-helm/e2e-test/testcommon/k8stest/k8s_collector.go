@@ -60,7 +60,6 @@ func CreateCollectorObjects(t *testing.T, client *K8sClient, testID string, mani
 func WaitForCollectorToStart(t *testing.T, client *K8sClient, podNamespace string, podLabels map[string]any) {
 	podGVR := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
 	listOptions := metav1.ListOptions{LabelSelector: SelectorFromMap(podLabels).String()}
-	podTimeoutMinutes := 3
 	t.Logf("waiting for collector pods to be ready")
 	require.Eventuallyf(t, func() bool {
 		list, err := client.DynamicClient.Resource(podGVR).Namespace(podNamespace).List(context.Background(), listOptions)
@@ -103,6 +102,6 @@ func WaitForCollectorToStart(t *testing.T, client *K8sClient, podNamespace strin
 			return true
 		}
 		return false
-	}, time.Duration(podTimeoutMinutes)*time.Minute, 2*time.Second,
-		"collector pods were not ready within %d minutes", podTimeoutMinutes)
+	}, 3*time.Minute, 2*time.Second,
+		"collector pods were not ready within 3 minutes")
 }
