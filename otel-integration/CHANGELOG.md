@@ -2,10 +2,16 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.115 / 2024-11-27
-- [Feat] Add Traces and Telemetrygen to e2e tests
+### v0.0.116 / 2024-11-29
+
+- [Fix] Change the default value of the metrics telemetry service address to `0.0.0.0:8888`.
+
+### v0.0.115 / 2024-11-28
+
+- [Fix] Make the metrics telemetry service listen on `0.0.0.0` instead of using shell var expansion to resolve the pod IP.
 
 ### v0.0.114 / 2024-11-27
+
 - [Feat] Add the `errorTracking` preset. It's enabled by default when `spanMetrics` is also enabled.
 
 ### v0.0.113 / 2024-11-21
