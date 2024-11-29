@@ -4,7 +4,7 @@
 
 ### v0.0.116 / 2024-11-29
 
-- [Fix] Change the default value of the metrics telemetry service to `0.0.0.0`.
+- [Fix] Change the default value of the metrics telemetry service address to `0.0.0.0:8888`.
 
 ### v0.0.115 / 2024-11-28
 
