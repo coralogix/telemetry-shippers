@@ -19,6 +19,10 @@ var expectedResourceScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                     false,
 }
 
+var unwantedScopeNames = map[string]struct{}{
+	"spanmetricsconnector": {},
+}
+
 var expectedResourceAttributesKubeletstatreceiver = map[string]string{
 	"azure.resourcegroup.name": "",
 	"azure.vm.name":            "",
@@ -138,6 +142,8 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"k8s.pod.memory.working_set":                      false,
 	"k8s.pod.network.errors":                          false,
 	"k8s.pod.network.io":                              false,
+	"otelcol_processor_filter_spans_filtered":         false,
+	"otelcol_otelsvc_k8s_pod_deleted":                 false,
 	"otelcol_exporter_queue_capacity":                 false,
 	"otelcol_exporter_queue_size":                     false,
 	"otelcol_exporter_send_failed_log_records":        false,
@@ -150,7 +156,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_fileconsumer_reading_files":              false,
 	"otelcol_otelsvc_k8s_ip_lookup_miss":              false,
 	"otelcol_otelsvc_k8s_pod_added":                   false,
-	"otelcol_otelsvc_k8s_pod_deleted":                 false,
 	"otelcol_otelsvc_k8s_pod_table_size":              false,
 	"otelcol_otelsvc_k8s_pod_updated":                 false,
 	"otelcol_process_cpu_seconds":                     false,

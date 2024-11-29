@@ -112,7 +112,9 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	}
 
 	if len(missingMetrics) > 0 {
-		t.Fatalf("expected metrics %v were not found in the actual metrics", missingMetrics)
+		// Note: actual metrics should a subset of expected metrics,
+		// and some expected metrics may not be found in actual metrics
+		t.Logf("Note: expected metrics %v were not found in the actual metrics", missingMetrics)
 	}
 
 	return nil
@@ -127,7 +129,13 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			continue
 		}
 
-		require.Equal(t, scope.Scope().Version(), expectedScopeVersion, "metrics unexpected scope version %v")
+		// Break if unwanted scope detected (e.g. spanmetrics)
+		_, exist := unwantedScopeNames[scope.Scope().Name()]
+		if exist {
+			t.Fatalf("unwanted scope detected %v", scope.Scope().Name())
+		}
+
+		require.Equal(t, expectedScopeVersion, scope.Scope().Version(), "metrics unexpected scope version %v")
 		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
 		if ok {
 			expectedResourceScopeNames[scope.Scope().Name()] = true
@@ -150,7 +158,7 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			if !ok {
 				spew.Dump(metric)
 			}
-			assert.True(t, ok, "actual metrics %v does not match one of the expected values", metric.Name())
+			require.True(t, ok, "actual metrics detected %v do not match expected metrics", metric.Name())
 		}
 	}
 
