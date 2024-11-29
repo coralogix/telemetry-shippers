@@ -207,7 +207,7 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 				expectedTracesSchemaURL[rspans.SchemaUrl()] = true
 			}
 
-			resource := trace.ResourceSpans().At(i).Resource()
+			resource := rspans.Resource()
 			service, exist := resource.Attributes().Get(ServiceNameAttribute)
 
 			expectedTrace := expectedTraces(testID, testNs)[service.AsString()]
