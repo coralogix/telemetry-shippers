@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.116 / 2024-11-29
+
+- [Fix] Change the default value of the metrics telemetry service address to `0.0.0.0:8888`.
+
 ### v0.0.115 / 2024-11-28
 
 - [Fix] Make the metrics telemetry service listen on `0.0.0.0` instead of using shell var expansion to resolve the pod IP.
