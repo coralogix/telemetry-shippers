@@ -22,8 +22,6 @@ opentelemetry-agent:
           name: otel-hostendpoint-configmap
           key: HOSTENDPOINT
   presets:
-    spanMetrics: 
-      enabled: true
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
