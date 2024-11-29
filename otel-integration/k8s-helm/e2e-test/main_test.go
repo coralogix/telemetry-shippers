@@ -215,8 +215,8 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 			require.True(t, exist, "traces: resource does not have the 'service.name' attribute")
 			assert.NoError(t, assertExpectedAttributes(resource.Attributes(), expectedTrace.attrs))
 
-			require.NotZero(t, trace.ResourceSpans().At(i).ScopeSpans().Len())
-			require.NotZero(t, trace.ResourceSpans().At(i).ScopeSpans().At(0).Spans().Len())
+			require.NotZero(t, rspans.ScopeSpans().Len())
+			require.NotZero(t, rspans.ScopeSpans().At(0).Spans().Len())
 		}
 	}
 	return nil
