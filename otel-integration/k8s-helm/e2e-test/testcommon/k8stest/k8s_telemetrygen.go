@@ -65,7 +65,7 @@ func CreateTelemetryGenObjects(t *testing.T, client *K8sClient, createOpts *Tele
 func WaitForTelemetryGenToStart(t *testing.T, client *K8sClient, podNamespace string, podLabels map[string]any, workload, dataType string) {
 	podGVR := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
 	listOptions := metav1.ListOptions{LabelSelector: SelectorFromMap(podLabels).String()}
-	podTimeoutMinutes := 3
+	podTimeoutMinutes := 3 * time.Minute
 	var podPhase string
 	require.Eventually(t, func() bool {
 		list, err := client.DynamicClient.Resource(podGVR).Namespace(podNamespace).List(context.Background(), listOptions)
@@ -75,6 +75,6 @@ func WaitForTelemetryGenToStart(t *testing.T, client *K8sClient, podNamespace st
 		}
 		podPhase = list.Items[0].Object["status"].(map[string]any)["phase"].(string)
 		return podPhase == "Running"
-	}, time.Duration(podTimeoutMinutes)*time.Minute, 50*time.Millisecond,
-		"telemetrygen pod of Workload [%s] in datatype [%s] haven't started within %d minutes, latest pod phase is %s", workload, dataType, podTimeoutMinutes, podPhase)
+	}, podTimeoutMinutes, 50*time.Millisecond,
+		"telemetrygen pod of Workload [%s] in datatype [%s] haven't started within %s, latest pod phase is %s", workload, dataType, podTimeoutMinutes, podPhase)
 }

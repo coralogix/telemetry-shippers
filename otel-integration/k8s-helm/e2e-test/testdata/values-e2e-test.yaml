@@ -1,6 +1,7 @@
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
 global:
   logLevel: "debug"
+  hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent:
   extraEnvs:
@@ -16,11 +17,6 @@ opentelemetry-agent:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
-    - name: HOSTENDPOINT
-      valueFrom:
-        configMapKeyRef:
-          name: otel-hostendpoint-configmap
-          key: HOSTENDPOINT
   presets:
     hostMetrics:
       enabled: true
@@ -32,7 +28,7 @@ opentelemetry-agent:
   config:
     exporters:
       otlp:
-        endpoint: ${env:HOSTENDPOINT}:4317
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
         tls:
           insecure: true
     service:
