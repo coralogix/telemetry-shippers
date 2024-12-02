@@ -61,7 +61,7 @@ jobs:
           # set -e
       - name: Verbose Debugging
         run: |
-          kubectl get confirmap coralogix-opentelemetry-agent -o yaml
+          kubectl get configmap coralogix-opentelemetry-agent -o yaml
           kubectl describe daemonsets coralogix-opentelemetry-agent
           kubectl logs -l app.kubernetes.io/name=opentelemetry-agent
           
