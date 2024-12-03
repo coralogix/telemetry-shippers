@@ -47,7 +47,6 @@ jobs:
           --set global.hostedEndpoint=$HOSTENDPOINT \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml
-          kubectl describe daemonsets coralogix-opentelemetry-agent
           kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
       - name: Run E2E test
         env:
@@ -56,4 +55,3 @@ jobs:
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go test -v -run=TestE2E_Agent ./...
-          
