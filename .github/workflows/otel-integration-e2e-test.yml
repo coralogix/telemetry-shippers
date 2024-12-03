@@ -55,7 +55,5 @@ jobs:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
-          # set +e
           go test -v -run=TestE2E_Agent ./...
-          # set -e
-
+          
