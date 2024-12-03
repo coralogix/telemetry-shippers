@@ -220,59 +220,59 @@ var expectedTracesSchemaURL = map[string]bool{
 func expectedTraces(testID string, testNs string) map[string]struct {
 	name    string
 	service string
-	attrs   map[string]ExpectedValue
+	attrs   map[string]expectedValue
 } {
 	return map[string]struct {
 		name    string
 		service string
-		attrs   map[string]ExpectedValue
+		attrs   map[string]expectedValue
 	}{
 		"test-traces-job": {
 			name:    "traces-job",
 			service: "test-traces-job",
-			attrs: map[string]ExpectedValue{
-				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
-				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.job.name":             NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-job"),
-				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
-				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.pod.name":             NewExpectedValue(AttributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-job-[a-z0-9]*"),
+			attrs: map[string]expectedValue{
+				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+				"k8s.job.name":             newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-job"),
+				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
+				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-job-[a-z0-9]*"),
 			},
 		},
 		"test-traces-statefulset": {
 			name:    "traces-statefulset",
 			service: "test-traces-statefulset",
-			attrs: map[string]ExpectedValue{
-				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
-				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
-				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.pod.name":             NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset-0"),
-				"k8s.statefulset.name":     NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset"),
+			attrs: map[string]expectedValue{
+				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
+				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset-0"),
+				"k8s.statefulset.name":     newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset"),
 			},
 		},
 		"test-traces-deployment": {
 			name:    "traces-deployment",
 			service: "test-traces-deployment",
-			attrs: map[string]ExpectedValue{
-				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
-				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.deployment.name":      NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-deployment"),
-				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
-				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.pod.name":             NewExpectedValue(AttributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-deployment-[a-z0-9]*-[a-z0-9]*"),
+			attrs: map[string]expectedValue{
+				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+				"k8s.deployment.name":      newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-deployment"),
+				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
+				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-deployment-[a-z0-9]*-[a-z0-9]*"),
 			},
 		},
 		"test-traces-daemonset": {
 			name:    "traces-daemonset",
 			service: "test-traces-daemonset",
-			attrs: map[string]ExpectedValue{
-				"cx.otel_integration.name": NewExpectedValue(AttributeMatchTypeEqual, "coralogix-integration-helm"),
-				"k8s.cluster.name":         NewExpectedValue(AttributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.daemonset.name":       NewExpectedValue(AttributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-daemonset"),
-				"k8s.namespace.name":       NewExpectedValue(AttributeMatchTypeEqual, testNs),
-				"k8s.node.name":            NewExpectedValue(AttributeMatchTypeExist, ""),
-				"k8s.pod.name":             NewExpectedValue(AttributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-daemonset-[a-z0-9]*"),
+			attrs: map[string]expectedValue{
+				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+				"k8s.daemonset.name":       newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-daemonset"),
+				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
+				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-daemonset-[a-z0-9]*"),
 			},
 		},
 	}

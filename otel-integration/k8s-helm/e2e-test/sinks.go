@@ -18,34 +18,34 @@ const (
 	regex
 	exist
 
-	AttributeMatchTypeEqual ExpectedValueMode = iota
-	AttributeMatchTypeRegex
-	AttributeMatchTypeExist
+	attributeMatchTypeEqual expectedValueMode = iota
+	attributeMatchTypeRegex
+	attributeMatchTypeExist
 
-	ServiceNameAttribute = "service.name"
+	serviceNameAttribute = "service.name"
 )
 
-type ExpectedValueMode int
+type expectedValueMode int
 
-type ExpectedTrace struct {
+type expectedTrace struct {
 	name    string
 	service string
-	attrs   map[string]ExpectedValue
+	attrs   map[string]expectedValue
 }
 
-type ExpectedValue struct {
-	Mode  ExpectedValueMode
-	Value string
+type expectedValue struct {
+	mode  expectedValueMode
+	value string
 }
 
-func NewExpectedValue(mode ExpectedValueMode, value string) ExpectedValue {
-	return ExpectedValue{
-		Mode:  mode,
-		Value: value,
+func newExpectedValue(mode expectedValueMode, value string) expectedValue {
+	return expectedValue{
+		mode:  mode,
+		value: value,
 	}
 }
 
-func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
+func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
 	cfg.HTTP = nil
@@ -62,7 +62,7 @@ func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 	}
 }
 
-func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
+func waitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
 	timeout := 5 * time.Minute // 5 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(mc.AllMetrics())
@@ -72,7 +72,7 @@ func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) 
 		entriesNum, timeout)
 }
 
-func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
+func waitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
 	timeout := 5 * time.Minute // 5 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())

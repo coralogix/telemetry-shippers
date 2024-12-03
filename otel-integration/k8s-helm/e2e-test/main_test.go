@@ -46,7 +46,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
-	shutdownSink := StartUpSinks(t, metricsConsumer, tracesConsumer)
+	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
 	testID := uuid.NewString()[:8]
@@ -68,8 +68,8 @@ func TestE2E_Agent(t *testing.T) {
 		}
 	})
 
-	WaitForMetrics(t, 20, metricsConsumer)
-	WaitForTraces(t, 20, tracesConsumer)
+	waitForMetrics(t, 20, metricsConsumer)
+	waitForTraces(t, 20, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
@@ -208,7 +208,7 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 			}
 
 			resource := rspans.Resource()
-			service, exist := resource.Attributes().Get(ServiceNameAttribute)
+			service, exist := resource.Attributes().Get(serviceNameAttribute)
 
 			expectedTrace := expectedTraces(testID, testNs)[service.AsString()]
 			require.NotEmpty(t, expectedTrace, "traces: unexpected service name %v", service.AsString())
@@ -222,7 +222,7 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 	return nil
 }
 
-func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]ExpectedValue) error {
+func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) error {
 	foundAttrs := make(map[string]bool)
 	for k := range kvs {
 		foundAttrs[k] = false
@@ -231,17 +231,17 @@ func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]ExpectedValue) e
 
 	attrs.Range(func(k string, v pcommon.Value) bool {
 		if val, ok := kvs[k]; ok {
-			switch val.Mode {
-			case AttributeMatchTypeEqual:
-				if val.Value == v.AsString() {
+			switch val.mode {
+			case attributeMatchTypeEqual:
+				if val.value == v.AsString() {
 					foundAttrs[k] = true
 				}
-			case AttributeMatchTypeRegex:
-				matched, _ := regexp.MatchString(val.Value, v.AsString())
+			case attributeMatchTypeRegex:
+				matched, _ := regexp.MatchString(val.value, v.AsString())
 				if matched {
 					foundAttrs[k] = true
 				}
-			case AttributeMatchTypeExist:
+			case attributeMatchTypeExist:
 				foundAttrs[k] = true
 			}
 		} else {
