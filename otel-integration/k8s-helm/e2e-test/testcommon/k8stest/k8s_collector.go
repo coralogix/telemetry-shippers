@@ -58,6 +58,7 @@ func CreateCollectorObjects(t *testing.T, client *K8sClient, testID string, mani
 }
 
 func WaitForCollectorToStart(t *testing.T, client *K8sClient, podNamespace string, podLabels map[string]any) {
+	timeoutWait := 3 * time.Minute
 	podGVR := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
 	listOptions := metav1.ListOptions{LabelSelector: SelectorFromMap(podLabels).String()}
 	t.Logf("waiting for collector pods to be ready")
@@ -102,6 +103,6 @@ func WaitForCollectorToStart(t *testing.T, client *K8sClient, podNamespace strin
 			return true
 		}
 		return false
-	}, 3*time.Minute, 2*time.Second,
-		"collector pods were not ready within 3 minutes")
+	}, timeoutWait, 2*time.Second,
+		"collector pods were not ready within %s", timeoutWait)
 }

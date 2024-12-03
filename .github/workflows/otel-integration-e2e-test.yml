@@ -40,7 +40,6 @@ jobs:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
           cd ./otel-integration/k8s-helm
-          kubectl create configmap otel-hostendpoint-configmap --from-literal=HOSTENDPOINT=$HOSTENDPOINT
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
@@ -59,10 +58,4 @@ jobs:
           # set +e
           go test -v -run=TestE2E_Agent ./...
           # set -e
-      - name: Verbose Debugging
-        run: |
-          kubectl get configmap coralogix-opentelemetry-agent -o yaml
-          kubectl describe daemonsets coralogix-opentelemetry-agent
-          kubectl logs -l app.kubernetes.io/name=opentelemetry-agent
-          
 

@@ -4,19 +4,6 @@ global:
   hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent:
-  extraEnvs:
-    - name: CORALOGIX_PRIVATE_KEY
-      valueFrom:
-        secretKeyRef:
-          name: coralogix-keys
-          key: PRIVATE_KEY
-    - name: OTEL_RESOURCE_ATTRIBUTES
-      value: "k8s.node.name=$(K8S_NODE_NAME)"
-    - name: KUBE_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
   presets:
     hostMetrics:
       enabled: true
