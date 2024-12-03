@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.117 / 2024-12-03
+
+- [Feat] Adding new configs to the Target Allocator.
+
 ### v0.0.116 / 2024-11-29
 
 - [Fix] Change the default value of the metrics telemetry service address to `0.0.0.0:8888`.
