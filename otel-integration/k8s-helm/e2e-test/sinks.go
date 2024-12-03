@@ -63,7 +63,7 @@ func StartUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 }
 
 func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) {
-	timeout := 3 * time.Minute // 3 minutes
+	timeout := 5 * time.Minute // 5 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(mc.AllMetrics())
 		t.Logf("Waiting for metrics: got %d/%d", count, entriesNum)
@@ -73,7 +73,7 @@ func WaitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) 
 }
 
 func WaitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-	timeout := 3 * time.Minute // 3 minutes
+	timeout := 5 * time.Minute // 5 minutes
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())
 		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)

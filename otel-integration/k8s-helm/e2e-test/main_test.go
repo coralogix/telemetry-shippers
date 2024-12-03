@@ -68,7 +68,7 @@ func TestE2E_Agent(t *testing.T) {
 		}
 	})
 
-	WaitForMetrics(t, 10, metricsConsumer)
+	WaitForMetrics(t, 20, metricsConsumer)
 	WaitForTraces(t, 20, tracesConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
@@ -114,7 +114,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	if len(missingMetrics) > 0 {
 		// Note: actual metrics should a subset of expected metrics,
 		// and some expected metrics may not be found in actual metrics
-		t.Logf("Note: expected metrics %v were not found in the actual metrics", missingMetrics)
+		t.Fatalf("expected metrics %v were not found in the actual metrics", missingMetrics)
 	}
 
 	return nil

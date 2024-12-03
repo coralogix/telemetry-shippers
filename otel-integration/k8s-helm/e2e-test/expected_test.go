@@ -142,8 +142,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"k8s.pod.memory.working_set":                      false,
 	"k8s.pod.network.errors":                          false,
 	"k8s.pod.network.io":                              false,
-	"otelcol_processor_filter_spans_filtered":         false,
-	"otelcol_otelsvc_k8s_pod_deleted":                 false,
 	"otelcol_exporter_queue_capacity":                 false,
 	"otelcol_exporter_queue_size":                     false,
 	"otelcol_exporter_send_failed_log_records":        false,
