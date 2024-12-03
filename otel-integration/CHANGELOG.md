@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.117 / 2024-11-29
+
+- [Feat] E2E Testing: Populated traces via telemetrygen.
+- [Feat] E2E Testing: Detect and prevent spanmetrics.
+
 ### v0.0.116 / 2024-11-29
 
 - [Fix] Change the default value of the metrics telemetry service address to `0.0.0.0:8888`.
