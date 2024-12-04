@@ -129,8 +129,6 @@ Provides information about Kubernetes version.
 
 coralogix-ebpf-agent is an agent developed by coralogix. using [EBPF](https://ebpf.io/what-is-ebpf/) to extract network traffic as spans (http requests, SQL traffic ect), allowing for [Coralogix APM](https://coralogix.com/docs/user-guides/apm/getting-started/introduction-to-apm/) capabilities without any service instrumentation.
 
-TODO: link to ebpf agent docs in coralogix site
-
 Componentes:
 - coralogix-ebpf-agent - The agent that extracts network traffic as spans, running as a daemonset.
 - k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
