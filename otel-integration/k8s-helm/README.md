@@ -1,4 +1,4 @@
- # OpenTelemetry Integration
+# OpenTelemetry Integration
 
 The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
 
@@ -416,6 +416,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 ### Enabling Coralogix EBPF Agent
+
 To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
 #### Filtering Specific Services For Coralogix EBPF Agent
@@ -435,7 +436,7 @@ coralogix-ebpf-agent:
       services_filter_type: "Allow"
 ```
 
-In another example, a case of where we want get all services beside `currencyservice` 
+In another example, a case of where we want get all services beside `currencyservice`
 
 ```yaml
 coralogix-ebpf-agent:
@@ -450,8 +451,6 @@ coralogix-ebpf-agent:
 
 A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
 the name of the service is the name of that owner resource.
-
-
 
 # How to use it
 
