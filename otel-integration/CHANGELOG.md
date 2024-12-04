@@ -4,8 +4,7 @@
 
 ### v0.0.117 / 2024-12-03
 
-- [Feat] E2E Testing: Populated traces via telemetrygen.
-- [Feat] E2E Testing: Detect and prevent spanmetrics.
+- [Feat] Adding new configs to the Target Allocator.
 
 ### v0.0.116 / 2024-11-29
 
