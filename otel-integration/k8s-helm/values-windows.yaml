@@ -361,3 +361,6 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   nodeSelector:
     kubernetes.io/os: linux
+
+coralogix-ebpf-agent:
+  enabled: false

@@ -125,6 +125,17 @@ Provides information about Kubernetes version.
 - container_cpu_cfs_periods_total
 - container_cpu_cfs_throttled_periods_total
 
+## Coralogix EBPF Agent
+
+coralogix-ebpf-agent is an agent developed by coralogix. using [EBPF](https://ebpf.io/what-is-ebpf/) to extract network traffic as spans (http requests, SQL traffic ect), allowing for [Coralogix APM](https://coralogix.com/docs/user-guides/apm/getting-started/introduction-to-apm/) capabilities without any service instrumentation.
+
+Componentes:
+- coralogix-ebpf-agent - The agent that extracts network traffic as spans, running as a daemonset.
+- k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
+- redis - Redis Pubsub is used for communication between k8s-watcher and coralogix-ebpf-agent, running as a sts with 1 replica.
+
+to enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+
 # Prerequisites
 
 Make sure you have at least these version of the following installed:
@@ -403,6 +414,43 @@ Or you can provide the values directly in the command line by passing them with 
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
+
+### Enabling Coralogix EBPF Agent
+
+To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+
+#### Filtering Specific Services For Coralogix EBPF Agent
+
+By default, the coralogix-ebpf-agent will collect traffic from all services in the cluster.
+but there are cases where you might want to filter specific services, or filter out specific services. you can use the
+`coralogix-ebpf-agent.ebpf_agent.sampler` parameter in `values.yaml` to change the service filtering behavior.
+
+For example, collect only traffic coming from `carts-service` and `orders-service`:
+
+```yaml
+coralogix-ebpf-agent:
+  enabled: true
+  ebpf_agent:
+    sampler:
+      services_filter: ["carts-service", "orders-service"]
+      services_filter_type: "Allow"
+```
+
+In another example, a case of where we want get all services beside `currencyservice`
+
+```yaml
+coralogix-ebpf-agent:
+  enabled: true
+  ebpf_agent:
+    sampler:
+      services_filter: ["currency-service"]
+      services_filter_type: "Deny"
+```
+
+#### What Is Considered A Service By Coralogix EBPF Agent?
+
+A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
+the name of the service is the name of that owner resource.
 
 # How to use it
 
