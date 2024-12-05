@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.118 / 2024-12-05
+- [Fix] Target Allocator configmap name conflicting with collector configmap. 
+
 ### v0.0.118 / 2024-12-04
 
 - [Feat] Add ebpf tracing agent subchart.
