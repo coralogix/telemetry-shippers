@@ -2,7 +2,11 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.118 / 2024-12-05
+### v0.0.120 / 2024-12-05
+- [Feat] Bump collector version to `0.115.0`
+- [Feat] Bump Target Allocator version to `0.114.0`
+
+### v0.0.119 / 2024-12-05
 - [Fix] Target Allocator configmap name conflicting with collector configmap.
 
 ### v0.0.118 / 2024-12-04
