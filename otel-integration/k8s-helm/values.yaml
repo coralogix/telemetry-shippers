@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.119"
+  version: "0.0.120"
 
   extensions:
     kubernetesDashboard:
@@ -58,12 +58,10 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.105.0
+      tag: v0.114.0
 
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -447,10 +445,8 @@ opentelemetry-cluster-collector:
     kubernetesResources:
       enabled: false
 
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -751,10 +747,8 @@ opentelemetry-gateway:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   config:
     extensions:
@@ -946,10 +940,8 @@ opentelemetry-receiver:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   config:
     extensions:
