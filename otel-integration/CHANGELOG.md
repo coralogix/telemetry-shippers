@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.121 / 2024-12-05
+- [Feat] Bump coralogix-ebpf-agent version to `0.1.5`
+
 ### v0.0.120 / 2024-12-05
 - [Feat] Bump collector version to `0.115.0`
 - [Feat] Bump Target Allocator version to `0.114.0`
