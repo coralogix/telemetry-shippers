@@ -47,7 +47,7 @@ opentelemetry-agent:
             - statsd
   resources:
     # slighly larger resource requests for gke/autopilot 
-    # since it was droping data
+    # since it was dropping data
     requests:
       cpu: 100m
       memory: 256Mi
@@ -70,4 +70,7 @@ opentelemetry-cluster-collector:
   enabled: true
 
 opentelemetry-agent-windows:
+  enabled: false
+
+coralogix-ebpf-agent:
   enabled: false

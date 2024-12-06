@@ -2,10 +2,19 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.118 / 2024-12-06
+### v0.0.121 / 2024-12-05
+- [Feat] Bump coralogix-ebpf-agent version to `0.1.5`
 
-- [Feat] E2E Testing: Added deploying via kubeconfig to spin up telemetrygen. Traces are now tested.
-- [Feat] E2E Testing: Added scopes scanning to prevent unwanted otel config changes (e.g. spanmetrics)
+### v0.0.120 / 2024-12-05
+- [Feat] Bump collector version to `0.115.0`
+- [Feat] Bump Target Allocator version to `0.114.0`
+
+### v0.0.119 / 2024-12-05
+- [Fix] Target Allocator configmap name conflicting with collector configmap.
+
+### v0.0.118 / 2024-12-04
+
+- [Feat] Add ebpf tracing agent subchart.
 
 ### v0.0.117 / 2024-12-03
 

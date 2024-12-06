@@ -38,3 +38,6 @@ opentelemetry-cluster-collector:
             - prometheus
             - k8s_cluster
             - prometheus/ksm
+
+coralogix-ebpf-agent:
+  enabled: false
