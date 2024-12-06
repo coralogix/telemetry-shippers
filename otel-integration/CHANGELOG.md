@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.118 / 2024-12-06
+
+- [Feat] E2E Testing: Added deploying via kubeconfig to spin up telemetrygen. Traces are now tested.
+- [Feat] E2E Testing: Added scopes scanning to prevent unwanted otel config changes (e.g. spanmetrics)
+
 ### v0.0.117 / 2024-12-03
 
 - [Feat] Adding new configs to the Target Allocator.
