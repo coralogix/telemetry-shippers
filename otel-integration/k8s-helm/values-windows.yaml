@@ -26,10 +26,6 @@ opentelemetry-agent-windows:
     tag: "0.104.0"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
-  command:
-    name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
   
   extraVolumes:
     - name: etcmachineid
