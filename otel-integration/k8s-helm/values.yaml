@@ -137,7 +137,7 @@ opentelemetry-agent:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
-      enabled: false
+      enabled: true
       # transformStatements:
       # - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
       errorTracking:
