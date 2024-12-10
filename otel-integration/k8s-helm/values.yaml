@@ -330,7 +330,6 @@ opentelemetry-agent:
           receivers:
             - otlp
             - prometheus
-            - hostmetrics
             - statsd
         traces:
           exporters:

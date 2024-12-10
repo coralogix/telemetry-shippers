@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.124 / 2024-12-10
+
+- [Feat] remove hostmetrics from the pipeline in default values.yaml, as it is added automatically by the preset
+
 ### v0.0.123 / 2024-12-09
 
 - [Fix] remove component.UseLocalHostAsDefaultHost feature gate from windows installations
