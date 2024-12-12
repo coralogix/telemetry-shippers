@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.125 / 2024-12-12
+
+- [Feat] allow deploying of coralogix-ebpf-agent with existing collector
+
 ### v0.0.124 / 2024-12-10
 
 - [Feat] remove hostmetrics from the pipeline in default values.yaml, as it is added automatically by the preset

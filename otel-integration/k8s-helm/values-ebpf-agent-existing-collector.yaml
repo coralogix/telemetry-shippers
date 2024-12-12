@@ -1,0 +1,17 @@
+global:
+  domain: "-"
+  clusterName: "-"
+
+opentelemetry-agent:
+  enabled: false
+
+opentelemetry-cluster-collector:
+  enabled: false
+
+coralogix-ebpf-agent:
+  enabled: true
+  ebpf_agent:
+    otel:
+      exporter:
+        # configure the opentelemetry collector endpoint here
+        endpoint: "coralogix-opentelemetry-receiver:4317"

@@ -452,6 +452,18 @@ coralogix-ebpf-agent:
 A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
 the name of the service is the name of that owner resource.
 
+#### Enabling Coralogix EBPF with existing OpenTelemetry Collector
+
+If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF agent.
+you can only deploy the ebpf agent and supply your existing OpenTelemetry Collector endpoint with this command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+
+helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
+```
+
 # How to use it
 
 ## Available Endpoints
