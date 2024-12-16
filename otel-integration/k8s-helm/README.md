@@ -541,12 +541,12 @@ Once you enable the Span Metrics preset, the errorTracking configuration will au
 
 This is how you can disable the errorTracking option:
 
-```
+```yaml
 presets:
-    spanMetrics:
-      enabled: true
-      errorTracking:
-        enabled: false
+  spanMetrics:
+    enabled: true
+    errorTracking:
+      enabled: false
 ```
 
 Note: errorTracking only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
@@ -557,7 +557,7 @@ http.status_code => http.response.status_code
 
 To do that, you can add the following configuration:
 
-```
+```yaml
 presets:
   spanMetrics:
      enabled: true
@@ -575,12 +575,12 @@ This is needed to enable the [Database Monitoring](https://coralogix.com/docs/us
 
 This is how you can disable the dbMetrics option:
 
-```
+```yaml
 presets:
-    spanMetrics:
-      enabled: true
-      dbMetrics:
-        enabled: false
+  spanMetrics:
+    enabled: true
+    dbMetrics:
+      enabled: false
 ```
 
 Note: DbMetrics only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
@@ -594,7 +594,7 @@ db.cassandra.table => db.collection.name
 
 To do that, you can add the following configuration:
 
-```
+```yaml
     spanMetrics:
       enabled: false
       dbMetrics:
@@ -741,6 +741,85 @@ service:
 ```
 
 This adds more metrics around exporter latency and various processors metrics.
+
+### Prometheus Receiver
+
+If you are missing metrics collected by Prometheus receiver make sure to check Collector logs.
+
+The Prometheus receiver typically logs `Failed to scrape Prometheus endpoint` errors with target information when it fails to collect the application metrics.
+
+For example:
+
+```
+message_obj:{
+level:warn
+ts:2024-12-13T08:19:17.809Z
+caller:internal/transaction.go:129
+msg:Failed to scrape Prometheus endpoint
+kind:receiver
+name:prometheus
+data_type:metrics
+scrape_timestamp:1734077957789
+target_labels:{__name__="up", container="main", endpoint="4001",  namespace="namespace", pod="pod-name"}
+}
+```
+
+The generic error, doesn't tell you much. To get more details, you will need to enable debug logs inside the Collector:
+
+```yaml
+global:
+  logLevel: "debug"
+```
+
+Then you will start seeing the actual metric and error in Collector logs, this will help you troubleshoot it further.
+
+**Common Errors**
+
+`invalid sample: non-unique label names` - Metric contains non-unique label names. For example:
+
+```yaml
+metric{label1="value1",label1="value2"}
+```
+
+This is not allowed in Prometheus / [OpenMetrics](https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md#labelset), but some libraries produce such labels. It is best to fix the application or library. But as a workaround, you can fix it with [metric_relabel_configs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs), which gets executed before the metric is ingested.
+
+For example, you drop the `label1` metric:
+
+```yaml
+metric_relabel_configs:
+  - action: labeldrop 
+    regex: 'label1'
+```
+
+Alternatively, you can replace the metric with itself, leaving only single label:
+
+```yaml
+metric_relabel_configs:
+  - action: replace
+    source_labels: ['label1']
+    target_label: label1
+```
+
+`'le' label on histogram metric is missing or empty.` Histogram metric contains multiple types. Typically, the metric library produces invalid metrics that are both a histogram and a summary, which is not allowed in Prometheus / OpenMetrics. For example:
+
+```
+# HELP http_server_requests_seconds  
+# TYPE http_server_requests_seconds histogram
+http_server_requests_seconds_bucket{le="0.025",} 1
+http_server_requests_seconds_count{} 15.0
+http_server_requests_seconds_sum{} 0.20938292
+...
+http_server_requests_seconds{quantile="0.999",} 0.0
+```
+
+It is best to fix the application or library to produce just histogram. But as a workaround, you can fix it with `metric_relabel_config`. The following example will drop metrics with quantile label:
+
+```yaml
+metric_relabel_configs
+ - sourceLabels: [__name__, quantile]
+   regex: http_server_requests_seconds;.*
+   action: drop
+```
 
 ## Traces
 
