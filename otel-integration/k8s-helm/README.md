@@ -725,7 +725,6 @@ The integration can be configured to connect to the Coralogix fleet management s
 
 > [!CAUTION]
 > Important security consideration when enabling this feature:
->
 > - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
 > - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
 > - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
