@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.126 / 2024-12-19
+
+- [Feat] add service.version to spanMetrics and dbMetrics
+
 ### v0.0.125 / 2024-12-12
 
 - [Feat] allow deploying of coralogix-ebpf-agent with existing collector

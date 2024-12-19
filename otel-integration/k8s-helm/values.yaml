@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.125"
+  version: "0.0.126"
 
   extensions:
     kubernetesDashboard:
@@ -138,12 +138,18 @@ opentelemetry-agent:
       collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
       enabled: false
+      # Configures collector to add service.version to spanMetrics dimensions
+      serviceVersion:
+        enabled: true
       # transformStatements:
       # - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
       errorTracking:
         enabled: true
       dbMetrics:
         enabled: true
+        # Configures collector to add service.version to spanMetrics dimensions
+        serviceVersion:
+          enabled: true
         # transformStatements:
         # - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
         # - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
