@@ -937,7 +937,7 @@ opentelemetry-receiver:
   presets:
     fleetManagement:
       enabled: false
-      agentType: "gateway"
+      agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
       enabled: false
