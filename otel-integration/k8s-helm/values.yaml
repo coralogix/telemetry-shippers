@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.126"
+  version: "0.0.127"
 
   extensions:
     kubernetesDashboard:
@@ -937,7 +937,7 @@ opentelemetry-receiver:
   presets:
     fleetManagement:
       enabled: false
-      agentType: "gateway"
+      agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
       enabled: false

@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.127 / 2024-12-20
+
+- [Fix] Make the receiver Collector report as agent type `receiver`
+- [Feat] Add fleet management preset configuration to the Windows values files
+
 ### v0.0.126 / 2024-12-19
 
 - [Feat] add service.version to spanMetrics and dbMetrics
