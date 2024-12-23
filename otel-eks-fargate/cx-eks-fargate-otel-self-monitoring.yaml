@@ -40,6 +40,15 @@ data:
             rule: type == "k8s.node" && labels["OTEL-collector-node"] == "true"
     
     processors:
+      resource/metadata:
+        attributes:
+          - key: "k8s.cluster.name"
+            value: "${env:K8S_CLUSTER_NAME}"
+            action: upsert
+          - key: "k8s.node.name"
+            value: "${env:K8S_NODE_NAME}"
+            action: upsert
+    
       # add cluster name from env variable and EKS metadata
       resourcedetection:
         detectors: [env, system, eks]
@@ -76,7 +85,7 @@ data:
       pipelines:
         metrics/colmon:
           receivers: [receiver_creator]
-          processors: [resourcedetection, batch]
+          processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
 
       extensions: [k8s_observer, health_check]
@@ -118,8 +127,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "ClusterName=fargate-lab"
+            - name: K8S_CLUSTER_NAME
+              value: "fargate-lab"
             - name: CORALOGIX_DOMAIN
               value: "coralogix.com"
             - name: CX_APPLICATION
