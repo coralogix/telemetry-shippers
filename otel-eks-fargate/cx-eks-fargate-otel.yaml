@@ -155,14 +155,14 @@ data:
 
     exporters:
       prometheusremotewrite:
-        endpoint: https://ingress.${CORALOGIX_DOMAIN}/prometheus/v1
+        endpoint: https://ingress.${env:CORALOGIX_DOMAIN}/prometheus/v1
         headers:
-          Authorization: "Bearer ${CORALOGIX_PRIVATE_KEY}"
+          Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
 
       coralogix:
         timeout: "30s"
-        private_key: "${CORALOGIX_PRIVATE_KEY}"
-        domain: "${CORALOGIX_DOMAIN}"
+        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
+        domain: "${env:CORALOGIX_DOMAIN}"
         application_name_attributes:
         - "k8s.namespace.name" 
         - "service.namespace"
@@ -175,8 +175,8 @@ data:
         - "k8s.container.name"
         - "k8s.node.name"
         - "service.name"
-        application_name: "${CX_APPLICATION}"
-        subsystem_name: "${CX_SUBSYSTEM}"
+        application_name: "${env:CX_APPLICATION}"
+        subsystem_name: "${env:CX_SUBSYSTEM}"
 
       debug:
         verbosity: detailed
