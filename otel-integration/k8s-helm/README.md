@@ -134,8 +134,6 @@ Componentes:
 - k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
 - redis - Redis Pubsub is used for communication between k8s-watcher and coralogix-ebpf-agent, running as a sts with 1 replica.
 
-to enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
-
 # Prerequisites
 
 Make sure you have at least these version of the following installed:
@@ -438,9 +436,18 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values.yaml -f ipv6-values.yaml
 ```
 
-### Enabling Coralogix EBPF Agent
+### Deploying Coralogix EBPF Agent
 
-To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+```bash
+helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-ebpf-agent.yaml
+```
+
+By default, coralogix ebpf agent will be deployed with the [span metrics preset](#About-span-metrics) enabled.
+since due to the usual high volume of spans collected by the ebpf agent, it is recommended to use 
+[Coralogix APM with span metrics](https://coralogix.com/docs/user-guides/apm/getting-started/span-metrics/)
+to disable this, you can edit to the `values-ebpf-agent.yaml` file and set `presets.spanMetrics.enabled` to `false`.
+
 
 #### Filtering Specific Services For Coralogix EBPF Agent
 
@@ -481,8 +488,6 @@ If you already have an existing OpenTelemetry Collector deployment and you want 
 you can only deploy the ebpf agent and supply your existing OpenTelemetry Collector endpoint with this command:
 
 ```bash
-helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
-
 helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
@@ -741,24 +746,6 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
-
-### Connecting to Coralogix fleet management
-
-The integration can be configured to connect to the Coralogix fleet management server through setting the `presets.fleetManagement.enabled` property to `true`. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is disabled by default.
-
-> [!CAUTION]
-> Important security consideration when enabling this feature:
-> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
-> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
-> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
-
-To enable this feature, set the `presets.fleetManagement.enabled` property to `true`. Here is an example `values.yaml`:
-
-```yaml
-presets:
-  fleetManagement:
-    enabled: true
-```
 
 # Troubleshooting
 
