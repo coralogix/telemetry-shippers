@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.128 / 2024-12-23
+
+- [Feat] add k8s ipv6 only support
+
 ### v0.0.127 / 2024-12-20
 
 - [Fix] Make the receiver Collector report as agent type `receiver`
