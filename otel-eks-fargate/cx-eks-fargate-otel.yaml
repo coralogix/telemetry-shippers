@@ -76,13 +76,28 @@ metadata:
     component: cx-otel-collector-config
 data:
   cx-otel-collector-config: |
-    extensions:
-      k8s_observer:
-        auth_type: serviceAccount
-        observe_pods: true
-        observe_nodes: true
+    extensions: 
       health_check:
-
+      k8s_observer:
+          auth_type: serviceAccount
+          observe_pods: true
+          observe_nodes: true
+      # The OpAMP extension below enables the Coralogix fleet management server connection. 
+      # Uncomment them to enable and add the "opamp" extension to the list under `service.extensions`.
+      # opamp:
+      #   server:
+      #     http:
+      #       endpoint: "https://ingress.${env:CORALOGIX_DOMAIN}/opamp/v1"
+      #       polling_interval: 2m
+      #       headers:
+      #         Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
+      #   agent_description:
+      #     non_identifying_attributes:
+      #       cx.agent.type: "gateway"
+      #       cx.cluster.name: "${env:K8S_CLUSTER_NAME}"
+      #       cx.integrationID: "eks-fargate"
+      #       k8s.node.name: ${env:K8S_NODE_NAME}
+    
     receivers:
       # Monitoring of OTEL performance metrics
       prometheus/self:
@@ -184,7 +199,8 @@ data:
           receivers: [receiver_creator]
           processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
-
+   
+      # When enabling the fleet management feature, add the "opamp" extension to the list below. 
       extensions: [health_check, k8s_observer]
 
 # configure the service and the collector as a StatefulSet

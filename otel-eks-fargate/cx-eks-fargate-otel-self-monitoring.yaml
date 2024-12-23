@@ -19,6 +19,21 @@ data:
         observe_pods: true
         observe_nodes: true
       health_check:
+      # The OpAMP extension below enables the Coralogix fleet management server connection. 
+      # Uncomment them to enable and add the "opamp" extension to the list under `service.extensions`.
+      # opamp:
+      #   server:
+      #     http:
+      #       endpoint: "https://ingress.${env:CORALOGIX_DOMAIN}/opamp/v1"
+      #       polling_interval: 2m
+      #       headers:
+      #         Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
+      #   agent_description:
+      #     non_identifying_attributes:
+      #       cx.agent.type: "gateway"
+      #       cx.cluster.name: "${env:K8S_CLUSTER_NAME}"
+      #       cx.integrationID: "eks-fargate"
+      #       k8s.node.name: ${env:K8S_NODE_NAME}
 
     receivers:
       # Monitor just the missing OTEL collector's kubelet
@@ -88,7 +103,8 @@ data:
           processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
 
-      extensions: [k8s_observer, health_check]
+      # When enabling the fleet management feature, add the "opamp" extension to the list below. 
+      extensions: [health_check, k8s_observer]
 
 ---
 
