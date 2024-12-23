@@ -439,15 +439,14 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ### Deploying Coralogix EBPF Agent
 
 ```bash
-helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
+helm upgrade --install otel-coralogix coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values-ebpf-agent.yaml
 ```
 
-By default, coralogix ebpf agent will be deployed with the [span metrics preset](#About-span-metrics) enabled.
-since due to the usual high volume of spans collected by the ebpf agent, it is recommended to use 
+By default, coralogix ebpf agent will be deployed with the [span metrics preset](#about-span-metrics) enabled.
+since due to the usual high volume of spans collected by the ebpf agent, it is recommended to use
 [Coralogix APM with span metrics](https://coralogix.com/docs/user-guides/apm/getting-started/span-metrics/)
 to disable this, you can edit to the `values-ebpf-agent.yaml` file and set `presets.spanMetrics.enabled` to `false`.
-
 
 #### Filtering Specific Services For Coralogix EBPF Agent
 
@@ -488,7 +487,7 @@ If you already have an existing OpenTelemetry Collector deployment and you want 
 you can only deploy the ebpf agent and supply your existing OpenTelemetry Collector endpoint with this command:
 
 ```bash
-helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
+helm upgrade --install otel-coralogix coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
 
@@ -746,6 +745,24 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
+
+### Connecting to Coralogix fleet management
+
+The integration can be configured to connect to the Coralogix fleet management server through setting the `presets.fleetManagement.enabled` property to `true`. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is disabled by default.
+
+> [!CAUTION]
+> Important security consideration when enabling this feature:
+> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
+> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
+> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
+
+To enable this feature, set the `presets.fleetManagement.enabled` property to `true`. Here is an example `values.yaml`:
+
+```yaml
+presets:
+  fleetManagement:
+    enabled: true
+```
 
 # Troubleshooting
 
