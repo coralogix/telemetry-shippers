@@ -1,6 +1,7 @@
-presets:
-  spanMetrics:
-    enabled: true
+opentelemetry-agent:
+  presets:
+    spanMetrics:
+      enabled: true
 
 coralogix-ebpf-agent:
   enabled: true
