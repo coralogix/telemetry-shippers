@@ -92,17 +92,6 @@ In the example above, you'll need to set `<Coralogix PrivateKey>` and `<Coralogi
 
 After adding the above container to your existing Task Definition, your applications can submit their traces and metrics exports to http://localhost:4318/v1/traces and /v1/metrics. It will also collect container metrics from all containers in the Task Definition.
 
-## Connecting to Coralogix fleet management
-
-In the Parameter Store configuration you will find commented lines that explain and configure the OpAMP extension to connect to Coralogix fleet management server.
-Read them to learn which lines to uncomment to enable the feature. Do not forget that besides configuring the extension it has to be added to the list in the `service.extensions` key of the configuration file.
-
-> [!CAUTION]
-> Important security consideration when enabling this feature:
-> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
-> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
-> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
-
 ## Granting permissions for parameter store access
 
 In order to allow container access to the Systems Manager Parameter Store, you'll need to provide the ssm:GetParameters action permissions to the task execution role:
