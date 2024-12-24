@@ -47,14 +47,14 @@ Resources:
             application_name_attributes:
             - aws.ecs.task.family
             - service.namespace
-            domain: ${CORALOGIX_DOMAIN}
+            domain: ${env:CORALOGIX_DOMAIN}
             logs:
               headers:
                 X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
             metrics:
               headers:
                 X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
-            private_key: ${PRIVATE_KEY}
+            private_key: ${env:PRIVATE_KEY}
             subsystem_name: 'integration'
             subsystem_name_attributes:
             - service.name
