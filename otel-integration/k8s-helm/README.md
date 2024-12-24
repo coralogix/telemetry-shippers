@@ -415,6 +415,29 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
+### Installing the chart on IPV6 Only clusters.
+
+To run otel-integration inside IPV6 only cluster, you need to install using `ipv6-values.yaml` file.
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the `ipv6-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values.yaml -f ipv6-values.yaml
+```
+
 ### Enabling Coralogix EBPF Agent
 
 To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
@@ -718,6 +741,24 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
+
+### Connecting to Coralogix fleet management
+
+The integration can be configured to connect to the Coralogix fleet management server through setting the `presets.fleetManagement.enabled` property to `true`. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is disabled by default.
+
+> [!CAUTION]
+> Important security consideration when enabling this feature:
+> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
+> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
+> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
+
+To enable this feature, set the `presets.fleetManagement.enabled` property to `true`. Here is an example `values.yaml`:
+
+```yaml
+presets:
+  fleetManagement:
+    enabled: true
+```
 
 # Troubleshooting
 
