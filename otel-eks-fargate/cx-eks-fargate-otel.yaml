@@ -83,7 +83,7 @@ data:
           observe_pods: true
           observe_nodes: true
       # The OpAMP extension below enables the Coralogix fleet management server connection. 
-      # Uncomment them to enable and add the "opamp" extension to the list under `service.extensions`.
+      # Uncomment them to enable the feature and add the "opamp" extension to the list under `service.extensions`.
       # opamp:
       #   server:
       #     http:
@@ -199,11 +199,9 @@ data:
           receivers: [receiver_creator]
           processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
-   
+    
       # When enabling the fleet management feature, add the "opamp" extension to the list below. 
       extensions: [health_check, k8s_observer]
-
-# configure the service and the collector as a StatefulSet
 ---
 apiVersion: v1
 kind: Service
@@ -222,8 +220,8 @@ spec:
   selector:
     component: cx-otel-collector
   type: ClusterIP
-
 ---
+# configure the service and the collector as a StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
