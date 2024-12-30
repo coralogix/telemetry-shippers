@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+
+### v0.0.129 / 2024-12-25
+
+- [Feat] default to span metrics enable for ebpf agent deployment
+
 ### v0.0.128 / 2024-12-23
 
 - [Feat] add k8s ipv6 only support
