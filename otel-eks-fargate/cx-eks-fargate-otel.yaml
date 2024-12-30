@@ -76,13 +76,28 @@ metadata:
     component: cx-otel-collector-config
 data:
   cx-otel-collector-config: |
-    extensions:
-      k8s_observer:
-        auth_type: serviceAccount
-        observe_pods: true
-        observe_nodes: true
+    extensions: 
       health_check:
-
+      k8s_observer:
+          auth_type: serviceAccount
+          observe_pods: true
+          observe_nodes: true
+      # The OpAMP extension below enables the Coralogix fleet management server connection. 
+      # Uncomment them to enable the feature and add the "opamp" extension to the list under `service.extensions`.
+      # opamp:
+      #   server:
+      #     http:
+      #       endpoint: "https://ingress.${env:CORALOGIX_DOMAIN}/opamp/v1"
+      #       polling_interval: 2m
+      #       headers:
+      #         Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
+      #   agent_description:
+      #     non_identifying_attributes:
+      #       cx.agent.type: "gateway"
+      #       cx.cluster.name: "${env:K8S_CLUSTER_NAME}"
+      #       cx.integrationID: "eks-fargate"
+      #       k8s.node.name: ${env:K8S_NODE_NAME}
+    
     receivers:
       # Monitoring of OTEL performance metrics
       prometheus/self:
@@ -120,7 +135,16 @@ data:
             endpoint: 0.0.0.0:4318
     
     processors:
-      # add cluster name from env variable and EKS metadata
+      resource/metadata:
+        attributes:
+          - key: "k8s.cluster.name"
+            value: "${env:K8S_CLUSTER_NAME}"
+            action: upsert
+          - key: "k8s.node.name"
+            value: "${env:K8S_NODE_NAME}"
+            action: upsert
+    
+      # add EKS metadata
       resourcedetection:
         detectors: [env, system, eks]
         system:
@@ -131,14 +155,14 @@ data:
 
     exporters:
       prometheusremotewrite:
-        endpoint: https://ingress.${CORALOGIX_DOMAIN}/prometheus/v1
+        endpoint: https://ingress.${env:CORALOGIX_DOMAIN}/prometheus/v1
         headers:
-          Authorization: "Bearer ${CORALOGIX_PRIVATE_KEY}"
+          Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
 
       coralogix:
         timeout: "30s"
-        private_key: "${CORALOGIX_PRIVATE_KEY}"
-        domain: "${CORALOGIX_DOMAIN}"
+        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
+        domain: "${env:CORALOGIX_DOMAIN}"
         application_name_attributes:
         - "k8s.namespace.name" 
         - "service.namespace"
@@ -151,8 +175,8 @@ data:
         - "k8s.container.name"
         - "k8s.node.name"
         - "service.name"
-        application_name: "${CX_APPLICATION}"
-        subsystem_name: "${CX_SUBSYSTEM}"
+        application_name: "${env:CX_APPLICATION}"
+        subsystem_name: "${env:CX_SUBSYSTEM}"
 
       debug:
         verbosity: detailed
@@ -161,24 +185,23 @@ data:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [resourcedetection, batch]
+          processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
         metrics/otlp:
           receivers: [otlp]
-          processors: [resourcedetection, batch]
+          processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
         metrics/self:
           receivers: [prometheus/self]
-          processors: [resourcedetection, batch]
+          processors: [resource/metadata, resourcedetection, batch]
           exporters: [prometheusremotewrite]
         metrics/kubeletstats:
           receivers: [receiver_creator]
-          processors: [resourcedetection, batch]
+          processors: [resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
-
+    
+      # When enabling the fleet management feature, add the "opamp" extension to the list below. 
       extensions: [health_check, k8s_observer]
-
-# configure the service and the collector as a StatefulSet
 ---
 apiVersion: v1
 kind: Service
@@ -197,8 +220,8 @@ spec:
   selector:
     component: cx-otel-collector
   type: ClusterIP
-
 ---
+# configure the service and the collector as a StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -246,8 +269,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "ClusterName=fargate-lab"
+            - name: K8S_CLUSTER_NAME
+              value: "fargate-lab"
             - name: CORALOGIX_DOMAIN
               value: "coralogix.com"
             - name: CX_APPLICATION
