@@ -27,20 +27,34 @@ Resources:
       Description: Configuration parameter for Coralogix OTEL Collector
       Type: String
       Value: |
+        extensions:
+        # The OpAMP extension below enables the Coralogix fleet management server connection. 
+        # Uncomment them to enable the feature and add the "opamp" extension to the list under `service.extensions`.
+        # opamp:
+        #   server:
+        #     http:
+        #       endpoint: "https://ingress.${env:CORALOGIX_DOMAIN}/opamp/v1"
+        #       polling_interval: 2m
+        #       headers:
+        #         Authorization: "Bearer ${env:PRIVATE_KEY}"
+        #   agent_description:
+        #     non_identifying_attributes:
+        #       cx.agent.type: "agent"
+        #       cx.integrationID: "ecs-fargate"
         exporters:
           coralogix:
             application_name: 'otel'
             application_name_attributes:
             - aws.ecs.task.family
             - service.namespace
-            domain: ${CORALOGIX_DOMAIN}
+            domain: ${env:CORALOGIX_DOMAIN}
             logs:
               headers:
                 X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
             metrics:
               headers:
                 X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
-            private_key: ${PRIVATE_KEY}
+            private_key: ${env:PRIVATE_KEY}
             subsystem_name: 'integration'
             subsystem_name_attributes:
             - service.name
@@ -118,6 +132,7 @@ Resources:
                 - targets:
                   - 127.0.0.1:8888
         service:
+          extensions: []
           pipelines:
             logs:
               exporters:
