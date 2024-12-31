@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.129 / 2024-12-31
+
+- [Feat] Add k8s job name plus other pod association rules for the k8s metadata processor
+
 ### v0.0.128 / 2024-12-23
 
 - [Feat] add k8s ipv6 only support
