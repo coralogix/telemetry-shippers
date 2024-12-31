@@ -275,6 +275,9 @@ opentelemetry-agent:
             - from: resource_attribute
               name: k8s.pod.uid
           - sources:
+            - from: resource_attribute
+              name: k8s.job.name
+          - sources:
             - from: connection
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -516,6 +519,9 @@ opentelemetry-cluster-collector:
           - sources:
             - from: resource_attribute
               name: k8s.pod.uid
+          - sources:
+            - from: resource_attribute
+              name: k8s.job.name
           - sources:
               - from: connection
         extract:
