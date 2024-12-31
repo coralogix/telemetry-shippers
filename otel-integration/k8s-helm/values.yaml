@@ -267,18 +267,6 @@ opentelemetry-agent:
               - delete_key(attributes, "service_instance_id") where resource.attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
-        pod_association:
-          - sources:
-            - from: resource_attribute
-              name: k8s.pod.ip
-          - sources:
-            - from: resource_attribute
-              name: k8s.pod.uid
-          - sources:
-            - from: resource_attribute
-              name: k8s.job.name
-          - sources:
-            - from: connection
         filter:
           node_from_env_var: KUBE_NODE_NAME
         extract:
@@ -512,18 +500,6 @@ opentelemetry-cluster-collector:
         send_batch_max_size: 2048
         timeout: "1s"
       k8sattributes:
-        pod_association:
-          - sources:
-            - from: resource_attribute
-              name: k8s.pod.ip
-          - sources:
-            - from: resource_attribute
-              name: k8s.pod.uid
-          - sources:
-            - from: resource_attribute
-              name: k8s.job.name
-          - sources:
-              - from: connection
         extract:
           metadata:
             - "k8s.namespace.name"
