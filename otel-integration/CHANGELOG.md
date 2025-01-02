@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.130 / 2025-01-02
+
+- [Fix] Rollback the default host of the metrics telemetry service to the pod's IP.
+  If you are using the OpenTelemetry Operator and the Collector CRD, please update
+  the Operator to version `0.116.0` or later
+
 ### v0.0.129 / 2024-12-31
 
 - [Feat] Add k8s job name plus other pod association rules for the k8s metadata processor
