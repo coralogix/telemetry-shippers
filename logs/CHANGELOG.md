@@ -53,6 +53,11 @@
 
 ## Fluent-Bit
 
+## v3.2.4/ 2025-1-5
+
+* [UPGRADE] Upgrade Fluentbit version to v3.2.4
+* [UPGRADE] Upgrade Fluentbit Helm chart dependency to 0.48.4
+
 ## v3.1.9 / 2024-10-10
 
 * [UPGRADE] Upgrade Fluentbit version to v3.1.9 for CVE-2024-37371, CVE-2024-5535, CVE-2023-45853
