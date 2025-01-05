@@ -2,6 +2,9 @@
 
 ## Fluentd
 
+### v1.18 / 2025-1-5
+* [UPGRADE] Upgrade Fluentd version to v1.18
+
 ### v1.17.1 / 2024-11-1
 * [UPGRADE] Upgrade Fluentd version to v1.17.1
 
