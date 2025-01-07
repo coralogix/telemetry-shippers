@@ -6,6 +6,7 @@
 
 - [Feat] Bump Windows 2019 image to the latest LTSC image for such version
 - [Feat] Bump Collector version in Windows nodes to `0.116.0`
+- [Fix] Update some missing/divergent configuration in the Windows tailsampling values file
 
 ### v0.0.131 / 2025-01-07
 
