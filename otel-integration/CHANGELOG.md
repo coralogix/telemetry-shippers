@@ -5,7 +5,9 @@
 ### v0.0.132 / 2025-01-08
 
 - [Feat] Bump Windows 2019 image to the latest LTSC image for such version
-- [Feat] Bump Collector version in Windows nodes to `0.116.0`
+- [:warning: Change][Feat] Bump Collector version in Windows nodes to `0.116.0`
+  If you're using your custom configuration that relies on implicit conversion of types, please see the note about change in behavior in [`the 0.89.0 to 0.90.0 section of UPGRADING.md`](./UPGRADING.md#0089-to-0090).
+  The defualt Windows values files have been already updated with this change.
 - [Fix] Update some missing/divergent configuration in the Windows tailsampling values file
 
 ### v0.0.131 / 2025-01-07
