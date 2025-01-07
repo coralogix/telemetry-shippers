@@ -2,7 +2,7 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.132 / 2025-01-07
+### v0.0.132 / 2025-01-08
 
 - [Feat] Bump Windows 2019 image to the latest LTSC image for such version
 - [Feat] Bump Collector version in Windows nodes to `0.116.0`
