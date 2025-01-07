@@ -1,5 +1,6 @@
 # escape=`
-ARG WIN_BASE_IMAGE
+# For Windows 2022, use `mcr.microsoft.com/windows/servercore:ltsc2022`
+ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 
 FROM --platform=$BUILDPLATFORM curlimages/curl AS build
 WORKDIR /src
