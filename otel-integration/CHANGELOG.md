@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.131 / 2025-01-07
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.116.0`
+
 ### v0.0.130 / 2025-01-02
 
 - [Fix] Rollback the default host of the metrics telemetry service to the pod's IP.
@@ -43,13 +47,16 @@
 - [Feat] E2E Testing: Added scopes scanning to prevent unwanted otel config changes (e.g. spanmetrics)
 
 ### v0.0.121 / 2024-12-05
+
 - [Feat] Bump coralogix-ebpf-agent version to `0.1.5`
 
 ### v0.0.120 / 2024-12-05
+
 - [Feat] Bump collector version to `0.115.0`
 - [Feat] Bump Target Allocator version to `0.114.0`
 
 ### v0.0.119 / 2024-12-05
+
 - [Fix] Target Allocator configmap name conflicting with collector configmap.
 
 ### v0.0.118 / 2024-12-04
@@ -77,139 +84,180 @@
 - [Fix] Setting max_batch_size for logsCollection preset now works on all recombine operators.
 
 ### v0.0.112 / 2024-11-06
+
 - [Feat] add ec2/azure resource detecion for kubernetes resource collection.
 - [Feat] Add support for scraping cadvisor metrics per node on daemonset
 
 ### v0.0.111 / 2024-11-05
+
 - [Feat] add aks/eks/gcp resource detecion for kubernetes resource collection.
 
 ### v0.0.110 / 2024-11-04
+
 - [Feat] logsCollection preset allow changing max_batch_size
 
 ### v0.0.109 / 2024-10-23
+
 - [Feat] E2E Testing: Populated hostmetrics maps and enable process metrics
 
 ### v0.0.108 / 2024-10-22
+
 - [Feat] add dbMetrics option to spanMetrics preset, which is enabled when spanMetrics enabled. You can disable it using spanMetrics.dbMetrics.enabled=false.
 
 ### v0.0.107 / 2024-10-08
+
 - [Feat] Upgrading base otel chart to 0.95.1
 
 ### v0.0.106 / 2024-10-08
+
 - [Feat] Bump collector version to `0.111.0`
 
 ### v0.0.105 / 2024-09-30
+
 - [Breaking] Change spanmetrics to disabled by default, which was enabled by mistake in v0.0.102
 
 ### v0.0.104 / 2024-09-26
+
 - [Feat] Bump collector version to `0.110.0`
 
 ### v0.0.103 / 2024-09-23
+
 - [Fix] agent_description.non_identifying_attributes expected a map, got 'slice'
 - [Fix] Change opamp poll interval to 2 minutes
 
 ### v0.0.102 / 2024-09-10
+
 - [Feat] Bump collector version to `0.109.0`
 - [Feat] Allow TA to pass static config
 
 ### v0.0.101 / 2024-09-05
+
 - [Fix] Fix Tail sampling gateway / receiver k8s attribute collection
 
 ### v0.0.100 / 2024-08-30
+
 - [Feat] Bump collector version to `0.108.0`
 
 ### v0.0.99 / 2024-08-29
+
 - [Fix] Change central-agent-values.yaml log level to warn
 - [Fix] Turn off k8sattributes preset for central collector cluster
 
 ### v0.0.98 / 2024-08-29
+
 - [Feat] Add a way to deploy central collector cluster for tail sampling
 
 ### v0.0.97 / 2024-08-19
+
 - [Fix] ignore process name not found errors for hostmetrics process preset
 
 ### v0.0.96 / 2024-08-16
+
 - [:warning: CHANGE] [FEAT] Bump collector version to `0.107.0`. Old way of providing environment variables in the collector configuration has been removed. If you are providing your own environment variables that are being expanded in the collector configuration, be sure to use the recommended syntax (for example with `env` prefix - `${env:ENV_VAR}` or `${ENV_VAR}` instead of just `$ENV_VAR`). For more information see previous [upgrading guide](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/UPGRADING.md#0084-to-0085).
 - [FIX] Restore previously mistakenly changed default log level to `warn`.
 
 ### v0.0.95 / 2024-08-14
+
 - [Feat] add k8s.cluster.name to entity events
 
 ### v0.0.94 / 2024-08-07
+
 - [Feat] add support for configuring scrape interval for target allocator prometheus custom resource
 - [CHORE] - Updated target allocator version to 0.105.0 in values.yaml
 
 ## v0.0.93 / 2024-08-06
+
 - [Feat] Add more defaults for fleet management preset
 
 ## v0.0.92 / 2024-08-05
+
 - [Feat] add more system attributes to host entity event preset
 - [Feat] Add fleet management preset
 
 ## v0.0.91 / 2024-08-05
+
 - [Feat] add more attributes to host entity event preset
 
 ## v0.0.90 / 2024-07-31
+
 - [:warning: CHANGE] [FEAT] Bump collector version to `0.106.1`. If you're using your custom configuration that relies on implicit conversion of types, please see the note about change in behavior in the [`UPGRADING.md`](./UPGRADING.md)
 - [Fix] Mute process executable errors in host metrics
 
 ### v0.0.89 / 2024-07-29
+
 - [Feat] add host entity event preset
 
 ### v0.0.88 / 2024-07-26
+
 - [Feat] add kubernetes resource preset
 
 ### v0.0.87 / 2024-07-18
+
 - [FEAT] Add process option to hostmetrics preset to scrape process metrics.
 
 ### v0.0.86 / 2024-07-08
+
 - [FEAT] Update Windows collector image to `0.104.0`
 - [FEAT] Update values file to be in sync with Linux agents.
 
 ### v0.0.85 / 2024-07-03
+
 - [:warning: CHANGE] [FEAT] Bump collector version to `0.104.0`. If you are providing your own environemnt variables that are being expanded in the collector configuration, be sure to use the recommended syntax with the `env:` prefix (for example: `${env:ENV_VAR}` instead of just `${ENV_VAR}`). For more information see [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.104.0). The old way of setting environment variables will be removed in the near future.
 
 ### v0.0.84 / 2024-06-26
+
 - [Fix] Add azure to resource detection processor
 
 ### v0.0.83 / 2024-06-26
+
 - [Fix] Add cluster.name and resource detection processors to gateway-collector metrics
 
 ### v0.0.82 / 2024-06-26
+
 - [Fix] Add k8s labels to gateway-collector metrics
 
 ### v0.0.81 / 2024-06-26
+
 - [Fix] Allow configuring max_unmatched_batch_size in multilineConfigs. Default is changed to max_unmatched_batch_size=1.
 - [Fix] Fix spanMetrics.spanNameReplacePattern preset does not work
 
 ### v0.0.80 / 2024-06-20
+
 - [BREAKING] logging exporter is removed from default exporters list, since collector 0.103.0 removed it.
 
 ### v0.0.79 / 2024-06-06
+
 - [FEAT] Update Target Allocator version to 0.101.0
 
 ### v0.0.78 / 2024-06-06
+
 - [FEAT] Bump Collector to 0.102.1
-- [FIX] Important: This version contains fix for cve-2024-36129. For more information see https://opentelemetry.io/blog/2024/cve-2024-36129/
+- [FIX] Important: This version contains fix for cve-2024-36129. For more information see <https://opentelemetry.io/blog/2024/cve-2024-36129/>
 
 ### v0.0.77 / 2024-06-05
+
 - [FIX] Fix target allocator add events and secrets permission
 
 ### v0.0.76 / 2024-06-03
+
 - [FEAT] Add Kubernetes metadata to otel collector metrics
 
 ### v0.0.75 / 2024-06-03
+
 - [FEAT] Add status_code to spanmetrics preset
 
 ### v0.0.74 / 2024-05-28
+
 - [FEAT] Bump Collector to 0.101.0
 - [FEAT] Allow setting dimensions to spanMetricsMulti preset
 
 ### v0.0.73 / 2024-05-28
+
 - [FEAT] Bump Helm chart dependencies.
 - [FEAT] Allowing loadBalancing presets dns configs (timout and resolver interval).
 
 ### v0.0.72 / 2024-05-16
+
 - [FEAT] Bump Collector to 0.100.0
 - [FEAT] Add container CPU throttling metrics
 - [FEAT] Add k8s_container_status_last_terminated_reason metric to track OOMKilled events.
@@ -219,6 +267,7 @@
 - [Fix] reduceResourceAttributes preset will now work when metadata preset is manually set in processors.
 
 ### v0.0.70 / 2024-04-29
+
 - [FEAT] Bump Collector to 0.99.0.
 - [BREAKING] GRPC/HTTP client metrics are now reported only when using `detailed` level.
 
@@ -340,7 +389,7 @@
 ### v0.0.44 / 2023-12-13
 
 - [CHORE] Update collector to `v0.91.0`.
-- [FEATURE] Remove memoryballast and enable GOMEMLIMIT instead. This should significantly reduce memory footprint. See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891.
+- [FEATURE] Remove memoryballast and enable GOMEMLIMIT instead. This should significantly reduce memory footprint. See <https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891>.
 
 ### v0.0.43 / 2023-12-12
 
@@ -370,145 +419,145 @@
 - [FIX] Kubelet Stats use Node IP instead of Node name.
 
 ### v0.0.37 / 2023-11-27
-* [:warning: BREAKING CHANGE] [FEATURE] Add support for span metrics preset. This replaces the deprecated `spanmetricsprocessor` with `spanmetricsconnector`. The new connector is disabled by default, as opposed the replaces processor. To enable it, set `presets.spanMetrics.enabled` to `true`.
+- [:warning: BREAKING CHANGE] [FEATURE] Add support for span metrics preset. This replaces the deprecated `spanmetricsprocessor` with `spanmetricsconnector`. The new connector is disabled by default, as opposed the replaces processor. To enable it, set `presets.spanMetrics.enabled` to `true`.
 
 ### v0.0.36 / 2023-11-15
-* [FIX] Change statsd receiver port to 8125 instead of 8127
+- [FIX] Change statsd receiver port to 8125 instead of 8127
 
 ### v0.0.35 / 2023-11-14
-* [FEATURE] Adds statsd receiver to listen for metrics on 8125 port.
+- [FEATURE] Adds statsd receiver to listen for metrics on 8125 port.
 
 ### v0.0.34 / 2023-11-13
-* [FIX] Remove Kube-State-Metrics receive_creator, which generated unnecessary configuration.
+- [FIX] Remove Kube-State-Metrics receive_creator, which generated unnecessary configuration.
 
 ### v0.0.33 / 2023-11-08
-* [FIX] Remove Kube-State-Metrics, as K8s Cluster Receiver provides all the needed metrics.
+- [FIX] Remove Kube-State-Metrics, as K8s Cluster Receiver provides all the needed metrics.
 
 ### v0.0.32 / 2023-11-03
-* [FIX] Ensure correct order of processors for k8s deployment attributes.
+- [FIX] Ensure correct order of processors for k8s deployment attributes.
 
 ### v0.0.31 / 2023-11-03
-* [FIX] Fix scraping Kube State Metrics
-* [CHORE] Update Collector to 0.88.0 (v0.76.0)
-* [FIX] Fix consistent k8s.deployment.name attribute
+- [FIX] Fix scraping Kube State Metrics
+- [CHORE] Update Collector to 0.88.0 (v0.76.0)
+- [FIX] Fix consistent k8s.deployment.name attribute
 
 ### v0.0.30 / 2023-10-31
-* [FEATURE] Add support for defining priority class
+- [FEATURE] Add support for defining priority class
 
 ### v0.0.29 / 2023-10-31
-* [FIX] Fix support for openshift
+- [FIX] Fix support for openshift
 
 ### v0.0.28 / 2023-10-30
-* [CHORE] Update Collector to 0.87.0 (v0.75.0)
+- [CHORE] Update Collector to 0.87.0 (v0.75.0)
 
 ### v0.0.27 / 2023-10-30
-* [CHORE] Update Collector to 0.86.0 (v0.74.0)
+- [CHORE] Update Collector to 0.86.0 (v0.74.0)
 
 ### v0.0.26 / 2023-10-30
-* [CHORE] Upgrading upstream chart. (v0.73.7)
+- [CHORE] Upgrading upstream chart. (v0.73.7)
 
 ### v0.0.25 / 2023-10-26
-* [CHORE] Remove unnecessary cloud resource detector configuration.
+- [CHORE] Remove unnecessary cloud resource detector configuration.
 
 ### v0.0.24 / 2023-10-26
-* [FIX] service::pipelines::logs: references exporter "k8sattributes" which is not configured
+- [FIX] service::pipelines::logs: references exporter "k8sattributes" which is not configured
 
 ### v0.0.23 / 2023-10-26
-* [FEATURE] Add k8sattributes and resourcedetecion processor for logs and traces in agent.
+- [FEATURE] Add k8sattributes and resourcedetecion processor for logs and traces in agent.
 
 ### v0.0.22 / 2023-10-24
-* [FEATURE] Add support for Windows node agent
+- [FEATURE] Add support for Windows node agent
 
 ### v0.0.21 / 2023-10-11
 
-* [FIX] Fix missing `hostNetwork` field for CRD-based deployment
-* [CHORE] Simplfy CRD override - put into a separate file
+- [FIX] Fix missing `hostNetwork` field for CRD-based deployment
+- [CHORE] Simplfy CRD override - put into a separate file
 
 ### v0.0.20 / 2023-10-06
 
-* [CHORE] Bump Collector to 0.85.0
+- [CHORE] Bump Collector to 0.85.0
 
 ### v0.0.19 / 2023-10-05
 
-* [CHORE] Bump Collector to 0.84.0
+- [CHORE] Bump Collector to 0.84.0
 
 ### v0.0.18 / 2023-10-04
 
-* [FIX] hostmetrics don't scrape /run/containerd/runc/* for filesystem metrics
+- [FIX] hostmetrics don't scrape /run/containerd/runc/* for filesystem metrics
 
 ### v0.0.17 / 2023-09-29
 
-* [FIX] Remove redundant `-agent` from `fullnameOverride` field of `values.yaml`
+- [FIX] Remove redundant `-agent` from `fullnameOverride` field of `values.yaml`
 
 ### v0.0.16 / 2023-09-28
 
-* [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
+- [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
 
 ### v0.0.15 / 2023-09-15
 
-* [FIX] Set k8s.cluster.name to all signals.
-* [CHORE] Upgrading upstream chart. (v0.71.2)
+- [FIX] Set k8s.cluster.name to all signals.
+- [CHORE] Upgrading upstream chart. (v0.71.2)
 
 ### v0.0.14 / 2023-09-04
 
-* [CHORE] Upgrading upstream chart. (v0.71.1)
+- [CHORE] Upgrading upstream chart. (v0.71.1)
 
 ### v0.0.13 / 2023-08-22
 
-* [FIX] Change `k8s.container.name` to `k8s.pod.name` attribute
+- [FIX] Change `k8s.container.name` to `k8s.pod.name` attribute
 
 ### v0.0.12 / 2023-08-21
 
-* [FEATURE] Support host.id from system resource detector.
+- [FEATURE] Support host.id from system resource detector.
 
 ### v0.0.11 / 2023-08-18
 
-* [CHORE] Upgrading upstream chart. (v0.71.0).
-* [CHORE] Update Opentelemetry Collector 0.81.0 -> 0.83.0.
-* [CHORE] Merges changes from upstream.
+- [CHORE] Upgrading upstream chart. (v0.71.0).
+- [CHORE] Update Opentelemetry Collector 0.81.0 -> 0.83.0.
+- [CHORE] Merges changes from upstream.
 
 ### v0.0.10 / 2023-08-14
 
-* [FEATURE] Add CRD generation feature
-* [FEATURE] Add MySQL preset
+- [FEATURE] Add CRD generation feature
+- [FEATURE] Add MySQL preset
 
 ### v0.0.9 / 2023-08-11
 
-* [CHORE] Upgrading upstream chart. (v0.70.1)
+- [CHORE] Upgrading upstream chart. (v0.70.1)
 
 ### v0.0.8 / 2023-08-11
 
-* [CHORE] Upgrading upstream chart. (v0.69.0)
+- [CHORE] Upgrading upstream chart. (v0.69.0)
 
 ### v0.0.7 / 2023-08-11
 
-* [FEATURE] Align `cx.otel_integration.name` with the new internal requirements
+- [FEATURE] Align `cx.otel_integration.name` with the new internal requirements
 
 ### v0.0.6 / 2023-08-08
 
-* [CHORE] Bump Coralogix OpenTelemetry chart to `0.68.0`
-* [FEATURE] Make `k8s.node.name` label the target node for Kubernetes node info metric
+- [CHORE] Bump Coralogix OpenTelemetry chart to `0.68.0`
+- [FEATURE] Make `k8s.node.name` label the target node for Kubernetes node info metric
 
 ### v0.0.5 / 2023-08-04
 
-* [FIX] Fix `kube-event` transfrom processor configuration to correctly filter log body keys
+- [FIX] Fix `kube-event` transfrom processor configuration to correctly filter log body keys
 
 ### v0.0.4 / 2023-08-03
 
-* [FEATURE] Add cluster metrics related to allocatable resources (CPU, memory)
-* [CHORE] Remove unused `cx.otel_integration.version` attribute
-* [CHORE] Remove unused `enabled` parameter on `kube-state-metrics` config
+- [FEATURE] Add cluster metrics related to allocatable resources (CPU, memory)
+- [CHORE] Remove unused `cx.otel_integration.version` attribute
+- [CHORE] Remove unused `enabled` parameter on `kube-state-metrics` config
 
 ### v0.0.3 / 2023-08-02
 
-* [CHORE] Bump Coralogix OpenTelemetry chart to `0.67.0`
+- [CHORE] Bump Coralogix OpenTelemetry chart to `0.67.0`
 
 ### v0.0.2 / 2023-08-02
 
-* [FEATURE] Add `k8s.node.name` resource attribute to cluster collector
-* [FEATURE] Override detection for cloud provider detectors
-* [BUG] Fix ports configuration
+- [FEATURE] Add `k8s.node.name` resource attribute to cluster collector
+- [FEATURE] Override detection for cloud provider detectors
+- [BUG] Fix ports configuration
 
 ### v0.0.1 / 2023-07-21
 
-* [FEATURE] Add new chart
+- [FEATURE] Add new chart
