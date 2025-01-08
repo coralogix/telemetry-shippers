@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.131 / 2025-01-08
+
+- [Feat] add entity interval for objects coming from kubernetesResources preset.
+
 ### v0.0.131 / 2025-01-07
 
 - [Feat] Upgrade OpenTelemetry Collector to `0.116.0`
