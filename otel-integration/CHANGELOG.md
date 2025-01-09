@@ -6,8 +6,8 @@
 
 - [Feat] Bump Windows 2019 image to the latest LTSC image for such version
 - [:warning: Change][Feat] Bump Collector version in Windows nodes to `0.116.0`
-  If you're using your custom configuration that relies on implicit conversion of types, please see the note about change in behavior in [`the 0.89.0 to 0.90.0 section of UPGRADING.md`](./UPGRADING.md#0089-to-0090).
-  The defualt Windows values files have been already updated with this change.
+  If you're using the Windows tailsampling values, please see the note about change in behavior in [`the 0.89.0 to 0.90.0 section of UPGRADING.md`](./UPGRADING.md#0089-to-0090).
+  The default Windows values is NOT affected..
 - [Fix] Update some missing/divergent configuration in the Windows tailsampling values file
 
 ### v0.0.134 / 2025-01-09
@@ -439,69 +439,53 @@
 - [FIX] Kubelet Stats use Node IP instead of Node name.
 
 ### v0.0.37 / 2023-11-27
-
 - [:warning: BREAKING CHANGE] [FEATURE] Add support for span metrics preset. This replaces the deprecated `spanmetricsprocessor` with `spanmetricsconnector`. The new connector is disabled by default, as opposed the replaces processor. To enable it, set `presets.spanMetrics.enabled` to `true`.
 
 ### v0.0.36 / 2023-11-15
-
 - [FIX] Change statsd receiver port to 8125 instead of 8127
 
 ### v0.0.35 / 2023-11-14
-
 - [FEATURE] Adds statsd receiver to listen for metrics on 8125 port.
 
 ### v0.0.34 / 2023-11-13
-
 - [FIX] Remove Kube-State-Metrics receive_creator, which generated unnecessary configuration.
 
 ### v0.0.33 / 2023-11-08
-
 - [FIX] Remove Kube-State-Metrics, as K8s Cluster Receiver provides all the needed metrics.
 
 ### v0.0.32 / 2023-11-03
-
 - [FIX] Ensure correct order of processors for k8s deployment attributes.
 
 ### v0.0.31 / 2023-11-03
-
 - [FIX] Fix scraping Kube State Metrics
 - [CHORE] Update Collector to 0.88.0 (v0.76.0)
 - [FIX] Fix consistent k8s.deployment.name attribute
 
 ### v0.0.30 / 2023-10-31
-
 - [FEATURE] Add support for defining priority class
 
 ### v0.0.29 / 2023-10-31
-
 - [FIX] Fix support for openshift
 
 ### v0.0.28 / 2023-10-30
-
 - [CHORE] Update Collector to 0.87.0 (v0.75.0)
 
 ### v0.0.27 / 2023-10-30
-
 - [CHORE] Update Collector to 0.86.0 (v0.74.0)
 
 ### v0.0.26 / 2023-10-30
-
 - [CHORE] Upgrading upstream chart. (v0.73.7)
 
 ### v0.0.25 / 2023-10-26
-
 - [CHORE] Remove unnecessary cloud resource detector configuration.
 
 ### v0.0.24 / 2023-10-26
-
 - [FIX] service::pipelines::logs: references exporter "k8sattributes" which is not configured
 
 ### v0.0.23 / 2023-10-26
-
 - [FEATURE] Add k8sattributes and resourcedetecion processor for logs and traces in agent.
 
 ### v0.0.22 / 2023-10-24
-
 - [FEATURE] Add support for Windows node agent
 
 ### v0.0.21 / 2023-10-11
