@@ -4,8 +4,8 @@ on:
   push:
     branches: master
     paths:
-    - 'otel-collector-windows-image/Dockerfile'
-    - '.github/workflows/otel-collector-windows-image.yml'
+      - "otel-collector-windows-image/Dockerfile"
+      - ".github/workflows/otel-collector-windows-image.yml"
 
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/opentelemetry-collector-contrib-windows
@@ -18,14 +18,14 @@ jobs:
         uses: actions/checkout@v2.4.0
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1 
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -40,11 +40,8 @@ jobs:
           context: ./otel-collector-windows-image/
           platforms: windows/amd64
           push: true
-          # For Windows 2019, we need to pin to specific sha256, in order to work around
-          # issue https://github.com/microsoft/Windows-Containers/issues/493. Once it's fixed,
-          # it can be removed.
-          build-args: |    
-            WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:1809@sha256:6fdf140282a2f809dae9b13fe441635867f0a27c33a438771673b8da8f3348a4
+          build-args: |
+            WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
             ${{ env.DOCKERHUB_REGISTRY }}:latest

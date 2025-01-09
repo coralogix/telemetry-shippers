@@ -2,6 +2,14 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.135 / 2025-01-09
+
+- [Feat] Bump Windows 2019 image to the latest LTSC image for such version
+- [:warning: Change][Feat] Bump Collector version in Windows nodes to `0.116.0`
+  If you're using the Windows tailsampling values, please see the note about change in behavior in [`the 0.89.0 to 0.90.0 section of UPGRADING.md`](./UPGRADING.md#0089-to-0090).
+  The default Windows values is NOT affected..
+- [Fix] Update some missing/divergent configuration in the Windows tailsampling values file
+
 ### v0.0.134 / 2025-01-09
 
 - [Feat] Upgrade OpenTelemetry Collector to `0.117.0`
