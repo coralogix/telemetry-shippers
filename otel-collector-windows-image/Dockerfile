@@ -4,7 +4,7 @@ ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 
 FROM --platform=$BUILDPLATFORM curlimages/curl AS build
 WORKDIR /src
-RUN curl -Lo otelcol.tar.gz https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.116.0/otelcol-contrib_0.116.0_windows_amd64.tar.gz
+RUN curl -Lo otelcol.tar.gz https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.117.0/otelcol-contrib_0.117.0_windows_amd64.tar.gz
 RUN tar -xzvf otelcol.tar.gz
 
 ##
