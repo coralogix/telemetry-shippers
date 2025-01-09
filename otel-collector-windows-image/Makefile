@@ -10,10 +10,12 @@ POST_BUILD ?= --load
 build-image:
 	docker buildx build ${POST_BUILD} --platform windows/amd64 --build-arg WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc${WIN_VERSION} -t ${IMAGE_REPOSITORY}:${IMAGE_TAG} .
 
+.phony: win2019
 win2019: WIN_VERSION=2019
 win2019: IMAGE_TAG=win2019
 win2019: build-image
 
+.phony: win2022
 win2022: WIN_VERSION=2022
 win2022: IMAGE_TAG=win2022
 win2022: build-image
