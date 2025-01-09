@@ -2,7 +2,11 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.131 / 2025-01-08
+### v0.0.133 / 2025-01-09
+
+- [Feat] use v1 entity endpoint for resource catalog
+
+### v0.0.132 / 2025-01-08
 
 - [Feat] add entity interval for objects coming from kubernetesResources preset.
 
