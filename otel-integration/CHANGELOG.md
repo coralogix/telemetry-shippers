@@ -252,7 +252,7 @@
 ### v0.0.78 / 2024-06-06
 
 - [FEAT] Bump Collector to 0.102.1
-- [FIX] Important: This version contains fix for cve-2024-36129. For more information see <https://opentelemetry.io/blog/2024/cve-2024-36129/>
+- [FIX] Important: This version contains fix for cve-2024-36129. For more information see https://opentelemetry.io/blog/2024/cve-2024-36129/
 
 ### v0.0.77 / 2024-06-05
 
@@ -409,7 +409,7 @@
 ### v0.0.44 / 2023-12-13
 
 - [CHORE] Update collector to `v0.91.0`.
-- [FEATURE] Remove memoryballast and enable GOMEMLIMIT instead. This should significantly reduce memory footprint. See <https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891>.
+- [FEATURE] Remove memoryballast and enable GOMEMLIMIT instead. This should significantly reduce memory footprint. See https://github.com/open-telemetry/opentelemetry-helm-charts/issues/891.
 
 ### v0.0.43 / 2023-12-12
 
