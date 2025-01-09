@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.134 / 2025-01-09
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.117.0`
+
 ### v0.0.133 / 2025-01-09
 
 - [Feat] use v1 entity endpoint for resource catalog
