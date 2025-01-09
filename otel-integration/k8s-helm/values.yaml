@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.133"
+  version: "0.0.134"
 
   extensions:
     kubernetesDashboard:
@@ -197,7 +197,7 @@ opentelemetry-agent:
     # This reduces target_info cardinality.
     reduceResourceAttributes:
       enabled: false
-     # Configures Host Metrics receiver to collect Entity Events.
+      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: false
   config:
@@ -721,15 +721,15 @@ opentelemetry-gateway:
     clusterRoleBinding:
       name: "coralogix-opentelemetry-gateway"
     rules:
-    - apiGroups: [""]
-      resources: ["pods", "namespaces"]
-      verbs: ["get", "watch", "list"]
-    - apiGroups: ["apps"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
-    - apiGroups: ["extensions"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
+      - apiGroups: [""]
+        resources: ["pods", "namespaces"]
+        verbs: ["get", "watch", "list"]
+      - apiGroups: ["apps"]
+        resources: ["replicasets"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["extensions"]
+        resources: ["replicasets"]
+        verbs: ["get", "list", "watch"]
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -790,11 +790,11 @@ opentelemetry-gateway:
       # needed for self-monitored otel colector metrics
       transform/k8s_attributes:
         metric_statements:
-        - context: resource
-          statements:
-          - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
-          - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
-          - delete_key(attributes, "k8s.replicaset.name")
+          - context: resource
+            statements:
+              - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+              - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+              - delete_key(attributes, "k8s.replicaset.name")
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -914,15 +914,15 @@ opentelemetry-receiver:
     clusterRoleBinding:
       name: "coralogix-opentelemetry-receiver"
     rules:
-    - apiGroups: [""]
-      resources: ["pods", "namespaces"]
-      verbs: ["get", "watch", "list"]
-    - apiGroups: ["apps"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
-    - apiGroups: ["extensions"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
+      - apiGroups: [""]
+        resources: ["pods", "namespaces"]
+        verbs: ["get", "watch", "list"]
+      - apiGroups: ["apps"]
+        resources: ["replicasets"]
+        verbs: ["get", "list", "watch"]
+      - apiGroups: ["extensions"]
+        resources: ["replicasets"]
+        verbs: ["get", "list", "watch"]
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -983,11 +983,11 @@ opentelemetry-receiver:
       # needed for self-monitored otel colector metrics
       transform/k8s_attributes:
         metric_statements:
-        - context: resource
-          statements:
-          - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
-          - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
-          - delete_key(attributes, "k8s.replicaset.name")
+          - context: resource
+            statements:
+              - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+              - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+              - delete_key(attributes, "k8s.replicaset.name")
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -1123,7 +1123,7 @@ coralogix-ebpf-agent:
         max_concurrent_exports: 3
       sampler:
         services_filter: []
-        services_filter_type: "Allow"  # Deny for blacklist
+        services_filter_type: "Allow" # Deny for blacklist
     resources:
       limits:
         cpu: "1"
