@@ -1123,7 +1123,7 @@ coralogix-ebpf-agent:
         max_concurrent_exports: 3
       sampler:
         services_filter: []
-        services_filter_type: "Allow" # Deny for blacklist
+        services_filter_type: "Allow"  # Deny for blacklist
     resources:
       limits:
         cpu: "1"
