@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.136 / 2025-01-14
+
+- [Fix] Add missing `source_identifier` to `presets.logsCollection.multilineConfigs`
+
 ### v0.0.135 / 2025-01-09
 
 - [Feat] Bump Windows 2019 image to the latest LTSC image for such version
