@@ -2,7 +2,7 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.131 / 2025-01-14
+### v0.0.136 / 2025-01-14
 
 - [Fix] Add missing `source_identifier` to `presets.logsCollection.multilineConfigs`
 
