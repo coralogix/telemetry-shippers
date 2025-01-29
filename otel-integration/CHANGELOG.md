@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.137 / 2025-01-29
+
+- [Feat] Enable hostEntity and kubernetesResource preset
+
 ### v0.0.136 / 2025-01-14
 
 - [Fix] Add missing `source_identifier` to `presets.logsCollection.multilineConfigs`

@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.136"
+  version: "0.0.137"
 
   extensions:
     kubernetesDashboard:
@@ -199,7 +199,7 @@ opentelemetry-agent:
       enabled: false
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
-      enabled: false
+      enabled: true
   config:
     extensions:
       zpages:
@@ -448,7 +448,7 @@ opentelemetry-cluster-collector:
       enabled: false
     # Enables Kubernetes Resource collection for for resource catalog
     kubernetesResources:
-      enabled: false
+      enabled: true
 
   command:
     name: otelcol-contrib
