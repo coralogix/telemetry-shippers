@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.138 / 2025-01-31
+
+- [Feat] Add extraConfig to allow adding extra processors, receivers, exporters, and connectors to the collector.
+
 ### v0.0.137 / 2025-01-29
 
 - [Feat] Enable hostEntity and kubernetesResource preset
