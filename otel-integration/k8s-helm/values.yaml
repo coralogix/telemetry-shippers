@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.137"
+  version: "0.0.138"
 
   extensions:
     kubernetesDashboard:
@@ -47,7 +47,42 @@ opentelemetry-agent:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
-
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
   targetAllocator:
     enabled: false
     replicas: 1
@@ -464,7 +499,42 @@ opentelemetry-cluster-collector:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
-
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
   config:
     extensions:
       zpages:
@@ -741,6 +811,43 @@ opentelemetry-gateway:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
+
   presets:
     fleetManagement:
       enabled: false
