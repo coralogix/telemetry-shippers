@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.138 / 2025-01-31
+
+- [Fix] Disable hostEntity and kubernetesResource preset, as causes issues on k3s / kind.
+
 ### v0.0.137 / 2025-01-29
 
 - [Feat] Enable hostEntity and kubernetesResource preset
