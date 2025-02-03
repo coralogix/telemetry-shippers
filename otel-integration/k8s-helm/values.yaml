@@ -749,7 +749,6 @@ opentelemetry-cluster-collector:
     periodSeconds: 15
     httpGet:
       port: 13133
-      scheme: HTTP
 
   resources:
     requests:
