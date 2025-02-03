@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.139 / 2025-02-03
+
+- [Feat] Add a startup probe to the cluster collector.
+
 ### v0.0.138 / 2025-01-31
 
 - [Feat] Add extraConfig to allow adding extra processors, receivers, exporters, and connectors to the collector.
