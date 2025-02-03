@@ -750,7 +750,7 @@ opentelemetry-cluster-collector:
     httpGet:
       port: 13133
       scheme: HTTP
-  
+
   resources:
     requests:
       cpu: 100m
