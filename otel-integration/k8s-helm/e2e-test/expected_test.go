@@ -5,7 +5,7 @@ var expectedResourceMetricsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 }
 
-const expectedScopeVersion = "0.117.0"
+const expectedScopeVersion = "0.118.0"
 
 var expectedResourceScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":        false,
