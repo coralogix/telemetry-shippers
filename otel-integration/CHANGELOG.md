@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.140 / 2025-02-04
+
+- [Fix] Prioritize memory limiter processor in all pipelines.
+
 ### v0.0.139 / 2025-02-03
 
 - [Feat] Add a startup probe to the cluster collector.
