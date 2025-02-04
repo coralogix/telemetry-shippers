@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.140 / 2025-02-05
+
+- [Fix] Remove k8s_cluster receiver from Opentelemetry Cluster Collector metrics
+  pipeline. The receiver is managed by clusterMetrics preset.
+
 ### v0.0.139 / 2025-02-03
 
 - [Feat] Add a startup probe to the cluster collector.
