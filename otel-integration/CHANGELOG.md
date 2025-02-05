@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.143 / 2025-02-05
+
+- [Feat] Add support for custom autoscaling mode alongside hpa mode
+
 ### v0.0.142 / 2025-02-05
 
 - [Fix] Remove k8s_cluster receiver from Opentelemetry Cluster Collector metrics
