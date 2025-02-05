@@ -2,9 +2,14 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.140 / 2025-02-04
+### v0.0.141 / 2025-02-05
 
 - [Fix] Prioritize memory limiter processor in all pipelines.
+
+### v0.0.140 / 2025-02-04
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.118.0`
+- [Feat] Upgrade Target Allocator to `0.117.0`
 
 ### v0.0.139 / 2025-02-03
 
