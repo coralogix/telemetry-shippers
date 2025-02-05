@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.142 / 2025-02-05
+
+- [Fix] Remove k8s_cluster receiver from Opentelemetry Cluster Collector metrics
+  pipeline. The receiver is managed by clusterMetrics preset.
+
 ### v0.0.141 / 2025-02-05
 
 - [Fix] Prioritize memory limiter processor in all pipelines.
