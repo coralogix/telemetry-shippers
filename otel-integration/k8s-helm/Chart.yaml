@@ -11,27 +11,27 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.106.0"
+    version: "0.106.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-agent-windows
-    version: "0.106.0"
+    version: "0.106.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent-windows.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-cluster-collector
-    version: "0.106.0"
+    version: "0.106.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-cluster-collector.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-receiver
-    version: "0.106.0"
+    version: "0.106.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-receiver.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-gateway
-    version: "0.106.0"
+    version: "0.106.1"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-gateway.enabled
   - name: coralogix-ebpf-agent
