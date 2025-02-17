@@ -615,7 +615,8 @@ presets:
     dbMetrics:
       enabled: true
       transformStatements:
-
+      - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
+      - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
 ```
 
 ##### Note on Semantic Conventions for old OTEL SDKs
