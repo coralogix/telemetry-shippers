@@ -606,6 +606,18 @@ presets:
       enabled: false
 ```
 
+The `dbMetrics` also support transform statements that will apply only to database traces. Here's how you can use it:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    dbMetrics:
+      enabled: true
+      transformStatements:
+
+```
+
 ##### Note on Semantic Conventions for old OTEL SDKs
 
 The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
@@ -617,7 +629,10 @@ db.cosmosdb.container => db.collection.name
 db.cassandra.table => db.collection.name
 ```
 
-To do that, you can add the configuration below for transform statements that will apply to the `db/traces` and `traces` pipelines. It is required to also have these transforms in the `traces` pipeline to ensure that spans going to the `spanmetrics` and `forward/db` connectors will be on the semantic convention.
+To do that, you can add the configuration below for transform statements that will apply to the `traces/db` and `traces` pipelines, ensuring that all the spans going through both pipelines will be on the same semantic convention.
+
+> [!IMPORTANT]
+> Correlation might be broken is the transform statements below are applied only at the `dbMetrics` level.
 
 ```yaml
     spanMetrics:
