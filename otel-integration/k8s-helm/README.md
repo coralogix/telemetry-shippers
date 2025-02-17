@@ -584,19 +584,19 @@ To do that, you can add the following configuration:
 presets:
   spanMetrics:
      enabled: true
-       transformStatements:
-       - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+     transformStatements:
+     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
      errorTracking:
        enabled: true
 ```
 
 #### SpanMetrics Database Monitoring
 
-Once you enable the Span Metrics preset, the dbMetrics configuration will automatically be enabled. The DbMetrics option generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
+Once you enable the Span Metrics preset, the `dbMetrics`` configuration will automatically be enabled. It generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
 
 This is needed to enable the [Database Monitoring](https://coralogix.com/docs/user-guides/apm/features/database-monitoring/) feature inside Coralogix APM.
 
-This is how you can disable the dbMetrics option:
+This is how you can disable the `dbMetrics` option:
 
 ```yaml
 presets:
@@ -606,7 +606,9 @@ presets:
       enabled: false
 ```
 
-Note: DbMetrics only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
+##### Note on Semantic Conventions for old OTEL SDKs
+
+The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
 
 ```
 db.sql.table => db.collection.name
@@ -615,27 +617,27 @@ db.cosmosdb.container => db.collection.name
 db.cassandra.table => db.collection.name
 ```
 
-To do that, you can add the following configuration:
+To do that, you can add the configuration below for transform statements that will apply to the `db/traces` and `traces` pipelines. It is required to also have these transforms in the `traces` pipeline to ensure that spans going to the `spanmetrics` and `forward/db` connectors will be on the semantic convention.
 
 ```yaml
     spanMetrics:
       enabled: false
+      transformStatements:
+      - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
       dbMetrics:
         enabled: true
-        transformStatements:
-        - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
 ```
 
 #### Span metrics with different buckets per application
