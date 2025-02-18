@@ -104,16 +104,16 @@ Resources:
                 host.mac: { enabled: true }
                 host.ip: { enabled: true }
                 os.description: { enabled: true }
-          # transform/entity-event:
-          #   error_mode: ignore
-          #   log_statements:
-          #     - context: log
-          #       statements:
-          #         - set(attributes["otel.entity.id"]["host.id"], resource.attributes["aws.ecs.task.id"])
-          #         - merge_maps(attributes, resource.attributes, "insert")
-          #     - context: resource
-          #       statements:
-          #         - keep_keys(attributes, [""])
+          transform/entity-event:
+            error_mode: ignore
+            log_statements:
+              - context: log
+                statements:
+                  - set(attributes["otel.entity.id"]["host.id"], resource.attributes["aws.ecs.task.id"])
+                  - merge_maps(attributes, resource.attributes, "insert")
+              - context: resource
+                statements:
+                  - keep_keys(attributes, [""])
         exporters:
           debug: { verbosity: detailed }
           coralogix:
@@ -127,16 +127,16 @@ Resources:
             subsystem_name: 'integration'
             subsystem_name_attributes: [service.name, aws.ecs.docker.name, container_name]
             timeout: 30s
-          # coralogix/resource_catalog:
-          #   application_name: resource
-          #   domain: ${CORALOGIX_DOMAIN}
-          #   private_key: ${PRIVATE_KEY}
-          #   logs:
-          #     headers:
-          #       X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
-          #       x-coralogix-ingress: metadata-as-otlp-logs/v1
-          #   subsystem_name: catalog
-          #   timeout: 30s
+          coralogix/resource_catalog:
+            application_name: resource
+            domain: ${CORALOGIX_DOMAIN}
+            private_key: ${PRIVATE_KEY}
+            logs:
+              headers:
+                X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
+                x-coralogix-ingress: metadata-as-otlp-logs/v1
+            subsystem_name: catalog
+            timeout: 30s
         service:
           extensions: []
           pipelines:
