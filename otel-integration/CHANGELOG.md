@@ -2,7 +2,7 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.144 / 2025-02-17
+### v0.0.144 / 2025-02-18
 
 - [Fix] `spanMetrics.transformStatements` are correctly created even when
   `spanMetrics.dbMetrics` is not enabled.
