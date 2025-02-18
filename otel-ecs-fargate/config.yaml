@@ -105,15 +105,15 @@ exporters:
     logs:
       headers:
         X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
-        x-coralogix-ingress: metadata-as-otlp-logs/v1alpha1
+        x-coralogix-ingress: metadata-as-otlp-logs/v1
     subsystem_name: catalog
     timeout: 30s
 service:
   pipelines:
-    # logs/resource_catalog:
-    #   exporters: [coralogix/resource_catalog]
-    #   processors: [resourcedetection, transform/entity-event]
-    #   receivers: [hostmetrics]
+    logs/resource_catalog:
+      exporters: [coralogix/resource_catalog]
+      processors: [resourcedetection, transform/entity-event]
+      receivers: [hostmetrics]
     logs:
       exporters: [coralogix]
       processors: [transform/firelens, resource/metadata, resourcedetection, batch]

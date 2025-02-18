@@ -138,12 +138,11 @@ Resources:
             subsystem_name: catalog
             timeout: 30s
         service:
-          extensions: []
           pipelines:
-            # logs/resource_catalog:
-            #   exporters: [coralogix/resource_catalog]
-            #   processors: [resourcedetection, transform/entity-event]
-            #   receivers: [hostmetrics]
+            logs/resource_catalog:
+              exporters: [coralogix/resource_catalog]
+              processors: [resourcedetection, transform/entity-event]
+              receivers: [hostmetrics]
             logs:
               exporters: [coralogix]
               processors: [transform/firelens, resource/metadata, resourcedetection, batch]
