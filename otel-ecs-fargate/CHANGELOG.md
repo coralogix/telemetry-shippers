@@ -10,7 +10,7 @@
 
 ### 0.0.2 / 2024-11-25
 
-* [UPDATE] Added commented configs for ECS Fargate Resource Catalog support
+* [UPDATE] Added configs for ECS Fargate Resource Catalog support
 * [UPDATE] Added hostmetrics receiver to collect limited host metrics from Fargate nodes
 
 ### 0.0.1 / 2024-10-21
