@@ -34,4 +34,5 @@ opentelemetry-agent-windows:
   enabled: false
 opentelemetry-gateway:
   enabled: false
-
+coralogix-ebpf-agent:
+  enabled: false

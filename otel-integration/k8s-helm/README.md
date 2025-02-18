@@ -125,6 +125,17 @@ Provides information about Kubernetes version.
 - container_cpu_cfs_periods_total
 - container_cpu_cfs_throttled_periods_total
 
+## Coralogix EBPF Agent
+
+coralogix-ebpf-agent is an agent developed by coralogix. using [EBPF](https://ebpf.io/what-is-ebpf/) to extract network traffic as spans (http requests, SQL traffic ect), allowing for [Coralogix APM](https://coralogix.com/docs/user-guides/apm/getting-started/introduction-to-apm/) capabilities without any service instrumentation.
+
+Componentes:
+- coralogix-ebpf-agent - The agent that extracts network traffic as spans, running as a daemonset.
+- k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
+- redis - Redis Pubsub is used for communication between k8s-watcher and coralogix-ebpf-agent, running as a sts with 1 replica.
+
+to enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+
 # Prerequisites
 
 Make sure you have at least these version of the following installed:
@@ -404,6 +415,78 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
+### Installing the chart on IPV6 Only clusters.
+
+To run otel-integration inside IPV6 only cluster, you need to install using `ipv6-values.yaml` file.
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the `ipv6-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values.yaml -f ipv6-values.yaml
+```
+
+### Enabling Coralogix EBPF Agent
+
+To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+
+#### Filtering Specific Services For Coralogix EBPF Agent
+
+By default, the coralogix-ebpf-agent will collect traffic from all services in the cluster.
+but there are cases where you might want to filter specific services, or filter out specific services. you can use the
+`coralogix-ebpf-agent.ebpf_agent.sampler` parameter in `values.yaml` to change the service filtering behavior.
+
+For example, collect only traffic coming from `carts-service` and `orders-service`:
+
+```yaml
+coralogix-ebpf-agent:
+  enabled: true
+  ebpf_agent:
+    sampler:
+      services_filter: ["carts-service", "orders-service"]
+      services_filter_type: "Allow"
+```
+
+In another example, a case of where we want get all services beside `currencyservice`
+
+```yaml
+coralogix-ebpf-agent:
+  enabled: true
+  ebpf_agent:
+    sampler:
+      services_filter: ["currency-service"]
+      services_filter_type: "Deny"
+```
+
+#### What Is Considered A Service By Coralogix EBPF Agent?
+
+A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
+the name of the service is the name of that owner resource.
+
+#### Enabling Coralogix EBPF with existing OpenTelemetry Collector
+
+If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF agent.
+you can only deploy the ebpf agent and supply your existing OpenTelemetry Collector endpoint with this command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+
+helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
+```
+
 # How to use it
 
 ## Available Endpoints
@@ -475,23 +558,70 @@ spanNameReplacePattern:
 
 This will result in your spans having generalized name `user-{id}`.
 
+#### SpanMetrics Error Tracking
+
+Once you enable the Span Metrics preset, the errorTracking configuration will automatically be enabled.
+
+This is how you can disable the errorTracking option:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    errorTracking:
+      enabled: false
+```
+
+Note: errorTracking only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+
+```
+http.status_code => http.response.status_code
+```
+
+To do that, you can add the following configuration:
+
+```yaml
+presets:
+  spanMetrics:
+     enabled: true
+     transformStatements:
+     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+     errorTracking:
+       enabled: true
+```
+
 #### SpanMetrics Database Monitoring
 
-Once you enable the Span Metrics preset, the dbMetrics configuration will automatically be enabled. The DbMetrics option generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
+Once you enable the Span Metrics preset, the `dbMetrics`` configuration will automatically be enabled. It generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
 
 This is needed to enable the [Database Monitoring](https://coralogix.com/docs/user-guides/apm/features/database-monitoring/) feature inside Coralogix APM.
 
-This is how you can disable the dbMetrics option:
+This is how you can disable the `dbMetrics` option:
 
-```
+```yaml
 presets:
-    spanMetrics:
-      enabled: true
-      dbMetrics:
-        enabled: false
+  spanMetrics:
+    enabled: true
+    dbMetrics:
+      enabled: false
 ```
 
-Note: DbMetrics only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
+The `dbMetrics` also support transform statements that will apply only to database traces. Here's how you can use it:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    dbMetrics:
+      enabled: true
+      transformStatements:
+      - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
+      - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
+```
+
+##### Note on Semantic Conventions for old OTEL SDKs
+
+The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
 
 ```
 db.sql.table => db.collection.name
@@ -500,27 +630,30 @@ db.cosmosdb.container => db.collection.name
 db.cassandra.table => db.collection.name
 ```
 
-To do that, you can add the following configuration:
+To do that, you can add the configuration below for transform statements that will apply to the `traces/db` and `traces` pipelines, ensuring that all the spans going through both pipelines will be on the same semantic convention.
 
-```
+> [!IMPORTANT]
+> Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
+
+```yaml
     spanMetrics:
-      enabled: false
+      enabled: true
+      transformStatements:
+      - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
       dbMetrics:
         enabled: true
-        transformStatements:
-        - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
-        - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
-        - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
 ```
 
 #### Span metrics with different buckets per application
@@ -627,6 +760,24 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
 
+### Connecting to Coralogix fleet management
+
+The integration can be configured to connect to the Coralogix fleet management server through setting the `presets.fleetManagement.enabled` property to `true`. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is disabled by default.
+
+> [!CAUTION]
+> Important security consideration when enabling this feature:
+> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
+> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
+> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
+
+To enable this feature, set the `presets.fleetManagement.enabled` property to `true`. Here is an example `values.yaml`:
+
+```yaml
+presets:
+  fleetManagement:
+    enabled: true
+```
+
 # Troubleshooting
 
 ## Metrics
@@ -649,6 +800,85 @@ service:
 ```
 
 This adds more metrics around exporter latency and various processors metrics.
+
+### Prometheus Receiver
+
+If you are missing metrics collected by Prometheus receiver make sure to check Collector logs.
+
+The Prometheus receiver typically logs `Failed to scrape Prometheus endpoint` errors with target information when it fails to collect the application metrics.
+
+For example:
+
+```
+message_obj:{
+level:warn
+ts:2024-12-13T08:19:17.809Z
+caller:internal/transaction.go:129
+msg:Failed to scrape Prometheus endpoint
+kind:receiver
+name:prometheus
+data_type:metrics
+scrape_timestamp:1734077957789
+target_labels:{__name__="up", container="main", endpoint="4001",  namespace="namespace", pod="pod-name"}
+}
+```
+
+The generic error, doesn't tell you much. To get more details, you will need to enable debug logs inside the Collector:
+
+```yaml
+global:
+  logLevel: "debug"
+```
+
+Then you will start seeing the actual metric and error in Collector logs, this will help you troubleshoot it further.
+
+**Common Errors**
+
+`invalid sample: non-unique label names` - Metric contains non-unique label names. For example:
+
+```yaml
+metric{label1="value1",label1="value2"}
+```
+
+This is not allowed in Prometheus / [OpenMetrics](https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md#labelset), but some libraries produce such labels. It is best to fix the application or library. But as a workaround, you can fix it with [metric_relabel_configs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs), which gets executed before the metric is ingested.
+
+For example, you drop the `label1` metric:
+
+```yaml
+metric_relabel_configs:
+  - action: labeldrop 
+    regex: 'label1'
+```
+
+Alternatively, you can replace the metric with itself, leaving only single label:
+
+```yaml
+metric_relabel_configs:
+  - action: replace
+    source_labels: ['label1']
+    target_label: label1
+```
+
+`'le' label on histogram metric is missing or empty.` Histogram metric contains multiple types. Typically, the metric library produces invalid metrics that are both a histogram and a summary, which is not allowed in Prometheus / OpenMetrics. For example:
+
+```
+# HELP http_server_requests_seconds  
+# TYPE http_server_requests_seconds histogram
+http_server_requests_seconds_bucket{le="0.025",} 1
+http_server_requests_seconds_count{} 15.0
+http_server_requests_seconds_sum{} 0.20938292
+...
+http_server_requests_seconds{quantile="0.999",} 0.0
+```
+
+It is best to fix the application or library to produce just histogram. But as a workaround, you can fix it with `metric_relabel_config`. The following example will drop metrics with quantile label:
+
+```yaml
+metric_relabel_configs
+ - sourceLabels: [__name__, quantile]
+   regex: http_server_requests_seconds;.*
+   action: drop
+```
 
 ## Traces
 

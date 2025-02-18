@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.113"
+  version: "0.0.144"
 
   extensions:
     kubernetesDashboard:
@@ -47,7 +47,42 @@ opentelemetry-agent:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
-
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
   targetAllocator:
     enabled: false
     replicas: 1
@@ -58,12 +93,10 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.105.0
+      tag: v0.117.0
 
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   serviceAccount:
     # Specifies whether a service account should be created
@@ -140,8 +173,18 @@ opentelemetry-agent:
       collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
       enabled: false
+      # Configures collector to add service.version to spanMetrics dimensions
+      serviceVersion:
+        enabled: true
+      # transformStatements:
+      # - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+      errorTracking:
+        enabled: true
       dbMetrics:
         enabled: true
+        # Configures collector to add service.version to spanMetrics dimensions
+        serviceVersion:
+          enabled: true
         # transformStatements:
         # - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
         # - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
@@ -191,7 +234,7 @@ opentelemetry-agent:
       enabled: false
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
-      enabled: false
+      enabled: true
   config:
     extensions:
       zpages:
@@ -309,7 +352,7 @@ opentelemetry-agent:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
         metrics:
-          address: ${env:MY_POD_IP}:8888
+          address: 0.0.0.0:8888
       extensions:
         - zpages
         - pprof
@@ -319,25 +362,24 @@ opentelemetry-agent:
           exporters:
             - coralogix
           processors:
+            - memory_limiter
             - transform/prometheus
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
-            - memory_limiter
             - batch
           receivers:
             - otlp
             - prometheus
-            - hostmetrics
             - statsd
         traces:
           exporters:
             - coralogix
           processors:
+            - memory_limiter
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
-            - memory_limiter
             - batch
           receivers:
             - otlp
@@ -441,12 +483,10 @@ opentelemetry-cluster-collector:
       enabled: false
     # Enables Kubernetes Resource collection for for resource catalog
     kubernetesResources:
-      enabled: false
+      enabled: true
 
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -459,7 +499,42 @@ opentelemetry-cluster-collector:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
-
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
   config:
     extensions:
       zpages:
@@ -645,28 +720,34 @@ opentelemetry-cluster-collector:
           exporters:
             - coralogix
           processors:
+            - memory_limiter
             - resource/kube-events
             - transform/kube-events
-            - memory_limiter
             - batch
         metrics:
           exporters:
             - coralogix
           processors:
+            - memory_limiter
             - transform/prometheus
             - k8sattributes
             - metricstransform/k8s-dashboard
             - transform/k8s-dashboard
             - resourcedetection/env
             - resourcedetection/region
-            - memory_limiter
             - batch
           receivers:
             - otlp
             - prometheus
-            - k8s_cluster
   tolerations:
     - operator: Exists
+
+  startupProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    httpGet:
+      port: 13133
 
   resources:
     requests:
@@ -736,6 +817,43 @@ opentelemetry-gateway:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
+
   presets:
     fleetManagement:
       enabled: false
@@ -747,10 +865,8 @@ opentelemetry-gateway:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   config:
     extensions:
@@ -864,12 +980,12 @@ opentelemetry-gateway:
           exporters:
             - coralogix
           processors:
+            - memory_limiter
             - transform/prometheus
             - k8sattributes
             - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
-            - memory_limiter
             - batch
           receivers:
             - prometheus
@@ -934,7 +1050,7 @@ opentelemetry-receiver:
   presets:
     fleetManagement:
       enabled: false
-      agentType: "gateway"
+      agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
       enabled: false
@@ -942,10 +1058,8 @@ opentelemetry-receiver:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-  # Temporary feature gates to prevent breaking changes. Please see changelog for version 0.0.85 for more information.
   command:
     name: otelcol-contrib
-    extraArgs: ["--feature-gates=component.UseLocalHostAsDefaultHost"]
 
   config:
     extensions:
@@ -1059,12 +1173,12 @@ opentelemetry-receiver:
           exporters:
             - coralogix
           processors:
+            - memory_limiter
             - transform/prometheus
             - k8sattributes
             - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
-            - memory_limiter
             - batch
           receivers:
             - prometheus
@@ -1109,3 +1223,38 @@ opentelemetry-receiver:
       enabled: false
     zipkin:
       enabled: false
+
+coralogix-ebpf-agent:
+  enabled: false
+  ebpf_agent:
+    debug: false
+    debug_modules:
+      - Otel
+    otel:
+      exporter:
+        max_queue_size: 10240
+        max_concurrent_exports: 3
+      sampler:
+        services_filter: []
+        services_filter_type: "Allow"  # Deny for blacklist
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  k8s_watcher:
+    replicaCount: 1
+    debug: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  priorityClass:
+    create: false
+    name: ""
+    value: 1000000000

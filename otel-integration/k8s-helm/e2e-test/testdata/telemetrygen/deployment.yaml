@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Name }}-{{ .DataType }}-deployment
+  namespace: e2e
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Name }}-{{ .DataType }}-deployment
+  template:
+    metadata:
+      annotations:
+        workload: deployment
+      labels:
+        app: {{ .Name }}-{{ .DataType }}-deployment
+    spec:
+      restartPolicy: Always
+      containers:
+      - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+        imagePullPolicy: IfNotPresent
+        name: telemetrygen
+        env:
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        command:
+        - /telemetrygen
+        - {{ .DataType }}
+        - --otlp-insecure
+        - --duration=36000s
+        - --rate=1
+        - --otlp-attributes=service.name="test-{{ .DataType }}-deployment"
+        args:
+        - "--otlp-endpoint=$(K8S_NODE_IP):4317"
+{{- if eq .DataType "traces" }}
+        - --status-code=
+{{- end }}

@@ -2,6 +2,9 @@
 
 ## Fluentd
 
+### v1.18.0 / 2025-1-5
+* [UPGRADE] Upgrade Fluentd version to v1.18.0
+
 ### v1.17.1 / 2024-11-1
 * [UPGRADE] Upgrade Fluentd version to v1.17.1
 
@@ -49,6 +52,11 @@
   ([#41](https://github.com/coralogix/eng-integrations/pull/41))
 
 ## Fluent-Bit
+
+## v3.2.4/ 2025-1-5
+
+* [UPGRADE] Upgrade Fluentbit version to v3.2.4
+* [UPGRADE] Upgrade Fluentbit Helm chart dependency to 0.48.4
 
 ## v3.1.9 / 2024-10-10
 

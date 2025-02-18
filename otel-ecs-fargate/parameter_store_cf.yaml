@@ -138,6 +138,7 @@ Resources:
           #   subsystem_name: catalog
           #   timeout: 30s
         service:
+          extensions: []
           pipelines:
             # logs/resource_catalog:
             #   exporters: [coralogix/resource_catalog]

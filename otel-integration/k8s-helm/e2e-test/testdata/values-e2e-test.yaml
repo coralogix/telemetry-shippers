@@ -1,4 +1,8 @@
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
+global:
+  logLevel: "debug"
+  hostedEndpoint: "host.docker.internal"
+
 opentelemetry-agent:
   presets:
     hostMetrics:
@@ -11,10 +15,9 @@ opentelemetry-agent:
   config:
     exporters:
       otlp:
-        endpoint: 172.17.0.1:4317 # Use the default Docker host gateway IP
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
         tls:
           insecure: true
-
     service:
       pipelines:
         metrics:
