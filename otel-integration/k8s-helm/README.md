@@ -633,7 +633,7 @@ db.cassandra.table => db.collection.name
 To do that, you can add the configuration below for transform statements that will apply to the `traces/db` and `traces` pipelines, ensuring that all the spans going through both pipelines will be on the same semantic convention.
 
 > [!IMPORTANT]
-> Correlation might be broken is the transform statements below are applied only at the `dbMetrics` level.
+> Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
 
 ```yaml
     spanMetrics:
