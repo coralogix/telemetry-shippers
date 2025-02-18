@@ -637,7 +637,7 @@ To do that, you can add the configuration below for transform statements that wi
 
 ```yaml
     spanMetrics:
-      enabled: false
+      enabled: true
       transformStatements:
       - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
       - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
