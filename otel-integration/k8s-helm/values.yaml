@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.144"
+  version: "0.0.145"
 
   extensions:
     kubernetesDashboard:
@@ -298,11 +298,9 @@ opentelemetry-agent:
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_instance_id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
-              - delete_key(attributes, "service_instance_id") where resource.attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
@@ -351,11 +349,17 @@ opentelemetry-agent:
       telemetry:
         resource:
           service.name: "opentelemetry-collector"
+          cx.agent.type: "agent"
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
         metrics:
-          address: 0.0.0.0:8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: ${env:MY_POD_IP}
+                    port: 8888
       extensions:
         - zpages
         - pprof
@@ -591,11 +595,9 @@ opentelemetry-cluster-collector:
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_instance_id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
-              - delete_key(attributes, "service_instance_id") where resource.attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
       resource/kube-events:
         attributes:
@@ -709,11 +711,17 @@ opentelemetry-cluster-collector:
       telemetry:
         resource:
           service.name: "opentelemetry-collector"
+          cx.agent.type: "cluster-collector"
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
         metrics:
-          address: ${env:MY_POD_IP}:8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: ${env:MY_POD_IP}
+                    port: 8888
       extensions:
         - zpages
         - pprof
@@ -948,11 +956,9 @@ opentelemetry-gateway:
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_instance_id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
-              - delete_key(attributes, "service_instance_id") where resource.attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
@@ -973,11 +979,17 @@ opentelemetry-gateway:
       telemetry:
         resource:
           service.name: "opentelemetry-collector"
+          cx.agent.type: "gateway"
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
         metrics:
-          address: ${env:MY_POD_IP}:8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: ${env:MY_POD_IP}
+                    port: 8888
       pipelines:
         metrics:
           exporters:
@@ -1141,11 +1153,9 @@ opentelemetry-receiver:
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_instance_id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
-              - delete_key(attributes, "service_instance_id") where resource.attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
@@ -1166,11 +1176,17 @@ opentelemetry-receiver:
       telemetry:
         resource:
           service.name: "opentelemetry-collector"
+          cx.agent.type: "receiver"
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
         metrics:
-          address: ${env:MY_POD_IP}:8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: ${env:MY_POD_IP}
+                    port: 8888
       pipelines:
         metrics/self_monitoring:
           exporters:

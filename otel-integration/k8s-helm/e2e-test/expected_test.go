@@ -102,6 +102,8 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"service.instance.id":      "",
 	"service.name":             "opentelemetry-collector",
 	"url.scheme":               "",
+	"cx_agent_type":            "",
+	"service_instance_id":      "",
 }
 
 var expectedMetrics map[string]bool = map[string]bool{
