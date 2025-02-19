@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.146 / 2025-02-19
+
+- [Feat] Automatically convert http.request.method to http.method for spans
+
 ### v0.0.145 / 2025-02-18
 
 - [Feat] Add agent type and service instance id to Otel Collector metrics

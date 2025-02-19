@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.145"
+  version: "0.0.146"
 
   extensions:
     kubernetesDashboard:
@@ -190,8 +190,6 @@ opentelemetry-agent:
       # Configures collector to add service.version to spanMetrics dimensions
       serviceVersion:
         enabled: true
-      # transformStatements:
-      # - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
       errorTracking:
         enabled: true
       dbMetrics:
@@ -318,7 +316,11 @@ opentelemetry-agent:
             - "k8s.node.name"
       # Will get the k8s resource limits
       memory_limiter: null
-
+      transform/semconv:
+        trace_statements:
+          - context: span
+            statements:
+              - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"] != nil
     exporters:
       coralogix:
         timeout: "30s"
@@ -387,6 +389,7 @@ opentelemetry-agent:
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
+            - transform/semconv
             - batch
           receivers:
             - otlp

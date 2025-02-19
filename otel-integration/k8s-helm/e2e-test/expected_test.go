@@ -217,7 +217,8 @@ var expectedMetrics map[string]bool = map[string]bool{
 }
 
 var expectedTracesSchemaURL = map[string]bool{
-	"https://opentelemetry.io/schemas/1.4.0": false,
+	"https://opentelemetry.io/schemas/1.4.0":  false,
+	"https://opentelemetry.io/schemas/1.25.0": false,
 }
 
 func expectedTraces(testID string, testNs string) map[string]struct {
