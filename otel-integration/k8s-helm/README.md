@@ -630,7 +630,7 @@ db.cosmosdb.container => db.collection.name
 db.cassandra.table => db.collection.name
 ```
 
-To do that, you can add the configuration below for transform statements that will apply to the `traces/db` and `traces` pipelines, ensuring that all the spans going through both pipelines will be on the same semantic convention.
+To do that, you can add the configuration below. It will take care of defining the `transform/spanmetrics` processor with those transform statements and adding it to the end of the `traces` pipeline, just before batching. This ensures that the transformations are applied to all spans before they are routed to the `spanmetrics` or `forward/db` connectors, putting all the spans on the same semantic convention.
 
 > [!IMPORTANT]
 > Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
