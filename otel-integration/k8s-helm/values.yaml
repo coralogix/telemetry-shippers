@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.146"
+  version: "0.0.147"
 
   extensions:
     kubernetesDashboard:
@@ -317,6 +317,7 @@ opentelemetry-agent:
       # Will get the k8s resource limits
       memory_limiter: null
       transform/semconv:
+        error_mode: ignore
         trace_statements:
           - context: span
             statements:

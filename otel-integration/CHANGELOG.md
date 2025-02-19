@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.147 / 2025-02-19
+
+- [Fix] Add error_mode: ignore to transform/semconv.
+
 ### v0.0.146 / 2025-02-19
 
 - [Feat] Automatically convert http.request.method to http.method for spans
