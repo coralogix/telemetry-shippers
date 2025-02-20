@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.148 / 2025-02-20
+
+- [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.
+
 ### v0.0.147 / 2025-02-19
 
 - [Fix] Add error_mode: ignore to transform/semconv.
