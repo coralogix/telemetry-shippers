@@ -1,85 +1,29 @@
-exporters:
-  coralogix:
-    application_name: 'otel'
-    application_name_attributes:
-    - aws.ecs.task.family
-    - service.namespace
-    domain: ${CORALOGIX_DOMAIN}
-    logs:
-      headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
-    metrics:
-      headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
-    private_key: ${PRIVATE_KEY}
-    subsystem_name: 'integration'
-    subsystem_name_attributes:
-    - service.name
-    - aws.ecs.docker.name
-    - container_name
-    timeout: 30s
-    traces:
-      headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/0.0.1
-processors:
-  transform/firelens:
-    log_statements:
-      - context: log
-        statements:
-          # parse json logs
-          - merge_maps(cache, ParseJSON(body), "insert") where IsMatch(body, "^\\{")
-          # set message
-          - set(body, cache["message"]) where cache["message"] != nil
-
-          # set trace/span id
-          - set(trace_id.string, cache["trace_id"]) where cache["trace_id"] != nil
-          - set(span_id.string, cache["span_id"]) where cache["span_id"] != nil
-
-          # set severity when available
-          - set(severity_number, SEVERITY_NUMBER_INFO) where IsMatch(cache["level"], "(?i)info")
-          - set(severity_number, SEVERITY_NUMBER_WARN) where IsMatch(cache["level"], "(?i)warn")
-          - set(severity_number, SEVERITY_NUMBER_ERROR) where IsMatch(cache["level"], "(?i)err")
-          - set(severity_number, SEVERITY_NUMBER_DEBUG) where IsMatch(cache["level"], "(?i)debug")
-          - set(severity_number, SEVERITY_NUMBER_TRACE) where IsMatch(cache["level"], "(?i)trace")
-          - set(severity_number, cache["severity_number"])  where cache["severity_number"] != nil
-
-          # move log_record attributes to resource
-          - set(resource.attributes["container_name"], attributes["container_name"])
-          - set(resource.attributes["container_id"], attributes["container_id"])
-          - delete_key(attributes, "container_id")
-          - delete_key(attributes, "container_name")
-
-          - delete_matching_keys(cache, "^(message|trace_id|span_id|severity_number)$")
-
-          - merge_maps(attributes,cache, "insert")
-  batch:
-    send_batch_max_size: 2048
-    send_batch_size: 1024
-    timeout: 1s
-  resource/metadata:
-    attributes:
-    - action: upsert
-      key: cx.otel_integration.name
-      value: coralogix-integration-ecs-fargate
-  resourcedetection:
-    detectors:
-    - env
-    - ec2
-    - ecs
-    override: true
-    timeout: 2s
 receivers:
-  fluentforward/socket:
-    # ECS will send logs to this socket
-    endpoint: unix:///var/run/fluent.sock
-  awsecscontainermetrics:
-    collection_interval: 10s
+  fluentforward/socket: { endpoint: unix:///var/run/fluent.sock }
+  awsecscontainermetrics: { collection_interval: 10s }
   otlp:
     protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
+      grpc: { endpoint: 0.0.0.0:4317 }
+      http: { endpoint: 0.0.0.0:4318 }
+  hostmetrics:
+    root_path: /
+    collection_interval: 10s
+    scrapers:
+      cpu: { metrics: { system.cpu.utilization: { enabled: true } } }
+      disk: null
+      filesystem:
+        exclude_fs_types: { fs_types: [autofs, binfmt_misc, bpf, cgroup2, configfs, debugfs, devpts, devtmpfs, fusectl, hugetlbfs, iso9660, mqueue, nsfs, overlay, proc, procfs, pstore, rpc_pipefs, securityfs, selinuxfs, squashfs, sysfs, tracefs], match_type: strict }
+        exclude_mount_points: { match_type: regexp, mount_points: [/dev/*, /proc/*, /sys/*, /run/k3s/containerd/*, /run/containerd/runc/*, /var/lib/docker/*, /var/lib/kubelet/*, /snap/*] }
+      load: null
+      memory: { metrics: { system.memory.utilization: { enabled: true } } }
+      network: null
+      process:
+        metrics:
+          process.cpu.utilization: { enabled: true }
+          process.memory.utilization: { enabled: true }
+          process.threads: { enabled: true }
+        mute_process_exe_error: true
+        mute_process_user_error: true
   prometheus:
     config:
       scrape_configs:
@@ -88,40 +32,103 @@ receivers:
         static_configs:
         - targets:
           - 127.0.0.1:8888
+processors:
+  transform/firelens:
+    log_statements:
+      - context: log
+        statements:
+          - merge_maps(cache, ParseJSON(body), "insert") where IsMatch(body, "^\\{")
+          - set(body, cache["message"]) where cache["message"] != nil
+          - set(trace_id.string, cache["trace_id"]) where cache["trace_id"] != nil
+          - set(span_id.string, cache["span_id"]) where cache["span_id"] != nil
+          - set(severity_number, SEVERITY_NUMBER_INFO) where IsMatch(cache["level"], "(?i)info")
+          - set(severity_number, SEVERITY_NUMBER_WARN) where IsMatch(cache["level"], "(?i)warn")
+          - set(severity_number, SEVERITY_NUMBER_ERROR) where IsMatch(cache["level"], "(?i)err")
+          - set(severity_number, SEVERITY_NUMBER_DEBUG) where IsMatch(cache["level"], "(?i)debug")
+          - set(severity_number, SEVERITY_NUMBER_TRACE) where IsMatch(cache["level"], "(?i)trace")
+          - set(severity_number, cache["severity_number"]) where cache["severity_number"] != nil
+          - set(resource.attributes["container_name"], attributes["container_name"])
+          - set(resource.attributes["container_id"], attributes["container_id"])
+          - delete_key(attributes, "container_id")
+          - delete_key(attributes, "container_name")
+          - delete_matching_keys(cache, "^(message|trace_id|span_id|severity_number)$")
+          - merge_maps(attributes, cache, "insert")
+  batch: { send_batch_max_size: 2048, send_batch_size: 1024, timeout: 1s }
+  resource/metadata:
+    attributes:
+      - action: upsert
+        key: cx.otel_integration.name
+        value: coralogix-integration-ecs-fargate
+  resourcedetection:
+    detectors: [system, env, ec2, ecs]
+    override: false
+    timeout: 2s
+    system:
+      resource_attributes:
+        host.id: { enabled: false }
+        host.cpu.cache.l2.size: { enabled: true }
+        host.cpu.stepping: { enabled: true }
+        host.cpu.model.name: { enabled: true }
+        host.cpu.model.id: { enabled: true }
+        host.cpu.family: { enabled: true }
+        host.cpu.vendor.id: { enabled: true }
+        host.mac: { enabled: true }
+        host.ip: { enabled: true }
+        os.description: { enabled: true }
+  transform/entity-event:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["otel.entity.id"]["host.id"], resource.attributes["aws.ecs.task.id"])
+          - merge_maps(attributes, resource.attributes, "insert")
+      - context: resource
+        statements:
+          - keep_keys(attributes, [""])
+exporters:
+  debug: { verbosity: detailed }
+  coralogix:
+    application_name: 'otel'
+    application_name_attributes: [aws.ecs.task.family, service.namespace]
+    domain: ${CORALOGIX_DOMAIN}
+    logs: { headers: { X-Coralogix-Distribution: ecs-fargate-integration/0.0.2 } }
+    metrics: { headers: { X-Coralogix-Distribution: ecs-fargate-integration/0.0.2 } }
+    traces: { headers: { X-Coralogix-Distribution: ecs-fargate-integration/0.0.2 } }
+    private_key: ${PRIVATE_KEY}
+    subsystem_name: 'integration'
+    subsystem_name_attributes: [service.name, aws.ecs.docker.name, container_name]
+    timeout: 30s
+  coralogix/resource_catalog:
+    application_name: resource
+    domain: ${CORALOGIX_DOMAIN}
+    private_key: ${PRIVATE_KEY}
+    logs:
+      headers:
+        X-Coralogix-Distribution: ecs-fargate-integration/0.0.2
+        x-coralogix-ingress: metadata-as-otlp-logs/v1
+    subsystem_name: catalog
+    timeout: 30s
 service:
   pipelines:
+    logs/resource_catalog:
+      exporters: [coralogix/resource_catalog]
+      processors: [resourcedetection, transform/entity-event]
+      receivers: [hostmetrics]
     logs:
-      exporters:
-      - coralogix
-      processors:
-      - transform/firelens
-      - resource/metadata
-      - resourcedetection
-      - batch
-      receivers:
-      - fluentforward/socket
+      exporters: [coralogix]
+      processors: [transform/firelens, resource/metadata, resourcedetection, batch]
+      receivers: [fluentforward/socket]
     metrics:
-      exporters:
-      - coralogix
-      processors:
-      - resource/metadata
-      - resourcedetection
-      - batch
-      receivers:
-      - otlp
-      - awsecscontainermetrics
+      exporters: [coralogix]
+      processors: [resource/metadata, resourcedetection, batch]
+      receivers: [otlp, awsecscontainermetrics, prometheus, hostmetrics]
     traces:
-      exporters:
-      - coralogix
-      processors:
-      - resource/metadata
-      - resourcedetection
-      - batch
-      receivers:
-      - otlp
+      exporters: [coralogix]
+      processors: [resource/metadata, resourcedetection, batch]
+      receivers: [otlp]
   telemetry:
-    logs:
-      level: "warn"
-      encoding: json
-    metrics:
-      address: 0.0.0.0:8888
+    logs: { level: "warn", encoding: json }
+    metrics: { address: 0.0.0.0:8888 }
+    resource:
+      service.instance.id: ""
+      service.name: ""
