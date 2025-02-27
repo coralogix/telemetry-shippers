@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.148"
+  version: "0.0.149"
 
   extensions:
     kubernetesDashboard:
@@ -292,6 +292,9 @@ opentelemetry-agent:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
@@ -300,6 +303,7 @@ opentelemetry-agent:
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -355,14 +359,6 @@ opentelemetry-agent:
           cx.agent.type: "agent"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       extensions:
         - zpages
         - pprof
@@ -595,6 +591,9 @@ opentelemetry-cluster-collector:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
@@ -603,6 +602,7 @@ opentelemetry-cluster-collector:
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       resource/kube-events:
         attributes:
           - key: service.name
@@ -718,14 +718,6 @@ opentelemetry-cluster-collector:
           cx.agent.type: "cluster-collector"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       extensions:
         - zpages
         - pprof
@@ -956,6 +948,9 @@ opentelemetry-gateway:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
@@ -964,6 +959,7 @@ opentelemetry-gateway:
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
         config:
@@ -986,14 +982,6 @@ opentelemetry-gateway:
           cx.agent.type: "gateway"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       pipelines:
         metrics:
           exporters:
@@ -1153,6 +1141,9 @@ opentelemetry-receiver:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
@@ -1161,6 +1152,7 @@ opentelemetry-receiver:
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
         config:
@@ -1183,14 +1175,6 @@ opentelemetry-receiver:
           cx.agent.type: "receiver"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       pipelines:
         metrics/self_monitoring:
           exporters:
