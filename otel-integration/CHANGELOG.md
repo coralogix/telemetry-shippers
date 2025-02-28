@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.150 / 2025-02-29
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.120.0`
+
 ### v0.0.149 / 2025-02-27
 
 - [Feat] Upgrade OpenTelemetry Collector to `0.119.0`

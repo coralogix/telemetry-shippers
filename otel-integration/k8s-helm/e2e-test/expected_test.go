@@ -56,6 +56,7 @@ var expectedResourceAttributesKubeletstatreceiver = map[string]string{
 	"k8s.pod.uid":              "",
 	"k8s.statefulset.name":     "",
 	"os.type":                  "linux",
+	"service.version":          "",
 }
 
 var expectedResourceAttributesHostmetricsreceiver = map[string]string{
@@ -80,6 +81,7 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"process.owner":            "",
 	"process.parent_pid":       "",
 	"process.pid":              "",
+	"service.version":          "",
 }
 
 var expectedResourceAttributesK8sattributesprocessor = map[string]string{
@@ -91,7 +93,7 @@ var expectedResourceAttributesK8sattributesprocessor = map[string]string{
 	"http.scheme":              "",
 	"server.port":              "",
 	"url.scheme":               "",
-	"cx_agent_type":            "",
+	"cx.agent.type":            "",
 	"k8s_node_name":            "",
 	"service_instance_id":      "",
 	"cx.otel_integration.name": "coralogix-integration-helm",
@@ -112,9 +114,10 @@ var expectedResourceAttributesK8sattributesprocessor = map[string]string{
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"service.version":          "",
 }
 
-var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
+var expectedResourceAttributesService = map[string]string{
 	"service.name":             "opentelemetry-collector",
 	"net.host.name":            "",
 	"server.address":           "",
@@ -123,11 +126,42 @@ var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
 	"http.scheme":              "http",
 	"server.port":              "",
 	"url.scheme":               "",
-	"cx_agent_type":            "",
+	"cx.agent.type":            "",
+	"k8s.node.name":            "",
+	"service.version":          "",
+	"k8s.cluster.name":         "otel-integration-agent-e2e",
+	"cx.otel_integration.name": "coralogix-integration-helm",
+	"k8s.pod.name":             "",
+	"k8s.namespace.name":       "",
+	"k8s.daemonset.name":       "",
+	"host.name":                "",
+	"os.type":                  "linux",
+	"host.id":                  "",
+	"cloud.provider":           "azure",
+	"cloud.platform":           "azure_vm",
+	"cloud.region":             "",
+	"cloud.account.id":         "",
+	"azure.vm.name":            "",
+	"azure.vm.size":            "",
+	"azure.vm.scaleset.name":   "",
+	"azure.resourcegroup.name": "",
+}
+
+var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
+	"service.name":             "opentelemetry-collector",
+	"service.version":          "",
+	"net.host.name":            "",
+	"server.address":           "",
+	"k8s.pod.ip":               "",
+	"net.host.port":            "",
+	"http.scheme":              "http",
+	"server.port":              "",
+	"url.scheme":               "",
+	"cx.agent.type":            "",
 	"k8s_node_name":            "",
 	"service_instance_id":      "",
 	"cx.otel_integration.name": "coralogix-integration-helm",
-	"service_version":          expectedScopeVersion,
+	"service_version":          "",
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
 	"k8s.pod.name":             "",
 	"k8s.namespace.name":       "",
@@ -161,6 +195,7 @@ var expectedResourceAttributesLoadscraper = map[string]string{
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"service.version":          "",
 }
 
 var expectedResourceAttributesPrometheusreceiver = map[string]string{
@@ -189,12 +224,11 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"os.type":                  "linux",
 	"server.address":           "",
 	"server.port":              "",
-	"service_version":          expectedScopeVersion,
-	"service.instance.id":      "",
+	"service.version":          "",
+	"service_instance_id":      "",
 	"service.name":             "opentelemetry-collector",
 	"url.scheme":               "",
-	"cx_agent_type":            "",
-	"service_instance_id":      "",
+	"cx.agent.type":            "",
 }
 
 var expectedResourceAttributesProcessscraper = map[string]string{
@@ -210,6 +244,37 @@ var expectedResourceAttributesProcessscraper = map[string]string{
 	"os.type":                  "linux",
 	"host.id":                  "",
 	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
+	"cloud.provider":           "azure",
+	"cloud.platform":           "azure_vm",
+	"cloud.region":             "",
+	"cloud.account.id":         "",
+	"azure.vm.name":            "",
+	"azure.vm.size":            "",
+	"azure.vm.scaleset.name":   "",
+	"azure.resourcegroup.name": "",
+	"service.version":          "",
+}
+
+var expectedResourceAttributesProcessorhelper = map[string]string{
+	"service.name":             "opentelemetry-collector",
+	"net.host.name":            "",
+	"server.address":           "",
+	"k8s.pod.ip":               "",
+	"net.host.port":            "",
+	"http.scheme":              "http",
+	"server.port":              "",
+	"url.scheme":               "",
+	"cx.agent.type":            "",
+	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
+	"service.version":          "",
+	"k8s.cluster.name":         "otel-integration-agent-e2e",
+	"cx.otel_integration.name": "coralogix-integration-helm",
+	"k8s.pod.name":             "",
+	"k8s.namespace.name":       "",
+	"k8s.daemonset.name":       "",
+	"host.name":                "",
+	"os.type":                  "linux",
+	"host.id":                  "",
 	"cloud.provider":           "azure",
 	"cloud.platform":           "azure_vm",
 	"cloud.region":             "",
