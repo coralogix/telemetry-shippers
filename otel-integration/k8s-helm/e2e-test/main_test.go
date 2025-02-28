@@ -194,6 +194,10 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	case "processscraper":
 		compareMap = expectedResourceAttributesProcessscraper
+	case "service":
+		compareMap = expectedResourceAttributesService
+	case "processorhelper":
+		compareMap = expectedResourceAttributesProcessorhelper
 	default:
 		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	}
