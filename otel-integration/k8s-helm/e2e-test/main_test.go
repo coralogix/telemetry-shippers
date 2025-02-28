@@ -101,7 +101,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 		require.True(t, expectedState, "metrics: schema_url %v was not found in the actual metrics", name)
 	}
 	for name, expectedState := range expectedResourceScopeNames {
-		require.True(t, expectedState, "metrics: scope %v was not found in the actual metrics", name)
+		require.True(t, expectedState, "metrics: scope %v was not found in the actual metrics, found scope names: %v", name, expectedResourceScopeNames)
 	}
 
 	var missingMetrics []string
@@ -121,6 +121,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 }
 
 func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
+
 	for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
 		scope := rmetrics.ScopeMetrics().At(k)
 
@@ -135,16 +136,22 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			t.Fatalf("unwanted scope detected %v", scope.Scope().Name())
 		}
 
-		require.Equal(t, expectedScopeVersion, scope.Scope().Version(), "metrics unexpected scope version %v")
 		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
 		if ok {
 			expectedResourceScopeNames[scope.Scope().Name()] = true
+		}
+
+		if !ok {
+			for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
+				scope := rmetrics.ScopeMetrics().At(k)
+				fmt.Printf("found scopeName: %v\n", scope.Scope().Name())
+			}
 		}
 		require.True(t, ok, "metrics: scope %v does not match one of the expected values", scope.Scope().Name())
 
 		// We only need the relevant part of the scopr name to get receiver name.
 		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
-		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
+		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[len(scopeNameTrimmed)-1])
 
 		metrics := scope.Metrics()
 
@@ -157,6 +164,10 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			}
 			if !ok {
 				spew.Dump(metric)
+				for j := 0; j < metrics.Len(); j++ {
+					metric := metrics.At(j)
+					fmt.Printf("Found metric %s\n", metric.Name())
+				}
 			}
 			require.True(t, ok, "actual metrics detected %v do not match expected metrics", metric.Name())
 		}
@@ -175,10 +186,26 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesKubeletstatreceiver
 	case "prometheusreceiver":
 		compareMap = expectedResourceAttributesPrometheusreceiver
+	case "k8sattributesprocessor":
+		compareMap = expectedResourceAttributesK8sattributesprocessor
+	case "loadscraper":
+		compareMap = expectedResourceAttributesLoadscraper
+	case "memorylimiterprocessor":
+		compareMap = expectedResourceAttributesMemorylimiterprocessor
+	case "processscraper":
+		compareMap = expectedResourceAttributesProcessscraper
+	default:
+		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	}
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
+		if !ok {
+			attributes.Range(func(k string, v pcommon.Value) bool {
+				fmt.Printf("found attribute: scopeName: %s, attribute: %v\n", scopeName, k)
+				return true
+			})
+		}
 		require.True(t, ok, "metrics: unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
 			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v", k)

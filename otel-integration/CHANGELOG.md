@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.149 / 2025-02-27
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.119.0`
+
 ### v0.0.148 / 2025-02-20
 
 - [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.
