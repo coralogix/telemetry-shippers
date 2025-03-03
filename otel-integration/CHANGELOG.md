@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.151 / 2024-03-04
+
+- [Fix] Add Bottlerocket support to coralogix-ebpf-agent
+
 ### v0.0.150 / 2025-02-29
 
 - [Feat] Upgrade OpenTelemetry Collector to `0.120.0`
