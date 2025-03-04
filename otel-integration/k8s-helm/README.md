@@ -1,6 +1,6 @@
 # OpenTelemetry Integration
 
-The OpenTelemetry Integration consists of two main compoenents, that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable eihter one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
+The OpenTelemetry Integration consists of two main components that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable either one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
 
 ### OpenTelemetry Operator (for CRD users)
 
@@ -127,9 +127,9 @@ Provides information about Kubernetes version.
 
 ## Coralogix EBPF Agent
 
-coralogix-ebpf-agent is an agent developed by coralogix. using [EBPF](https://ebpf.io/what-is-ebpf/) to extract network traffic as spans (http requests, SQL traffic ect), allowing for [Coralogix APM](https://coralogix.com/docs/user-guides/apm/getting-started/introduction-to-apm/) capabilities without any service instrumentation.
+The Coralogix EBPF Agent (coralogix-ebpf-agent) is an agent developed by Coralogix using EBPF to extract network traffic as spans (http requests, SQL traffic etc.), enabling APM capabilities without service instrumentation.
 
-Componentes:
+Components:
 - coralogix-ebpf-agent - The agent that extracts network traffic as spans, running as a daemonset.
 - k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
 - redis - Redis Pubsub is used for communication between k8s-watcher and coralogix-ebpf-agent, running as a sts with 1 replica.
@@ -145,7 +145,7 @@ Make sure you have at least these version of the following installed:
 
 ### Secret Key
 
-Follow the [private key docs](https://coralogix.com/docs/private-key/) tutorial to obtain your secret key tutorial to obtain your secret key.
+Follow the [private key docs](https://coralogix.com/docs/private-key/) tutorial to obtain your secret key.
 
 OpenTelemetry Agent require a `secret` called `coralogix-keys` with the relevant `private key` under a secret key called `PRIVATE_KEY`, inside the `same namespace` that the chart is installed in.
 
@@ -805,7 +805,7 @@ This adds more metrics around exporter latency and various processors metrics.
 
 If you are missing metrics collected by Prometheus receiver make sure to check Collector logs.
 
-The Prometheus receiver typically logs `Failed to scrape Prometheus endpoint` errors with target information when it fails to collect the application metrics.
+The Prometheus receiver typically logs `Failed to scrape Prometheus endpoint` errors with target information when it fails to collect the application metrics.
 
 For example:
 
@@ -953,7 +953,7 @@ processors:
 
 ## Picking the right tracing SDK span processor
 
-OpenTelemetry tracing SDK supports two strategies to create an application traces, a “SimpleSpanProcessor” and a “BatchSpanProcessor.” While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
+OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor. While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
@@ -979,9 +979,9 @@ Default installation collects Kubernetes logs.
 
 ## Kubernetes Events
 
-Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster’s resources — such as pods, deployments, or nodes — change state.
+Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster's resources — such as pods, deployments, or nodes — change state.
 
-Whenever something happens inside your cluster, it produces an events object that provides visibility into your cluster. However, Kubernetes events don’t persist throughout your cluster life cycle, as there’s no mechanism for retention. They’re short-lived and only available for one hour after the event is generated.
+Whenever something happens inside your cluster, it produces an events object that provides visibility into your cluster. However, Kubernetes events don't persist throughout your cluster life cycle, as there's no mechanism for retention. They're short-lived and only available for one hour after the event is generated.
 
 With that in mind we're configuring an OpenTelemetry receiver to collect Kubernetes events and ship them to the `kube-events` subSystem so that you can leverage all the other features such as dashboard and alerting using Kubernetes events as the source of information.
 
