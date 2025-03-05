@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.152 / 2024-03-05
+
+- [Feat] Allow adding tolerations to coralogix-ebpf-agent
+
 ### v0.0.151 / 2024-03-04
 
 - [Fix] Add Bottlerocket support to coralogix-ebpf-agent

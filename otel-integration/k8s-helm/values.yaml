@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.151"
+  version: "0.0.152"
 
   extensions:
     kubernetesDashboard:
@@ -1265,3 +1265,4 @@ coralogix-ebpf-agent:
     create: false
     name: ""
     value: 1000000000
+  tolerations: []
