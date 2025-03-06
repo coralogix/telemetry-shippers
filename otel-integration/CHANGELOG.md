@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.153/ 2025-03-06
+- [Feat] Update Collector to v0.121.0
+- [Feat] Update Target Allocator to v0.119.0
+- [Feat] Add headSampling preset to configure probabilistic sampling for traces
+
 ### v0.0.152 / 2024-03-05
 
 - [Feat] Allow adding tolerations to coralogix-ebpf-agent
