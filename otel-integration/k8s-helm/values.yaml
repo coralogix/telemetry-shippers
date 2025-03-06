@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.152"
+  version: "0.0.153"
 
   extensions:
     kubernetesDashboard:
@@ -93,7 +93,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.117.0
+      tag: v0.119.0
 
   command:
     name: otelcol-contrib
@@ -236,6 +236,12 @@ opentelemetry-agent:
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: true
+    headSampling:
+      enabled: false
+      # Percentage of traces to sample (0-100)
+      percentage: 10
+      # Sampling mode - "proportional", "equalizing", "hash_seed"
+      mode: "proportional"
   config:
     extensions:
       zpages:
