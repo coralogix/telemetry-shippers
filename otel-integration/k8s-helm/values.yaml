@@ -1266,3 +1266,6 @@ coralogix-ebpf-agent:
     name: ""
     value: 1000000000
   tolerations: []
+
+coralogix-ebpf-profiler:
+  enabled: false
