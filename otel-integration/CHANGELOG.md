@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.152 / 2024-03-xx
+
+- [Feat] Add coralogix-ebpf-profiler
+
 ### v0.0.152 / 2024-03-05
 
 - [Feat] Allow adding tolerations to coralogix-ebpf-agent
