@@ -2,7 +2,10 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.153/ 2025-03-06
+### v0.0.154 / 2025-03-07
+- [Feat] Update windows image to v0.121.0
+
+### v0.0.153 / 2025-03-06
 - [Feat] Update Collector to v0.121.0
 - [Feat] Update Target Allocator to v0.119.0
 - [Feat] Add headSampling preset to configure probabilistic sampling for traces
