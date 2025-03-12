@@ -82,6 +82,7 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"process.parent_pid":       "",
 	"process.pid":              "",
 	"service.version":          "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesK8sattributesprocessor = map[string]string{
@@ -115,6 +116,7 @@ var expectedResourceAttributesK8sattributesprocessor = map[string]string{
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
 	"service.version":          "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesService = map[string]string{
@@ -145,6 +147,7 @@ var expectedResourceAttributesService = map[string]string{
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
@@ -178,6 +181,7 @@ var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesLoadscraper = map[string]string{
@@ -196,6 +200,7 @@ var expectedResourceAttributesLoadscraper = map[string]string{
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
 	"service.version":          "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesPrometheusreceiver = map[string]string{
@@ -229,6 +234,7 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"service.name":             "opentelemetry-collector",
 	"url.scheme":               "",
 	"cx.agent.type":            "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesProcessscraper = map[string]string{
@@ -253,6 +259,7 @@ var expectedResourceAttributesProcessscraper = map[string]string{
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
 	"service.version":          "",
+	"service.instance.id":      "",
 }
 
 var expectedResourceAttributesProcessorhelper = map[string]string{
@@ -283,6 +290,7 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 	"azure.vm.size":            "",
 	"azure.vm.scaleset.name":   "",
 	"azure.resourcegroup.name": "",
+	"service.instance.id":      "",
 }
 
 var expectedMetrics map[string]bool = map[string]bool{
