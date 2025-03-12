@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.155 / 2025-03-12
+- [Feat] Add ebpf-profiler subchart.
+
 ### v0.0.154 / 2025-03-07
 - [Feat] Update windows image to v0.121.0
 

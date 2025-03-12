@@ -129,12 +129,18 @@ Provides information about Kubernetes version.
 
 coralogix-ebpf-agent is an agent developed by coralogix. using [EBPF](https://ebpf.io/what-is-ebpf/) to extract network traffic as spans (http requests, SQL traffic ect), allowing for [Coralogix APM](https://coralogix.com/docs/user-guides/apm/getting-started/introduction-to-apm/) capabilities without any service instrumentation.
 
-Componentes:
+Components:
 - coralogix-ebpf-agent - The agent that extracts network traffic as spans, running as a daemonset.
 - k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
 - redis - Redis Pubsub is used for communication between k8s-watcher and coralogix-ebpf-agent, running as a sts with 1 replica.
 
 to enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+
+## Coralogix EBPF Profiler
+
+coralogix-ebpf-profiler is an agent developed by coralogix. It is a fork from [opentelemetry-ebpf-profiler](https://github.com/open-telemetry/opentelemetry-ebpf-profiler) with some extra features to set k8s attributes.
+
+To enable the coralogix-ebpf-profiler deployment, set `coralogix-ebpf-profiler.enabled` to `true` in the `values.yaml` file.
 
 # Prerequisites
 
