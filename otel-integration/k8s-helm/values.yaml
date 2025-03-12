@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.154"
+  version: "0.0.155"
 
   extensions:
     kubernetesDashboard:
@@ -304,7 +304,6 @@ opentelemetry-agent:
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
@@ -603,7 +602,6 @@ opentelemetry-cluster-collector:
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
@@ -960,7 +958,6 @@ opentelemetry-gateway:
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
@@ -1153,7 +1150,6 @@ opentelemetry-receiver:
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
