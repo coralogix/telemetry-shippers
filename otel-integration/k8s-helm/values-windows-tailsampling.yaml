@@ -339,3 +339,6 @@ opentelemetry-cluster-collector:
 
 coralogix-ebpf-agent:
   enabled: false
+
+coralogix-ebpf-profiler:
+  enabled: false
