@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.155"
+  version: "0.0.156"
 
   extensions:
     kubernetesDashboard:
@@ -127,7 +127,7 @@ opentelemetry-agent:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
 
@@ -467,7 +467,7 @@ opentelemetry-cluster-collector:
   replicaCount: 1
   presets:
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "cluster-collector"
       clusterName: "{{.Values.global.clusterName}}"
     clusterMetrics:
@@ -871,7 +871,7 @@ opentelemetry-gateway:
 
   presets:
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "gateway"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
@@ -1063,7 +1063,7 @@ opentelemetry-receiver:
           fieldPath: spec.nodeName
   presets:
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:

@@ -86,7 +86,7 @@ opentelemetry-agent-windows:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
     logsCollection:
