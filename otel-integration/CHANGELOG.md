@@ -4,6 +4,7 @@
 
 ### v0.0.156 / 2025-03-12
 - [Fix] Add missing service_instance_id in metrics
+- [docs] Add headsampling docs
 
 ### v0.0.155 / 2025-03-12
 - [Feat] Add ebpf-profiler subchart.
