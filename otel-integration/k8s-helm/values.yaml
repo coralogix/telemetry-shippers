@@ -236,6 +236,10 @@ opentelemetry-agent:
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: true
+
+    # Head sampling configuration for traces.
+    # When enabled, this creates a separate pipeline for sampled traces using probabilistic sampler.
+    # More info: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/probabilisticsamplerprocessor/README.md
     headSampling:
       enabled: false
       # Percentage of traces to sample (0-100)

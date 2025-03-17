@@ -262,6 +262,32 @@ This change will configure otel-agent pods to send span data to coralogix-opente
 
 When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`. When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
 
+### Configuring Head Sampling for Tracing
+
+Head sampling is a feature that allows you to sample traces at the collection point. When enabled, it creates a separate pipeline for sampled traces using probabilistic sampling. This helps reduce the volume of traces while maintaining a representative sample.
+
+When used in combination with tail sampling, head sampling is applied first at the agent level. The sampled traces are then forwarded to the tail sampling collectors, where additional sampling decisions can be made. This means that tail sampling will only see and process the traces that have already passed through head sampling.
+
+The sampling configuration:
+- Creates a new 'traces/sampled' pipeline in addition to the main traces pipeline
+- Applies probabilistic sampling based on the configured percentage
+- Supports different sampling modes:
+  * "proportional": Maintains the relative proportion of traces across services
+  * "equalizing": Attempts to sample equal numbers of traces from each service
+  * "hash_seed": Uses consistent hashing to ensure the same traces are sampled
+
+To enable head sampling, configure the following in your values.yaml:
+
+```yaml
+presets:
+  headSampling:
+    enabled: true
+    # Percentage of traces to sample (0-100)
+    percentage: 10
+    # Sampling mode - "proportional", "equalizing", "hash_seed"
+    mode: "proportional"
+```
+
 ### Deploying Central Collector Cluster for Tail Sampling
 
 If you want to deploy OpenTelemetry Collector in a seperate "central" Kubernetes Cluster, that receives telemetry data via OTLP receivers and does [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) you can install `otel-integration` using `central-tail-sampling-values.yaml` values file. Check the values file for configuration.
@@ -811,7 +837,7 @@ This adds more metrics around exporter latency and various processors metrics.
 
 If you are missing metrics collected by Prometheus receiver make sure to check Collector logs.
 
-The Prometheus receiver typically logs `Failed to scrape Prometheus endpoint` errors with target information when it fails to collect the application metrics.
+The Prometheus receiver typically logs `Failed to scrape Prometheus endpoint` errors with target information when it fails to collect the application metrics.
 
 For example:
 
@@ -959,7 +985,7 @@ processors:
 
 ## Picking the right tracing SDK span processor
 
-OpenTelemetry tracing SDK supports two strategies to create an application traces, a “SimpleSpanProcessor” and a “BatchSpanProcessor.” While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
+OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor. While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
@@ -985,9 +1011,9 @@ Default installation collects Kubernetes logs.
 
 ## Kubernetes Events
 
-Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster’s resources — such as pods, deployments, or nodes — change state.
+Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster's resources — such as pods, deployments, or nodes — change state.
 
-Whenever something happens inside your cluster, it produces an events object that provides visibility into your cluster. However, Kubernetes events don’t persist throughout your cluster life cycle, as there’s no mechanism for retention. They’re short-lived and only available for one hour after the event is generated.
+Whenever something happens inside your cluster, it produces an events object that provides visibility into your cluster. However, Kubernetes events don't persist throughout your cluster life cycle, as there's no mechanism for retention. They're short-lived and only available for one hour after the event is generated.
 
 With that in mind we're configuring an OpenTelemetry receiver to collect Kubernetes events and ship them to the `kube-events` subSystem so that you can leverage all the other features such as dashboard and alerting using Kubernetes events as the source of information.
 
