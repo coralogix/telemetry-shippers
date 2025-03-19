@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.159 / 2025-03-19
+- [Feat] Use global k8stest package
+
+### v0.0.158 / 2025-03-17
+- [Feat] Enable fleetmanagement preset by default
+
 ### v0.0.157 / 2025-03-17
 - [Feat] Enable fleetmanagement preset by default
 
