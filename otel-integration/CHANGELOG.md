@@ -2,18 +2,19 @@
 
 ## OpenTelemtry-Integration
 
-### v0.0.157 / 2025-03-17
+### v0.0.157 / 2025-03-19
+- [Feat] Use global k8stest package
+
+### v0.0.156 / 2025-03-17
 - [Feat] Enable fleetmanagement preset by default
 
-### v0.0.156 / 2025-03-12
+### v0.0.155 / 2025-03-12
 - [Fix] Add missing service_instance_id in metrics
 - [docs] Add headsampling docs
 
-### v0.0.155 / 2025-03-12
-- [Feat] Add ebpf-profiler subchart.
-
-### v0.0.154 / 2025-03-07
+### v0.0.154 / 2025-03-12
 - [Feat] Update windows image to v0.121.0
+- [Feat] Add ebpf-profiler subchart.
 
 ### v0.0.153 / 2025-03-06
 - [Feat] Update Collector to v0.121.0
