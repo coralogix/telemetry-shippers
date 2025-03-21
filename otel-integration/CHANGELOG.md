@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.158 / 2025-03-21
+- [Fix] OpentelemetryCollector crd generation
+
 ### v0.0.157 / 2025-03-19
 - [Feat] Use global k8stest package
 
