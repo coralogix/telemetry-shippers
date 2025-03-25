@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.159 / 2025-03-25
+- [Revert] Remove `ebpf-profiler` as a subchart
+
 ### v0.0.158 / 2025-03-21
 - [Fix] OpentelemetryCollector crd generation
 
