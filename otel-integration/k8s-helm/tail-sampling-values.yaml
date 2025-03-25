@@ -64,6 +64,3 @@ opentelemetry-agent-windows:
 
 coralogix-ebpf-agent:
   enabled: false
-
-coralogix-ebpf-profiler:
-  enabled: false

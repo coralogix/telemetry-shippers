@@ -16,6 +16,3 @@ coralogix-ebpf-agent:
         # configure the opentelemetry collector endpoint here
         endpoint: "coralogix-opentelemetry-receiver:4317"
   tolerations: []
-
-coralogix-ebpf-profiler:
-  enabled: false

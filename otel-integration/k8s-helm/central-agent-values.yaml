@@ -36,5 +36,3 @@ opentelemetry-gateway:
   enabled: false
 coralogix-ebpf-agent:
   enabled: false
-coralogix-ebpf-profiler:
-  enabled: false
