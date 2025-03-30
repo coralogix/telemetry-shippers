@@ -1,23 +1,29 @@
+[//]: # (static-modules-readme-start-description)
+
 # Kubernetes observability using OpenTelemetry
-Coralogix offers Kubernetes Observability using OpenTelemetry for comprehensive Kubernetes and application observability. Using our OpenTelemetry Chart, the integration enables you to simplify the collection of logs, metrics, and traces from the running application in your pods to the cluster-level components of your Kubernetes cluster, while enabling our [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
+
+Coralogix offers **Kubernetes Observability using OpenTelemetry** for comprehensive Kubernetes and application observability. Using our **OpenTelemetry Chart**, the integration enables you to simplify the collection of logs, metrics, and traces from the running application in your pods to the cluster-level components of your Kubernetes cluster, while enabling our [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
 
 ## Observability explained
+
 ### Kubernetes observability
+
 Kubernetes observability is essential for monitoring a Kubernetes cluster's health, performance, resource utilization, and workloads. It involves collecting and analyzing metrics, logs and traces from the cluster and underlying machines to ensure the stability and optimal operation of the cluster.
 
 When managing and monitoring Kubernetes components, consider these critical areas:
 
-- Cluster Health. Monitoring the overall health of the Kubernetes cluster is crucial. This includes checking the status and availability of the master and worker nodes and the control plane components such as the API server, kube-proxy, and scheduler.
+- **Cluster health**: Monitoring the overall health of the Kubernetes cluster is crucial. This includes checking the status and availability of the master and worker nodes and the control plane components such as the API server, kube-proxy, and scheduler.
 
-- Resource Utilisation. Observing the resource utilization of cluster nodes and individual pods is essential for identifying bottlenecks, optimizing resource allocation, and ensuring efficient utilization of cluster resources. Extracting metrics and metadata from the underlying components provides the CPU, memory consumption, system load, and file system activity.
+- **Resource utilization**: Observing the resource utilization of cluster nodes and individual pods is essential for identifying bottlenecks, optimizing resource allocation, and ensuring efficient utilization of cluster resources. Extracting metrics and metadata from the underlying components provides the CPU, memory consumption, system load, and file system activity.
 
-- Networking. Monitoring Kubernetes networking is crucial for smooth pod and service communication. This involves observing network traffic, latency, and error rates to detect and troubleshoot connectivity issues, identify performance bottlenecks, and improve network configurations.
+- **Networking**: Monitoring Kubernetes networking is crucial for smooth pod and service communication. This involves observing network traffic, latency, and error rates to detect and troubleshoot connectivity issues, identify performance bottlenecks, and improve network configurations.
 
-- Application Performance. Observing the performance of applications running on Kubernetes is essential for delivering a reliable and responsive user experience.
+- **Application performance**: Observing the performance of applications running on Kubernetes is essential for delivering a reliable and responsive user experience.
 
-- Logging and Tracing. Logging and tracing play a vital role in understanding the behaviour and troubleshooting of Kubernetes components and applications. By collecting and analysing logs and traces, you can gain insights into system events, diagnose issues, and perform root cause analysis. Implementing effective logging and tracing strategies is important to capture relevant information for observability purposes.
+- **Logging and Tracing**. Logging and tracing play a vital role in understanding the behaviour and troubleshooting of Kubernetes components and applications. By collecting and analysing logs and traces, you can gain insights into system events, diagnose issues, and perform root cause analysis. Implementing effective logging and tracing strategies is important to capture relevant information for observability purposes.
 
-## Application observability
+### Application observability
+
 Application observability focuses on monitoring and understanding the behavior of applications running on the Kubernetes cluster. It includes collecting and analyzing metrics, logs, and traces specific to the applications to gain insights into their performance and identify any issues or bottlenecks. This includes monitoring response times, throughput, error rates, and other application-specific metrics.
 
 
@@ -29,16 +35,18 @@ Depending on your needs, you can use both charts (default behavior) or decide to
 
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
 
-OLD:
+//OLD-START
 The OpenTelemetry Integration consists of two main components that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable either one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
+//OLD-END
 
 ### OpenTelemetry Operator (for CRD users)
 
-If you wish to use this Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
+If you want to use the OpenTelemetry Integration Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
 
 We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
 
-Content:
+//OLD-START
+Table of Contents:
 1. [Components](#components)
 2. [Prerequisites](#prerequisites)
 3. [Installation](#installation)
@@ -47,64 +55,79 @@ Content:
 6. [Infrastructure Monitoring](#infrastructure-monitoring)
 7. [Integration presets](#integration-presets)
 8. [Dependencies](#dependencies)
+//OLD-END
 
-# Components
 
 ## OpenTelemetry Agent
 
-For the agent component, the collector will be deployed as a daemonset, meaning the collector will run as an `agent` on each node. Agent runs in host network mode allowing you to easily send application telemetry data.
+The OpenTelemetry Agent simplifies the collection of logs, metrics, and traces from applications running in your Kubernetes cluster. It is configured to deploy as a `daemonset` and runs on every node in the cluster. The agent maps metadata - such as Kubernetes attributes, Kubelet metrics, and host data - to the collected telemetry. This is particularly beneficial for high-traffic clusters or when utilizing our [APM capabilities](../../integrations/apm-kubernetes/index.md).
 
-The included agent provides:
+The agent comes with several pre-configured processors and receivers:
 
-- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) - Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
-- [Kubernetes Attributes Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) Kubernetes Attributes Processor, enriches data with Kubernetes metadata, such as Deployment information.
-- [Kubernetes Log Collection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) - native Kubernetes Log collection with Opentelemetry Collector. No need to run multiple agents such as fluentd, fluent-bit or filebeat.
-- [Host Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver) - native Linux monitor resource collection agent. No need to run Node exporter or vendor agents.
-- [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) - Fetches running container metrics from the local Kubelet.
-- [OTLP Metrics](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) - Send application metrics via OpenTelemetry protocol.
-- Traces - You can send data in various format, such as [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver), [OpenTelemetry Protocol](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) or [Zipkin](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/zipkinreceiver).
-- [Span Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/spanmetricsconnector/README.md) - Optional Traces are converted to Requests, Duration and Error metrics using spanmetrics connector.
-- [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension) - You can investigate latency and error issues by navigating to Pod's localhost:55516 web server. Routes are desribed in [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes)
+- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter). Coralogix Exporter automatically enriches telemetry data with Kubernetes attributes, using consistent ApplicationName and SubsytemName fields for better correlation across your telemetry signals.
+
+- [Kubernetes Attributes Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor). This processor enriches data with Kubernetes metadata, such as pod and deployment information.
+
+- [Kubernetes Log Collection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver). Enables native Kubernetes log collection with OpenTelemetry Collector, eliminating the need for multiple agents like Fluentd, Fluent Bit, or Filebeat.
+
+// ???
+- [Host Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver). native Linux monitor resource collection agent. No need to run Node exporter or vendor agents.
+
+- [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver). Fetches running container metrics from the local Kubelet.
+
+- [OTLP Metrics](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md). Sends application metrics using the OpenTelemetry protocol.
+
+- Traces. Collects data in various formats such as [Jaeger](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/jaegerreceiver), [OpenTelemetry Protocol](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md), or [Zipkin](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/zipkinreceiver).
+
+- [Span Metrics](../../../user-guides/apm/getting-started/span-metrics/index.md). Converts optional traces into requests, duration, and error metrics using the span metrics processor.
+
+- [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension).Investigate latency and error issues by navigating to the pod's localhost:55516 web server. Relevant routes are described in the [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes).
 
 ## OpenTelemetry Cluster Collector
 
-This cluster collector provides:
+The OpenTelemetry Cluster Collector retrieves data from the cluster level, including Kubernetes events, cluster metrics, and additional Kubernetes-specific metrics. It enables you to gain insights into the health and performance of various objects within the cluster, such as deployments, nodes, and pods.
 
-- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) - Coralogix exporter is preconfigured to enrich data using Kubernetes Attributes, which allows quick correlation of telemetry signals using consistent ApplicationName and SubsytemName fields.
-- [Cluster Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver) - The Kubernetes Cluster receiver collects cluster-level metrics from the Kubernetes API server.
+- [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter). Coralogix Exporter automatically enriches telemetry data with Kubernetes attributes, using consistent ApplicationName and SubsytemName fields for better correlation across your telemetry signals.
+
+- [Cluster Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver). The Kubernetes Cluster receiver collects cluster-level metrics from the Kubernetes API server.
+
 - [Kubernetes Events Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8seventsreceiver) - The Kubernetes Events receiver collects events from the Kubernetes API server. See [Kubernetes Events](#kubernetes-events) for more information.
-- Kubernetes Extra Metrics - This preset enables collection of extra Kubernetes related metrics, such as node information, pod status or container I/O metrics. These metrics are collected in particular for the [Kubernetes Dashboard](#kubernetes-dashboard).
-- [Integrations presets](#integration-presets) - This chart provides support to integrate with various applications running on your cluster to monitor them out of the box.
+
+- Kubernetes Extra Metrics. This preset enables the collection of extra Kubernetes-related metrics, such as node information, pod status, or container I/O metrics. These metrics are collected in particular for the [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md).
+
+- [Integration Presets](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#integration-presets). This chart provides support to integrate with various applications (e.g. mysql) running on your cluster to monitor them out of the box.
 
 ## Kubernetes Dashboard
 
-This chart will also collect, out of the box, all the metrics necessary for [Coralogix Kubernetes Monitoring](https://coralogix.com/docs/apm-kubernetes/), which will allow you to monitor your Kubernetes cluster and applications.
+The OpenTelemetry Integration chart enables the collection of essential metrics needed for the [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) setup. The [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver#kubernetes-cluster-receiver) is an essential part that provides cluster-level metrics and entity events from the Kubernetes API server. It can report real-time metrics of allocatable resource types such as CPU.memory, network and disk usage of nodes and pods and give an update on node conditions (e.g. `Ready`, `MemoryPressure`). As a whole, the metrics gathered are useful for the Kubernetes Dashboard to report on the health of your cluster.
 
-**Please be aware** that certain metrics collected by for the dashboard have high cardinality, which means that the number of unique values for a given metric is high and might result in higher costs connected with metrics ingestion and storage. This is applies in particular to the pod related metrics `kube_pod_status_reason`, `kube_pod_status_phase` and `kube_pod_status_qos_class`.
+!!! Note
+    **Please be aware** that certain metrics collected by the dashboard have high cardinality because of a high number of unique values for a given metric. This might result in higher costs because of metrics' ingestion and storage. This  particularly applies to the following pod related metrics: `kube_pod_status_reason`, `kube_pod_status_phase` and `kube_pod_status_qos_class`.
 
-If you do not require to collect these metrics, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
+    If collecting these metrics is not required, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
 
 ## Metrics
 
-OpenTelemetry integration collects metrics from various sources. You can see the list of metrics and their labels in OpenTelemetry Collector contrib receiver documentation:
+Please refer to the following documentation for the full list of metrics and their labels, collected from various sources:
 
-- Kubernetes Cluster Receiver - https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md
-- Kubelet Stats Receiver - https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/metadata.yaml
-- Host Metrics Receiver - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver
+- [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md)
+- [Kubelet Stats Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/metadata.yaml)
+- [Host Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver)
 
-Additionally, we use [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) and [resource detection processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) to add more metadata labels.
+Additionally, [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) and [resource detection processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) are used to add more metadata labels.
 
-For Kubernetes Dashboard we also use [Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) to scrape Kubernetes API Server and [Kubelet cAdvisor](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/) endpoints.
+[Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) is used to scrape Kubernetes API Server and [Kubelet cAdvisor](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/) endpoints for display in the [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md).
 
-Note: OpenTelemetry metrics are converted to Prometheus format following [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/compatibility/prometheus_and_openmetrics/#otlp-metric-points-to-prometheus)
+!!! Note
+    OpenTelemetry metrics are converted to Prometheus format following the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/compatibility/prometheus_and_openmetrics/#otlp-metric-points-to-prometheus)
 
 ## Custom Metrics
 
-OpenTelemetry Integration additionally adds these custom metrics:
+In addition to standard metrics, the OpenTelemetry Integration provides the following custom metrics:
 
 ### kube_pod_status_qos_class
 
-Provides information about Pod QOS class.
+Provides information about the Pod QOS class.
 
 | Metric Type | Value | Labels |
 |-------------|-------|--------|
@@ -112,7 +135,7 @@ Provides information about Pod QOS class.
 
 ### kube_pod_status_reason
 
-Provides information about Kubernetes Pod Status.
+Provides information about the Kubernetes Pod Status.
 
 | Metric Type | Value | Labels |
 |-------------|-------|--------|
@@ -122,7 +145,7 @@ Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, Unexpected
 
 ### kube_node_info
 
-Provides information about Kubernetes Node.
+Provides information about the Kubernetes Node.
 
 | Metric Type | Value | Labels              |
 |-------------|-------|---------------------|
@@ -140,7 +163,7 @@ Example reason label keys: OOMKilled
 
 ### kubernetes_build_info
 
-Provides information about Kubernetes version.
+Provides information about the Kubernetes version.
 
 ### Container Filesystem usage metrics
 
@@ -157,21 +180,40 @@ Provides information about Kubernetes version.
 
 ## Coralogix EBPF Agent
 
-The Coralogix EBPF Agent (coralogix-ebpf-agent) is an agent developed by Coralogix using EBPF to extract network traffic as spans (http requests, SQL traffic etc.), enabling APM capabilities without service instrumentation.
+The Coralogix EBPF Agent (`coralogix-ebpf-agent`) is an agent developed by Coralogix using EBPF to extract network traffic as spans (HTTP requests, SQL traffic, etc.), enabling APM capabilities without service instrumentation.
+To enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
 Components:
-- coralogix-ebpf-agent - The agent that extracts network traffic as spans, running as a daemonset.
-- k8s-watcher - The agent that watches for changes in k8s resources and publishes them to redis pubsub for coralogix-ebpf-agent to consume them, running as a deployment with 1 replica.
-- redis - Redis Pubsub is used for communication between k8s-watcher and coralogix-ebpf-agent, running as a sts with 1 replica.
+- `coralogix-ebpf-agent`. The agent that extracts network traffic as spans, running as a daemonset.
+- `k8s-watcher`. The agent that watches for changes in k8s resources and publishes them to redis pubsub for `coralogix-ebpf-agent` to consume. Running as a deployment with 1 replica.
+- `redis`. Redis Pubsub is used for communication between `k8s-watcher` and `coralogix-ebpf-agent`, running as an sts with 1 replica.
 
-to enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+
+## Next Steps
+
+View our **basic configuration** instructions [here](../kubernetes-complete-observability-basic-configuration/index.md).
+
+**Advanced configuration** instructions can be found [here](../advanced-configuration/index.md).
+
+[//]: # (static-modules-readme-end-description)
+
+
+
+[//]: # (static-modules-readme-start-description)
+
+# Kubernetes Complete Observability: basic configuration
+Coralogix’s **Kubernetes Complete Observability** provides a comprehensive solution for full-stack observability in your Kubernetes environment.
+
+## Overview
+
+View all of your nodes, pods and cluster metrics, pod logs, Kubernetes events, and your distributed traces pipeline. Take advantage of our Kubernetes Dashboard using our pre-configured OpenTelemetry Collector.
+
+Utilizing [OpenTelemetry](../../getting-started/index.md), we ensure seamless and automated data collection from various components of your stack. This enables you to monitor infrastructure health and gain insights into application behavior and inter-service dependencies. Troubleshoot issues, optimize performance and manage your cluster more effectively with a 360-degree view of your Kubernetes ecosystem.
 
 # Prerequisites
 
-Make sure you have at least these version of the following installed:
-
-- Kubernetes 1.24+
-- Helm 3.9+
+- [Kubernetes](https://kubernetes.io/) (v1.24+) installed
+- [Helm](https://helm.sh/) (v3.9+) installed and configured
 
 ### Secret Key
 
@@ -979,7 +1021,7 @@ processors:
           - resource.attributes["my_label"] == "abc123"
 ```
 
-# Performance of the Collector
+# Performance of the collector
 
 ## Picking the right tracing SDK span processor
 
@@ -1001,7 +1043,7 @@ import BatchSpanProcessor from "@opentelemetry/sdk-trace-base";
 tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 ```
 
-# Infrastructure Monitoring
+# Infrastructure monitoring
 
 ## Log Collection
 
