@@ -210,17 +210,23 @@ View all of your nodes, pods and cluster metrics, pod logs, Kubernetes events, a
 
 Utilizing [OpenTelemetry](../../getting-started/index.md), we ensure seamless and automated data collection from various components of your stack. This enables you to monitor infrastructure health and gain insights into application behavior and inter-service dependencies. Troubleshoot issues, optimize performance and manage your cluster more effectively with a 360-degree view of your Kubernetes ecosystem.
 
-# Prerequisites
+## Prerequisites
 
 - [Kubernetes](https://kubernetes.io/) (v1.24+) installed
 - [Helm](https://helm.sh/) (v3.9+) installed and configured
 
-### Secret Key
+!!! Note  
+    If you have previously installed the Coralogix Exporter or [Kubernetes Infrastructure Monitoring](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-infrastructure-monitoring/index.md), they must be **removed** before proceeding with this integration.
 
-Follow the [private key docs](https://coralogix.com/docs/private-key/) tutorial to obtain your secret key.
 
-OpenTelemetry Agent require a `secret` called `coralogix-keys` with the relevant `private key` under a secret key called `PRIVATE_KEY`, inside the `same namespace` that the chart is installed in.
+### Secret key
 
+Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
+
+The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](../../../user-guides/account-management/api-keys/send-your-data-api-key/index.md) under the secret key `PRIVATE_KEY`.
+This secret must exist in the same namespace where the Helm chart is installed.
+
+To create the secret, run the following command:
 ```bash
 kubectl create secret generic coralogix-keys \
   --from-literal=PRIVATE_KEY=<private-key>
@@ -239,80 +245,141 @@ metadata:
 type: Opaque 
 ```
 
-# Installation
+## Installation
 
-> [!NOTE] With some Helm version (< `v3.14.3`), users might experience multiple warning messages during the installation about following:
->
-> ```
-> index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
->
-> ```
->
-> This is due to a validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). This does not affect the installation process and the chart will be installed successfully. If you do not wish to see these warnings, we recommend either upgrading to the latest Helm version, or downgrading to a version not affected by the issue.
+!!! Note  
+    With some Helm versions (< `v3.14.3`), users might experience multiple warning messages during installation:
+    ```
+    index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
+    ```
 
-First make sure to add our Helm charts repository to the local repos list with the following command:
+    This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
+
+
+### UI-based installation
+
+**STEP 1.** In your Coralogix toolbar, navigate to **Data Flow** > **Integrations**.
+
+**STEP 2.** From the Integrations section, select **Kubernetes Complete Observability**.
+
+![Coralogix Kubernetes Complete Observability](images/Untitled-20.png)
+
+**STEP 3.** On the Coralogix OpenTelemetry Collector integration page, click **\+ SETUP COLLECTOR**.
+
+![Coralogix Kubernetes Complete Observability](images/Untitled-21.png)
+
+**STEP 4.** Enter a name for your integration.
+
+**STEP 5.** Enter one of your [Send-Your-Data API keys](../../../user-guides/account-management/api-keys/send-your-data-api-key/index.md) or click **CREATE NEW KEY** to generate a new dedicated API key.
+
+![Coralogix Kubernetes Complete Observability](images/Untitled-22.png)
+
+**STEP 6.** Click **NEXT**.
+
+**STEP 7.** Check the Helm version by using the `helm version` command. You are required to use Helm v3.9 or above.
+
+**STEP 8.** Add the Coralogix Helm repository to your Helm configuration by copying and running the command.
+
+Run the command `helm repo update` to update Helm's local repository cache.
+
+Click **NEXT**.
+
+**STEP 9.** OpenTelemetry Agent requires a secret called `coralogix-keys` with the [Send-Your-Data API key](../../../user-guides/account-management/api-keys/send-your-data-api-key/index.md) obtained in **STEP 5**. It is defined as `PRIVATE_KEY` inside the same namespace in which the chart is installed. If the secret is not present, create it by copying and running the command shown in the installer.
+
+**STEP 10.** Copy and run the `helm upgrade` command shown in the installer. Make sure you replace the `<cluster name>` with your Kubernetes cluster name.
+
+**STEP 11.** Mark the checkbox to confirm you have run the Helm command. Click **COMPLETE**.
+
+![Coralogix Kubernetes Complete Observability](images/Untitled-25.png)
+
+
+### Code-based installation
+
+**STEP 1**. First, make sure to add our Helm charts repository to the local repos list with the following command:
 
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
 
-In order to get the updated Helm charts from the added repository, please run:
+**STEP 2**. In order to get the updated Helm charts from the added repository, run:
 
 ```bash
 helm repo update
 ```
 
-Install the chart:
+**STEP 3**. Install the chart:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values.yaml
 ```
 
-### Providing own array values for `extraEnvs`, `extraVolumes` or `extraVolumeMounts`
+#### Providing custom array values for `extraEnvs`, `extraVolumes` or `extraVolumeMounts`
 
-If you'd like to provide your own overrides for array values such as `extraEnvs`, `extraVolumes` or `extraVolumeMounts`, please beware that Helm does not support merging arrays, but instead the arrays will be nulled out (see this [issue](https://github.com/helm/helm/issues/3486) for more). In case you'd like to provide your own values for these arrays, make sure that you first **copy over any existing array values** from the provided `values.yaml` file.
+When providing custom overrides for array values like `extraEnvs`, `extraVolumes`, or `extraVolumeMounts`, note that Helm does not support array merging. Instead, arrays are completely overwritten (see this [issue](https://github.com/helm/helm/issues/3486) for details). To ensure proper configuration, first copy any existing array values from the provided [`values.yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file before adding your custom values.
 
-### Generating OpenTelemetryCollector CRD for OpenTelemetry Operator users
 
-If you wish to deploy the `otel-integration` using the OpenTelemetry Operator, you can generate an `OpenTelemetryCollector` CRD. You might want to do this if you'd like to take advantage of some advanced features provided by the operator, such as automatic collector upgrade or CRD-defined auto-instrumentation.
+### CoralogixOperator-based installation - generating an OpenTelemetryCollector CRD
 
-For full details on how to install and use the operator, please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md).
+The OpenTelemetry Operator provides advanced capabilities like automatic collector upgrades and CRD-defined auto-instrumentation. To leverage these features, you can deploy the `otel-integration` using the Operator by generating an `OpenTelemetryCollector` Custom Resource Definition (CRD).
 
-First make sure to add our Helm charts repository to the local repos list with the following command:
+For full details on how to install and use the Operator, refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md).
+
+**STEP 1**. First, make sure to add our Helm charts repository to the local repos list using the following command:
 
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
 
-In order to get the updated Helm charts from the added repository, please run:
+**STEP 2**. In order to get the updated Helm charts from the added repository, run:
 
 ```bash
 helm repo update
 ```
 
-Install the chart with the CRD `values-crd-override.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
+**STEP 3**. Install the chart with the CRD `values-crd-override.yaml` file. You can provide the global values (such as secret key and cluster name) in one of two ways:
+
+1. Adjust the main `values.yaml` file and pass it to the `helm upgrade` command as shown below:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values.yaml -f values-crd-override.yaml
 ```
 
-Or you can provide the values directly in the command line by passing them with the `--set` flag:
+2. Provide the values directly through the command line by passing them with the `--set` flag:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-> [!NOTE] Users might experience multiple warning messages during the installation about following:
->
-> ```
-> Warning: missing the following rules for namespaces: [get,list,watch]
-> ```
->
-> This is due to a bug in Opentelemetry (see this [issue](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)). This does not affect the installation process and the chart will be installed successfully.
+!!! Note
+    During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
 
+## Limits & Quotas
+
+- Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](../../../integrations/coralogix-endpoints.md), with a **recommendation of 2MB**.
+
+- Metric names must be a maximum of 255 characters.
+
+- Attribute keys for metric data must be a maximum of 255 characters.
+
+## Next Steps
+
+**Advanced configuration** instructions can be found [here](../advanced-configuration/index.md).
+
+**Validation** instructions can be found [here](../validation/index.md).
+
+## Additional Resources
+| | |
+| --- | --- |
+| Documentation | [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites)<br/>[Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) |
+
+
+[//]: # (static-modules-readme-end-description)
+
+
+[//]: # (static-modules-readme-start-description)
 ### Enabling Tail Sampling
 
 If you want to use [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) to reduce the amount of traces using [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) you can install `otel-integration` using `tail-sampling-values.yaml` values. For example:
