@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.160 / 2025-03-31
+- [Feat] Add extraDimensions support for dbMetrics in spanMetrics preset
+- [Fix] Configure hostEntityEvents preset to require hostMetrics preset to be enabled
+
 ### v0.0.159 / 2025-03-25
 - [Revert] Remove `ebpf-profiler` as a subchart
 
