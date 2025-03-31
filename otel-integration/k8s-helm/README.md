@@ -380,39 +380,284 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 
 [//]: # (static-modules-readme-start-description)
-### Enabling Tail Sampling
+# Tail Sampling with OpenTelemetry using Kubernetes
 
-If you want to use [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) to reduce the amount of traces using [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) you can install `otel-integration` using `tail-sampling-values.yaml` values. For example:
+This tutorial demonstrates how to configure a Kubernetes cluster, deploy OpenTelemetry to collect logs, metrics, and traces, and enable trace sampling. We will cover an example of enabling a tail sample for the Opentelemetry Demo Application and a more precise example using the small trace-generating application.
+
+## Prerequisites
+
+- A Kubernetes cluster
+
+- Helm installed
+
+- Coralogix [Send-Your-Data API key](../../../user-guides/account-management/api-keys/send-your-data-api-key/index.md)
+
+## How it Works
+
+![](images/docker-flow-daig-1.png)
+
+The Kubernetes OpenTelemetry Integration consists of the following components:
+
+- **OpenTelemetry Agent**. The Agent is deployed to each node within the Cluster and collects telemetry data from the applications running on that node. The agent is configured to send the telemetry data to the OpenTelemetry Gateway. The agent ensures that traces with the same ID are sent to the same gateway. This allows tail sampling to be performed on the traces correctly, even if they span multiple applications and nodes.
+
+- **OpenTelemetry Gateway**. The Gateway is responsible for receiving telemetry data from the agents and forwarding it to the Coralogix backend. The Gateway is also responsible for load balancing the telemetry data to the Coralogix backend.
+
+## Install the Coralogix OpenTelemetry Integration
+
+This integration uses the [Coralogix OpenTelemetry Helm Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm). While this document focuses on tail sampling for traces, deploying this chart also deploys the infrastructure to collect logs, metrics, and traces from your Kubernetes cluster and pods.
+
+The following configuration enables OTEL-agent pods to send span data to the coralogix-opentelemetry-gateway deployment using the [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter).
+
+To ensure optimal performance:
+
+- Configure an appropriate number of replicas based on your traffic volume
+- Set resource requests and limits to handle the expected load
+- Define custom [tail sampling policies](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) to control which spans are collected.
+
+!!! Note
+    - When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
+    - When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
+
+
+**STEP 1**. Add the Coralogix Helm repository.
 
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 
+**STEP 2**. Copy the `tail-sampling-values.yaml` file found [here](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/tail-sampling-values.yaml) and update the relevant fields with your values.
+
+``` yaml
+global:
+  domain: "<your-coralogix-domain>"
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "warn"
+  collectionInterval: "30s"
+
+opentelemetry-agent:
+  enabled: true
+  mode: daemonset
+  presets:
+    loadBalancing:
+      enabled: true
+      routingKey: "traceID"
+      hostname: coralogix-opentelemetry-gateway
+
+  config:
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - loadbalancing
+
+opentelemetry-gateway:
+  enabled: true
+  replicaCount: 3
+
+  config:
+    processors:
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: 100
+        expected_new_traces_per_sec: 10
+        policies:
+          [
+            {
+              name: errors-policy,
+              type: status_code,
+              status_code: {status_codes: [ERROR]}
+            },
+            {
+              name: randomized-policy,
+              type: probabilistic,
+              probabilistic: {sampling_percentage: 10}
+            },
+          ]
+
+opentelemetry-collector:
+  enabled: false
+
+```
+
+**STEP 3**. Add your Coralogix [Send-Your-Data API key](../../../user-guides/account-management/api-keys/send-your-data-api-key/index.md) to the `tail-sampling-values.yaml` file.
+
+``` bash
+kubectl create secret generic coralogix-keys --from-literal 'PRIVATE_KEY=<your-private-key>'
+```
+
+**STEP 4**. Install the `otel-integration`.
+
+```
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f tail-sampling-values.yaml
 ```
 
-This change will configure otel-agent pods to send span data to coralogix-opentelemetry-gateway deployment using [loadbalancing exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter). Make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies with your custom tail sampling policies.
+``` bash
+kubectl get pods
+NAME                                               READY   STATUS    RESTARTS   AGE
+coralogix-opentelemetry-agent-86qdb                1/1     Running   0          7h59m
+coralogix-opentelemetry-gateway-65dfbb5567-6rk4j   1/1     Running   0          7h59m
+coralogix-opentelemetry-gateway-65dfbb5567-g7m5l   1/1     Running   0          7h59m
+coralogix-opentelemetry-gateway-65dfbb5567-zbprd   1/1     Running   0          7h59m
 
-When running in Openshift make sure to set `distribution: "openshift"` in your `values.yaml`. When running in Windows environments, please use `values-windows-tailsampling.yaml` values file.
+```
 
-### Deploying Central Collector Cluster for Tail Sampling
+You should end up with as many opentelemetry-agent pods as you have nodes in your cluster, and 3 opentelemetry-gateway pods.
 
-If you want to deploy OpenTelemetry Collector in a seperate "central" Kubernetes Cluster, that receives telemetry data via OTLP receivers and does [Tail Sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) you can install `otel-integration` using `central-tail-sampling-values.yaml` values file. Check the values file for configuration.
+## Install Test Application Environment
 
-This will deploy two deployments:
-- opentelemetry-receiver - responsible for receiving otlp data, pushing metrics and logs to Coralogix and loadbalancing spans to opentelemetry-gateway deployment.
-- opentelemetry-gateway - a service that receives span data and does Tail Sampling decisions.
+In the next section, we will describe the process for installing 2 application environments, the OpenTelemetry Demo Application and a Small Trace Generating. You do not need to install both these examples.
 
-The opentelemetry-receiver will need to be exposed to other Kubernetes Clusters for sending data. You can do that by using service of type LoadBalancer, configuring Ingress object, or manually configuring your load balancer. Also, make sure to configure enough replicas and resource requests and limits to handle the load. Next, you will need to configure [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies with your custom tail sampling policies.
+### Install OpenTelemetry Demo
+
+**STEP 1**. Add the Hlem chart for the OpenTelemetry Demo Application.
+
+``` bash
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+```
+
+**STEP 2**. Create a `values.yaml` file and add the following:
+
+``` yaml
+default:
+  env:
+    - name: OTEL_SERVICE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: "metadata.labels['app.kubernetes.io/component']"
+    - name: OTEL_COLLECTOR_NAME
+      value: '{{ '{{' }} include "otel-demo.name" . }}-otelcol'
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://$(OTEL_COLLECTOR_NAME):4317
+    - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+      value: cumulative
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: service.name=$(OTEL_SERVICE_NAME),service.namespace=opentelemetry-demo
+
+  envOverrides:
+    - name: OTEL_COLLECTOR_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://$(OTEL_COLLECTOR_NAME):4317
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+opentelemetry-collector:
+  enabled: false
+
+jaeger:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+grafana:
+  enabled: false
+
+```
+
+This will configure the OpenTelemetry Demo Application to send traces to the Coralogix OpenTelemetry Agent running on the node.
+
+**STEP 3**. Install the Opentelemetry Demo Application.
+
+``` bash
+helm install otel-demo open-telemetry/opentelemetry-demo -f values.yaml
+
+NAME: my-otel-demo
+LAST DEPLOYED: Mon Feb 19 23:29:16 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+
+```
+
+### Install the Small Trace-Generating Application
+
+This application is a small trace-generating application. We will demonstrate how to connect it to the Coralogix OpenTelemetry Agent to enable tail sampling.
+
+**STEP 1**. Create a file `go-traces-demo.yaml` and add the following:
+
+``` yaml
+apiVersion: apps/v1        
+kind: Deployment
+metadata:
+  name: go-otel-traces-demo
+spec:
+  selector:
+    matchLabels:
+      app: go-otel-traces-demo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: go-otel-traces-demo
+    spec:
+      containers:
+        - name: go-otel-traces-demo
+          image: public.ecr.aws/c1s3k2h4/go-otel-traces-demo:latest  
+          imagePullPolicy: Always        
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP         
+            - name: CX_ENDPOINT
+              value: $(NODE_IP):4317
+
+```
+
+**STEP 2**. Apply the Kuberenetes deployment.
+
+```
+kubectl apply -f go-traces-demo.yaml
+```
+
+## Validation
+
+View your telemetry data in your Coralogix dashboard. Traces should arrive from the tail-sampling load balancer.
+
+![](images/console-2.jpg)
+
+## Deploying Central Collector Cluster for Tail Sampling
+
+To deploy OpenTelemetry Collector in a separate "central" Kubernetes cluster for telemetry collection and [tail sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) using OpenTelemetry Protocol (OTLP) receivers, install `otel-integration` using the `central-tail-sampling-values.yaml` values file. Review the values file for detailed configuration options.
+
+This deployment creates two key components:
+
+- `opentelemetry-receiver`. Receives OTLP data and sends metrics and logs directly to Coralogix while performing load balancing of span data sent to the `opentelemetry-gateway` deployment.
+deployment.
+- `opentelemetry-gateway`. Performs tail sampling decisions on the received span data before forwarding to Coralogix
+
+To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`, expose it using one of these methods:
+- Service of type LoadBalancer
+- Ingress object configuration  
+- Manual load balancer configuration
+
+!!! Note
+    Ensure you configure sufficient replicas and appropriate resource requests/limits to handle the expected load. You'll also need to set up custom [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies.
+
+**STEP 1**. Run the following commands to deploy the Central Collector Cluster.
 
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
 
+``` 
 helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f central-tail-sampling-values.yaml
 ```
 
-Once you deploy it, you can validate by sending some otlp data to opentelemetry-receiver Service and checking Coralogix for spans. This can be done via telemetrygen:
+**STEP 2**. Validate the deployment by sending a sample of OTLP data to the `opentelemetry-receiver` Service and navigating to the Coralogix [Explore Screen](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) to view collected traces. This can be done via `telemetrygen`:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -442,14 +687,15 @@ spec:
 EOF
 ```
 
-Next, you will need to configure regular `otel-integration` deployment to send data to Central Collector Cluster:
+**STEP 3**. Configure a regular `otel-integration` deployment to send data to the Central Collector Cluster:
 
 ```bash
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f central-agent-values.yaml
 ```
 
-#### Why am I getting ResourceExhausted errors when using Tail Sampling?
+## Troubleshooting
+### Why am I getting ResourceExhausted errors when using Tail Sampling?
 
 Typically, the errors look like this:
 
@@ -457,7 +703,7 @@ Typically, the errors look like this:
 not retryable error: Permanent error: rpc error: code = ResourceExhausted desc = grpc: received message after decompression larger than max (5554999 vs. 4194304)
 ```
 
-By default, OTLP Server has a single grpc request size 4MiB limit. This limit might breached when openetelemtry-agent sends the trace data using loadbalancing exporter to the gateway's OTLP Server. To fix this you should change the limit to a bigger value. For example:
+By default, the OTLP Server has a [4MiB size limit](https://pkg.go.dev/google.golang.org/grpc#MaxRecvMsgSize) for a single gRPC request. This limit may be exceeded when the `opentelemetry-agent` sends trace data to the gateway's OTLP Server using the load balancing exporter. To resolve this, increase the size limit by adjusting the [configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md#server-configuration). For example:
 
 ```
 receivers:
@@ -467,10 +713,15 @@ receivers:
         max_recv_msg_size_mib: 20
 ```
 
-References:
-- OTLP Receiver config - https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md
-- GRPC settings for this config - https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md#server-configuration
-- Default msg size limit of GRPC servers - https://pkg.go.dev/google.golang.org/grpc#MaxRecvMsgSize
+## Additional Resources
+|  |  |
+| --- | --- |
+| Documentation | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](../../tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/index.md) |
+| OTLP Configuration | [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) |
+
+[//]: # (static-modules-readme-end-description)
+
+
 
 ### Enabling scraping of Prometheus custom resources (`ServiceMonitor` and `PodMonitor`)
 
