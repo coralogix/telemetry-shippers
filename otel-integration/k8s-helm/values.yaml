@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.160"
+  version: "0.0.161"
 
   extensions:
     kubernetesDashboard:
@@ -196,6 +196,9 @@ opentelemetry-agent:
         enabled: true
         serviceVersion:
           enabled: true
+        # extraDimensions:
+        #  - name: cgx.transaction
+        #  - name: cgx.transaction.root
         # transformStatements:
         # - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
         # - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
