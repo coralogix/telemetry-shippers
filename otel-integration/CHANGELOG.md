@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.161 / 2025-04-01
+- [Fix] Add extraDimensions support for dbMetrics in spanMetrics preset
+
 ### v0.0.160 / 2025-03-31
 - [Feat] Add extraDimensions support for dbMetrics in spanMetrics preset
 - [Fix] Configure hostEntityEvents preset to require hostMetrics preset to be enabled
