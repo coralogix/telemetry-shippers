@@ -497,13 +497,36 @@ opentelemetry-cluster-collector:
 
 ### Installing the chart on clusters with mixed operating systems (Linux and Windows)
 
-Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The `kube-state-metrics` and collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
+Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
 
-Adjust the Helm command in **STEP 10** of the [basic configuration](../kubernetes-complete-observability-basic-configuration/index.md) to use the `values-windows.yaml` file as follows:
+Depending on your Windows server version, you might need to adjust the image you are using with the Windows agent. The default image is `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>`. For Windows 2022 servers, use the `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>-windows2022` version. You can do this by adjusting the `opentelemetry-agent-windows.image.tag` value in the `values-windows.yaml` file.
 
-``` bash
-helm upgrade --install otel-coralogix-integration coralogix/otel-integration -n $NAMESPACE -f values-windows.yaml --set global.domain="coralogix.com" --set global.clusterName="<cluster name>"
+Add the Coralogix Helm charts repository to your local repository list by running:
 
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+To update your local Helm repository cache with the latest charts, run:
+
+```bash
+helm repo update
+```
+
+Install the chart using the `values-windows.yaml` CRD file. You can provide the global values (secret key and cluster name) in one of two ways:
+
+1. Edit the main `values.yaml` file and pass both files to the `helm upgrade` command:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values.yaml -f values-windows.yaml
+```
+
+2. Provide the values directly in the command line by passing them with the `--set` flag:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-windows.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
 ### **Service pipelines**
@@ -1428,39 +1451,7 @@ You can browse or curl the `/jobs` and `/scrape_configs` endpoints for the detec
 
 The generated `kubernetes_sd_configs` is a common configuration syntax for discovering and scraping Kubernetes targets in Prometheus.
 
-[//]: # (static-modules-readme-start-description)
-
-### Installing the chart on clusters with mixed operating systems (Linux and Windows)
-
-Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
-
-Depending on your Windows server version, you might need to adjust the image you are using with the Windows agent. The default image is `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>`. For Windows 2022 servers, please use `coralogixrepo/opentelemetry-collector-contrib-windows:<semantic_version>-windows2022` version. You can do this by adjusting the `opentelemetry-agent-windows.image.tag` value in the `values-windows.yaml` file.
-
-First make sure to add our Helm charts repository to the local repos list with the following command:
-
-```bash
-helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
-```
-
-In order to get the updated Helm charts from the added repository, please run:
-
-```bash
-helm repo update
-```
-
-Install the chart with the CRD `values-windows.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
-
-```bash
-helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f values.yaml -f values-windows.yaml
-```
-
-Or you can provide the values directly in the command line by passing them with the `--set` flag:
-
-```bash
-helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f values-windows.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
-```
+[//]: # (static-modules-readme-end-description)
 
 ### Installing the chart on GKE Autopilot clusters.
 
