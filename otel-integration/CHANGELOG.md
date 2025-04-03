@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.162 / 2025-04-02
+- [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.
+
 ### v0.0.161 / 2025-04-01
 - [Fix] Add extraDimensions support for dbMetrics in spanMetrics preset
 
