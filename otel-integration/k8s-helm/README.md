@@ -906,6 +906,68 @@ helm upgrade --install otel-integration coralogix-charts-virtual/otel-integratio
 
 ```
 
+### Installing the chart on GKE Autopilot clusters.
+
+GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
+
+Notable important differences from regular `otel-integration` are:
+- Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
+- Kubernetes Dashboard does not work, due to missing Host Metrics.
+- Host networking and host ports are not available, users need to send tracing spans through Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally running agents.
+- Log Collection works, but does not store check points. Restarting the agent will collect logs from the beginning.
+
+To install otel-integration to GKE/Autopilot follow these steps:
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the CRD `gke-autopilot-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values.yaml -f gke-autopilot-values.yaml
+```
+
+Or you can provide the values directly in the command line by passing them with the `--set` flag:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
+```
+
+### Installing the chart on IPV6 only clusters
+
+To run otel-integration inside IPV6 only cluster, you need to install using `ipv6-values.yaml` file.
+
+First make sure to add our Helm charts repository to the local repos list with the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+In order to get the updated Helm charts from the added repository, please run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the `ipv6-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values.yaml -f ipv6-values.yaml
+```
+
+
 ## Next steps
 
 **Validation** instructions can be found [here](../validation/index.md).
@@ -1453,66 +1515,6 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 [//]: # (static-modules-readme-end-description)
 
-### Installing the chart on GKE Autopilot clusters.
-
-GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
-
-Notable important differences from regular `otel-integration` are:
-- Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
-- Kubernetes Dashboard does not work, due to missing Host Metrics.
-- Host networking and host ports are not available, users need to send tracing spans through Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally running agents.
-- Log Collection works, but does not store check points. Restarting the agent will collect logs from the beginning.
-
-To install otel-integration to GKE/Autopilot follow these steps:
-
-First make sure to add our Helm charts repository to the local repos list with the following command:
-
-```bash
-helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
-```
-
-In order to get the updated Helm charts from the added repository, please run:
-
-```bash
-helm repo update
-```
-
-Install the chart with the CRD `gke-autopilot-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
-
-```bash
-helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f values.yaml -f gke-autopilot-values.yaml
-```
-
-Or you can provide the values directly in the command line by passing them with the `--set` flag:
-
-```bash
-helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
-```
-
-### Installing the chart on IPV6 Only clusters.
-
-To run otel-integration inside IPV6 only cluster, you need to install using `ipv6-values.yaml` file.
-
-First make sure to add our Helm charts repository to the local repos list with the following command:
-
-```bash
-helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
-```
-
-In order to get the updated Helm charts from the added repository, please run:
-
-```bash
-helm repo update
-```
-
-Install the chart with the `ipv6-values.yaml` file. You can either provide the global values (secret key, cluster name) by adjusting the main `values.yaml` file and then passing the `values.yaml` file to the `helm upgrade` command as following:
-
-```bash
-helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
-  --render-subchart-notes -f values.yaml -f ipv6-values.yaml
-```
 
 ### Enabling Coralogix EBPF Agent
 
@@ -1563,6 +1565,7 @@ helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
 
+// ???
 # How to use it
 
 ## Available Endpoints
@@ -1597,7 +1600,7 @@ env:
 
 The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
 
-Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choise of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
+Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choice of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
 
 ### About batch sizing
 
@@ -1972,7 +1975,7 @@ service:
               endpoint: ${env:MY_POD_IP}:4317
 ```
 
-# Filtering and reducing metrics cost.
+# Filtering and reducing metrics cost
 
 otel-integration has a couple of ways you can reduce the metric cost. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
 - container.id
