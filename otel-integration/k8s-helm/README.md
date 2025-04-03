@@ -197,6 +197,55 @@ View our **basic configuration** instructions [here](../kubernetes-complete-obse
 
 [//]: # (static-modules-readme-end-description)
 
+# Validation
+
+Verify that you have properly configured [Kubernetes Observability using OpenTelemetry](../kubernetes-observability-using-opentelemetry/index.md) and that your cluster telemetry is being sent to Coralogix.
+
+**Step 1: Verify cluster collector pods**
+
+Check that the cluster collector pods are running in your cluster:
+
+```bash
+kubectl get pods -o wide -n $NAMESPACE
+```
+
+Look for:
+- **OpenTelemetry Cluster Collector** pods (named `coralogix-opentelemetry-collector-xxx`)
+- **Kube State Metrics** pods (named `otel-integration-kube-state-metrics-xxx`)
+
+Both should show a `Running` status.
+
+![](images/Untitled-39-1024x77.png)
+
+**STEP 2**. Install the **Kubernetes OpenTelemetry** [extension packages](../../../user-guides/getting-started/packages-and-extensions/extension-packages/index.md) in your Coralogix account by navigating to **Data Flow** > **Extensions** in your toolbar. Use this to hit the ground running with predefined alerts, parsing rules, dashboards, saved views, and actions.
+
+- Open the **Kubernetes OpenTelemetry** extension with the latest version.
+
+- Select **Applications** and **Subsystems** for all related Kubernetes telemetry or select **All** for both.
+
+- Click **+** **Deploy.**
+
+![](images/Untitled-40.png)
+
+**STEP 3**. The **Kubernetes OpenTelemetry** extension includes a set of Grafana K8s Otel dashboards when installed. It is a useful way to determine if the metrics being exported to Coralogix are satisfactory for your [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) setup.
+
+- In the [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md), select **I've Installed OpenTelemetry**. Click **→ GO**.
+
+![](images/Kubernetes-Dashboard-Getting-Started-1024x705.png)
+
+- If all the metrics and labels are present, the **Kubernetes Dashboard** is opened. If there are missing metrics or labels, a screen appears detailing the missing metrics and/or labels.
+
+![](images/Kubernetes-Dashboard-Missing-Metrics-1024x673.png)
+
+- Provide any missing metrics or labels.
+
+- Click **DONE, RELOAD MY DATA →** to continue to the **Kubernetes Dashboard**.
+
+![](images/Untitled-42-1024x970.png)
+
+## Next Steps
+
+Troubleshoot your configuration [here](../troubleshooting/index.md).
 
 
 [//]: # (static-modules-readme-start-description)
