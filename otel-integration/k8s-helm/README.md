@@ -35,9 +35,6 @@ Depending on your needs, you can use both charts (default behavior) or decide to
 
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
 
-//OLD-START
-The OpenTelemetry Integration consists of two main components that provide our users with full fledged integration for their Kubernetes cluster - the [OpenTelemetry Agent](#opentelemetry-agent) and [OpenTelemetry Cluster Collector](#opentelemetry-cluster-collector). Depending on your needs, you can deploy both components (default behavior) or decide to disable either one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
-//OLD-END
 
 ### OpenTelemetry Operator (for CRD users)
 
@@ -70,7 +67,6 @@ The agent comes with several pre-configured processors and receivers:
 
 - [Kubernetes Log Collection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver). Enables native Kubernetes log collection with OpenTelemetry Collector, eliminating the need for multiple agents like Fluentd, Fluent Bit, or Filebeat.
 
-// ???
 - [Host Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver). native Linux monitor resource collection agent. No need to run Node exporter or vendor agents.
 
 - [Kubelet Metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver). Fetches running container metrics from the local Kubelet.
@@ -405,7 +401,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 !!! Note
     During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
 
-## Limits & Quotas
+## Limits & quotas
 
 - Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](../../../integrations/coralogix-endpoints.md), with a **recommendation of 2MB**.
 
@@ -413,13 +409,13 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 - Attribute keys for metric data must be a maximum of 255 characters.
 
-## Next Steps
+## Next steps
 
 **Advanced configuration** instructions can be found [here](../advanced-configuration/index.md).
 
 **Validation** instructions can be found [here](../validation/index.md).
 
-## Additional Resources
+## Additional resources
 | | |
 | --- | --- |
 | Documentation | [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites)<br/>[Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) |
@@ -1217,7 +1213,7 @@ spec:
 
 ```
 
-**STEP 2**. Apply the Kuberenetes deployment.
+**STEP 2**. Apply the Kubernetes deployment.
 
 ```
 kubectl apply -f go-traces-demo.yaml
@@ -1350,7 +1346,7 @@ Then, the Target Allocator detects available OpenTelemetry Collectors and distri
 
 ![](https://coralogix.com/wp-content/uploads/2024/06/Otel-Collector_Jun_20-2.svg)
 
-### Allocation Strategies
+### Allocation strategies
 
 Upon query from collectors, the Target Allocator assigns metric endpoint targets according to a chosen allocation strategy. To align with our chart’s Opentelemetry agent in DaemonSet mode, the allocation strategy `per node` is preconfigured. This assigns each target to the OpenTelemetry collector running on the same Node as the metric endpoint.
 
@@ -1565,7 +1561,6 @@ helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
 
-// ???
 # How to use it
 
 ## Available Endpoints
@@ -1582,7 +1577,7 @@ Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the loc
 | OTLP GRPC             | 4317  |
 | OTLP HTTP             | 4318  |
 
-### Example Application environment configuration
+### Example application environment configuration
 
 The following code creates a new environment variable (`NODE`) containing the node's IP address and then uses that IP in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable. This ensures that each instrumented pod will send data to the local OTEL collector on the node it is currently running on.
 
@@ -1651,7 +1646,8 @@ presets:
       enabled: false
 ```
 
-Note: errorTracking only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+!!! Note
+    `errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
 
 ```
 http.status_code => http.response.status_code
