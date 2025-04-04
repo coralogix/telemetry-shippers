@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.163 / 2025-04-04
+- [Feat] Add MongoDB support to coralogix-ebpf-agent.
+
 ### v0.0.162 / 2025-04-02
 - [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.
 
