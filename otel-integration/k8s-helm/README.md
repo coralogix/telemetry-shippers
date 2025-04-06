@@ -42,18 +42,6 @@ If you want to use the OpenTelemetry Integration Helm chart as an `OpenTelemetry
 
 We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
 
-//OLD-START
-Table of Contents:
-1. [Components](#components)
-2. [Prerequisites](#prerequisites)
-3. [Installation](#installation)
-4. [How to use it](#how-to-use-it)
-5. [Performance of the Collector](#performance-of-the-collector)
-6. [Infrastructure Monitoring](#infrastructure-monitoring)
-7. [Integration presets](#integration-presets)
-8. [Dependencies](#dependencies)
-//OLD-END
-
 
 ## OpenTelemetry Agent
 
