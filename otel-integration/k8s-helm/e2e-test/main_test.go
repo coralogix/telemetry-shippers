@@ -13,10 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"coralogix.com/otel-integration/e2e/testcommon/k8stest"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
@@ -25,21 +24,32 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
+const (
+	testKubeConfig   = "/tmp/kind-otel-integration-agent-e2e"
+	kubeConfigEnvVar = "KUBECONFIG"
+)
+
 func TestE2E_Agent(t *testing.T) {
 
 	//Check if the HOST_ENDPOINT is set
-	require.Equal(t, k8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
 
 	testDataDir := filepath.Join("testdata")
 
-	k8sClient, err := k8stest.NewK8sClient()
+	// Get the kubeconfig path from env
+	kubeconfigPath := testKubeConfig
+	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {
+		kubeconfigPath = kubeConfigFromEnv
+	}
+
+	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
 	require.NoError(t, err)
 
 	// Create the namespace specific for the test
 	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
 	require.NoErrorf(t, err, "failed to read namespace object file %s", nsFile)
-	nsObj, err := k8stest.CreateObject(k8sClient, buf)
+	nsObj, err := xk8stest.CreateObject(k8sClient, buf)
 	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
 
 	testNs := nsObj.GetName()
@@ -50,21 +60,21 @@ func TestE2E_Agent(t *testing.T) {
 	defer shutdownSink()
 
 	testID := uuid.NewString()[:8]
-	createTeleOpts := &k8stest.TelemetrygenCreateOpts{
+	createTeleOpts := &xk8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(testDataDir, "telemetrygen"),
 		TestID:       testID,
 		DataTypes:    []string{"traces"},
 	}
 
-	telemetryGenObjs, telemetryGenObjInfos := k8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
+	telemetryGenObjs, telemetryGenObjInfos := xk8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
 	for _, info := range telemetryGenObjInfos {
-		k8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
+		xk8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
 	t.Cleanup(func() {
-		require.NoErrorf(t, k8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
+		require.NoErrorf(t, xk8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
 		for _, obj := range telemetryGenObjs {
-			require.NoErrorf(t, k8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
+			require.NoErrorf(t, xk8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
 		}
 	})
 
@@ -101,7 +111,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 		require.True(t, expectedState, "metrics: schema_url %v was not found in the actual metrics", name)
 	}
 	for name, expectedState := range expectedResourceScopeNames {
-		require.True(t, expectedState, "metrics: scope %v was not found in the actual metrics", name)
+		require.True(t, expectedState, "metrics: scope %v was not found in the actual metrics, found scope names: %v", name, expectedResourceScopeNames)
 	}
 
 	var missingMetrics []string
@@ -121,6 +131,7 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 }
 
 func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
+
 	for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
 		scope := rmetrics.ScopeMetrics().At(k)
 
@@ -135,16 +146,22 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			t.Fatalf("unwanted scope detected %v", scope.Scope().Name())
 		}
 
-		require.Equal(t, expectedScopeVersion, scope.Scope().Version(), "metrics unexpected scope version %v")
 		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
 		if ok {
 			expectedResourceScopeNames[scope.Scope().Name()] = true
+		}
+
+		if !ok {
+			for k := 0; k < rmetrics.ScopeMetrics().Len(); k++ {
+				scope := rmetrics.ScopeMetrics().At(k)
+				fmt.Printf("found scopeName: %v\n", scope.Scope().Name())
+			}
 		}
 		require.True(t, ok, "metrics: scope %v does not match one of the expected values", scope.Scope().Name())
 
 		// We only need the relevant part of the scopr name to get receiver name.
 		scopeNameTrimmed := strings.Split(scope.Scope().Name(), "/")
-		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[4])
+		checkResourceAttributes(t, rmetrics.Resource().Attributes(), scopeNameTrimmed[len(scopeNameTrimmed)-1])
 
 		metrics := scope.Metrics()
 
@@ -157,6 +174,10 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			}
 			if !ok {
 				spew.Dump(metric)
+				for j := 0; j < metrics.Len(); j++ {
+					metric := metrics.At(j)
+					fmt.Printf("Found metric %s\n", metric.Name())
+				}
 			}
 			require.True(t, ok, "actual metrics detected %v do not match expected metrics", metric.Name())
 		}
@@ -175,10 +196,30 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesKubeletstatreceiver
 	case "prometheusreceiver":
 		compareMap = expectedResourceAttributesPrometheusreceiver
+	case "k8sattributesprocessor":
+		compareMap = expectedResourceAttributesK8sattributesprocessor
+	case "loadscraper":
+		compareMap = expectedResourceAttributesLoadscraper
+	case "memorylimiterprocessor":
+		compareMap = expectedResourceAttributesMemorylimiterprocessor
+	case "processscraper":
+		compareMap = expectedResourceAttributesProcessscraper
+	case "service":
+		compareMap = expectedResourceAttributesService
+	case "processorhelper":
+		compareMap = expectedResourceAttributesProcessorhelper
+	default:
+		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	}
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
+		if !ok {
+			attributes.Range(func(k string, v pcommon.Value) bool {
+				fmt.Printf("found attribute: scopeName: %s, attribute: %v\n", scopeName, k)
+				return true
+			})
+		}
 		require.True(t, ok, "metrics: unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
 			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v", k)

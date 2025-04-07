@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.148"
+  version: "0.0.163"
 
   extensions:
     kubernetesDashboard:
@@ -93,7 +93,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.117.0
+      tag: v0.119.0
 
   command:
     name: otelcol-contrib
@@ -127,7 +127,7 @@ opentelemetry-agent:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
 
@@ -196,6 +196,9 @@ opentelemetry-agent:
         enabled: true
         serviceVersion:
           enabled: true
+        # extraDimensions:
+        #  - name: cgx.transaction
+        #  - name: cgx.transaction.root
         # transformStatements:
         # - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
         # - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
@@ -236,6 +239,16 @@ opentelemetry-agent:
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: true
+
+    # Head sampling configuration for traces.
+    # When enabled, this creates a separate pipeline for sampled traces using probabilistic sampler.
+    # More info: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/probabilisticsamplerprocessor/README.md
+    headSampling:
+      enabled: false
+      # Percentage of traces to sample (0-100)
+      percentage: 10
+      # Sampling mode - "proportional", "equalizing", "hash_seed"
+      mode: "proportional"
   config:
     extensions:
       zpages:
@@ -292,14 +305,17 @@ opentelemetry-agent:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -355,14 +371,6 @@ opentelemetry-agent:
           cx.agent.type: "agent"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       extensions:
         - zpages
         - pprof
@@ -462,7 +470,7 @@ opentelemetry-cluster-collector:
   replicaCount: 1
   presets:
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "cluster-collector"
       clusterName: "{{.Values.global.clusterName}}"
     clusterMetrics:
@@ -595,14 +603,17 @@ opentelemetry-cluster-collector:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       resource/kube-events:
         attributes:
           - key: service.name
@@ -718,14 +729,6 @@ opentelemetry-cluster-collector:
           cx.agent.type: "cluster-collector"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       extensions:
         - zpages
         - pprof
@@ -871,7 +874,7 @@ opentelemetry-gateway:
 
   presets:
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "gateway"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
@@ -956,14 +959,17 @@ opentelemetry-gateway:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
         config:
@@ -986,14 +992,6 @@ opentelemetry-gateway:
           cx.agent.type: "gateway"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       pipelines:
         metrics:
           exporters:
@@ -1068,7 +1066,7 @@ opentelemetry-receiver:
           fieldPath: spec.nodeName
   presets:
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
     kubernetesAttributes:
@@ -1153,14 +1151,17 @@ opentelemetry-receiver:
       transform/prometheus:
         error_mode: ignore
         metric_statements:
+          - context: metric
+            statements:
+              - replace_pattern(name, "_total$", "")
           - context: resource
             statements:
               - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service.instance.id") where attributes["service.name"] == "opentelemetry-collector"
               - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
           - context: datapoint
             statements:
               - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
+              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
       prometheus:
         config:
@@ -1183,14 +1184,6 @@ opentelemetry-receiver:
           cx.agent.type: "receiver"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       pipelines:
         metrics/self_monitoring:
           exporters:
@@ -1281,3 +1274,4 @@ coralogix-ebpf-agent:
     create: false
     name: ""
     value: 1000000000
+  tolerations: []

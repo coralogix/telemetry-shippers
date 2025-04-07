@@ -2,6 +2,60 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.163 / 2025-04-04
+- [Feat] Add MongoDB support to coralogix-ebpf-agent.
+
+### v0.0.162 / 2025-04-02
+- [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.
+
+### v0.0.161 / 2025-04-01
+- [Fix] Add extraDimensions support for dbMetrics in spanMetrics preset
+
+### v0.0.160 / 2025-03-31
+- [Feat] Add extraDimensions support for dbMetrics in spanMetrics preset
+- [Fix] Configure hostEntityEvents preset to require hostMetrics preset to be enabled
+
+### v0.0.159 / 2025-03-25
+- [Revert] Remove `ebpf-profiler` as a subchart
+
+### v0.0.158 / 2025-03-21
+- [Fix] OpentelemetryCollector crd generation
+
+### v0.0.157 / 2025-03-19
+- [Feat] Use global k8stest package
+
+### v0.0.156 / 2025-03-17
+- [Feat] Enable fleetmanagement preset by default
+
+### v0.0.155 / 2025-03-12
+- [Fix] Add missing service_instance_id in metrics
+- [docs] Add headsampling docs
+
+### v0.0.154 / 2025-03-12
+- [Feat] Update windows image to v0.121.0
+- [Feat] Add ebpf-profiler subchart.
+
+### v0.0.153 / 2025-03-06
+- [Feat] Update Collector to v0.121.0
+- [Feat] Update Target Allocator to v0.119.0
+- [Feat] Add headSampling preset to configure probabilistic sampling for traces
+
+### v0.0.152 / 2024-03-05
+
+- [Feat] Allow adding tolerations to coralogix-ebpf-agent
+
+### v0.0.151 / 2024-03-04
+
+- [Fix] Add Bottlerocket support to coralogix-ebpf-agent
+
+### v0.0.150 / 2025-02-29
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.120.0`
+
+### v0.0.149 / 2025-02-27
+
+- [Feat] Upgrade OpenTelemetry Collector to `0.119.0`
+
 ### v0.0.148 / 2025-02-20
 
 - [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.

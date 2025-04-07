@@ -403,6 +403,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 **Validation** instructions can be found [here](../validation/index.md).
 
+
 ## Additional resources
 | | |
 | --- | --- |
@@ -2048,7 +2049,7 @@ processors:
 
 ## Picking the right tracing SDK span processor
 
-OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor". While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
+OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor. While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
