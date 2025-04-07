@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.164 / 2025-04-04
+- [Feat] Update Collector to v0.122.1
+
 ### v0.0.163 / 2025-04-04
 - [Feat] Add MongoDB support to coralogix-ebpf-agent.
 
