@@ -1213,7 +1213,7 @@ View your telemetry data in your Coralogix dashboard. Traces should arrive from 
 
 ![](images/console-2.jpg)
 
-### Configuring Head Sampling for Tracing
+## Configuring Head Sampling for Tracing
 
 Head sampling is a feature that allows you to sample traces at the collection point. When enabled, it creates a separate pipeline for sampled traces using probabilistic sampling. This helps reduce the volume of traces while maintaining a representative sample.
 
