@@ -1213,6 +1213,32 @@ View your telemetry data in your Coralogix dashboard. Traces should arrive from 
 
 ![](images/console-2.jpg)
 
+### Configuring Head Sampling for Tracing
+
+Head sampling is a feature that allows you to sample traces at the collection point. When enabled, it creates a separate pipeline for sampled traces using probabilistic sampling. This helps reduce the volume of traces while maintaining a representative sample.
+
+When used in combination with tail sampling, head sampling is applied first at the agent level. The sampled traces are then forwarded to the tail sampling collectors, where additional sampling decisions can be made. This means that tail sampling will only see and process the traces that have already passed through head sampling.
+
+The sampling configuration:
+- Creates a new 'traces/sampled' pipeline in addition to the main traces pipeline
+- Applies probabilistic sampling based on the configured percentage
+- Supports different sampling modes:
+  - "proportional": Maintains the relative proportion of traces across services
+  - "equalizing": Attempts to sample equal numbers of traces from each service
+  - "hash_seed": Uses consistent hashing to ensure the same traces are sampled
+
+To enable head sampling, configure the following in your values.yaml:
+
+```yaml
+presets:
+  headSampling:
+    enabled: true
+    # Percentage of traces to sample (0-100)
+    percentage: 10
+    # Sampling mode - "proportional", "equalizing", "hash_seed"
+    mode: "proportional"
+```
+
 ## Deploying Central Collector Cluster for Tail Sampling
 
 To deploy OpenTelemetry Collector in a separate "central" Kubernetes cluster for telemetry collection and [tail sampling](https://opentelemetry.io/docs/concepts/sampling/#tail-sampling) using OpenTelemetry Protocol (OTLP) receivers, install `otel-integration` using the `central-tail-sampling-values.yaml` values file. Review the values file for detailed configuration options.
@@ -1303,6 +1329,12 @@ receivers:
 | --- | --- |
 | Documentation | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](../../tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/index.md) |
 | OTLP Configuration | [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) |
+
+[//]: # (static-modules-readme-end-description)
+
+[//]: # (static-modules-readme-start-description)
+
+
 
 [//]: # (static-modules-readme-end-description)
 
@@ -2012,11 +2044,11 @@ processors:
           - resource.attributes["my_label"] == "abc123"
 ```
 
-# Performance of the collector
+# Performance of the Collector
 
 ## Picking the right tracing SDK span processor
 
-OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor. While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
+OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor". While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
 Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
