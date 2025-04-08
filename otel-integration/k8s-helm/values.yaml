@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.165"
+  version: "0.0.166"
 
   extensions:
     kubernetesDashboard:
@@ -1253,6 +1253,36 @@ coralogix-ebpf-agent:
       sampler:
         services_filter: []
         services_filter_type: "Allow"  # Deny for blacklist
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  k8s_watcher:
+    replicaCount: 1
+    debug: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  priorityClass:
+    create: false
+    name: ""
+    value: 1000000000
+  tolerations: []
+
+
+coralogix-ebpf-profiler:
+  enabled: false
+  ebpf_profiler_agent:
+    samples_per_second: 20
+    reporter_interval: 5s
+    debug: true
     resources:
       limits:
         cpu: "1"

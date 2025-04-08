@@ -1,0 +1,24 @@
+global:
+  domain: "-"
+  clusterName: "-"
+
+opentelemetry-agent:
+  enabled: true
+  presets:
+    profilesCollection:
+      enabled: true
+
+  command:
+    extraArgs: [ "--feature-gates=service.profilesSupport" ]
+
+opentelemetry-cluster-collector:
+  enabled: false
+
+
+coralogix-ebpf-profiler:
+  enabled: true
+  ebpf_agent:
+    otel:
+      exporter:
+        # configure the opentelemetry collector endpoint here
+        endpoint: "coralogix-opentelemetry-receiver:4317"

@@ -1582,6 +1582,26 @@ helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
 
+
+### Enabling Coralogix EBPF profiler
+
+To enable the coralogix EBPF profiler, set `coralogix-ebpf-profiler.enabled` to `true` in the `values.yaml` file.
+
+#### Enabling Coralogix EBPF profiler with existing OpenTelemetry Collector
+
+If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF profiler.
+you can only deploy the ebpf profiler and supply your existing OpenTelemetry Collector endpoint with this command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+
+kubectl create namespace profiling
+
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration -n profiling \
+  --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml  --set coralogix-ebpf-profiler.profiling.profiling_otel_agent.otel.exporter.endpoint=<your-otel-collector-endpoint> \  
+```
+
+
 # How to use it
 
 ## Available Endpoints
