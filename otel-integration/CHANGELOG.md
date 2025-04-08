@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.165 / 2025-04-04
+- [Feat] Review otel-integration readme
+
 ### v0.0.164 / 2025-04-04
 - [Feat] Update Collector to v0.122.1
 
