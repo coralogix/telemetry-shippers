@@ -11,8 +11,7 @@ opentelemetry-agent:
   command:
     extraArgs: [ "--feature-gates=service.profilesSupport" ]
 
-opentelemetry-cluster-collector:
-  enabled: false
+
 
 
 coralogix-ebpf-profiler:
@@ -21,4 +20,4 @@ coralogix-ebpf-profiler:
     otel:
       exporter:
         # configure the opentelemetry collector endpoint here
-        endpoint: "coralogix-opentelemetry-receiver:4317"
+        endpoint: "$(HOST_IP):4317"

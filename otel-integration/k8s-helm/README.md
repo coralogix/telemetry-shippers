@@ -1595,7 +1595,6 @@ you can only deploy the ebpf profiler and supply your existing OpenTelemetry Col
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 
-kubectl create namespace profiling
 
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration -n profiling \
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml  --set coralogix-ebpf-profiler.profiling.profiling_otel_agent.otel.exporter.endpoint=<your-otel-collector-endpoint> \  
