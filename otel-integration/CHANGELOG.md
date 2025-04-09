@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.166 / 2025-04-08
+- [Feat] Add ebpf-profiler subchart.
+
 ### v0.0.165 / 2025-04-04
 - [Feat] Review otel-integration readme
 

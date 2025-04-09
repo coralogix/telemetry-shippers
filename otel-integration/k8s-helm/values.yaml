@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.165"
+  version: "0.0.166"
 
   extensions:
     kubernetesDashboard:
@@ -1275,3 +1275,33 @@ coralogix-ebpf-agent:
     name: ""
     value: 1000000000
   tolerations: []
+
+coralogix-ebpf-profiler:
+  enabled: false
+  profiling:
+    profiling_otel_agent:
+      samples_per_second: 20
+      reporter_interval: 5s
+      debug: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  k8s_watcher:
+    replicaCount: 1
+    debug: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+#  priorityClass:
+#    create: false
+#    name: ""
+#    value: 1000000000
+#  tolerations: []
