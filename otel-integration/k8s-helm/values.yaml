@@ -1276,13 +1276,13 @@ coralogix-ebpf-agent:
     value: 1000000000
   tolerations: []
 
-
 coralogix-ebpf-profiler:
   enabled: false
-  ebpf_profiler_agent:
-    samples_per_second: 20
-    reporter_interval: 5s
-    debug: true
+  profiling:
+    profiling_otel_agent:
+      samples_per_second: 20
+      reporter_interval: 5s
+      debug: false
     resources:
       limits:
         cpu: "1"
@@ -1300,8 +1300,8 @@ coralogix-ebpf-profiler:
       requests:
         cpu: 100m
         memory: 128Mi
-  priorityClass:
-    create: false
-    name: ""
-    value: 1000000000
-  tolerations: []
+#  priorityClass:
+#    create: false
+#    name: ""
+#    value: 1000000000
+#  tolerations: []
