@@ -180,13 +180,13 @@ opentelemetry-agent:
       # - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
       # - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
       # - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection_name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
       # Configures collector to add service.version to spanMetrics dimensions
       serviceVersion:
         enabled: true
