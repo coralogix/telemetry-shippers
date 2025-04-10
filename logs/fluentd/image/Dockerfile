@@ -4,7 +4,7 @@
 # Image description labels
 LABEL Description="Multi-Arch FluentD image for Coralogix integration" \
       Vendor="Coralogix Inc." \
-      Version="1.18.0" \
+      Version="1.18.0-4" \
       Maintainer="Coralogix Inc. <info@coralogix.com>"
 
 # Change user

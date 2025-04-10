@@ -1,6 +1,7 @@
 # Changelog
 
 ## Fluentd
+
 ### v1.18.0-4 / 2025-4-10
 * [UPGRADE] Upgrade Fluentd version to v1.18.0-debian-forward-1.4
 
