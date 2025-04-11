@@ -1778,6 +1778,16 @@ presets:
     enabled: true
 ```
 
+#### Known errors
+
+When running on Windows, you might see the "failed getting host info" error. This is expected behavior because the collector attempts to retrieve Windows metadata from the Windows Registry, which is only possible when running from HostProcess Windows containers. This error has no negative impact on the functionality of the Collector or OpAMP in any way.
+
+Example:
+
+```
+"msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
+```
+
 # Troubleshooting
 
 ## Metrics
