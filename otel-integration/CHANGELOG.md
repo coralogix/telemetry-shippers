@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.167 / 2025-04-11
+- [Feat] Update Collector to v0.123.0
+
 ### v0.0.166 / 2025-04-08
 - [Feat] Add ebpf-profiler subchart.
 
