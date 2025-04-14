@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.167"
+  version: "0.0.168"
 
   extensions:
     kubernetesDashboard:
@@ -180,13 +180,13 @@ opentelemetry-agent:
       # - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
       # - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
       # - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection_name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+      # - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
       # Configures collector to add service.version to spanMetrics dimensions
       serviceVersion:
         enabled: true
@@ -212,6 +212,10 @@ opentelemetry-agent:
         - name: cgx.transaction
         - name: cgx.transaction.root
         - name: status_code
+        - name: db.namespace
+        - name: db.operation.name
+        - name: db.collection.name
+        - name: db.system
       # Configures the collector to export span metrics with different histogram bucket options
       # for different applications. Applications are selected and routed to different pipelines
       # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
