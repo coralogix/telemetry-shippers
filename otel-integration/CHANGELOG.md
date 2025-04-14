@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.168 / 2025-04-14
+- [Feat] Add db dimensions to spanmetrics
+- [Fix] fix dbMetrics use db.collection.name instead of db.collection_name
+
 ### v0.0.167 / 2025-04-11
 - [Feat] Update Collector to v0.123.0
 
