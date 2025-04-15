@@ -55,3 +55,11 @@ jobs:
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go test -v -run='^TestE2E.*' ./...
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l release=<release-name> -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Logs for pod: $pod ====="
+            kubectl logs $pod
+            echo
+          done
