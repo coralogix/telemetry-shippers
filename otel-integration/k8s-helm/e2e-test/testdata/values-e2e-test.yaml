@@ -22,7 +22,7 @@ opentelemetry-agent:
       opamp:
         server:
           http:
-            endpoint: "http://localhost:4320/v1/opamp"
+            endpoint: "http://{{.Values.global.hostedEndpoint}}:4320/v1/opamp"
             headers:
               X-Coralogix-Auth: "super secret key"
             tls:
