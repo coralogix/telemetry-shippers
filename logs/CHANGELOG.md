@@ -56,6 +56,11 @@
 
 ## Fluent-Bit
 
+### v3.2.10 / 2025-4-15
+
+* [UPGRADE] Upgrade Fluentbit version to v3.2.10
+* [UPGRADE] Upgrade Fluentbit Helm chart dependency to 0.48.10
+
 ## v3.2.4/ 2025-1-5
 
 * [UPGRADE] Upgrade Fluentbit version to v3.2.4
