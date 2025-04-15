@@ -84,7 +84,7 @@ func (s *TestOpampServer) handleMessage(
 	conn types.Connection,
 	msg *protobufs.AgentToServer,
 ) *protobufs.ServerToAgent {
-	s.logger.Debugf(ctx, "Received message: %v", msg)
+	s.logger.Debugf(ctx, "Received message: %s", msg.String())
 	s.messageLock.Lock()
 	defer s.messageLock.Unlock()
 	s.Messages = append(s.Messages, msg)
