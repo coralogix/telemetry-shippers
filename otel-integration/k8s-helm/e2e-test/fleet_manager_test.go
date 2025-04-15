@@ -13,7 +13,7 @@ import (
 func TestE2E_FleetManager(t *testing.T) {
 	t.Parallel()
 
-	testServer, err := NewOpampTestServer()
+	testServer, err := newOpampTestServer()
 	assert.NoError(t, err)
 
 	testServerAddr := "localhost"
@@ -21,9 +21,9 @@ func TestE2E_FleetManager(t *testing.T) {
 		testServerAddr = hostedAddr
 	}
 
-	err = testServer.Start(fmt.Sprintf("%s:4320", testServerAddr))
+	err = testServer.start(fmt.Sprintf("%s:4320", testServerAddr))
 	assert.NoError(t, err)
-	defer testServer.Stop()
+	defer testServer.stop()
 
 	ctx := context.Background()
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -33,5 +33,5 @@ func TestE2E_FleetManager(t *testing.T) {
 	// 1st: reporting the creation of the agent.
 	// 2nd: reporting the agent's initial configuration.
 	// More messages might have arrived, but we don't care about the extra ones at the moment.
-	testServer.AssertMessageCount(t, ctxWithTimeout, 2)
+	testServer.assertMessageCount(t, ctxWithTimeout, 2)
 }

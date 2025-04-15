@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type TestOpampServer struct {
+type testOpampServer struct {
 	logger      *logWrapper
 	opampSrv    server.OpAMPServer
 	messageLock *sync.Mutex
@@ -40,20 +40,20 @@ func (l *logWrapper) Errorf(ctx context.Context, format string, v ...any) {
 	l.logger.Error(fmt.Sprintf(format, v...))
 }
 
-func NewOpampTestServer() (*TestOpampServer, error) {
+func newOpampTestServer() (*testOpampServer, error) {
 	zapLogger, err := zap.NewDevelopment()
 	if err != nil {
 		return nil, err
 	}
 	opampLogger := newOpAMPLogger(zapLogger)
-	return &TestOpampServer{
+	return &testOpampServer{
 		opampSrv:    server.New(opampLogger),
 		logger:      opampLogger,
 		messageLock: &sync.Mutex{},
 	}, nil
 }
 
-func (s *TestOpampServer) Start(listenAddr string) error {
+func (s *testOpampServer) start(listenAddr string) error {
 	settings := server.StartSettings{
 		ListenEndpoint: listenAddr,
 		Settings: server.Settings{
@@ -65,11 +65,11 @@ func (s *TestOpampServer) Start(listenAddr string) error {
 	return s.opampSrv.Start(settings)
 }
 
-func (s *TestOpampServer) Stop() error {
+func (s *testOpampServer) stop() error {
 	return s.opampSrv.Stop(context.TODO())
 }
 
-func (s *TestOpampServer) handleConnect(requset *http.Request) types.ConnectionResponse {
+func (s *testOpampServer) handleConnect(requset *http.Request) types.ConnectionResponse {
 	return types.ConnectionResponse{
 		Accept:         true,
 		HTTPStatusCode: http.StatusOK,
@@ -79,7 +79,7 @@ func (s *TestOpampServer) handleConnect(requset *http.Request) types.ConnectionR
 	}
 }
 
-func (s *TestOpampServer) handleMessage(
+func (s *testOpampServer) handleMessage(
 	ctx context.Context,
 	conn types.Connection,
 	msg *protobufs.AgentToServer,
@@ -91,7 +91,7 @@ func (s *TestOpampServer) handleMessage(
 	return &protobufs.ServerToAgent{}
 }
 
-func (s *TestOpampServer) AssertMessageCount(t *testing.T, ctx context.Context, count int) {
+func (s *testOpampServer) assertMessageCount(t *testing.T, ctx context.Context, count int) {
 	assert.Eventually(t, func() bool {
 		s.messageLock.Lock()
 		defer s.messageLock.Unlock()
