@@ -11,6 +11,7 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server"
 	"github.com/open-telemetry/opamp-go/server/types"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -91,25 +92,9 @@ func (s *TestOpampServer) handleMessage(
 }
 
 func (s *TestOpampServer) AssertMessageCount(t *testing.T, ctx context.Context, count int) {
-	gotCount := make(chan struct{})
-	defer close(gotCount)
-	go func() {
-		for {
-			s.messageLock.Lock()
-			msgCount := len(s.Messages)
-			s.messageLock.Unlock()
-			if msgCount >= count {
-				gotCount <- struct{}{}
-				return
-			}
-			time.Sleep(1 * time.Second)
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		t.Fatal("timeout waiting for messages")
-	case <-gotCount:
-		return
-	}
+	assert.Eventually(t, func() bool {
+		s.messageLock.Lock()
+		defer s.messageLock.Unlock()
+		return len(s.Messages) >= count
+	}, 1*time.Minute, 1*time.Second, "timeout waiting for 2 messages")
 }
