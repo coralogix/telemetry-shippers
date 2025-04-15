@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -13,7 +15,13 @@ func TestE2E_FleetManager(t *testing.T) {
 
 	testServer, err := NewOpampTestServer()
 	assert.NoError(t, err)
-	err = testServer.Start("localhost:4320")
+
+	testServerAddr := "localhost"
+	if hostedAddr := os.Getenv("HOSTENDPOINT"); hostedAddr != "" {
+		testServerAddr = hostedAddr
+	}
+
+	err = testServer.Start(fmt.Sprintf("%s:4320", testServerAddr))
 	assert.NoError(t, err)
 	defer testServer.Stop()
 
