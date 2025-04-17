@@ -53,7 +53,7 @@ In the 'logs' integrations inside the 'k8s-helm' there are two supported `helm c
 and another one using the `http` output plugin.
 We recommend using the `http` chart, since it's an open source plugin, and therefore it is more community driven.
 IMPORTANT:
-`Coralogix` output plugin version is fixed in Fluent-Bit image 3.2.4. The Plugin will not be supported in supirior versions. 
+`Coralogix` output plugin version is fixed in Fluent-Bit image 3.2.4. The Plugin will not be supported in supirior versions.
 
 Under each integration there is an 'image' directory which our GitHub Actions workflows use in order to build the image and publish it to DockerHub.
 
