@@ -40,13 +40,14 @@ func TestE2E_FleetManager(t *testing.T) {
 	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
 	require.NoError(t, err)
 
-	// We give a kick to all the Collector to trigger them to reconnect to the
-	// OpAMP server, decreasing the likelyhood of a false positive in the test.
+	// We give a kick to all the Collectors to trigger them to be recreated and
+	// reconnect to the OpAMP server, decreasing the likelyhood of a false
+	// positive in the test.
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	err = k8sClient.
 		DynamicClient.
 		Resource(gvr).
-		Namespace("").
+		Namespace("default").
 		DeleteCollection(
 			context.Background(),
 			metav1.DeleteOptions{},
