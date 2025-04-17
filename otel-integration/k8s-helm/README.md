@@ -32,12 +32,6 @@ Depending on your needs, you can use both charts (default behavior) or decide to
 
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
 
-### OpenTelemetry Operator (for CRD users)
-
-If you want to use the OpenTelemetry Integration Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
-
-We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
-
 ## OpenTelemetry Agent
 
 The OpenTelemetry Agent simplifies the collection of logs, metrics, and traces from applications running in your Kubernetes cluster. It is configured to deploy as a `daemonset` and runs on every node in the cluster. The agent maps metadata - such as Kubernetes attributes, Kubelet metrics, and host data - to the collected telemetry. This is particularly beneficial for high-traffic clusters or when utilizing our [APM capabilities](https://coralogix.com/docs/opentelemetry/integrations/apm-kubernetes/).
@@ -106,9 +100,6 @@ Utilizing OpenTelemetry, we ensure seamless and automated data collection from v
 - [Kubernetes](https://kubernetes.io/) (v1.24+) installed
 - [Helm](https://helm.sh/) (v3.9+) installed and configured
 
-!!! Note
-If you have previously installed the Coralogix Exporter or [Kubernetes Infrastructure Monitoring](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-infrastructure-monitoring/), they must be **removed** before proceeding with this integration.
-
 ### Secret key
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
@@ -137,15 +128,6 @@ type: Opaque
 ```
 
 ## Installation
-
-!!! Note
-With some Helm versions (< `v3.14.3`), users might experience multiple warning messages during installation:
-
-```
-index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
-```
-
-This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
 
 ### UI-based installation
 
@@ -180,7 +162,9 @@ When providing custom overrides for array values like `extraEnvs`, `extraVolumes
 
 The OpenTelemetry Operator provides advanced capabilities like automatic collector upgrades and CRD-defined auto-instrumentation. To leverage these features, you can deploy the `otel-integration` using the Operator by generating an `OpenTelemetryCollector` Custom Resource Definition (CRD).
 
-For full details on how to install and use the Operator, refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md).
+If you want to use the OpenTelemetry Integration Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
+
+We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
 
 **STEP 1**. First, make sure to add our Helm charts repository to the local repos list using the following command:
 
@@ -210,21 +194,17 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-!!! Note
+### Troubleshooting
+
 During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
 
-### Limits & quotas
+With some Helm versions (< `v3.14.3`), users might experience multiple warning messages during installation:
 
-- Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](https://coralogix.com/docs/integrations/coralogix-endpoints/, with a **recommendation of 2MB**.
+```
+index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
+```
 
-- Metric names must be a maximum of 255 characters.
-
-- Attribute keys for metric data must be a maximum of 255 characters.
-
-### Additional resources
-
-- [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites)
-- [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/)
+This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
 
 # Kubernetes complete observability: advanced configuration
 
@@ -342,7 +322,7 @@ If there are nodes without a running OpenTelemetry Agent pod, the hosted pods of
 
 The multi-instanced OpenTelemetry Agent can be deployed across multiple nodes as a `daemonset`. It provides presets for collecting host metrics, Kubernetes attributes, and Kubelet metrics. When logs, metrics, and traces are generated from a pod, the collector enriches them with the metadata associated with the hosting machine. This metadata is very useful for linking infrastructure issues with performance degradation in services.
 
-For more information on presets, refer to the documentation in [values.yam](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml#L129)
+For more information on presets, refer to the documentation in [values.yaml](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml#L129)
 
 ```yaml
 # example
@@ -1057,9 +1037,6 @@ You can customize the scrape interval for Prometheus Custom Resources by configu
 
 For more details on Prometheus custom resources and target allocator see the documentation [here](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#discovery-of-prometheus-custom-resources).
 
-!!! Note
-Due to a [known issue](https://github.com/open-telemetry/opentelemetry-operator/issues/3034) with the Prometheus Receiver, OpenTelemetry Collector self-monitoring is currently not functioning. As a workaround, ensure you enable both the PodMonitor and metrics port to collect Collector metrics.
-
 ### Discovery
 
 The Target Allocator discovers [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator/tree/main) Custom Resources, namely the ServiceMonitor and PodMonitor as Metrics Targets. These metrics targets detail the endpoints of exportable metrics available on the Kubernetes cluster as "jobs."
@@ -1200,8 +1177,6 @@ Also, as shown above, the default allocation strategy is `per node` to align wit
 
 ```
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration --render-subchart-notes -n <namespace> -f values.yaml
-kubectl get pod -n <namespace>
-
 ```
 
 ### Troubleshooting
@@ -1214,7 +1189,6 @@ Port forward to the target allocator pod with the following `kubectl` command:
 
 ```
 kubectl port-forward -n <namespace> svc/coralogix-opentelemetry-targetallocator 8080:8080
-
 ```
 
 You can browse or curl the `/jobs` and `/scrape_configs` endpoints for the detected PodMonitor & ServiceMonitor resources and the generated scrape configs.
@@ -1667,6 +1641,12 @@ Example:
 ```
 
 # Troubleshooting
+
+## Limits & quotas
+
+- Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](https://coralogix.com/docs/integrations/coralogix-endpoints/, with a **recommendation of 2MB**.
+- Metric names must be a maximum of 255 characters.
+- Attribute keys for metric data must be a maximum of 255 characters.
 
 ## Metrics
 
