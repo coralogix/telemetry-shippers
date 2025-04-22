@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.168"
+  version: "0.0.169"
 
   extensions:
     kubernetesDashboard:
@@ -483,6 +483,7 @@ opentelemetry-cluster-collector:
       enabled: true
     kubernetesExtraMetrics:
       enabled: true
+      scrapeAll: false
     kubernetesAttributes:
       enabled: true
     mysql:
