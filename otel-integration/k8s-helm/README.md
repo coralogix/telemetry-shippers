@@ -26,22 +26,15 @@ When managing and monitoring Kubernetes components, consider these critical area
 
 Application observability focuses on monitoring and understanding the behavior of applications running on the Kubernetes cluster. It includes collecting and analyzing metrics, logs, and traces specific to the applications to gain insights into their performance and identify any issues or bottlenecks. This includes monitoring response times, throughput, error rates, and other application-specific metrics.
 
-
 ## OpenTelemetry integration overview
+
 Integrating OpenTelemetry with Kubernetes enables comprehensive Kubernetes and application observability. The OpenTelemetry Integration Chart is a solution that combines two dependent charts into a single Helm installation for Kubernetes clusters: the OpenTelemetry Agent and the OpenTelemetry Cluster Collector. Both are built on the OpenTelemetry Collector Helm Chart, but are configured for optimal performance while collecting different data sources from Kubernetes. Together, they simplify the collection of logs, metrics, and traces from the running application in pods to the cluster-level components of your Kubernetes cluster.
+
 Depending on your needs, you can use both charts (default behavior) or decide to disable either one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
 
 ![Kubernetes Observability OpenTelemetry Coralogix k8s otel](https://coralogix.com/wp-content/uploads/2023/11/Excali-Diagram-1.svg)
 
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
-
-
-### OpenTelemetry Operator (for CRD users)
-
-If you want to use the OpenTelemetry Integration Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
-
-We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
-
 
 ## OpenTelemetry Agent
 
@@ -86,9 +79,9 @@ The OpenTelemetry Cluster Collector retrieves data from the cluster level, inclu
 The OpenTelemetry Integration chart enables the collection of essential metrics needed for the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) setup. The [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver#kubernetes-cluster-receiver) is an essential part that provides cluster-level metrics and entity events from the Kubernetes API server. It can report real-time metrics of allocatable resource types such as CPU.memory, network and disk usage of nodes and pods and give an update on node conditions (e.g. `Ready`, `MemoryPressure`). As a whole, the metrics gathered are useful for the Kubernetes Dashboard to report on the health of your cluster.
 
 !!! Note
-    **Please be aware** that certain metrics collected by the dashboard have high cardinality because of a high number of unique values for a given metric. This might result in higher costs because of metrics' ingestion and storage. This  particularly applies to the following pod related metrics: `kube_pod_status_reason`, `kube_pod_status_phase` and `kube_pod_status_qos_class`.
+**Please be aware** that certain metrics collected by the dashboard have high cardinality because of a high number of unique values for a given metric. This might result in higher costs because of metrics' ingestion and storage. This particularly applies to the following pod related metrics: `kube_pod_status_reason`, `kube_pod_status_phase` and `kube_pod_status_qos_class`.
 
-    If collecting these metrics is not required, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
+If collecting these metrics is not required, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
 
 ## Metrics
 
@@ -213,7 +206,7 @@ Both should show a `Running` status.
 
 ![](./static/Untitled-40.png)
 
-**STEP 3**. The **Kubernetes OpenTelemetry** extension includes a set of Grafana K8s Otel dashboards when installed. It is a useful way to determine if the metrics being exported to Coralogix are satisfactory for your [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) setup.
+**STEP 3**. The **Kubernetes OpenTelemetry** extension includes a set of Grafana K8s OTel dashboards when installed. It is a useful way to determine if the metrics being exported to Coralogix are satisfactory for your [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) setup.
 
 - In the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/), select **I've Installed OpenTelemetry**. Click **→ GO**.
 
@@ -238,7 +231,8 @@ Troubleshoot your configuration [here](https://coralogix.com/docs/opentelemetry/
 [//]: # (split title="Kubernetes Complete Observability: basic configuration" path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md")
 
 # Kubernetes Complete Observability: basic configuration
-Coralogix’s **Kubernetes Complete Observability** provides a comprehensive solution for full-stack observability in your Kubernetes environment.
+
+Coralogix's **Kubernetes Complete Observability** provides a comprehensive solution for full-stack observability in your Kubernetes environment.
 
 ## Overview
 
@@ -263,6 +257,7 @@ The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, whi
 This secret must exist in the same namespace where the Helm chart is installed.
 
 To create the secret, run the following command:
+
 ```bash
 kubectl create secret generic coralogix-keys \
   --from-literal=PRIVATE_KEY=<private-key>
@@ -282,15 +277,6 @@ type: Opaque
 ```
 
 ## Installation
-
-!!! Note  
-    With some Helm versions (< `v3.14.3`), users might experience multiple warning messages during installation:
-    ```
-    index.go:366: skipping loading invalid entry for chart "otel-integration" \<version> from \<path>: validation: more than one dependency with name or alias "opentelemetry-collector"
-    ```
-
-    This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
-
 
 ### UI-based installation
 
@@ -352,14 +338,15 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 #### Providing custom array values for `extraEnvs`, `extraVolumes` or `extraVolumeMounts`
 
-When providing custom overrides for array values like `extraEnvs`, `extraVolumes`, or `extraVolumeMounts`, note that Helm does not support array merging. Instead, arrays are completely overwritten (see this [issue](https://github.com/helm/helm/issues/3486) for details). To ensure proper configuration, first copy any existing array values from the provided [`values.yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file before adding your custom values.
+When providing custom overrides for array values like `extraEnvs`, `extraVolumes`, or `extraVolumeMounts`, note that Helm does not support array merging. Instead, arrays are completely overwritten (see this [issue](https://github.com/helm/helm/issues/3486) for details). To ensure proper configuration, first copy any existing array values from the provided [`values.yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file before adding your custom values.
 
-
-### CoralogixOperator-based installation - generating an OpenTelemetryCollector CRD
+### OpenTelemetry Operator based installation - generating an OpenTelemetryCollector CRD
 
 The OpenTelemetry Operator provides advanced capabilities like automatic collector upgrades and CRD-defined auto-instrumentation. To leverage these features, you can deploy the `otel-integration` using the Operator by generating an `OpenTelemetryCollector` Custom Resource Definition (CRD).
 
-For full details on how to install and use the Operator, refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md).
+If you want to use the OpenTelemetry Integration Helm chart as an `OpenTelemetryCollector` CRD, you will need to have the OpenTelemetry Operator installed in your cluster. Please refer to the [OpenTelemetry Operator documentation](https://github.com/open-telemetry/opentelemetry-operator/blob/main/README.md) for full details.
+
+We recommend to install the operator with the help of the community Helm charts from the [OpenTelemetry Helm Charts](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) repository.
 
 **STEP 1**. First, make sure to add our Helm charts repository to the local repos list using the following command:
 
@@ -389,8 +376,9 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-!!! Note
-    During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
+### Troubleshooting
+
+During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
 
 ## Useful information
 
@@ -712,6 +700,7 @@ presets:
 # Kubernetes complete observability: advanced configuration
 
 Coralogix provides [Kubernetes Observability using OpenTelemetry](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-observability-using-opentelemetry/) for comprehensive monitoring of your Kubernetes clusters and applications. This guide explains advanced configuration options for optimizing your Kubernetes observability setup.
+Coralogix provides [Kubernetes Observability using OpenTelemetry](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-observability-using-opentelemetry/) for comprehensive monitoring of your Kubernetes clusters and applications. This guide explains advanced configuration options for optimizing your Kubernetes observability setup.
 
 For basic configuration instructions, see our [basic configuration tutorial](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
 
@@ -744,7 +733,7 @@ Configure these values:
 You can also copy additional configurations from the repository [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file.
 
 !!! note
-    If you want to override array values such as `extraEnvs`, `extraVolumes`, or `extraVolumeMounts`, note that Helm doesn't support array merging. Instead, arrays [are nulled out](https://github.com/helm/helm/issues/3486). If you need to customize these arrays, first copy the existing values from the provided [`values.yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file.
+If you want to override array values such as `extraEnvs`, `extraVolumes`, or `extraVolumeMounts`, note that Helm doesn't support array merging. Instead, arrays [are nulled out](https://github.com/helm/helm/issues/3486). If you need to customize these arrays, first copy the existing values from the provided [`values.yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file.
 
 **STEP 2**. Save this file as `values.yaml`
 
@@ -763,7 +752,7 @@ helm upgrade --install otel-integration \
 
 The **OpenTelemetry Agent** is primarily used for collecting application telemetry, while the **OpenTelemetry Cluster Collector** is primarily used to collect cluster-level data. Depending on your requirements, you can either use the default configuration that enables both components, or you can choose to disable either of them by modifying the `enabled` flag in the `values.yaml` file under the `opentelemetry-agent` or `opentelemetry-cluster-collector` section as shown below:
 
-``` yaml
+```yaml
 ...
 opentelemetry-agent:
   enabled: true
@@ -772,10 +761,9 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
-
 ```
 
-### Installing the chart on clusters with mixed operating systems (Linux and Windows)
+## Installing the chart on clusters with mixed operating systems (Linux and Windows)
 
 Installing `otel-integration` is also possible on clusters that support running Windows workloads on Windows node alongside Linux nodes (such as [EKS](https://docs.aws.amazon.com/eks/latest/userguide/windows-support.html), [AKS](https://learn.microsoft.com/en-us/azure/aks/windows-faq?tabs=azure-cli) or [GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/creating-a-cluster-windows)). The collector will be installed on Linux nodes, as these components are supported only on Linux operating systems. Conversely, the agent will be installed on both Linux and Windows nodes as a daemonset, in order to collect metrics for both operating systems. In order to do so, the chart needs to be installed with few adjustments.
 
@@ -809,99 +797,26 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-windows.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-### **Service pipelines**
-
-The [OpenTelemetry Collector Configuration](https://opentelemetry.io/docs/collector/configuration/) guides you to initialise components and then add them to the pipelines in the `service` section. It is important to ensure that the telemetry type is supported. For example, the [prometheus](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#prometheus-receiver) receiver documentation in the [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#prometheus-receiver) states that it only supports `metrics`. Therefore, the following `prometheus` receiver can only be defined under `receivers` and added to the `metrics` pipelines in the `service` block to enable it.
-
-``` yaml
-opentelemetry-agent:
-...
-	config:
-		receivers:
-			prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-infrastructure-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${MY_POD_IP}:8888
-
-		...
-	  service:
-	    pipelines:
-				logs:
-					...
-				metrics:
-					receivers:
-					- prometheus
-	      traces:
-						...
-
-```
-
-### Coralogix exporter
-
-In both charts, you have the option to configure the sending of logs, metrics, and / or traces to Coralogix. This can be done by configuring the [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) for different pipelines. The default `values.yaml` file includes all three options, but you can customize it by removing the `coralogix` exporter from the `pipelines` configuration for either `logs`, `metrics`, or `traces`.
-
-The following `opentelemetry-agent` exporter configuration also applies to the `opentelemetry-cluster-collector`:
-
-``` yaml
-global:
-  domain: "<coralogix-domain>"
-  clusterName: "<cluster-name>"
-  defaultApplicationName: "otel"
-  defaultSubsystemName: "integration"
-...
-opentelemetry-agent:
-...
-  config:
-	...
-    exporters:
-      coralogix:
-        timeout: "30s"
-        private_key: "${CORALOGIX_PRIVATE_KEY}"
-				## Values set in "global" section
-        domain: "{{ '{{' }} .Values.global.domain }}"
-				application_name: "{{ '{{' }} .Values.global.defaultApplicationName }}"
-        subsystem_name: "{{ '{{' }} .Values.global.defaultSubsystemName }}"
-    service:
-      pipelines:
-        metrics:
-          exporters:
-            - coralogix
-							...
-        traces:
-          exporters:
-            - coralogix
-							...
-        logs:
-          exporters:
-            - coralogix
-
-```
-
 ## OpenTelemetry Agent
 
 The OpenTelemetry Agent is enabled and deployed as a `daemonset` by default. This creates an Agent pod per node. Allowing the collection of logs, metrics, and traces from application pods to be sent to OpenTelemetry pods hosted on the same node and spreads the ingestion load across the cluster. Be aware that the OpenTelemetry Agent pods consumes resources (e.g., CPU & memory) from each node on which it runs.
 
-``` yaml
+```yaml
 opentelemetry-agent:
   enabled: true
   mode: daemonset
-
 ```
 
 !!! Note
-    If there are nodes without a running OpenTelemetry Agent pod, the hosted pods of applications may be missing metadata attributes (e.g. node info and host name) in the telemetry sent.
+If there are nodes without a running OpenTelemetry Agent pod, the hosted pods of applications may be missing metadata attributes (e.g. node info and host name) in the telemetry sent.
 
 ### Agent presets
 
 The multi-instanced OpenTelemetry Agent can be deployed across multiple nodes as a `daemonset`. It provides presets for collecting host metrics, Kubernetes attributes, and Kubelet metrics. When logs, metrics, and traces are generated from a pod, the collector enriches them with the metadata associated with the hosting machine. This metadata is very useful for linking infrastructure issues with performance degradation in services.
 
-For more information on presets, refer to the [Configuration of OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector#configuration).
+For more information on presets, refer to the documentation in [values.yaml](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml#L129)
 
-``` yaml
+```yaml
 # example
 opentelemetry-agent:
 ...
@@ -921,20 +836,17 @@ opentelemetry-agent:
     # KubeletMetrics enables the kubeletstats receiver to collect node, pod and container metrics from the Kubernetes API. It also adjusts the ClusterRole with appropriate RBAC roles.
     kubeletMetrics:
       enabled: true
-
-
 ```
 
 For example, setting the `kubeletMetrics` preset to `true` will configure the `kubeletstats` receiver to pull node, pod, container, and volume metrics from the API server of the host's kubelet. The metrics will be sent to the metric pipeline.
 
-``` yaml
+```yaml
 # example
 receivers:
-	kubeletstats:
-		auth_type: serviceAccount
-		collection_interval: 20s
-		endpoint: ${K8S_NODE_NAME}:10250
-
+  kubeletstats:
+    auth_type: serviceAccount
+    collection_interval: 20s
+    endpoint: ${K8S_NODE_NAME}:10250
 ```
 
 ### Receivers
@@ -945,14 +857,13 @@ To achieve this, you need to first [instrument your application](https://opentel
 
 The `daemonset` deployment of the OpenTelemetry Agent also uses `hostPort` for the `otlp` port, allowing agent pod IPs to be reachable via node IPs, as follows:
 
-``` yaml
+```yaml
 # K8s daemonset otlp port config
 ports:
 - containerPort: 4317
   hostPort: 4317
   name: otlp
   protocol: TCP
-
 ```
 
 #### Configuring auto-instrumented JavaScript applications
@@ -961,12 +872,12 @@ The following examples demonstrate how to configure an [Auto-Instrumented JavaSc
 
 **STEP 1**. Set the Kubernetes environment variables of the JavaScript application's deployment/pod as in the example below. Define the `OTEL_EXPORTER_OTLP_ENDPOINT` as the configured `NODE_IP` and `OTLP_PORT`. Configure `OTEL_TRACES_EXPORTER` to send in the `otlp` format. Choose `OTEL_EXPORTER_OTLP_PRO` as `grpc`.
 
-``` yaml
+```yaml
 # kubernetes deployment manifest's env section
 spec:
   containers:
-		...
-	env:
+  ...
+  env:
   - name: NODE_IP
     valueFrom:
       fieldRef:
@@ -977,14 +888,14 @@ spec:
     value: "http://$(NODE_IP):$(OTLP_PORT)"
   - name: OTEL_TRACES_EXPORTER
     value: "otlp"
-	- name: OTEL_EXPORTER_OTLP_PROTOCOL
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
     value: "grpc"
 
 ```
 
 **STEP 2**. By default the agent has the otlp receiver configured as follows:
 
-``` yaml
+```yaml
 # collector config
 receivers:
   otlp:
@@ -997,8 +908,8 @@ receivers:
 ```
 
 !!! Note
-    - `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
-    - The agent is also preconfigured to collect data from `jaeger`.
+- `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
+- The agent is also preconfigured to collect data from `jaeger`.
 
 ### Processors
 
@@ -1006,10 +917,10 @@ Processors are generally used to process logs, metrics, and traces before the da
 
 In the example below, a `k8sattributes` processor is used to automatically discovers k8s resources (pods), extract metadata from them and add the extracted metadata to the relevant logs, metrics and spans as resource attributes.
 
-``` yaml
+```yaml
 # default in values.yaml
 processors:
-	k8sattributes:
+    k8sattributes:
     filter:
       node_from_env_var: KUBE_NODE_NAME
     extract:
@@ -1026,37 +937,34 @@ processors:
 ```
 
 !!! Note
-    - The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
-    - More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
+- The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
+- More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
 
 ## OpenTelemetry Cluster Collector
 
 Enable the `opentelemetry-cluster-collector` by setting `enabled` to `true`.
 
-``` yaml
+```yaml
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
-
 ```
 
 !!! Note
-
-    The cluster collector operates as a `deployment` workload with a minimal replica of 1 to avoid duplication of telemetry data.
+The cluster collector operates as a `deployment` workload with a minimal replica of 1 to avoid duplication of telemetry data.
 
 ### Cluster Collector presets
 
 The cluster collector is best suited to enable [presets](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector#configuration) such as Kubernetes Events and Cluster Metrics. A smaller instance count of the `deployment` is sufficient to query the Kubernetes API.
 
-``` yaml
-	presets:
+```yaml
+  presets:
     clusterMetrics:
       enabled: true
     kubernetesEvents:
       enabled: true
     kubernetesExtraMetrics:
       enabled: true
-
 ```
 
 For example, if you enable the `kubernetesEvents` preset, the [Kubernetes objects receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver) configuration will be added dynamically during the Helm installation. This configuration enables the collection of `events.k8s.io` objects from the Kubernetes API server.
@@ -1069,16 +977,15 @@ When collecting Kubernetes events using the cluster collector, it is common for 
 
 By default, a transform processor named `transform/kube-events` is configured to remove unneeded fields from the collected Kubernetes events. You may override this or alter the fields as desired.
 
-``` yaml
+```yaml
 processors:
-	transform/kube-events:
-	  log_statements:
-	    - context: log
-	      statements:
-	        - keep_keys(body["object"], ["type", "eventTime", "reason", "regarding", "note", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
-	        - keep_keys(body["object"]["metadata"], ["creationTimestamp"])
-	        - keep_keys(body["object"]["regarding"], ["kind", "name", "namespace"])
-
+  transform/kube-events:
+    log_statements:
+      - context: log
+        statements:
+          - keep_keys(body["object"], ["type", "eventTime", "reason", "regarding", "note", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+          - keep_keys(body["object"]["metadata"], ["creationTimestamp"])
+          - keep_keys(body["object"]["regarding"], ["kind", "name", "namespace"])
 ```
 
 ### Filtering Kubernetes events
@@ -1087,26 +994,24 @@ In large-scale environments, where there are numerous events occurring per hour,
 
 Below is a sample configuration for reference. This configuration filters out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`.
 
-``` yaml
+```yaml
 processors:
   filter/kube-events:
     logs:
       log_record:
         - 'IsMatch(body["reason"], "(BackoffLimitExceeded|FailedScheduling|Unhealthy)") == true'
-
 ```
 
 ### Collecting warning events only
 
-Currently, Kubernetes has two different types of events: `Normal` and `Warning`. As we have the ability to filter events according to their type, you may choose to collect only `Warning` events, as these events are key to troubleshooting. One example could be the use of a filter processor to drop all unwanted `Normal`-type events.
+Currently, Kubernetes has two different types of events: `Normal` and `Warning`. As we have the ability to filter events according to their type, you may choose to collect only `Warning` events, as these events are key to troubleshooting. One example could be the use of a filter processor to drop all unwanted `Normal`-type events.
 
-``` yaml
+```yaml
 processors:
   filter/kube-events:
     logs:
       log_record:
         - 'IsMatch(body["object"]["type"], "Normal")'
-
 ```
 
 ## Resource Catalog
@@ -1114,33 +1019,30 @@ processors:
 The Coralogix Resource Catalog can be used to monitor the various resource types within your Kubernetes clusters. It collects component details and lets you observe performance metrics and review logs of the associated components. Data for this feature comes from multiple sources. There are several presets that can be used to enable these features.
 
 ### Kubernetes resources preset
+
 This preset enables the scrape of the Kubernetes API to populate your Kubernetes resource inventory. It uses the `k8sobjects` receiver and collects objects as defined in this configuration, uses a processor to enrich the collected objects, and exports it with a customized `coralogix/resource_catalog` exporter.
 
 This preset needs to be enabled only in the cluster-collector configuration.
 
 ```yaml
   presets:
-    .
-    .
     kubernetesResources:
       enabled: true
 ```
 
 ### Host details presets
+
 The last two presets collect important host information to enrich the catalog. This data is collected by the agent nodes and consists of host entity events and processes collected by `hostmetrics` receiver. While the `hostEntityEvents` preset is required, the `hostMetrics.process` preset is optional.
 
 ```yaml
   presets:
-    .
-    .
     hostEntityEvents:
       enabled: true
 ```
 
 !!! note
-
-    - The `hostMetrics` process preset is detailed in the Agent presets section above.
-    - It is recommended to use the `hostMetric` preset only on agent collectors. Applying this preset to other collector types may result in duplicate host metrics.
+- The `hostMetrics` process preset is detailed in the Agent presets section above.
+- It is recommended to use the `hostMetric` preset only on agent collectors. Applying this preset to other collector types may result in duplicate host metrics.
 
 ## Kubernetes infrastructure monitoring
 
@@ -1148,7 +1050,7 @@ If you already have an existing log shipper (such as, [Fluentd](https://coralogi
 
 **STEP 1**. Copy the following into a YAML-formatted override file and save as `values.yaml`.
 
-``` yaml
+```yaml
 global:
   domain: "<coralogix-endpoint>"
   clusterName: "<k8s-cluster-name>"
@@ -1176,14 +1078,12 @@ opentelemetry-agent:
             - logging
           receivers:
             - otlp
-
 ```
 
 **STEP 2**. Install with the `helm upgrade --install` command.
 
-``` bash
+```bash
 helm upgrade --install otel-integration coralogix-charts-virtual/otel-integration -f values.yaml -n $NAMESPACE
-
 ```
 
 ### Installing the chart on GKE Autopilot clusters
@@ -1247,8 +1147,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values.yaml -f ipv6-values.yaml
 ```
 
-
-## Next steps
+### Next steps
 
 **Validation** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/validation/).
 
@@ -1297,9 +1196,8 @@ To ensure optimal performance:
 - Define custom [tail sampling policies](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) to control which spans are collected.
 
 !!! Note
-    - When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
-    - When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
-
+- When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
+- When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
 
 **STEP 1**. Add the Coralogix Helm repository.
 
@@ -1308,7 +1206,7 @@ helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogi
 
 **STEP 2**. Copy the `tail-sampling-values.yaml` file found [here](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/tail-sampling-values.yaml) and update the relevant fields with your values.
 
-``` yaml
+```yaml
 global:
   domain: "<your-coralogix-domain>"
   clusterName: ""
@@ -1364,7 +1262,7 @@ opentelemetry-collector:
 
 **STEP 3**. Add your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) to the `tail-sampling-values.yaml` file.
 
-``` bash
+```bash
 kubectl create secret generic coralogix-keys --from-literal 'PRIVATE_KEY=<your-private-key>'
 ```
 
@@ -1375,7 +1273,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f tail-sampling-values.yaml
 ```
 
-``` bash
+```bash
 kubectl get pods
 NAME                                               READY   STATUS    RESTARTS   AGE
 coralogix-opentelemetry-agent-86qdb                1/1     Running   0          7h59m
@@ -1395,13 +1293,13 @@ In the next section, we will describe the process for installing 2 application e
 
 **STEP 1**. Add the Helm chart for the OpenTelemetry Demo Application.
 
-``` bash
+```bash
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 ```
 
 **STEP 2**. Create a `values.yaml` file and add the following:
 
-``` yaml
+```yaml
 default:
   env:
     - name: OTEL_SERVICE_NAME
@@ -1450,7 +1348,7 @@ This will configure the OpenTelemetry Demo Application to send traces to the Cor
 
 **STEP 3**. Install the Opentelemetry Demo Application.
 
-``` bash
+```bash
 helm install otel-demo open-telemetry/opentelemetry-demo -f values.yaml
 
 NAME: my-otel-demo
@@ -1469,7 +1367,7 @@ This application is a small trace-generating application. We will demonstrate ho
 
 **STEP 1**. Create a file `go-traces-demo.yaml` and add the following:
 
-``` yaml
+```yaml
 apiVersion: apps/v1        
 kind: Deployment
 metadata:
@@ -1508,8 +1406,6 @@ kubectl apply -f go-traces-demo.yaml
 
 View your telemetry data in your Coralogix dashboard. Traces should arrive from the tail-sampling load balancer.
 
-![](images/console-2.jpg)
-
 ## Configuring Head Sampling for Tracing
 
 Head sampling is a feature that allows you to sample traces at the collection point. When enabled, it creates a separate pipeline for sampled traces using probabilistic sampling. This helps reduce the volume of traces while maintaining a representative sample.
@@ -1547,11 +1443,11 @@ This deployment creates two key components:
 
 To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`, expose it using one of these methods:
 - Service of type LoadBalancer
-- Ingress object configuration  
+- Ingress object configuration
 - Manual load balancer configuration
 
 !!! Note
-    Ensure you configure sufficient replicas and appropriate resource requests/limits to handle the expected load. You'll also need to set up custom [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies.
+Ensure you configure sufficient replicas and appropriate resource requests/limits to handle the expected load. You'll also need to set up custom [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies.
 
 **STEP 1**. Run the following commands to deploy the Central Collector Cluster.
 
@@ -1559,12 +1455,12 @@ To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 ```
 
-``` 
+```
 helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual/otel-integration \
   --render-subchart-notes -f central-tail-sampling-values.yaml
 ```
 
-**STEP 2**. Validate the deployment by sending a sample of OTLP data to the `opentelemetry-receiver` Service and navigating to the Coralogix [Explore Screen](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) to view collected traces. This can be done via `telemetrygen`:
+**STEP 2**. Validate the deployment by sending a sample of OTLP data to the `opentelemetry-receiver` Service and navigating to the Coralogix Explore Screen to view collected traces. This can be done via `telemetrygen`:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -1602,6 +1498,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 ## Troubleshooting
+
 ### Why am I getting ResourceExhausted errors when using Tail Sampling?
 
 Typically, the errors look like this:
@@ -1628,14 +1525,14 @@ receivers:
 
 [//]: # (/split)
 
-[//]: # (split title="Target Allocator and PrometheusCR with OpenTelemetry" path="kubernetes-observability/target-allocator-and-prometheuscr-with-opentelemetry/index.md")
+[//]: # (split title="Target Allocator and Prometheus Operator with OpenTelemetry" path="kubernetes-observability/target-allocator-and-prometheus-operator-with-opentelemetry/index.md")
 
-# Target Allocator and PrometheusCR with OpenTelemetry
+# Target Allocator and Prometheus Operator with OpenTelemetry
 ## Overview
 
 Targets are endpoints that supply metrics via the Prometheus data model. For the Prometheus Receiver to scrape them, they can be statically configured via the `static_configs` parameters or dynamically discovered using one of the supported service discovery mechanisms.
 
-The OpenTelemetry [Target Allocator](https://opentelemetry.io/docs/kubernetes/operator/target-allocator/) for Kubernetes, an optional component of the [OpenTelemetry Operator](https://opentelemetry.io/docs/kubernetes/operator/) now included in Coralogix’s [OpenTelemetry Integration Helm Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm), facilitates service discovery and manages the configuration of targets into the different agent collector’s [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) across nodes.
+The OpenTelemetry [Target Allocator](https://opentelemetry.io/docs/kubernetes/operator/target-allocator/) for Kubernetes, an optional component of the [OpenTelemetry Operator](https://opentelemetry.io/docs/kubernetes/operator/) now included in Coralogix's [OpenTelemetry Integration Helm Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm), facilitates service discovery and manages the configuration of targets into the different agent collector's [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) across nodes.
 
 If you're using the Prometheus Operator custom resources (`ServiceMonitor` and `PodMonitor`) and want to continue using them with the OpenTelemetry collector, you can enable target scraping through the Target Allocator component. This optional feature is disabled by default but can be enabled by setting `opentelemetry-agent.targetAllocator.enabled: true` in your `values.yaml` file.
 
@@ -1645,12 +1542,9 @@ You can customize the scrape interval for Prometheus Custom Resources by configu
 
 For more details on Prometheus custom resources and target allocator see the documentation [here](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#discovery-of-prometheus-custom-resources).
 
-!!! Note
-    Due to a [known issue](https://github.com/open-telemetry/opentelemetry-operator/issues/3034) with the Prometheus Receiver, OpenTelemetry Collector self-monitoring is currently not functioning. As a workaround, ensure you enable both the PodMonitor and metrics port to collect Collector metrics.
-
 ### Discovery
 
-The Target Allocator discovers [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator/tree/main) Custom Resources, namely the ServiceMonitor and PodMonitor as Metrics Targets. These metrics targets detail the endpoints of exportable metrics available on the Kubernetes cluster as "jobs."
+The Target Allocator discovers [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator/tree/main) Custom Resources, namely the ServiceMonitor and PodMonitor as Metrics Targets. These metrics targets detail the endpoints of exportable metrics available on the Kubernetes cluster as "jobs."
 
 Then, the Target Allocator detects available OpenTelemetry Collectors and distributes the targets among known collectors. As a result, the collectors routinely query the Target Allocator for their assigned metric targets to add to the scrape configuration.
 
@@ -1658,9 +1552,9 @@ Then, the Target Allocator detects available OpenTelemetry Collectors and distri
 
 ### Allocation strategies
 
-Upon query from collectors, the Target Allocator assigns metric endpoint targets according to a chosen allocation strategy. To align with our chart’s Opentelemetry agent in DaemonSet mode, the allocation strategy `per node` is preconfigured. This assigns each target to the OpenTelemetry collector running on the same Node as the metric endpoint.
+Upon query from collectors, the Target Allocator assigns metric endpoint targets according to a chosen allocation strategy. To align with our chart's Opentelemetry agent in DaemonSet mode, the allocation strategy `per node` is preconfigured. This assigns each target to the OpenTelemetry collector running on the same Node as the metric endpoint.
 
-## Monitoring CRDs (ServiceMonitor & PodMonitor)
+### Monitoring CRDs (ServiceMonitor & PodMonitor)
 
 As part of the deployment model under the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator), concepts were introduced to simplify the configuration aspects of monitoring to align them with the capabilities of Kubernetes better.
 
@@ -1672,13 +1566,13 @@ Specifying endpoints under the monitoring scope as CRD objects:
 
 - Reduces impact across monitored components for changes as there is no single standard file or resource to work with. Any different workload will continue to work.
 
-Both ServiceMonitor and PodMonitor use selectors to detect pods or services to monitor with additional configurations on how to scrape them (_e.g., port, interval, path_).
+Both ServiceMonitor and PodMonitor use selectors to detect pods or services to monitor with additional configurations on how to scrape them (*e.g., port, interval, path*).
 
-### ServiceMonitor
+#### ServiceMonitor
 
 A ServiceMonitor provides metrics from the service itself and each of its endpoints. This means each pod implementing the service will be discovered and scraped.
 
-``` yaml
+```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -1702,13 +1596,13 @@ spec:
 
 Details:
 
-- `endpoints`: Defines an endpoint serving Prometheus metrics to be scraped by Prometheus. It specifies an interval, port, URL path, and scrape timeout duration. See the [Endpoints spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.Endpoint).
+- `endpoints`: Defines an endpoint serving Prometheus metrics to be scraped by Prometheus. It specifies an interval, port, URL path, and scrape timeout duration. See the [Endpoints spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.Endpoint).
 
 - `selector` & `namespaceSelector`: Selectors for labels and namespaces from which the Kubernetes Endpoints objects will be discovered.
 
-More details on writing the ServiceMonitor can be found in the [ServiceMonitor Spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.ServiceMonitor).
+More details on writing the ServiceMonitor can be found in the [ServiceMonitor Spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.ServiceMonitor).
 
-### PodMonitor
+#### PodMonitor
 
 For workloads that cannot be exposed behind a service, a PodMonitor is used instead.
 
@@ -1718,7 +1612,7 @@ This includes:
 
 - Components such as CronJobs, DaemonSets, etc (e.g. using hostPort)
 
-``` yaml
+```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
@@ -1738,15 +1632,15 @@ spec:
 
 Details:
 
-- `podMetricsEndpoints` : Similar to `endpoint`, this defines the pod endpoint serving Prometheus metrics. See [PodMetricsEndpoint spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMetricsEndpoint).
+- `podMetricsEndpoints` : Similar to `endpoint`, this defines the pod endpoint serving Prometheus metrics. See [PodMetricsEndpoint spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.PodMetricsEndpoint).
 
-## Prerequisites
+### Prerequisites
 
-- [Kubernetes](https://kubernetes.io/) (v1.24+)
+- [Kubernetes](https://kubernetes.io/) (v1.24+)
 
-- The command-line tool [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- The command-line tool [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 
-- [Helm](https://helm.sh/) (v3.9+) installed and configured
+- [Helm](https://helm.sh/) (v3.9+) installed and configured
 
 - CRDs for PodMonitors and ServiceMonitors installed.
 
@@ -1761,20 +1655,21 @@ kubectl get crd | grep monitoring
 
 If not, you can install them with the following `kubectl apply` commands:
 
-``` bash
+```bash
 kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
 kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
 ```
 
-## Installation
+### Installation
 
-The Target Allocator can be enabled by modifying the default [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml) file in the [OpenTelemetry Integration Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm). Once enabled, it is deployed to service the Prometheus Receivers of the OpenTelemetry Agent Collectors and allocate targets residing on the DaemonSet’s nodes.
+The Target Allocator can be enabled by modifying the default [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml) file in the [OpenTelemetry Integration Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm). Once enabled, it is deployed to service the Prometheus Receivers of the OpenTelemetry Agent Collectors and allocate targets residing on the DaemonSet's nodes.
 
 This guide assumes you have running services exporting Prometheus metrics running in your Kubernetes cluster.
 
 **STEP 1.** Follow the instructions for Kubernetes Observability with OpenTelemetry, specifically the [Advanced Configuration guide](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/), which utilizes the otel-integration [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml) file by setting `opentelemetry-agent.targetAllocator.enabled` to `true`:
+**STEP 1.** Follow the instructions for Kubernetes Observability with OpenTelemetry, specifically the [Advanced Configuration guide](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/), which utilizes the otel-integration [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml) file by setting `opentelemetry-agent.targetAllocator.enabled` to `true`:
 
-``` yaml
+```yaml
 opentelemetry-agent:
   targetAllocator:
     enabled: true   ##set to true
@@ -1784,7 +1679,7 @@ opentelemetry-agent:
       enabled: true
 ```
 
-Also, as shown above, the default allocation strategy is `per node` to align with the OpenTelemetry agent’s daemon set mode.
+Also, as shown above, the default allocation strategy is `per node` to align with the OpenTelemetry agent's daemon set mode.
 
 **STEP 2.** Install the Helm chart with the changes made to the [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml) and deploy the target allocator pod:
 
@@ -1798,7 +1693,7 @@ kubectl get pod -n <namespace>
 
 ## Troubleshooting
 
-To check if the jobs and scrape configs generated by the Target Allocator are correct and ServiceMonitors and PodMonitors are successfully detected, port-forward to the Target Allocator’s exposed service. The information will be available under the `/jobs` and `/scrape_configs` HTTP paths.
+To check if the jobs and scrape configs generated by the Target Allocator are correct and ServiceMonitors and PodMonitors are successfully detected, port-forward to the Target Allocator's exposed service. The information will be available under the `/jobs` and `/scrape_configs` HTTP paths.
 
 The Target Allocator’s service can be located with the following command: `kubectl get svc -n <namespace>`
 
@@ -1808,7 +1703,6 @@ Port forward to the target allocator pod with the following `kubectl` command:
 
 ```
 kubectl port-forward -n <namespace> svc/coralogix-opentelemetry-targetallocator 8080:8080
-
 ```
 
 You can browse or curl the `/jobs` and `/scrape_configs` endpoints for the detected PodMonitor & ServiceMonitor resources and the generated scrape configs.
@@ -1868,10 +1762,28 @@ helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
 
+#### Enabling Coralogix EBPF profiler with existing OpenTelemetry Collector
+
+If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF profiler.
+You can only deploy the ebpf profiler and enable profiling pipeline with this command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration  \
+  --render-subchart-notes -f values-ebpf-profiler.yaml \  
+```
+
 [//]: # (/split)
 
 [//]: # (split title="Troubleshooting" path="kubernetes-observability/troubleshooting/index.md")
 # Troubleshooting
+
+## Limits & quotas
+
+- Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](https://coralogix.com/docs/integrations/coralogix-endpoints/, with a **recommendation of 2MB**.
+- Metric names must be a maximum of 255 characters.
+- Attribute keys for metric data must be a maximum of 255 characters.
 
 ## Metrics
 
@@ -2038,8 +1950,8 @@ processors:
     error_mode: ignore
     metrics:
       metric:
-          - name == "my.metric" 
-          - resource.attributes["my_label"] == "abc123"
+        - name == "my.metric" 
+        - resource.attributes["my_label"] == "abc123"
 ```
 
 ## Performance of the Collector
@@ -2090,10 +2002,10 @@ On large-scale environments, you may have hundreds or even millions of events pe
 
 ```yaml
 processors:
-      filter/kube-events:
-        logs:
-          log_record:
-            - 'IsMatch(body["reason"], "(BackoffLimitExceeded|FailedScheduling|Unhealthy)") == true'
+  filter/kube-events:
+    logs:
+      log_record:
+        - 'IsMatch(body["reason"], "(BackoffLimitExceeded|FailedScheduling|Unhealthy)") == true'
 ```
 
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
@@ -2105,7 +2017,7 @@ Under the `dashboard` directory, there are:
 - Host Metrics Dashboard
 - Kubernetes Pod Dashboard
 - Span Metrics Dashboard
-- Otel-Agent Grafana dashboard
+- OTel-Agent Grafana dashboard
 
 ## Integration presets
 
@@ -2207,7 +2119,7 @@ This chart uses [openetelemetry-collector](https://github.com/coralogix/opentele
 
 Check out these **frequently asked questions** regarding [Kubernetes Observability using OpenTelemetry](../kubernetes-observability-using-opentelemetry/index.md).
 
-## How do I upgrade the Otel integration chart to its latest version?
+## How do I upgrade the OTel integration chart to its latest version?
 
 **STEP 1**. Ensure that your existing Values YAML file is aligned with the latest [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file. This is to avoid [configuration issues](../troubleshooting/index.md#collector-configuration-issues) that may arise.
 

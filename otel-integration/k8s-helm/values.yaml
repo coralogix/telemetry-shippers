@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.165"
+  version: "0.0.169"
 
   extensions:
     kubernetesDashboard:
@@ -212,6 +212,10 @@ opentelemetry-agent:
         - name: cgx.transaction
         - name: cgx.transaction.root
         - name: status_code
+        - name: db.namespace
+        - name: db.operation.name
+        - name: db.collection.name
+        - name: db.system
       # Configures the collector to export span metrics with different histogram bucket options
       # for different applications. Applications are selected and routed to different pipelines
       # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
@@ -479,6 +483,7 @@ opentelemetry-cluster-collector:
       enabled: true
     kubernetesExtraMetrics:
       enabled: true
+      scrapeAll: false
     kubernetesAttributes:
       enabled: true
     mysql:
@@ -1275,3 +1280,33 @@ coralogix-ebpf-agent:
     name: ""
     value: 1000000000
   tolerations: []
+
+coralogix-ebpf-profiler:
+  enabled: false
+  profiling:
+    profiling_otel_agent:
+      samples_per_second: 20
+      reporter_interval: 5s
+      debug: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  k8s_watcher:
+    replicaCount: 1
+    debug: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+#  priorityClass:
+#    create: false
+#    name: ""
+#    value: 1000000000
+#  tolerations: []

@@ -1,6 +1,6 @@
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
 global:
-  logLevel: "debug"
+  logLevel: "info"
   hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent:
@@ -18,6 +18,19 @@ opentelemetry-agent:
         endpoint: "{{.Values.global.hostedEndpoint}}:4317"
         tls:
           insecure: true
+    extensions:
+      opamp:
+        server:
+          http:
+            endpoint: "http://{{.Values.global.hostedEndpoint}}:4320/v1/opamp"
+            headers:
+              X-Coralogix-Auth: "super secret key"
+            tls:
+              insecure: true
+        agent_description:
+          non_identifying_attributes:
+            "cx.agent.type": "agent"
+            "cx.cluster.name": "e2e-test-cluster"
     service:
       pipelines:
         metrics:

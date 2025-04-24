@@ -1,0 +1,16 @@
+opentelemetry-agent:
+  enabled: true
+  presets:
+    profilesCollection:
+      enabled: true
+
+  command:
+    extraArgs: [ "--feature-gates=service.profilesSupport" ]
+
+coralogix-ebpf-profiler:
+  enabled: true
+  ebpf_agent:
+    otel:
+      exporter:
+#        # configure the opentelemetry collector endpoint here
+#        endpoint: "$(HOST_IP):4317"

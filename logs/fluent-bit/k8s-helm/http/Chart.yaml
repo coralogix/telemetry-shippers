@@ -1,14 +1,14 @@
 apiVersion: v2
 name: fluent-bit-http
 description: Fluent-Bit Chart with HTTP output plugin
-version: 3.2.4
-appVersion: 3.2.4
+version: 3.2.10
+appVersion: 3.2.10
 keywords:
   - Fluent-Bit
   - HTTP output plugin
 dependencies:
   - name: fluent-bit
-    version: "0.48.4"
+    version: "0.48.10"
     repository: https://fluent.github.io/helm-charts
 sources:
   - https://github.com/fluent/fluent-bit/

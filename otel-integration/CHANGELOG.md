@@ -2,6 +2,19 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.169 / 2025-04-22
+- [Feat] Add scrapeAll metrics support for collector
+
+### v0.0.168 / 2025-04-14
+- [Feat] Add db dimensions to spanmetrics
+- [Fix] fix dbMetrics use db.collection.name instead of db.collection_name
+
+### v0.0.167 / 2025-04-11
+- [Feat] Update Collector to v0.123.0
+
+### v0.0.166 / 2025-04-08
+- [Feat] Add ebpf-profiler subchart.
+
 ### v0.0.165 / 2025-04-04
 - [Feat] Review otel-integration readme
 

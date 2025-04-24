@@ -54,4 +54,12 @@ jobs:
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
-          go test -v -run=TestE2E_Agent ./...
+          go test -v -run='^TestE2E.*' ./...
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done

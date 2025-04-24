@@ -2,6 +2,9 @@
 
 ## Fluentd
 
+### v1.18.0-4 / 2025-4-10
+* [UPGRADE] Upgrade Fluentd version to v1.18.0-debian-forward-1.4
+
 ### v1.18.0 / 2025-1-5
 * [UPGRADE] Upgrade Fluentd version to v1.18.0
 
@@ -52,6 +55,11 @@
   ([#41](https://github.com/coralogix/eng-integrations/pull/41))
 
 ## Fluent-Bit
+
+### v3.2.10 / 2025-4-15
+* [REMOVE] Remove Coralogix plugin from Fluentbit image
+* [UPGRADE] Upgrade Fluentbit version to v3.2.10
+* [UPGRADE] Upgrade Fluentbit Helm chart dependency to 0.48.10
 
 ## v3.2.4/ 2025-1-5
 
