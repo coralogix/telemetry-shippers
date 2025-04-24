@@ -2117,11 +2117,11 @@ This chart uses [openetelemetry-collector](https://github.com/coralogix/opentele
 
 # FAQ
 
-Check out these **frequently asked questions** regarding [Kubernetes Observability using OpenTelemetry](../kubernetes-observability-using-opentelemetry/index.md).
+Check out these **frequently asked questions** regarding [Kubernetes Observability using OpenTelemetry](https://coralogix.com/docs/opentelemetry/kubernetes-observability/faqs/).
 
 ## How do I upgrade the OTel integration chart to its latest version?
 
-**STEP 1**. Ensure that your existing Values YAML file is aligned with the latest [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file. This is to avoid [configuration issues](../troubleshooting/index.md#collector-configuration-issues) that may arise.
+**STEP 1**. Ensure that your existing Values YAML file is aligned with the latest [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file. This is to avoid [configuration issues](https://coralogix.com/docs/opentelemetry/kubernetes-observability/troubleshooting/#collector-configuration-issues) that may arise.
 
 **STEP 2**. Update the chart repository listing, assuming the OpenTelemetry Integration chart is named `otel-integration`.
 
@@ -2261,7 +2261,7 @@ This sizing ensures that the telemetry sent to the Coralogix backend is batched 
 
 These settings impose a hard limit of 2048 units (spans, metrics, logs) on the batch size, balancing the recommended batch size and networking overhead.
 
-While you can adjust these settings to suit your requirements, considering the size limits enforced by Coralogix endpoints, [currently set to a max of 10 MB after decompression](../../../integrations/coralogix-endpoints.md#limits-quotas), is essential.
+While you can adjust these settings to suit your requirements, considering the size limits enforced by Coralogix endpoints, [currently set to a max of 10 MB after decompression](https://coralogix.com/docs/integrations/coralogix-endpoints/#limits-quotas), is essential.
 
 Find out more [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor) about configuring your batch processor.
 
