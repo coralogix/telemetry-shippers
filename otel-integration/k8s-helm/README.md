@@ -1,4 +1,4 @@
-[//]: # (static-modules-readme-start-description)
+[//]: # (split title="Kubernetes observability using OpenTelemetry" path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md")
 
 # Kubernetes observability using OpenTelemetry
 
@@ -179,7 +179,9 @@ View our **basic configuration** instructions [here](https://coralogix.com/docs/
 
 **Advanced configuration** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/).
 
-[//]: # (static-modules-readme-end-description)
+[//]: # (/split)
+
+[//]: # (split title="Validation" path="kubernetes-observability/validation/index.md")
 
 # Validation
 
@@ -231,8 +233,9 @@ Both should show a `Running` status.
 
 Troubleshoot your configuration [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/troubleshooting/).
 
+[//]: # (/split)
 
-[//]: # (static-modules-readme-start-description)
+[//]: # (split title="Kubernetes Complete Observability: basic configuration" path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md")
 
 # Kubernetes Complete Observability: basic configuration
 Coralogix’s **Kubernetes Complete Observability** provides a comprehensive solution for full-stack observability in your Kubernetes environment.
@@ -389,9 +392,9 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 !!! Note
     During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
 
-# Useful information
+## Useful information
 
-## Available endpoints
+### Available endpoints
 
 Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
 
@@ -663,7 +666,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
 
-### Connecting to Coralogix fleet management
+### Connecting to the Coralogix fleet management
 
 The integration can be configured to connect to the Coralogix fleet management server through setting the `presets.fleetManagement.enabled` property to `true`. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is disabled by default.
 
@@ -702,9 +705,9 @@ presets:
 | Documentation | [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites)<br/>[Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) |
 
 
-[//]: # (static-modules-readme-end-description)
+[//]: # (/split)
 
-[//]: # (static-modules-readme-start-description)
+[//]: # (split title="Kubernetes complete observability: advanced configuration" path="kubernetes-observability/kubernetes-complete-observability-advanced-configuration/index.md")
 
 # Kubernetes complete observability: advanced configuration
 
@@ -1041,7 +1044,7 @@ opentelemetry-cluster-collector:
 
     The cluster collector operates as a `deployment` workload with a minimal replica of 1 to avoid duplication of telemetry data.
 
-### Cluster collector presets
+### Cluster Collector presets
 
 The cluster collector is best suited to enable [presets](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector#configuration) such as Kubernetes Events and Cluster Metrics. A smaller instance count of the `deployment` is sufficient to query the Kubernetes API.
 
@@ -1183,7 +1186,7 @@ helm upgrade --install otel-integration coralogix-charts-virtual/otel-integratio
 
 ```
 
-### Installing the chart on GKE Autopilot clusters.
+### Installing the chart on GKE Autopilot clusters
 
 GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 
@@ -1255,9 +1258,10 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 | Documentation | [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites) |
 
 
-[//]: # (static-modules-readme-end-description)
+[//]: # (/split)
 
-[//]: # (static-modules-readme-start-description)
+[//]: # (split title="Tail Sampling with OpenTelemetry using Kubernetes" path="kubernetes-observability/tail-sampling-with-opentelemetry-using-kubernetes/index.md")
+
 # Tail Sampling with OpenTelemetry using Kubernetes
 
 This tutorial demonstrates how to configure a Kubernetes cluster, deploy OpenTelemetry to collect logs, metrics, and traces, and enable trace sampling. We will cover an example of enabling a tail sample for the Opentelemetry Demo Application and a more precise example using the small trace-generating application.
@@ -1622,10 +1626,9 @@ receivers:
 | Documentation | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](https://coralogix.com/docs/opentelemetry/tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/) |
 | OTLP Configuration | [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md) |
 
-[//]: # (static-modules-readme-end-description)
+[//]: # (/split)
 
-
-[//]: # (static-modules-readme-start-description)
+[//]: # (split title="Target Allocator and PrometheusCR with OpenTelemetry" path="kubernetes-observability/target-allocator-and-prometheuscr-with-opentelemetry/index.md")
 
 # Target Allocator and PrometheusCR with OpenTelemetry
 ## Overview
@@ -1816,9 +1819,6 @@ You can browse or curl the `/jobs` and `/scrape_configs` endpoints for the detec
 
 The generated `kubernetes_sd_configs` is a common configuration syntax for discovering and scraping Kubernetes targets in Prometheus.
 
-[//]: # (static-modules-readme-end-description)
-
-
 ### Enabling Coralogix EBPF Agent
 
 To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
@@ -1868,7 +1868,9 @@ helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual
   --render-subchart-notes -f values-ebpf-agent-existing-collector.yaml --set coralogix-ebpf-agent.ebpf_agent.otel.exporter.endpoint=<your-existing-collector-endpoint>
 ```
 
+[//]: # (/split)
 
+[//]: # (split title="Troubleshooting" path="kubernetes-observability/troubleshooting/index.md")
 # Troubleshooting
 
 ## Metrics
@@ -1987,7 +1989,7 @@ service:
               endpoint: ${env:MY_POD_IP}:4317
 ```
 
-# Filtering and reducing metrics cost
+## Filtering and reducing metric cost
 
 otel-integration has a couple of ways you can reduce the metric cost. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
 - container.id
@@ -2040,9 +2042,9 @@ processors:
           - resource.attributes["my_label"] == "abc123"
 ```
 
-# Performance of the Collector
+## Performance of the Collector
 
-## Picking the right tracing SDK span processor
+### Picking the right tracing SDK span processor
 
 OpenTelemetry tracing SDK supports two strategies to create an application traces, a "SimpleSpanProcessor" and a "BatchSpanProcessor. While the SimpleSpanProcessor submits a span every time a span is finished, the BatchSpanProcessor processes spans in batches, and buffers them until a flush event occurs. Flush events can occur when the buffer is full or when a timeout is reached.
 
@@ -2062,13 +2064,13 @@ import BatchSpanProcessor from "@opentelemetry/sdk-trace-base";
 tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 ```
 
-# Infrastructure monitoring
+## Infrastructure monitoring
 
-## Log Collection
+### Log Collection
 
-Default installation collects Kubernetes logs.
+The default installation collects Kubernetes logs.
 
-## Kubernetes Events
+### Kubernetes Events
 
 Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster's resources — such as pods, deployments, or nodes — change state.
 
@@ -2105,11 +2107,11 @@ Under the `dashboard` directory, there are:
 - Span Metrics Dashboard
 - Otel-Agent Grafana dashboard
 
-# Integration presets
+## Integration presets
 
 The `otel-integration` chart also provides support to integrate with different applications. The following integration presets are available.
 
-## MySQL
+### MySQL
 
 The MySQL preset is able to collect metrics and extra logs (slow query log, general query log) from your MySQL instances. **Extra logs collection is available only when running the `otel-integration` as CRD with the OpenTelemetry Operator.**
 
@@ -2193,6 +2195,168 @@ Optional settings:
       mountPath: "/var/log/mysql"
 ```
 
-# Dependencies
+## Dependencies
 
 This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
+
+[//]: # (/split)
+
+[//]: # (split title="FAQ" path="kubernetes-observability/faq/index.md")
+
+# FAQ
+
+Check out these **frequently asked questions** regarding [Kubernetes Observability using OpenTelemetry](../kubernetes-observability-using-opentelemetry/index.md).
+
+## How do I upgrade the Otel integration chart to its latest version?
+
+**STEP 1**. Ensure that your existing Values YAML file is aligned with the latest [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file. This is to avoid [configuration issues](../troubleshooting/index.md#collector-configuration-issues) that may arise.
+
+**STEP 2**. Update the chart repository listing, assuming the OpenTelemetry Integration chart is named `otel-integration`.
+
+``` bash
+helm repo update coralogix
+
+```
+
+**STEP 3**. Compare the latest chart version with the Helm installed chart version.
+
+``` bash
+helm search repo coralogix | grep otel-integration
+helm list -n $NAMESPACE
+
+```
+
+**STEP 4**. Upgrade to the latest with the following command:
+
+``` bash
+helm upgrade otel-integration coralogix/otel-integration -f values.yaml -n $NAMESPACE
+
+```
+
+## How do I prevent telemetry from being exported to Coralogix?
+
+In cases where telemetry data (such as logs, metrics, or traces) and their corresponding metadata are no longer needed for observability in Coralogix, the [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) can be replaced with the [Debug Exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/debugexporter). This ensures that the telemetry data is not sent to Coralogix. It is important to note that at least one exporter is required, otherwise the Debug Exporter will fail.
+
+Below is an example that demonstrates the definition and configuration of the Debug Exporter for traces.
+
+```yaml
+opentelemetry-agent:
+  config:    
+    exporters:
+      debug: # Define the debug exporter here
+        verbosity: detailed
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{ '{{' }} .Values.global.domain }}"
+        application_name: "{{ '{{' }} .Values.global.defaultApplicationName }}"
+        subsystem_name: "{{ '{{' }} .Values.global.defaultSubsystemName }}"
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - batch
+          receivers:
+            - otlp
+        traces:
+          exporters: 
+            - debug # Enable only the Debug Exporter for Traces
+          processors: 
+            - batch
+          receivers:
+            - otlp
+        logs:
+          exporters:
+            - coralogix
+          processors:
+            - batch
+          receivers:
+            - otlp
+```
+
+## How do I fix multi-line logs using recombine FileLog Operator?
+
+In the case of multi-line logs, a single logical log entry may exist in multiple lines, resulting in multiple log records by default. The [OpenTelemetry Integration Helm Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm) includes a commented section in the [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file to address this issue. Navigate to `presets` > `logsCollection` > `extraFilelogOperators`.
+
+``` yaml
+presets:
+    metadata:
+      enabled: true
+      clusterName: "{{ '{{' }}.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-helm"
+    logsCollection:
+      enabled: true
+      storeCheckpoints: true
+      maxRecombineLogSize: 1048576
+      extraFilelogOperators: []
+#     - type: recombine
+#       combine_field: body
+#       source_identifier: attributes["log.file.path"]
+#       is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+
+```
+
+The `extraFilelogOperators` is an array where we can define any additional Filelog Operators that we want to leverage when shipping logs.
+
+Uncomment the example with the [recombine](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/recombine.md) operator. This operator is used to recombine log entries from a single log file, as defined by the `source_identifier` looking at the `log.file.path` attribute, in cases where multi-line has occurred. To achieve this, a regex is defined for the first line of the log using the `is_first_entry` field.
+
+A working example of a values.yaml file can be seen below:
+
+``` yaml
+global:
+  domain: "eu2.coralogix.com"
+  clusterName: "coralogix-cluster"
+
+opentelemetry-agent:
+  presets:
+    logsCollection:
+      extraFilelogOperators:
+        - type: recombine
+          combine_field: body
+          combine_with: "\n"
+          source_identifier: attributes["log.file.path"]
+          is_first_entry: body matches "(\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s\\[\\w+\\]\\s\\w+\\s|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z\\s\\w+\\s)"
+
+```
+
+**Notes:**
+
+- The example seeks 2 different regex patterns to recognize the start of the log entry.
+
+- Double-escape all special characters to match the GoLang standard patterns.
+
+``` 
+\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s\\[\\w+\\]\\s\\w+\\s
+AND
+\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z\\s\\w+\\s
+
+```
+
+## How do I optimize batch sizing?
+
+Coralogix recommends the default otel-integration chart settings for [batch processors](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) in all collectors:
+
+``` yaml
+  batch:
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+    timeout: "1s"
+```
+
+This sizing ensures that the telemetry sent to the Coralogix backend is batched into larger requests, reducing networking overhead and improving performance.
+
+These settings impose a hard limit of 2048 units (spans, metrics, logs) on the batch size, balancing the recommended batch size and networking overhead.
+
+While you can adjust these settings to suit your requirements, considering the size limits enforced by Coralogix endpoints, [currently set to a max of 10 MB after decompression](../../../integrations/coralogix-endpoints.md#limits-quotas), is essential.
+
+Find out more [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor) about configuring your batch processor.
+
+## Support
+
+**Need help?**
+
+Contact us **via our in-app chat** or by emailing [support@coralogix.com](mailto:support@coralogix.com).
+
+[//]: # (/split)
