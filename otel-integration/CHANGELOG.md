@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.170 / 2025-04-25
+- [Feat] Update Collector to v0.124.1
+- [Breaking] We are moving to ghcr image registry instead of dockerhub, as OTel doesn't use dockerhub due to rate limits. Ref https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.123.1
+
 ### v0.0.169 / 2025-04-22
 - [Feat] Add scrapeAll metrics support for collector
 

@@ -20,10 +20,10 @@ opentelemetry-agent-windows:
     kubernetes.io/os: windows
   image:
     # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
-    repository: otel/opentelemetry-collector-contrib
+    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.123.0-windows-2019-amd64"
+    tag: "0.124.1-windows-2019-amd64"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
 
