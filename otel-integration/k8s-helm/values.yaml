@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.169"
+  version: "0.0.170"
 
   extensions:
     kubernetesDashboard:
@@ -93,7 +93,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.121.0
+      tag: v0.124.0
 
   command:
     name: otelcol-contrib
