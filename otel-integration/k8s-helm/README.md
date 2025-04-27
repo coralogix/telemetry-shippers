@@ -808,7 +808,7 @@ opentelemetry-agent:
 ```
 
 !!! Note
-If there are nodes without a running OpenTelemetry Agent pod, the hosted pods of applications may be missing metadata attributes (e.g. node info and host name) in the telemetry sent.
+    If there are nodes without a running OpenTelemetry Agent pod, the hosted pods of applications may be missing metadata attributes (e.g. node info and host name) in the telemetry sent.
 
 ### Agent presets
 
@@ -908,8 +908,8 @@ receivers:
 ```
 
 !!! Note
-- `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
-- The agent is also preconfigured to collect data from `jaeger`.
+    - `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
+    - The agent is also preconfigured to collect data from `jaeger`.
 
 ### Processors
 
@@ -937,8 +937,8 @@ processors:
 ```
 
 !!! Note
-- The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
-- More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
+    - The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
+    - More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
 
 ## OpenTelemetry Cluster Collector
 
@@ -951,7 +951,7 @@ opentelemetry-cluster-collector:
 ```
 
 !!! Note
-The cluster collector operates as a `deployment` workload with a minimal replica of 1 to avoid duplication of telemetry data.
+    The cluster collector operates as a `deployment` workload with a minimal replica of 1 to avoid duplication of telemetry data.
 
 ### Cluster Collector presets
 
@@ -1196,8 +1196,8 @@ To ensure optimal performance:
 - Define custom [tail sampling policies](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) to control which spans are collected.
 
 !!! Note
-- When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
-- When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
+    - When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
+    - When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
 
 **STEP 1**. Add the Coralogix Helm repository.
 
@@ -1447,7 +1447,7 @@ To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`
 - Manual load balancer configuration
 
 !!! Note
-Ensure you configure sufficient replicas and appropriate resource requests/limits to handle the expected load. You'll also need to set up custom [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies.
+    Ensure you configure sufficient replicas and appropriate resource requests/limits to handle the expected load. You'll also need to set up custom [tail sampling processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) policies.
 
 **STEP 1**. Run the following commands to deploy the Central Collector Cluster.
 
