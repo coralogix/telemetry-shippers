@@ -161,10 +161,10 @@ The Coralogix EBPF Agent (`coralogix-ebpf-agent`) is an agent developed by Coral
 To enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
 Components:
+
 - `coralogix-ebpf-agent`. The agent that extracts network traffic as spans, running as a daemonset.
 - `k8s-watcher`. The agent that watches for changes in k8s resources and publishes them to redis pubsub for `coralogix-ebpf-agent` to consume. Running as a deployment with 1 replica.
 - `redis`. Redis Pubsub is used for communication between `k8s-watcher` and `coralogix-ebpf-agent`, running as an sts with 1 replica.
-
 
 ## Next Steps
 
@@ -189,6 +189,7 @@ kubectl get pods -o wide -n $NAMESPACE
 ```
 
 Look for:
+
 - **OpenTelemetry Cluster Collector** pods (named `coralogix-opentelemetry-collector-xxx`)
 - **Kube State Metrics** pods (named `otel-integration-kube-state-metrics-xxx`)
 
@@ -247,7 +248,6 @@ Utilizing [OpenTelemetry](https://coralogix.com/docs/opentelemetry/getting-start
 
 !!! Note  
     If you have previously installed the Coralogix Exporter or [Kubernetes Infrastructure Monitoring](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-infrastructure-monitoring/), they must be **removed** before proceeding with this integration.
-
 
 ### Secret key
 
@@ -313,7 +313,6 @@ Click **NEXT**.
 **STEP 11.** Mark the checkbox to confirm you have run the Helm command. Click **COMPLETE**.
 
 ![Coralogix Kubernetes Complete Observability](./static/Untitled-25.png)
-
 
 ### Code-based installation
 
@@ -686,12 +685,11 @@ presets:
 
 **Validation** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/validation/).
 
-
 ## Additional resources
+
 | | |
 | --- | --- |
 | Documentation | [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites)<br/>[Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) |
-
 
 [//]: # (/split)
 
@@ -727,6 +725,7 @@ global:
 ```
 
 Configure these values:
+
 - `domain`: Specify your [OpenTelemetry endpoint](https://coralogix.com/docs/integrations/coralogix-endpoints/) for the **domain** associated with your Coralogix account.
 - `clusterName`: A required identifier for your cluster
 
@@ -1041,6 +1040,7 @@ The last two presets collect important host information to enrich the catalog. T
 ```
 
 !!! note
+
 - The `hostMetrics` process preset is detailed in the Agent presets section above.
 - It is recommended to use the `hostMetric` preset only on agent collectors. Applying this preset to other collector types may result in duplicate host metrics.
 
@@ -1091,6 +1091,7 @@ helm upgrade --install otel-integration coralogix-charts-virtual/otel-integratio
 GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 
 Notable important differences from regular `otel-integration` are:
+
 - Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
 - Kubernetes Dashboard does not work, due to missing Host Metrics.
 - Host networking and host ports are not available, users need to send tracing spans through Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally running agents.
@@ -1152,10 +1153,10 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 **Validation** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/validation/).
 
 ## Additional resources
+
 | | |
 | --- | --- |
 | Documentation | [GitHub Repository](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#prerequisites) |
-
 
 [//]: # (/split)
 
@@ -1413,6 +1414,7 @@ Head sampling is a feature that allows you to sample traces at the collection po
 When used in combination with tail sampling, head sampling is applied first at the agent level. The sampled traces are then forwarded to the tail sampling collectors, where additional sampling decisions can be made. This means that tail sampling will only see and process the traces that have already passed through head sampling.
 
 The sampling configuration:
+
 - Creates a new 'traces/sampled' pipeline in addition to the main traces pipeline
 - Applies probabilistic sampling based on the configured percentage
 - Supports different sampling modes:
@@ -1442,6 +1444,7 @@ This deployment creates two key components:
 - `opentelemetry-gateway`. Performs tail sampling decisions on the received span data before forwarding to Coralogix
 
 To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`, expose it using one of these methods:
+
 - Service of type LoadBalancer
 - Ingress object configuration
 - Manual load balancer configuration
@@ -1518,6 +1521,7 @@ receivers:
 ```
 
 ## Additional resources
+
 |  |  |
 | --- | --- |
 | Documentation | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](https://coralogix.com/docs/opentelemetry/tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/) |
@@ -1528,6 +1532,7 @@ receivers:
 [//]: # (split title="Target Allocator and Prometheus Operator with OpenTelemetry" path="kubernetes-observability/target-allocator-and-prometheus-operator-with-opentelemetry/index.md")
 
 # Target Allocator and Prometheus Operator with OpenTelemetry
+
 ## Overview
 
 Targets are endpoints that supply metrics via the Prometheus data model. For the Prometheus Receiver to scrape them, they can be statically configured via the `static_configs` parameters or dynamically discovered using one of the supported service discovery mechanisms.
@@ -1777,11 +1782,12 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 [//]: # (/split)
 
 [//]: # (split title="Troubleshooting" path="kubernetes-observability/troubleshooting/index.md")
+
 # Troubleshooting
 
 ## Limits & quotas
 
-- Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](https://coralogix.com/docs/integrations/coralogix-endpoints/, with a **recommendation of 2MB**.
+- Coralogix places a **hard limit of 10MB** of data to our [**OpenTelemetry Endpoints**](https://coralogix.com/docs/integrations/coralogix-endpoints/), with a **recommendation of 2MB**.
 - Metric names must be a maximum of 255 characters.
 - Attribute keys for metric data must be a maximum of 255 characters.
 
@@ -1904,6 +1910,7 @@ service:
 ## Filtering and reducing metric cost
 
 otel-integration has a couple of ways you can reduce the metric cost. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
+
 - container.id
 - k8s.pod.uid
 - k8s.replicaset.uid
@@ -2040,10 +2047,12 @@ The metrics collection has to be enabled by setting the `metrics.enabled` to `tr
 Each MySQL instance is configured in the `metrics.instances` section. You can configure multiple instances, if you have more than one instance you'd like to monitor.
 
 Required instance settings:
+
 - `username`: The username of the database user that will be used to collect metrics.
 - `password`: The password of the database user that will be used to collect metrics. We strongly recommend to provide this via a Kuberetes secret as an environment variable, e.g `MYSQL_PASSWORD`, which should be provided in the `extraEnv` section of the chart. This parameter should be passed in format `${env:MYSQL_PASSWORD}` in order for the collector to be able to read it.
 
 Optional instance settings:
+
 - `port`: The port of the MySQL instance. Defaults to `3306`. Unless you use non-standard port, there is no need to set this parameter.
 - `labelSelectors`: A list of label selectors to select the pods that run the MySQL instances. If you wish to monitor mutiple instance, the selectors will determine which pods belong to a given instance.
 
@@ -2058,10 +2067,12 @@ kubectl patch sts <YOUR_MYSQL_INSTANCE_NAME> -p '{"spec": {"template":{"metadata
 ```
 
 Required settings:
+
 - `volumeMountName`: specifies the name of the volume mount. It should correspond to the volume name of the MySQL data volume.
 - `mountPath`: specifies the path at which to mount the volume. This should correspond the mount path of your MySQL data volume. Provide this parameter without trailing slash.
 
 Optional settings:
+
 - `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory, such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
 - `logFilesExtension`: specifies which file extensions to watch for. Defaults to `.log`.
 
@@ -2239,7 +2250,7 @@ opentelemetry-agent:
 
 - Double-escape all special characters to match the GoLang standard patterns.
 
-``` 
+```
 \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s\\[\\w+\\]\\s\\w+\\s
 AND
 \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z\\s\\w+\\s
