@@ -1186,7 +1186,7 @@ Also, as shown above, the default allocation strategy is `per node` to align wit
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration --render-subchart-notes -n <namespace> -f values.yaml
 ```
 
-![](./static/target-allocator-pods.png)
+![Target Allocator Pods](./static/target-allocator-pods.png)
 
 ## Troubleshooting
 
@@ -1202,9 +1202,9 @@ kubectl port-forward -n <namespace> svc/coralogix-opentelemetry-targetallocator 
 
 You can browse or curl the `/jobs` and `/scrape_configs` endpoints for the detected PodMonitor & ServiceMonitor resources and the generated scrape configs.
 
-![](./static/target-allocator-jobs.png)
+![Target Allocator Jobs](./static/target-allocator-jobs.png)
 
-![](./static/target-allocator-scrape-configs.png)
+![Target Allocator Scrape Configs](./static/target-allocator-scrape-configs.png)
 
 The generated `kubernetes_sd_configs` is a common configuration syntax for discovering and scraping Kubernetes targets in Prometheus.
 
