@@ -243,7 +243,7 @@ Configure these values:
 
 You can also copy additional configurations from the repository [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file.
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > If you want to override array values such as `extraEnvs`, `extraVolumes`, or `extraVolumeMounts`, note that Helm doesn't support array merging. Instead, arrays [are nulled out](https://github.com/helm/helm/issues/3486). If you need to customize these arrays, first copy the existing values from the provided [`values.yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file.
 
@@ -319,7 +319,7 @@ opentelemetry-agent:
   mode: daemonset
 ```
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > If there are nodes without a running OpenTelemetry Agent pod, the hosted pods of applications may be missing metadata attributes (e.g. node info and host name) in the telemetry sent.
 
@@ -420,7 +420,7 @@ receivers:
 
 ```
 
-> [!IMPORTANT]
+> [!NOTE]
 > - `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
 > - The agent is also preconfigured to collect data from `jaeger`.
 
@@ -449,7 +449,7 @@ processors:
 
 ```
 
-> [!IMPORTANT]
+> [!NOTE]
 > - The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
 > - More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
 
@@ -463,7 +463,7 @@ opentelemetry-cluster-collector:
   mode: deployment
 ```
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > The cluster collector operates as a `deployment` workload with a minimal replica of 1 to avoid duplication of telemetry data.
 
@@ -554,7 +554,7 @@ The last two presets collect important host information to enrich the catalog. T
       enabled: true
 ```
 
-> [!IMPORTANT]
+> [!NOTE]
 > - The `hostMetrics` process preset is detailed in the Agent presets section above.
 > - It is recommended to use the `hostMetric` preset only on agent collectors. Applying this preset to other collector types may result in duplicate host metrics.
 
@@ -699,7 +699,7 @@ To ensure optimal performance:
 - Set resource requests and limits to handle the expected load
 - Define custom [tail sampling policies](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) to control which spans are collected.
 
-> [!IMPORTANT]
+> [!NOTE]
 > - When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
 > - When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
 
@@ -1298,7 +1298,7 @@ Additionally, [k8sattributes processor](https://github.com/open-telemetry/opente
 
 [Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) is used to scrape Kubernetes API Server and [Kubelet cAdvisor](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/) endpoints for display in the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > OpenTelemetry metrics are converted to Prometheus format following the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/compatibility/prometheus_and_openmetrics/#otlp-metric-points-to-prometheus)
 
