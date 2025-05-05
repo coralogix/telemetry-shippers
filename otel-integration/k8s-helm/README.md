@@ -333,7 +333,7 @@ For more information on presets, refer to the documentation in [values.yaml](htt
 # example
 opentelemetry-agent:
 ...
-  presets:
+   presets:
     # LogsCollection preset enables a configured filelog receiver to read all containers' logged console output (/var/log/pods/*/*/*.log).
     logsCollection:
       enabled: true
