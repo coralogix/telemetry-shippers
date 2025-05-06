@@ -106,7 +106,6 @@ Utilizing [OpenTelemetry](https://coralogix.com/docs/opentelemetry/getting-start
 > [!NOTE]
 > If you have previously installed the Coralogix Exporter or [Kubernetes Infrastructure Monitoring](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-infrastructure-monitoring/), they must be **removed** before proceeding with this integration.
 
-
 ### Secret key
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
