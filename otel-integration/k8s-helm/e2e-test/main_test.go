@@ -224,6 +224,8 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesService
 	case "processorhelper":
 		compareMap = expectedResourceAttributesProcessorhelper
+	case "spanmetricsconnector":
+		compareMap = expectedResourceAttributesSpanmetricsconnector
 	default:
 		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	}
@@ -238,7 +240,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		}
 		require.True(t, ok, "metrics: unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
-			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v", k)
+			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v - scopeName: %s", k, scopeName)
 		}
 		return true
 	})
