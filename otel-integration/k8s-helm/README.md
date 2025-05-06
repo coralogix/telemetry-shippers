@@ -137,9 +137,41 @@ type: Opaque
 
 ### UI-based installation
 
-For UI-based installation check [Kubernetes Complete Observability](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
+**STEP 1.** In your Coralogix toolbar, navigate to **Data Flow** > **Integrations**.
 
-### Helm based installation
+**STEP 2.** From the Integrations section, select **Kubernetes Complete Observability**.
+
+![Coralogix Kubernetes Complete Observability](./static/Untitled-20.png)
+
+**STEP 3.** On the Coralogix OpenTelemetry Collector integration page, click **\+ SETUP COLLECTOR**.
+
+![Coralogix Kubernetes Complete Observability](./static/Untitled-21.png)
+
+**STEP 4.** Enter a name for your integration.
+
+**STEP 5.** Enter one of your [Send-Your-Data API keys](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) or click **CREATE NEW KEY** to generate a new dedicated API key.
+
+![Coralogix Kubernetes Complete Observability](./static/Untitled-22.png)
+
+**STEP 6.** Click **NEXT**.
+
+**STEP 7.** Check the Helm version by using the `helm version` command. You are required to use Helm v3.9 or above.
+
+**STEP 8.** Add the Coralogix Helm repository to your Helm configuration by copying and running the command.
+
+Run the command `helm repo update` to update Helm's local repository cache.
+
+Click **NEXT**.
+
+**STEP 9.** OpenTelemetry Agent requires a secret called `coralogix-keys` with the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) obtained in **STEP 5**. It is defined as `PRIVATE_KEY` inside the same namespace in which the chart is installed. If the secret is not present, create it by copying and running the command shown in the installer.
+
+**STEP 10.** Copy and run the `helm upgrade` command shown in the installer. Make sure you replace the `<cluster name>` with your Kubernetes cluster name.
+
+**STEP 11.** Mark the checkbox to confirm you have run the Helm command. Click **COMPLETE**.
+
+![Coralogix Kubernetes Complete Observability](./static/Untitled-25.png)
+
+### Code-based installation
 
 **STEP 1**. First, make sure to add our Helm charts repository to the local repos list with the following command:
 
