@@ -56,6 +56,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
+	logsConsumer := new(consumertest.LogsSink)
 	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
@@ -80,6 +81,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	waitForMetrics(t, 20, metricsConsumer)
 	waitForTraces(t, 20, tracesConsumer)
+	waitForLogs(t, 20, logsConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)

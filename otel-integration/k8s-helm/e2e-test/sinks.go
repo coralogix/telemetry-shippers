@@ -81,3 +81,13 @@ func waitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
 	}, timeout, 1*time.Second, "failed to receive %d entries in %s",
 		entriesNum, timeout)
 }
+
+func waitForLogs(t *testing.T, entriesNum int, lc *consumertest.LogsSink) {
+	timeout := 5 * time.Minute // 5 minutes
+	require.Eventuallyf(t, func() bool {
+		count := len(lc.AllLogs())
+		t.Logf("Waiting for logs: got %d/%d", count, entriesNum)
+		return count >= entriesNum
+	}, timeout, 1*time.Second, "failed to receive %d entries in %s",
+		entriesNum, timeout)
+}
