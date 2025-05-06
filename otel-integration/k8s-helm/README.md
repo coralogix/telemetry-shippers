@@ -96,18 +96,22 @@ Coralogix's **Kubernetes Complete Observability** provides a comprehensive solut
 
 View all of your nodes, pods and cluster metrics, pod logs, Kubernetes events, and your distributed traces pipeline. Take advantage of our Kubernetes Dashboard using our pre-configured OpenTelemetry Collector.
 
-Utilizing OpenTelemetry, we ensure seamless and automated data collection from various components of your stack. This enables you to monitor infrastructure health and gain insights into application behavior and inter-service dependencies. Troubleshoot issues, optimize performance and manage your cluster more effectively with a 360-degree view of your Kubernetes ecosystem.
+Utilizing [OpenTelemetry](https://coralogix.com/docs/opentelemetry/getting-started/), we ensure seamless and automated data collection from various components of your stack. This enables you to monitor infrastructure health and gain insights into application behavior and inter-service dependencies. Troubleshoot issues, optimize performance and manage your cluster more effectively with a 360-degree view of your Kubernetes ecosystem.
 
 ## Prerequisites
 
 - [Kubernetes](https://kubernetes.io/) (v1.24+) installed
-- [Helm](https://helm.sh/) (v3.9+) installed and configured
+- [Helm](https://helm.sh/) (v3.9+) installed and configured
+
+> [!NOTE]
+> If you have previously installed the Coralogix Exporter or [Kubernetes Infrastructure Monitoring](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-infrastructure-monitoring/), they must be **removed** before proceeding with this integration.
+
 
 ### Secret key
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
 
-The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/ under the secret key `PRIVATE_KEY`.
+The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) under the secret key `PRIVATE_KEY`.
 This secret must exist in the same namespace where the Helm chart is installed.
 
 To create the secret, run the following command:
@@ -1612,13 +1616,13 @@ Components:
 
 To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
-#### Filtering Specific Services For Coralogix EBPF Agent
+#### Filtering specific services for Coralogix EBPF Agent
 
 By default, the coralogix-ebpf-agent will collect traffic from all services in the cluster.
-but there are cases where you might want to filter specific services, or filter out specific services. you can use the
+However, there are cases where you might want to filter by specific services or filter out specific services. You can use the
 `coralogix-ebpf-agent.ebpf_agent.sampler` parameter in `values.yaml` to change the service filtering behavior.
 
-For example, collect only traffic coming from `carts-service` and `orders-service`:
+For example, to collect only traffic coming from `carts-service` and `orders-service`:
 
 ```yaml
 coralogix-ebpf-agent:
@@ -1629,7 +1633,7 @@ coralogix-ebpf-agent:
       services_filter_type: "Allow"
 ```
 
-In another example, a case of where we want get all services beside `currencyservice`
+Another example, where we want to get all services besides `currencyservice`:
 
 ```yaml
 coralogix-ebpf-agent:
@@ -1640,10 +1644,10 @@ coralogix-ebpf-agent:
       services_filter_type: "Deny"
 ```
 
-#### What Is Considered A Service By Coralogix EBPF Agent?
+#### What is considered a service by Coralogix EBPF Agent?
 
-A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
-the name of the service is the name of that owner resource.
+A service is defined by the top owner of the specific container that performed the network request, in most cases a Deployment, StatefulSet, DaemonSet, or CronJob.
+The name of the service is the name of that owner resource.
 
 #### Enabling Coralogix EBPF with existing OpenTelemetry Collector
 
@@ -2020,6 +2024,6 @@ Optional settings:
       mountPath: "/var/log/mysql"
 ```
 
-# Dependencies
+## Dependencies
 
 This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
