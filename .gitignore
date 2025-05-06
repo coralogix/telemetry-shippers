@@ -9,3 +9,4 @@ Chart.lock
 # Fluent-bit
 logs/fluent-bit/test/
 logs/fluent-bit/k8s-manifest/fluentbit-env-cm.yaml
+**/charts/
