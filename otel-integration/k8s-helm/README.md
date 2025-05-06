@@ -244,7 +244,7 @@ index.go:366: skipping loading invalid entry for chart "otel-integration" \<vers
 
 This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
 
-# Kubernetes complete observability: advanced configuration
+# Kubernetes Complete Observability: advanced configuration
 
 Coralogix provides [Kubernetes Observability using OpenTelemetry](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-observability-using-opentelemetry/) for comprehensive monitoring of your Kubernetes clusters and applications. This guide explains advanced configuration options for optimizing your Kubernetes observability setup.
 
@@ -1076,6 +1076,58 @@ Example:
 ```
 "msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
 ```
+
+# Validation
+
+Validate that you have enabled [Kubernetes Observability using OpenTelemetry](../kubernetes-observability-using-opentelemetry/index.md) and are sending cluster telemetry to Coralogix.
+
+**STEP 1**. Check that the cluster collector are running in your cluster.
+
+Search for pods in the deployed namespace with the following:
+
+``` bash
+kubectl get pods -o wide -n $NAMESPACE
+
+```
+
+**OpenTelemetry Cluster Collector** pods named `coralogix-opentelemetry-collector-xxx` and **Kube State Metrics** pods named `otel-integration-kube-state-metrics-xxx` should appear with `Running` status.
+
+![OpenTelemetry Cluster Collector pods](./static/cluster-collector-pods.png)
+
+**STEP 2**. Install the **Kubernetes OpenTelemetry** [extension packages](../../../user-guides/getting-started/packages-and-extensions/extension-packages/index.md) in your Coralogix account by navigating to **Data Flow** > **Extensions** in your toolbar. Use this to hit the ground running with predefined alerts, parsing rules, dashboards, saved views, and actions.
+
+- Open the **Kubernetes OpenTelemetry** extension with the latest version.
+
+- Select **Applications** and **Subsystems** for all related Kubernetes telemetry or select **All** for both.
+
+- Click **+** **Deploy.**
+
+![Kubernetes OpenTelemetry extension](./static/kubernetes-otel-extension.png)
+
+**STEP 3**. The **Kubernetes OpenTelemetry** extension includes a set of Grafana K8s Otel dashboards when installed. It is a useful way to determine if the metrics being exported to Coralogix are satisfactory for your [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) setup.
+
+- In the [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md), select **I’ve Installed OpenTelemetry**. Click **→ GO**.
+
+![Kubernetes Dashboard - getting started](./static/Kubernetes-Dashboard-Getting-Started-1024x705.png)
+
+- If all the metrics and labels are present, the **Kubernetes Dashboard** is opened. If there are missing metrics or labels, a screen appears detailing the missing metrics and/or labels.
+
+![Kubernetes Dashboard - missing metrics](./static/Kubernetes-Dashboard-Missing-Metrics-1024x673.png)
+
+- Provide any missing metrics or labels.
+
+- Click **DONE, RELOAD MY DATA →** to continue to the **Kubernetes Dashboard**.
+
+![Kubernetes Dashboard - validation complete](./static/kubernetes-dashboard-validation-complete.png)
+
+## Next Steps
+
+Troubleshoot your configuration [here](../troubleshooting/index.md).
+
+## Additional Resources
+| | |
+| --- | --- |
+| Documentation | [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) |
 
 # Tail Sampling with OpenTelemetry using Kubernetes
 
@@ -2037,3 +2089,4 @@ Optional settings:
 ## Dependencies
 
 This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
+
