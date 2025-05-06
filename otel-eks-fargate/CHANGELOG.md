@@ -3,7 +3,7 @@
 ## OpenTelemetry EKS-Fargate
 
 ### v0.0.4 / 2025-05-06
-* [FEAT] Add k8sattributes proccesor 
+* [FEAT] Add k8sattributes proccesor
 
 ### v0.0.3 / 2024-10-21
 * [FIX] Add OTLP HTTP receiver
