@@ -22,7 +22,7 @@ spec:
       containers:
         - name: fluent-bit
           image: "coralogixrepo/coralogix-fluent-bit-multiarch:v3.2.10"
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           env:
             - name: HOSTNAME
               valueFrom:
@@ -59,27 +59,9 @@ spec:
               cpu: 100m
               memory: 250Mi
           volumeMounts:
-            - mountPath: /fluent-bit/etc/fluent-bit.conf
+            - mountPath: /fluent-bit/etc/fluent-bit.yaml
               name: config
-              subPath: fluent-bit.conf
-            - mountPath: /fluent-bit/etc/custom_parsers.conf
-              name: config
-              subPath: custom_parsers.conf
-            - name: config
-              mountPath: /fluent-bit/etc/filters-systemd.conf
-              subPath: filters-systemd.conf
-            - name: config
-              mountPath: /fluent-bit/etc/input-systemd.conf
-              subPath: input-systemd.conf
-            - name: config
-              mountPath: /fluent-bit/etc/output-systemd.conf
-              subPath: output-systemd.conf
-            - name: config
-              mountPath: /fluent-bit/etc/input-fluentbit-metrics.conf
-              subPath: input-fluentbit-metrics.conf
-            - name: config
-              mountPath: /fluent-bit/etc/output-fluentbit-metrics.conf
-              subPath: output-fluentbit-metrics.conf
+              subPath: fluent-bit.yaml
             - mountPath: /var/log
               name: varlog
             - mountPath: /var/lib/docker/containers

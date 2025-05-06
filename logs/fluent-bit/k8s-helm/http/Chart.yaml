@@ -1,7 +1,7 @@
 apiVersion: v2
 name: fluent-bit-http
 description: Fluent-Bit Chart with HTTP output plugin
-version: 3.2.10
+version: 3.2.10-1
 appVersion: 3.2.10
 keywords:
   - Fluent-Bit
