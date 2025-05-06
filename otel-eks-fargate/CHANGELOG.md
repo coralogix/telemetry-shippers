@@ -15,4 +15,3 @@
 
 * [NEW] Added EKS Fargate related configuration files
 * [DOC] Documented EKS Fargate OTEL integration
- 
