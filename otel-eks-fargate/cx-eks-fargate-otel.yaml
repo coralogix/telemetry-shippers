@@ -149,7 +149,35 @@ data:
         detectors: [env, system, eks]
         system:
           hostname_sources: ["os"]
-
+      # add kubernetes metadata
+      k8sattributes:
+        extract:
+          metadata:
+          - k8s.namespace.name
+          - k8s.replicaset.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.pod.name
+          - k8s.node.name
+        passthrough: false
+        pod_association:
+          - sources:
+            - from: connection
+          - sources:
+            - from: resource_attribute
+              name: k8s.pod.ip
+          - sources:
+            - from: resource_attribute
+              name: k8s.pod.uid
+          - sources:
+            - from: resource_attribute
+              name: k8s.job.name
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 25
       batch:
         timeout: 60s
 
@@ -185,19 +213,19 @@ data:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [resource/metadata, resourcedetection, batch]
+          processors: [memory_limiter, resource/metadata, resourcedetection, k8sattributes, batch]
           exporters: [coralogix]
         metrics/otlp:
           receivers: [otlp]
-          processors: [resource/metadata, resourcedetection, batch]
+          processors: [memory_limiter, resource/metadata, resourcedetection, k8sattributes, batch]
           exporters: [coralogix]
         metrics/self:
           receivers: [prometheus/self]
-          processors: [resource/metadata, resourcedetection, batch]
+          processors: [memory_limiter, resource/metadata, resourcedetection, batch]
           exporters: [prometheusremotewrite]
         metrics/kubeletstats:
           receivers: [receiver_creator]
-          processors: [resource/metadata, resourcedetection, batch]
+          processors: [memory_limiter, resource/metadata, resourcedetection, batch]
           exporters: [coralogix]
     
       # When enabling the fleet management feature, add the "opamp" extension to the list below. 
