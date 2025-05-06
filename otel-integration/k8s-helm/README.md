@@ -667,6 +667,381 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 **Validation** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/validation/).
 
+## How to use it
+
+### Metrics
+
+Please refer to the following documentation for the full list of metrics and their labels, collected from various sources:
+
+- [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md)
+- [Kubelet Stats Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/metadata.yaml)
+- [Host Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver)
+
+Additionally, [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) and [resource detection processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) are used to add more metadata labels.
+
+[Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) is used to scrape Kubernetes API Server and [Kubelet cAdvisor](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/) endpoints for display in the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
+
+> [!NOTE]
+>
+> OpenTelemetry metrics are converted to Prometheus format following the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/compatibility/prometheus_and_openmetrics/#otlp-metric-points-to-prometheus)
+
+### Custom Metrics
+
+In addition to standard metrics, the OpenTelemetry Integration provides the following custom metrics:
+
+#### kube_pod_status_qos_class
+
+Provides information about the Pod QOS class.
+
+| Metric Type | Value | Labels |
+|-------------|-------|--------|
+| Gauge       | 1     | reason |
+
+#### kube_pod_status_reason
+
+Provides information about the Kubernetes Pod Status.
+
+| Metric Type | Value | Labels |
+|-------------|-------|--------|
+| Gauge       | 1     | reason |
+
+Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, UnexpectedAdmissionError
+
+#### kube_node_info
+
+Provides information about the Kubernetes Node.
+
+| Metric Type | Value | Labels              |
+|-------------|-------|---------------------|
+| Gauge       | 1     | k8s.kubelet.version |
+
+#### k8s.container.status.last_terminated_reason
+
+Provides information about Pod's last termination.
+
+| Metric Type | Value | Labels |
+|-------------|-------|--------|
+| Gauge       | 1     | reason |
+
+Example reason label keys: OOMKilled
+
+#### kubernetes_build_info
+
+Provides information about the Kubernetes version.
+
+#### Container Filesystem usage metrics
+
+- container_fs_writes_total
+- container_fs_reads_total
+- container_fs_writes_bytes_total
+- container_fs_reads_bytes_total
+- container_fs_usage_bytes
+
+#### CPU throttling metrics
+
+- container_cpu_cfs_periods_total
+- container_cpu_cfs_throttled_periods_total
+
+### Available Endpoints
+
+Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
+
+| Protocol              | Port  |
+|-----------------------|-------|
+| Zipkin                | 9411  |
+| Jaeger GRPC           | 6832  |
+| Jaeger Thrift binary  | 6832  |
+| Jaeger Thrift compact | 6831  |
+| Jaeger Thrift http    | 14268 |
+| OTLP GRPC             | 4317  |
+| OTLP HTTP             | 4318  |
+
+#### Example application environment configuration
+
+The following code creates a new environment variable (`NODE`) containing the node's IP address and then uses that IP in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable. This ensures that each instrumented pod will send data to the local OTEL collector on the node it is currently running on.
+
+```yaml
+  env:
+  - name: NODE
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://$(NODE):4317"
+```
+
+#### About global collection interval
+
+The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
+
+Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choice of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
+
+#### About batch sizing
+
+[Batch processor](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) ensures that the telemetry being sent to Coralogix backend is batched into bigger requests, ensuring lower networking overhead and better performance. The batching processor is enabled by default and we strongly recommend to use it. By default, the `otel-integration` chart uses the following recommended settings for batch processors in all collectors:
+
+```yaml
+    batch:
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+      timeout: "1s"
+```
+
+These settings imposes a hard limit of 2048 units (spans, metrics, logs) on the batch size, ensuring a balance between the recommended size of the batches and networking overhead.
+
+You may adjust these settings according to your needs, but when configuring the batch processor by yourself, it is important to be mindful of the size limites imposed by the Coraloigx endpoints (currently **max. 10 MB** after decompression - see [documentation](https://coralogix.com/docs/opentelemetry/#limits--quotas)).
+
+More information on how to configure the batch processor can be found [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor).
+
+#### About span metrics
+
+The collector provides a possibility to synthesize R.E.D (Request, Error, Duration) metrics based on the incoming span data. This can be useful to obtain extra metrics about the operations you have instrumented for tracing. For more information, please refer to the [OpenTelemetry Collector documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md).
+
+This feature is disabled by default and can be enabled by setting the `spanmetrics.enabled` value to `true` in the `values.yaml` file.
+
+Beware that enabling the feature will result in creation of additional metrics. Depending on how you instrument your applications, this can result in a significant increase in the number of metrics. This is especially true for cases where the span name includes specific values, such as user IDs or UUIDs. Such instrumentation practice is [strongly discouraged](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#span).
+
+In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
+
+```yaml
+spanNameReplacePattern: 
+- regex: "user-[0-9]+"
+  replacement: "user-{id}"
+```
+
+This will result in your spans having generalized name `user-{id}`.
+
+##### SpanMetrics Error Tracking
+
+Once you enable the Span Metrics preset, the errorTracking configuration will automatically be enabled.
+
+This is how you can disable the errorTracking option:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    errorTracking:
+      enabled: false
+```
+
+!!! Note
+`errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+
+```
+http.status_code => http.response.status_code
+```
+
+To do that, you can add the following configuration:
+
+```yaml
+presets:
+  spanMetrics:
+     enabled: true
+     transformStatements:
+     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+     errorTracking:
+       enabled: true
+```
+
+##### SpanMetrics Database Monitoring
+
+Once you enable the Span Metrics preset, the `dbMetrics`` configuration will automatically be enabled. It generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
+
+This is needed to enable the [Database Monitoring](https://coralogix.com/docs/user-guides/apm/features/database-monitoring/) feature inside Coralogix APM.
+
+This is how you can disable the `dbMetrics` option:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    dbMetrics:
+      enabled: false
+```
+
+The `dbMetrics` also support transform statements that will apply only to database traces. Here's how you can use it:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    dbMetrics:
+      enabled: true
+      transformStatements:
+      - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
+      - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
+```
+
+##### Note on Semantic Conventions for old OTEL SDKs
+
+The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
+
+```
+db.sql.table => db.collection.name
+db.mongodb.collection => db.collection.name
+db.cosmosdb.container => db.collection.name
+db.cassandra.table => db.collection.name
+```
+
+To do that, you can add the configuration below. It will take care of defining the `transform/spanmetrics` processor with those transform statements and adding it to the end of the `traces` pipeline, just before batching. This ensures that the transformations are applied to all spans before they are routed to the `spanmetrics` or `forward/db` connectors, putting all the spans on the same semantic convention.
+
+> [!IMPORTANT]
+> Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
+
+```yaml
+    spanMetrics:
+      enabled: true
+      transformStatements:
+      - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+      - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
+      dbMetrics:
+        enabled: true
+```
+
+##### Span metrics with different buckets per application
+
+If you want to use Span Metrics connector with different buckets per application you need to use `spanMetricsMulti` preset. For example:
+
+```yaml
+  presets:
+    spanMetricsMulti:
+      enabled: false
+      defaultHistogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      configs:
+        - selector: route() where attributes["service.name"] == "one"
+          histogramBuckets: [1s, 2s]
+        - selector: route() where attributes["service.name"] == "two"
+          histogramBuckets: [5s, 10s]
+```
+
+For selector you need to write a [OTTL](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) statement, more information is available in [routing connector docs](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector).
+
+#### Multi-line log configuration
+
+This helm chart supports multi-line configurations for different namespace, pod, and/or container names. The following example configuration applies a specific firstEntryRegex for a container which is part of a x Pod in y namespace:
+
+```yaml
+  presets:
+    logsCollection:
+      enabled: true
+      multilineConfigs:
+        - namespaceName:
+            value: kube-system
+          podName:
+            value: app-a.*
+            useRegex: true
+          containerName:
+            value: http
+          firstEntryRegex: ^[^\s].*
+          combineWith: ""
+        - namespaceName:
+            value: kube-system
+          podName:
+            value: app-b.*
+            useRegex: true
+          containerName:
+            value: http
+          firstEntryRegex: ^[^\s].*
+          combineWith: ""
+        - namespaceName:
+            value: default
+          firstEntryRegex: ^[^\s].*
+          combineWith: ""
+
+```
+
+This feature uses [filelog receiver's](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/filelogreceiver/README.md) [router](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/router.md) and [recombine](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/recombine.md) operators.
+
+Alternatively, you can add a recombine filter at the end of log collection operators using `extraFilelogOperators` field. The following example adds a single recombine operator for all Kubernetes logs:
+
+```yaml
+  presets:
+    logsCollection:
+      enabled: true
+      extraFilelogOperators:
+        - type: recombine
+          combine_field: body
+          source_identifier: attributes["log.file.path"]
+          is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
+```
+
+#### Integrating Kube State Metrics
+
+You can configure otel-integration to collect Kube State Metrics metrics. Using Kube State Metrics is useful when missing metrics or labels in the Kubernetes Cluster Receiver. Kube State Metrics collects Kubernetes cluster-level metrics that are crucial for monitoring resource states, like pods, deployments, and HorizontalPodAutoscalers (HPAs). To integrate with Kube State Metrics, create a file called `values-ksm.yaml`, and there configure the metrics and labels that you wish to collect:
+
+```yaml
+metricAllowlist:
+  - kube_horizontalpodautoscaler_labels
+  - kube_horizontalpodautoscaler_spec_max_replicas
+  - kube_horizontalpodautoscaler_status_current_replicas
+  - kube_pod_info
+  - kube_pod_labels
+  - kube_pod_container_status_waiting
+  - kube_pod_container_status_waiting_reason
+metricLabelsAllowlist:
+  - pods=[app,environment]
+  - horizontalpodautoscalers=[app,environment]
+```
+
+Then install Kube State Metrics:
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm install kube-state-metrics prometheus-community/kube-state-metrics --values values-ksm.yaml
+```
+
+This command adds the Prometheus community's Helm repository and installs Kube State Metrics using the values you've configured.
+
+Next, configure opentelemetry-cluster-collector to scrape Kube State Metrics via Prometheus receiver.
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration . --values values-cluster-ksm.yaml
+```
+
+Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
+
+#### Connecting to Coralogix fleet management
+
+The integration connects to the Coralogix fleet management server through fleetManagement preset. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is enabled by default. You can disable it by setting the `presets.fleetManagement.enabled` property to `false`.
+
+> [!NOTE]
+> Important security considerations when enabling this feature:
+> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
+> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
+> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
+
+To enable this feature, set the `presets.fleetManagement.enabled` property to `true`. Here is an example `values.yaml`:
+
+```yaml
+presets:
+  fleetManagement:
+    enabled: true
+```
+
+##### Known errors
+
+When running on Windows, you might see the "failed getting host info" error. This is expected behavior because the collector attempts to retrieve Windows metadata from the Windows Registry, which is only possible when running from HostProcess Windows containers. This error has no negative impact on the functionality of the Collector or OpAMP in any way.
+
+Example:
+
+```
+"msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
+```
+
 # Tail Sampling with OpenTelemetry using Kubernetes
 
 This tutorial demonstrates how to configure a Kubernetes cluster, deploy OpenTelemetry to collect logs, metrics, and traces, and enable trace sampling. We will cover an example of enabling a tail sample for the Opentelemetry Demo Application and a more precise example using the small trace-generating application.
@@ -1287,381 +1662,6 @@ helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogi
 
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration  \
   --render-subchart-notes -f values-ebpf-profiler.yaml \  
-```
-
-# How to use it
-
-## Metrics
-
-Please refer to the following documentation for the full list of metrics and their labels, collected from various sources:
-
-- [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver/documentation.md)
-- [Kubelet Stats Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/metadata.yaml)
-- [Host Metrics Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver)
-
-Additionally, [k8sattributes processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/k8sattributesprocessor) and [resource detection processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor) are used to add more metadata labels.
-
-[Prometheus receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) is used to scrape Kubernetes API Server and [Kubelet cAdvisor](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/) endpoints for display in the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
-
-> [!NOTE]
->
-> OpenTelemetry metrics are converted to Prometheus format following the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/compatibility/prometheus_and_openmetrics/#otlp-metric-points-to-prometheus)
-
-## Custom Metrics
-
-In addition to standard metrics, the OpenTelemetry Integration provides the following custom metrics:
-
-### kube_pod_status_qos_class
-
-Provides information about the Pod QOS class.
-
-| Metric Type | Value | Labels |
-|-------------|-------|--------|
-| Gauge       | 1     | reason |
-
-### kube_pod_status_reason
-
-Provides information about the Kubernetes Pod Status.
-
-| Metric Type | Value | Labels |
-|-------------|-------|--------|
-| Gauge       | 1     | reason |
-
-Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, UnexpectedAdmissionError
-
-### kube_node_info
-
-Provides information about the Kubernetes Node.
-
-| Metric Type | Value | Labels              |
-|-------------|-------|---------------------|
-| Gauge       | 1     | k8s.kubelet.version |
-
-### k8s.container.status.last_terminated_reason
-
-Provides information about Pod's last termination.
-
-| Metric Type | Value | Labels |
-|-------------|-------|--------|
-| Gauge       | 1     | reason |
-
-Example reason label keys: OOMKilled
-
-### kubernetes_build_info
-
-Provides information about the Kubernetes version.
-
-### Container Filesystem usage metrics
-
-- container_fs_writes_total
-- container_fs_reads_total
-- container_fs_writes_bytes_total
-- container_fs_reads_bytes_total
-- container_fs_usage_bytes
-
-### CPU throttling metrics
-
-- container_cpu_cfs_periods_total
-- container_cpu_cfs_throttled_periods_total
-
-## Available Endpoints
-
-Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
-
-| Protocol              | Port  |
-|-----------------------|-------|
-| Zipkin                | 9411  |
-| Jaeger GRPC           | 6832  |
-| Jaeger Thrift binary  | 6832  |
-| Jaeger Thrift compact | 6831  |
-| Jaeger Thrift http    | 14268 |
-| OTLP GRPC             | 4317  |
-| OTLP HTTP             | 4318  |
-
-### Example application environment configuration
-
-The following code creates a new environment variable (`NODE`) containing the node's IP address and then uses that IP in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable. This ensures that each instrumented pod will send data to the local OTEL collector on the node it is currently running on.
-
-```yaml
-  env:
-  - name: NODE
-    valueFrom:
-      fieldRef:
-        fieldPath: status.hostIP
-  - name: OTEL_EXPORTER_OTLP_ENDPOINT
-    value: "http://$(NODE):4317"
-```
-
-### About global collection interval
-
-The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
-
-Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choice of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
-
-### About batch sizing
-
-[Batch processor](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) ensures that the telemetry being sent to Coralogix backend is batched into bigger requests, ensuring lower networking overhead and better performance. The batching processor is enabled by default and we strongly recommend to use it. By default, the `otel-integration` chart uses the following recommended settings for batch processors in all collectors:
-
-```yaml
-    batch:
-      send_batch_size: 1024
-      send_batch_max_size: 2048
-      timeout: "1s"
-```
-
-These settings imposes a hard limit of 2048 units (spans, metrics, logs) on the batch size, ensuring a balance between the recommended size of the batches and networking overhead.
-
-You may adjust these settings according to your needs, but when configuring the batch processor by yourself, it is important to be mindful of the size limites imposed by the Coraloigx endpoints (currently **max. 10 MB** after decompression - see [documentation](https://coralogix.com/docs/opentelemetry/#limits--quotas)).
-
-More information on how to configure the batch processor can be found [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor).
-
-### About span metrics
-
-The collector provides a possibility to synthesize R.E.D (Request, Error, Duration) metrics based on the incoming span data. This can be useful to obtain extra metrics about the operations you have instrumented for tracing. For more information, please refer to the [OpenTelemetry Collector documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md).
-
-This feature is disabled by default and can be enabled by setting the `spanmetrics.enabled` value to `true` in the `values.yaml` file.
-
-Beware that enabling the feature will result in creation of additional metrics. Depending on how you instrument your applications, this can result in a significant increase in the number of metrics. This is especially true for cases where the span name includes specific values, such as user IDs or UUIDs. Such instrumentation practice is [strongly discouraged](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#span).
-
-In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
-
-```yaml
-spanNameReplacePattern: 
-- regex: "user-[0-9]+"
-  replacement: "user-{id}"
-```
-
-This will result in your spans having generalized name `user-{id}`.
-
-#### SpanMetrics Error Tracking
-
-Once you enable the Span Metrics preset, the errorTracking configuration will automatically be enabled.
-
-This is how you can disable the errorTracking option:
-
-```yaml
-presets:
-  spanMetrics:
-    enabled: true
-    errorTracking:
-      enabled: false
-```
-
-!!! Note
-`errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
-
-```
-http.status_code => http.response.status_code
-```
-
-To do that, you can add the following configuration:
-
-```yaml
-presets:
-  spanMetrics:
-     enabled: true
-     transformStatements:
-     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
-     errorTracking:
-       enabled: true
-```
-
-#### SpanMetrics Database Monitoring
-
-Once you enable the Span Metrics preset, the `dbMetrics`` configuration will automatically be enabled. It generates RED (Request, Errors, Duration) metrics for database spans. For example, query `db_calls_total` to view generated request metrics.
-
-This is needed to enable the [Database Monitoring](https://coralogix.com/docs/user-guides/apm/features/database-monitoring/) feature inside Coralogix APM.
-
-This is how you can disable the `dbMetrics` option:
-
-```yaml
-presets:
-  spanMetrics:
-    enabled: true
-    dbMetrics:
-      enabled: false
-```
-
-The `dbMetrics` also support transform statements that will apply only to database traces. Here's how you can use it:
-
-```yaml
-presets:
-  spanMetrics:
-    enabled: true
-    dbMetrics:
-      enabled: true
-      transformStatements:
-      - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
-      - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
-```
-
-##### Note on Semantic Conventions for old OTEL SDKs
-
-The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
-
-```
-db.sql.table => db.collection.name
-db.mongodb.collection => db.collection.name
-db.cosmosdb.container => db.collection.name
-db.cassandra.table => db.collection.name
-```
-
-To do that, you can add the configuration below. It will take care of defining the `transform/spanmetrics` processor with those transform statements and adding it to the end of the `traces` pipeline, just before batching. This ensures that the transformations are applied to all spans before they are routed to the `spanmetrics` or `forward/db` connectors, putting all the spans on the same semantic convention.
-
-> [!IMPORTANT]
-> Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
-
-```yaml
-    spanMetrics:
-      enabled: true
-      transformStatements:
-      - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
-      - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
-      - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
-      - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
-      - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
-      - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
-      - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
-      - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
-      dbMetrics:
-        enabled: true
-```
-
-#### Span metrics with different buckets per application
-
-If you want to use Span Metrics connector with different buckets per application you need to use `spanMetricsMulti` preset. For example:
-
-```yaml
-  presets:
-    spanMetricsMulti:
-      enabled: false
-      defaultHistogramBuckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
-      configs:
-        - selector: route() where attributes["service.name"] == "one"
-          histogramBuckets: [1s, 2s]
-        - selector: route() where attributes["service.name"] == "two"
-          histogramBuckets: [5s, 10s]
-```
-
-For selector you need to write a [OTTL](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/README.md) statement, more information is available in [routing connector docs](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector).
-
-### Multi-line log configuration
-
-This helm chart supports multi-line configurations for different namespace, pod, and/or container names. The following example configuration applies a specific firstEntryRegex for a container which is part of a x Pod in y namespace:
-
-```yaml
-  presets:
-    logsCollection:
-      enabled: true
-      multilineConfigs:
-        - namespaceName:
-            value: kube-system
-          podName:
-            value: app-a.*
-            useRegex: true
-          containerName:
-            value: http
-          firstEntryRegex: ^[^\s].*
-          combineWith: ""
-        - namespaceName:
-            value: kube-system
-          podName:
-            value: app-b.*
-            useRegex: true
-          containerName:
-            value: http
-          firstEntryRegex: ^[^\s].*
-          combineWith: ""
-        - namespaceName:
-            value: default
-          firstEntryRegex: ^[^\s].*
-          combineWith: ""
-
-```
-
-This feature uses [filelog receiver's](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/filelogreceiver/README.md) [router](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/router.md) and [recombine](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/recombine.md) operators.
-
-Alternatively, you can add a recombine filter at the end of log collection operators using `extraFilelogOperators` field. The following example adds a single recombine operator for all Kubernetes logs:
-
-```yaml
-  presets:
-    logsCollection:
-      enabled: true
-      extraFilelogOperators:
-        - type: recombine
-          combine_field: body
-          source_identifier: attributes["log.file.path"]
-          is_first_entry: body matches "^(YOUR-LOGS-REGEX)"
-```
-
-### Integrating Kube State Metrics
-
-You can configure otel-integration to collect Kube State Metrics metrics. Using Kube State Metrics is useful when missing metrics or labels in the Kubernetes Cluster Receiver. Kube State Metrics collects Kubernetes cluster-level metrics that are crucial for monitoring resource states, like pods, deployments, and HorizontalPodAutoscalers (HPAs). To integrate with Kube State Metrics, create a file called `values-ksm.yaml`, and there configure the metrics and labels that you wish to collect:
-
-```yaml
-metricAllowlist:
-  - kube_horizontalpodautoscaler_labels
-  - kube_horizontalpodautoscaler_spec_max_replicas
-  - kube_horizontalpodautoscaler_status_current_replicas
-  - kube_pod_info
-  - kube_pod_labels
-  - kube_pod_container_status_waiting
-  - kube_pod_container_status_waiting_reason
-metricLabelsAllowlist:
-  - pods=[app,environment]
-  - horizontalpodautoscalers=[app,environment]
-```
-
-Then install Kube State Metrics:
-
-```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-
-helm install kube-state-metrics prometheus-community/kube-state-metrics --values values-ksm.yaml
-```
-
-This command adds the Prometheus community's Helm repository and installs Kube State Metrics using the values you've configured.
-
-Next, configure opentelemetry-cluster-collector to scrape Kube State Metrics via Prometheus receiver.
-
-```bash
-helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration . --values values-cluster-ksm.yaml
-```
-
-Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
-
-### Connecting to Coralogix fleet management
-
-The integration connects to the Coralogix fleet management server through fleetManagement preset. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is enabled by default. You can disable it by setting the `presets.fleetManagement.enabled` property to `false`.
-
-> [!NOTE]
-> Important security considerations when enabling this feature:
-> - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
-> - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
-> - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
-
-To enable this feature, set the `presets.fleetManagement.enabled` property to `true`. Here is an example `values.yaml`:
-
-```yaml
-presets:
-  fleetManagement:
-    enabled: true
-```
-
-#### Known errors
-
-When running on Windows, you might see the "failed getting host info" error. This is expected behavior because the collector attempts to retrieve Windows metadata from the Windows Registry, which is only possible when running from HostProcess Windows containers. This error has no negative impact on the functionality of the Collector or OpAMP in any way.
-
-Example:
-
-```
-"msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
 ```
 
 # Troubleshooting
