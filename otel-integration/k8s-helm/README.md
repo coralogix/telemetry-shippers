@@ -1284,6 +1284,16 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-ebpf-profiler.yaml \  
 ```
 
+## Coralogix Operator
+
+The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provides Kubernetes-native deployment
+and management for Coralogix, designed to simplify and automate the configuration of Coralogix APIs through
+Kubernetes custom resources definitions and controllers.
+
+### Enabling Coralogix Operator
+
+To enable the Coralogix Operator, set `coralogix-operator.enabled` to `true` in the `values.yaml` file.
+
 # How to use it
 
 ## Metrics

@@ -44,6 +44,11 @@ dependencies:
     version: "0.0.5"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts
     condition: coralogix-ebpf-profiler.enabled
+  - name: coralogix-operator
+    alias: coralogix-operator
+    version: "0.4.2"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: coralogix-operator.enabled
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:

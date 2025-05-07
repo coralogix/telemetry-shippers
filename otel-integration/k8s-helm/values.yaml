@@ -1310,3 +1310,28 @@ coralogix-ebpf-profiler:
 #    name: ""
 #    value: 1000000000
 #  tolerations: []
+
+coralogix-operator:
+  enabled: false
+#  secret:
+#    create: true
+#    secretKeyReference: {}
+#    data:
+#      apiKey: ""
+#  deployment:
+#    replicas: 1
+#  serviceMonitor:
+#    create: true
+#  validatingWebhookConfiguration:
+#    create: true
+#  certificate:
+#    create: true
+#  issuer:
+#    create: true
+#  coralogixOperator:
+#    webhooks:
+#      enabled: true
+#    region: ""
+#    domain: ""
+#    labelSelector: {}
+#    namespaceSelector: {}
