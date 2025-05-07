@@ -1099,7 +1099,7 @@ Validate that you have enabled [Kubernetes Observability using OpenTelemetry](..
 
 Search for pods in the deployed namespace with the following:
 
-``` bash
+```bash
 kubectl get pods -o wide -n $NAMESPACE
 
 ```
@@ -1139,8 +1139,9 @@ kubectl get pods -o wide -n $NAMESPACE
 Troubleshoot your configuration [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/troubleshooting/).
 
 ## Additional resources
-| | |
-| --- | --- |
+
+|               |                                                                                                                         |
+|---------------|-------------------------------------------------------------------------------------------------------------------------|
 | Documentation | [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) |
 
 <!-- /split -->
@@ -2130,14 +2131,14 @@ Check out these **frequently asked questions** regarding [Kubernetes Observabili
 
 **STEP 2**. Update the chart repository listing, assuming the OpenTelemetry Integration chart is named `otel-integration`.
 
-``` bash
+```bash
 helm repo update coralogix
 
 ```
 
 **STEP 3**. Compare the latest chart version with the Helm installed chart version.
 
-``` bash
+```bash
 helm search repo coralogix | grep otel-integration
 helm list -n $NAMESPACE
 
@@ -2145,7 +2146,7 @@ helm list -n $NAMESPACE
 
 **STEP 4**. Upgrade to the latest with the following command:
 
-``` bash
+```bash
 helm upgrade otel-integration coralogix/otel-integration -f values.yaml -n $NAMESPACE
 
 ```
@@ -2197,7 +2198,7 @@ opentelemetry-agent:
 
 In the case of multi-line logs, a single logical log entry may exist in multiple lines, resulting in multiple log records by default. The [OpenTelemetry Integration Helm Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm) includes a commented section in the [values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml) file to address this issue. Navigate to `presets` > `logsCollection` > `extraFilelogOperators`.
 
-``` yaml
+```yaml
 presets:
     metadata:
       enabled: true
@@ -2221,7 +2222,7 @@ Uncomment the example with the [recombine](https://github.com/open-telemetry/ope
 
 A working example of a values.yaml file can be seen below:
 
-``` yaml
+```yaml
 global:
   domain: "eu2.coralogix.com"
   clusterName: "coralogix-cluster"
@@ -2241,7 +2242,7 @@ opentelemetry-agent:
 > [!NOTE]
 > - The example uses two different regex patterns to identify the start of log entries
 > - All special characters must be double-escaped to match GoLang standard patterns
-> 
+>
 > ```
 > \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s\\[\\w+\\]\\s\\w+\\s
 > AND
@@ -2252,7 +2253,7 @@ opentelemetry-agent:
 
 Coralogix recommends the default otel-integration chart settings for [batch processors](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor) in all collectors:
 
-``` yaml
+```yaml
   batch:
     send_batch_size: 1024
     send_batch_max_size: 2048
