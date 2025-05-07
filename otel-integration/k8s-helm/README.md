@@ -1,4 +1,6 @@
-# Kubernetes observability using OpenTelemetry
+<!-- split title="Kubernetes Observability using OpenTelemetry" path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md" -->
+
+# Kubernetes Observability using OpenTelemetry
 
 Coralogix offers **Kubernetes Observability using OpenTelemetry** for comprehensive Kubernetes and application observability. Using our **OpenTelemetry Chart**, the integration enables you to simplify the collection of logs, metrics, and traces from the running application in your pods to the cluster-level components of your Kubernetes cluster, while enabling our [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
 
@@ -82,11 +84,15 @@ The OpenTelemetry Integration chart enables the collection of essential metrics 
 
 If collecting these metrics is not required, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
 
-## Next Steps
+## Next steps
 
 View our **basic configuration** instructions [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
 
 **Advanced configuration** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/).
+
+<!-- /split -->
+
+<!-- split title="Kubernetes Complete Observability: basic configuration" path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md" -->
 
 # Kubernetes Complete Observability: basic configuration
 
@@ -243,6 +249,10 @@ index.go:366: skipping loading invalid entry for chart "otel-integration" \<vers
 ```
 
 This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
+
+<!-- /split -->
+
+<!-- split title="Kubernetes Complete Observability: advanced configuration" path="kubernetes-observability/advanced-configuration/index.md" -->
 
 # Kubernetes Complete Observability: advanced configuration
 
@@ -1077,6 +1087,10 @@ Example:
 "msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
 ```
 
+<!-- /split -->
+
+<!-- split title="Validation" path="kubernetes-observability/validation/index.md" -->
+
 # Validation
 
 Validate that you have enabled [Kubernetes Observability using OpenTelemetry](../kubernetes-observability-using-opentelemetry/index.md) and are sending cluster telemetry to Coralogix.
@@ -1120,14 +1134,18 @@ kubectl get pods -o wide -n $NAMESPACE
 
 ![Kubernetes Dashboard - validation complete](./static/kubernetes-dashboard-validation-complete.png)
 
-## Next Steps
+## Next steps
 
-Troubleshoot your configuration [here](../troubleshooting/index.md).
+Troubleshoot your configuration [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/troubleshooting/).
 
-## Additional Resources
+## Additional resources
 | | |
 | --- | --- |
 | Documentation | [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) |
+
+<!-- /split -->
+
+<!-- split title="Tail Sampling with OpenTelemetry using Kubernetes" path="kubernetes-observability/tail-sampling-with-opentelemetry-using-kubernetes/index.md" -->
 
 # Tail Sampling with OpenTelemetry using Kubernetes
 
@@ -1489,12 +1507,16 @@ receivers:
         max_recv_msg_size_mib: 20
 ```
 
-### Additional Resources
+### Additional resources
 
 |                    |                                                                                                                                                                        |
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Documentation      | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](https://coralogix.com/docs/opentelemetry/tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/) |
 | OTLP Configuration | [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md)                                     |
+
+<!-- /split -->
+
+<!-- split title="Target Allocator and Prometheus Operator with OpenTelemetry" path="kubernetes-observability/target-allocator-and-prometheus-operator-with-opentelemetry/index.md" -->
 
 # Target Allocator and Prometheus Operator with OpenTelemetry
 
@@ -1750,6 +1772,10 @@ helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogi
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration  \
   --render-subchart-notes -f values-ebpf-profiler.yaml \  
 ```
+
+<!-- /split -->
+
+<!-- split title="Troubleshooting" path="kubernetes-observability/troubleshooting/index.md" -->
 
 # Troubleshooting
 
@@ -2090,6 +2116,9 @@ Optional settings:
 
 This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
 
+<!-- /split -->
+
+<!-- split title="FAQ" path="kubernetes-observability/faqs/index.md" -->
 
 # FAQ
 
@@ -2237,3 +2266,5 @@ These settings impose a hard limit of 2048 units (spans, metrics, logs) on the b
 While you can adjust these settings to suit your requirements, considering the size limits enforced by Coralogix endpoints, [currently set to a max of 10 MB after decompression](https://coralogix.com/docs/integrations/coralogix-endpoints/#limits-quotas), is essential.
 
 Find out more [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor) about configuring your batch processor.
+
+<!-- /split -->
