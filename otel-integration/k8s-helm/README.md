@@ -1118,7 +1118,7 @@ kubectl get pods -o wide -n $NAMESPACE
 
 ![Kubernetes OpenTelemetry extension](./static/kubernetes-otel-extension.png)
 
-**STEP 3**. The **Kubernetes OpenTelemetry** extension includes a set of Grafana K8s Otel dashboards when installed. It is a useful way to determine if the metrics being exported to Coralogix are satisfactory for your [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md) setup.
+**STEP 3**. Verify your Kubernetes telemetry data in the Coralogix Kubernetes Dashboard:
 
 - In the [Kubernetes Dashboard](../../../user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/index.md), select **I’ve Installed OpenTelemetry**. Click **→ GO**.
 
