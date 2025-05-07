@@ -4,6 +4,9 @@ cache:
   type: 'SQLite'
 
 validators: 
+  # Ignore all GitHub links since they are rate-limited.
+  - regex: '(^http[s]?:\/\/)(www\.)?(github\.com\/).*'
+    type: 'ignore'
   # Ignore links to pr Labels.
   - regex: '(^http[s]?:\/\/)(www\.)?(github\.com\/)coralogix\/telemetry-shippers(\/issues.*)'
     type: 'ignore'
