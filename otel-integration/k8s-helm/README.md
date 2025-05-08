@@ -1,4 +1,4 @@
-<!-- split title="Kubernetes Observability using OpenTelemetry" path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md" -->
+<!-- split path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md" -->
 
 # Kubernetes Observability using OpenTelemetry
 
@@ -92,7 +92,7 @@ View our **basic configuration** instructions [here](https://coralogix.com/docs/
 
 <!-- /split -->
 
-<!-- split title="Kubernetes Complete Observability: basic configuration" path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md" -->
+<!-- split path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md" -->
 
 # Kubernetes Complete Observability: basic configuration
 
@@ -252,7 +252,7 @@ This is a known validation bug in Helm (see this [issue](https://github.com/helm
 
 <!-- /split -->
 
-<!-- split title="Kubernetes Complete Observability: advanced configuration" path="kubernetes-observability/advanced-configuration/index.md" -->
+<!-- split path="kubernetes-observability/advanced-configuration/index.md" -->
 
 # Kubernetes Complete Observability: advanced configuration
 
@@ -1089,7 +1089,7 @@ Example:
 
 <!-- /split -->
 
-<!-- split title="Validation" path="kubernetes-observability/validation/index.md" -->
+<!-- split path="kubernetes-observability/validation/index.md" -->
 
 # Validation
 
@@ -1146,7 +1146,7 @@ Troubleshoot your configuration [here](https://coralogix.com/docs/opentelemetry/
 
 <!-- /split -->
 
-<!-- split title="Tail Sampling with OpenTelemetry using Kubernetes" path="kubernetes-observability/tail-sampling-with-opentelemetry-using-kubernetes/index.md" -->
+<!-- split path="kubernetes-observability/tail-sampling-with-opentelemetry-using-kubernetes/index.md" -->
 
 # Tail Sampling with OpenTelemetry using Kubernetes
 
@@ -1517,7 +1517,7 @@ receivers:
 
 <!-- /split -->
 
-<!-- split title="Target Allocator and Prometheus Operator with OpenTelemetry" path="kubernetes-observability/target-allocator-and-prometheus-operator-with-opentelemetry/index.md" -->
+<!-- split path="kubernetes-observability/target-allocator-and-prometheus-operator-with-opentelemetry/index.md" -->
 
 # Target Allocator and Prometheus Operator with OpenTelemetry
 
@@ -1776,7 +1776,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 <!-- /split -->
 
-<!-- split title="Troubleshooting" path="kubernetes-observability/troubleshooting/index.md" -->
+<!-- split path="kubernetes-observability/troubleshooting/index.md" -->
 
 # Troubleshooting
 
@@ -2119,7 +2119,7 @@ This chart uses [openetelemetry-collector](https://github.com/coralogix/opentele
 
 <!-- /split -->
 
-<!-- split title="FAQ" path="kubernetes-observability/faqs/index.md" -->
+<!-- split path="kubernetes-observability/faqs/index.md" -->
 
 # FAQ
 
