@@ -6,6 +6,7 @@
 - [Fix] Fix target allocator namespace.
 - [Fix] Fix rendering of securityContext and podSecurityContext for Collector CRD.
 - [Feat] Add collectorMetrics preset to collect collector's own metrics using Prometheus receiver
+- [Feat] Add E2E test for the OTEL Operator
 
 ### v0.0.170 / 2025-04-25
 - [Feat] Update Collector to v0.124.1
