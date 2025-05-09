@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.171 / 2025-05-09
+- [Fix] Fix target allocator namespace.
+- [Fix] Fix rendering of securityContext and podSecurityContext for Collector CRD.
+- [Feat] Add collectorMetrics preset to collect collector's own metrics using Prometheus receiver
+
 ### v0.0.170 / 2025-04-25
 - [Feat] Update Collector to v0.124.1
 - [Breaking] We are moving to ghcr image registry instead of dockerhub, as OTel doesn't use dockerhub due to rate limits. Ref https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.123.1
