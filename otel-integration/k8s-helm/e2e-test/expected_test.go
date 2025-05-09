@@ -402,6 +402,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_otelsvc_k8s_pod_added_ratio":             false,
 	"otelcol_otelsvc_k8s_pod_table_size_ratio":        false,
 	"otelcol_otelsvc_k8s_pod_updated_ratio":           false,
+	"otelcol_otelsvc_k8s_pod_deleted_ratio":           false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
