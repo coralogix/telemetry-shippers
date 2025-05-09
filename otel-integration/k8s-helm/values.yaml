@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.170"
+  version: "0.0.171"
 
   extensions:
     kubernetesDashboard:
@@ -253,6 +253,14 @@ opentelemetry-agent:
       percentage: 10
       # Sampling mode - "proportional", "equalizing", "hash_seed"
       mode: "proportional"
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
   config:
     extensions:
       zpages:
@@ -306,20 +314,6 @@ opentelemetry-agent:
         detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -385,14 +379,12 @@ opentelemetry-agent:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
             - batch
           receivers:
             - otlp
-            - prometheus
             - statsd
         traces:
           exporters:
@@ -508,7 +500,14 @@ opentelemetry-cluster-collector:
     # Enables Kubernetes Resource collection for for resource catalog
     kubernetesResources:
       enabled: true
-
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
   command:
     name: otelcol-contrib
 
@@ -605,20 +604,6 @@ opentelemetry-cluster-collector:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       resource/kube-events:
         attributes:
           - key: service.name
@@ -752,7 +737,6 @@ opentelemetry-cluster-collector:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - metricstransform/k8s-dashboard
             - transform/k8s-dashboard
@@ -761,7 +745,6 @@ opentelemetry-cluster-collector:
             - batch
           receivers:
             - otlp
-            - prometheus
   tolerations:
     - operator: Exists
 
@@ -888,6 +871,14 @@ opentelemetry-gateway:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
   command:
     name: otelcol-contrib
 
@@ -961,29 +952,7 @@ opentelemetry-gateway:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
       otlp:
         protocols:
           grpc:
@@ -1003,14 +972,11 @@ opentelemetry-gateway:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
             - batch
-          receivers:
-            - prometheus
         traces:
           exporters:
             - coralogix
@@ -1080,6 +1046,14 @@ opentelemetry-receiver:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
   command:
     name: otelcol-contrib
 
@@ -1153,29 +1127,7 @@ opentelemetry-receiver:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
       otlp:
         protocols:
           grpc:
@@ -1195,15 +1147,11 @@ opentelemetry-receiver:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
             - batch
-          receivers:
-            - prometheus
-
         metrics:
           exporters:
             - coralogix
