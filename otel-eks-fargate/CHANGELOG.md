@@ -2,6 +2,9 @@
 
 ## OpenTelemetry EKS-Fargate
 
+### v0.0.5 / 2025-05-14
+* [FIX] Remove overwrite of k8s.node.name attribute
+
 ### v0.0.4 / 2025-05-06
 * [FEAT] Add k8sattributes proccesor
 

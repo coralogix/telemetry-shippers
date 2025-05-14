@@ -140,9 +140,6 @@ data:
           - key: "k8s.cluster.name"
             value: "${env:K8S_CLUSTER_NAME}"
             action: upsert
-          - key: "k8s.node.name"
-            value: "${env:K8S_NODE_NAME}"
-            action: upsert
     
       # add EKS metadata
       resourcedetection:
