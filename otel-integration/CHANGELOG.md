@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.172 / 2025-05-15
+- [Feat] Update Collector to v0.125.0
+- [Fix] Configure `kubeletstatsreceiver` to enable network metrics collection from all available interfaces on Node level
+
 ### v0.0.171 / 2025-05-09
 - [Fix] Fix target allocator namespace.
 - [Fix] Fix rendering of securityContext and podSecurityContext for Collector CRD.
