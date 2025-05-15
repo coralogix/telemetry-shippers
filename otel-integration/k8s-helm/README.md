@@ -830,25 +830,25 @@ presets:
     errorTracking:
       enabled: false
 ```
+> [!NOTE]
+> `errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+> 
+> ```
+> http.status_code => http.response.status_code
+> ```
+> 
+> To do that, you can add the following configuration:
+> 
+> ```yaml
+> presets:
+>   spanMetrics:
+>      enabled: true
+>      transformStatements:
+>      - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+>      errorTracking:
+>        enabled: true
+> ```
 
-!!! Note
-`errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
-
-```
-http.status_code => http.response.status_code
-```
-
-To do that, you can add the following configuration:
-
-```yaml
-presets:
-  spanMetrics:
-     enabled: true
-     transformStatements:
-     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
-     errorTracking:
-       enabled: true
-```
 
 ##### SpanMetrics Database Monitoring
 
