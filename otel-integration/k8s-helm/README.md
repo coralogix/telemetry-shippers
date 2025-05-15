@@ -830,6 +830,7 @@ presets:
     errorTracking:
       enabled: false
 ```
+
 > [!NOTE]
 > `errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
 > 
@@ -1921,15 +1922,6 @@ processors:
 ```
 
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
-
-## Dashboards
-
-Under the `dashboard` directory, there are:
-
-- Host Metrics Dashboard
-- Kubernetes Pod Dashboard
-- Span Metrics Dashboard
-- OTel-Agent Grafana dashboard
 
 ## Integration presets
 
