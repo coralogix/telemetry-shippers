@@ -295,7 +295,7 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 
 var expectedMetrics map[string]bool = map[string]bool{
 	"container.cpu.time":                              false,
-	"container.cpu.usage":                             false,
+	"container.cpu.utilization":                       false,
 	"container.filesystem.available":                  false,
 	"container.filesystem.capacity":                   false,
 	"container.filesystem.usage":                      false,
@@ -306,7 +306,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"container.memory.usage":                          false,
 	"container.memory.working_set":                    false,
 	"k8s.node.cpu.time":                               false,
-	"k8s.node.cpu.usage":                              false,
+	"k8s.node.cpu.utilization":                        false,
 	"k8s.node.filesystem.available":                   false,
 	"k8s.node.filesystem.capacity":                    false,
 	"k8s.node.filesystem.usage":                       false,
@@ -319,7 +319,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"k8s.node.network.errors":                         false,
 	"k8s.node.network.io":                             false,
 	"k8s.pod.cpu.time":                                false,
-	"k8s.pod.cpu.usage":                               false,
+	"k8s.pod.cpu.utilization":                         false,
 	"k8s.pod.filesystem.available":                    false,
 	"k8s.pod.filesystem.capacity":                     false,
 	"k8s.pod.filesystem.usage":                        false,
