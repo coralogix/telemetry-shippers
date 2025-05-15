@@ -778,7 +778,7 @@ The following code creates a new environment variable (`NODE`) containing the no
 
 #### About global collection interval
 
-The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
+The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
 
 Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choice of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
 
