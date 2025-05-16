@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.173 / 2025-05-16
+- [Chore] Remove unnecessary config form values.yaml
+
 ### v0.0.172 / 2025-05-15
 - [Feat] Update Collector to v0.125.0
 - [Fix] Configure `kubeletstatsreceiver` to enable network metrics collection from all available interfaces on Node level
