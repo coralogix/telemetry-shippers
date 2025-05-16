@@ -2,6 +2,12 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.174 / 2025-05-16
+- [Chore] Remove unnecessary config form values.yaml
+- [Feat] Move to jaegerReceiver preset instead of configuring jaeger ports and receivers directly
+- [Feat] Move to zipkinReceiver preset instead of configuring zipkin ports and receivers directly
+- [Feat] Move to resourceDetection preset instead of configuring resourcedetection manually.
+
 ### v0.0.173 / 2025-05-16
 - [Chore] Remove unnecessary config form values.yaml
 
