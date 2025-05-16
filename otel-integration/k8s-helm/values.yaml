@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.173"
+  version: "0.0.174"
 
   extensions:
     kubernetesDashboard:
@@ -17,23 +17,8 @@ opentelemetry-agent:
   enabled: true
   mode: daemonset
   fullnameOverride: coralogix-opentelemetry
-  extraVolumes:
-    - name: etcmachineid
-      hostPath:
-        path: /etc/machine-id
-    - name: varlibdbusmachineid
-      hostPath:
-        path: /var/lib/dbus/machine-id
-
-  extraVolumeMounts:
-    - mountPath: /etc/machine-id
-      mountPropagation: HostToContainer
-      name: etcmachineid
-      readOnly: true
-    - mountPath: /var/lib/dbus/machine-id
-      mountPropagation: HostToContainer
-      name: varlibdbusmachineid
-      readOnly: true
+  # extraVolumes: []
+  # extraVolumeMounts: []
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -95,17 +80,14 @@ opentelemetry-agent:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
       tag: v0.124.0
 
-  command:
-    name: otelcol-contrib
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: ""
+  # serviceAccount:
+  #   # Specifies whether a service account should be created
+  #   create: true
+  #   # Annotations to add to the service account
+  #   annotations: {}
+  #   # The name of the service account to use.
+  #   # If not set and create is true, a name is generated using the fullname template
+  #   name: ""
   clusterRole:
     name: "coralogix-opentelemetry-agent"
     clusterRoleBinding:
@@ -175,17 +157,9 @@ opentelemetry-agent:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-      histogramBuckets:
-        [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
-      extraDimensions:
-        - name: http.method
-        - name: cgx.transaction
-        - name: cgx.transaction.root
-        - name: status_code
-        - name: db.namespace
-        - name: db.operation.name
-        - name: db.collection.name
-        - name: db.system
+      # histogramBuckets:
+      #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+
     #   transformStatements:
     #     - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
     #     - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
@@ -221,13 +195,8 @@ opentelemetry-agent:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-      extraDimensions:
-        - name: http.method
-        - name: cgx.transaction
-        - name: cgx.transaction.root
-        - name: status_code
-      defaultHistogramBuckets:
-        [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      # defaultHistogramBuckets:
+      #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
       configs: []
       #  - selector: route() where attributes["service.name"] == "one"
       #    histogramBuckets: [1s, 2s]
@@ -250,6 +219,7 @@ opentelemetry-agent:
     #   percentage: 10
     #   # Sampling mode - "proportional", "equalizing", "hash_seed"
     #   mode: "proportional"
+
     # Configures the collector to collect its own metrics using Prometheus receiver.
     # Adds the prometheus receiver to the metrics pipeline with a scrape config
     # targeting the collector's metrics endpoint.
@@ -258,6 +228,18 @@ opentelemetry-agent:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
+    # Configures the collector to receive Jaeger data in all supported protocols.
+    # Adds the jaeger receiver to the traces pipeline with all protocols configured.
+    jaegerReceiver:
+      enabled: true
+    # Configures the collector to receive Zipkin data.
+    # Adds the zipkin receiver to the traces pipeline.
+    zipkinReceiver:
+      enabled: false
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
   config:
     extensions:
       zpages:
@@ -274,35 +256,11 @@ opentelemetry-agent:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:14250
-          thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
-          thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
-          thrift_binary:
-            endpoint: ${env:MY_POD_IP}:6832
     processors:
       batch:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -369,8 +327,6 @@ opentelemetry-agent:
           processors:
             - memory_limiter
             - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
           receivers:
             - otlp
@@ -381,21 +337,15 @@ opentelemetry-agent:
           processors:
             - memory_limiter
             - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - transform/semconv
             - batch
           receivers:
             - otlp
-            - zipkin
-            - jaeger
         logs:
           exporters:
             - coralogix
           processors:
             - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
           receivers:
             - otlp
@@ -417,12 +367,6 @@ opentelemetry-agent:
       servicePort: 8125
       hostPort: 8125
       protocol: UDP
-    jaeger-binary:
-      enabled: true
-      containerPort: 6832
-      servicePort: 6832
-      hostPort: 6832
-      protocol: TCP
     # In order to enable podMonitor, following part must be enabled in order to expose the required port:
     # metrics:
     #   enabled: true
@@ -467,17 +411,10 @@ opentelemetry-cluster-collector:
       scrapeAll: false
     kubernetesAttributes:
       enabled: true
-    mysql:
-      metrics:
-        enabled: false
-        instances:
-          - username: ""
-            password: ""
-            port: 3306
-      extraLogs:
-        enabled: false
-        volumeMountName: ""
-        mountPath: ""
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
@@ -497,8 +434,6 @@ opentelemetry-cluster-collector:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-  command:
-    name: otelcol-contrib
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -654,15 +589,6 @@ opentelemetry-cluster-collector:
               - delete_key(attributes, "k8s.container.status.last_terminated_reason")
               - delete_key(attributes, "k8s.pod.qos_class")
               - delete_key(attributes, "k8s.kubelet.version")
-
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
       # Will get the k8s resource limits
       memory_limiter: null
 
@@ -720,8 +646,6 @@ opentelemetry-cluster-collector:
             - k8sattributes
             - metricstransform/k8s-dashboard
             - transform/k8s-dashboard
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
           receivers:
             - otlp
@@ -747,14 +671,6 @@ opentelemetry-cluster-collector:
     otlp:
       enabled: true
     otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
       enabled: false
     # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
     # metrics:
@@ -857,9 +773,10 @@ opentelemetry-gateway:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-  command:
-    name: otelcol-contrib
-
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
   config:
     extensions:
       zpages:
@@ -914,18 +831,6 @@ opentelemetry-gateway:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
       batch:
         send_batch_size: 1024
         send_batch_max_size: 2048
@@ -952,8 +857,6 @@ opentelemetry-gateway:
             - memory_limiter
             - k8sattributes
             - transform/k8s_attributes
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
         traces:
           exporters:
@@ -971,14 +874,6 @@ opentelemetry-gateway:
     otlp:
       enabled: true
     otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
       enabled: false
 
 opentelemetry-receiver:
@@ -1030,9 +925,6 @@ opentelemetry-receiver:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-  command:
-    name: otelcol-contrib
-
   config:
     extensions:
       zpages:
@@ -1159,14 +1051,6 @@ opentelemetry-receiver:
     otlp:
       enabled: true
     otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
       enabled: false
 
 coralogix-ebpf-agent:
