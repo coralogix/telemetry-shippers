@@ -361,7 +361,7 @@ receivers:
     collection_interval: 20s
     endpoint: ${K8S_NODE_NAME}:10250
     collect_all_network_interfaces:
-      pod: false
+      pod: true
       node: true
 ```
 
