@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.175 / 2025-05-19
+- [Fix] Fix utilization metric name and unit in `kubeletMetrics` preset to keep the metrics' backward compatibility for dashboards
+
 ### v0.0.174 / 2025-05-16
 - [Chore] Remove unnecessary config form values.yaml
 - [Feat] Move to jaegerReceiver preset instead of configuring jaeger ports and receivers directly
