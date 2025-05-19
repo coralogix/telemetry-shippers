@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.176 / 2025-05-19
+- [Feat] Update Collector to v0.126.0
+- [Update] `kubeletstatsreceiver`: set `collect_all_network_interfaces` on `pods`
+
 ### v0.0.175 / 2025-05-19
 - [Fix] Fix utilization metric name and unit in `kubeletMetrics` preset to keep the metrics' backward compatibility for dashboards
 
