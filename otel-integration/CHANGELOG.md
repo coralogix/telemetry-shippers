@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.177 / 2025-05-22
+- [Feat] Enable spanmetrics by default
+
 ### v0.0.176 / 2025-05-19
 - [Feat] Update Collector to v0.126.0
 - [Update] `kubeletstatsreceiver`: set `collect_all_network_interfaces` on `pods`
