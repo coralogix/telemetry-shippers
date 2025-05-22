@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.178 / 2025-05-22
+- [Feat] Update windows and target-allocator image
+
 ### v0.0.177 / 2025-05-22
 - [Feat] Enable spanmetrics by default
 

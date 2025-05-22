@@ -23,7 +23,7 @@ opentelemetry-agent-windows:
     repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.124.1-windows-2019-amd64"
+    tag: "0.126.0-windows-2019-amd64"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
 
