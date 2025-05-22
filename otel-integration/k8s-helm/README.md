@@ -1417,7 +1417,7 @@ More information on how to configure the batch processor can be found [here](htt
 
 The collector provides a possibility to synthesize R.E.D (Request, Error, Duration) metrics based on the incoming span data. This can be useful to obtain extra metrics about the operations you have instrumented for tracing. For more information, please refer to the [OpenTelemetry Collector documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md).
 
-This feature is disabled by default and can be enabled by setting the `spanmetrics.enabled` value to `true` in the `values.yaml` file.
+This feature is enabled by default and can be disabled by setting the `spanmetrics.enabled` value to `false` in the `values.yaml` file.
 
 Beware that enabling the feature will result in creation of additional metrics. Depending on how you instrument your applications, this can result in a significant increase in the number of metrics. This is especially true for cases where the span name includes specific values, such as user IDs or UUIDs. Such instrumentation practice is [strongly discouraged](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#span).
 
