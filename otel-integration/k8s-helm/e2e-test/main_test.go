@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	corev1 "k8s.io/api/core/v1"
@@ -73,14 +74,14 @@ func TestE2E_Agent(t *testing.T) {
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
 	logsConsumer := new(consumertest.LogsSink)
-	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer)
+	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer, logsConsumer)
 	defer shutdownSink()
 
 	testID := uuid.NewString()[:8]
 	createTeleOpts := &xk8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(testDataDir, "telemetrygen"),
 		TestID:       testID,
-		DataTypes:    []string{"traces"},
+		DataTypes:    []string{"traces", "logs"},
 	}
 
 	telemetryGenObjs, telemetryGenObjInfos := xk8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
@@ -101,6 +102,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
+	checkLogsAttributes(t, logsConsumer.AllLogs(), testID, testNs)
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -281,6 +283,84 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 		}
 	}
 	return nil
+}
+
+func checkLogsAttributes(t *testing.T, actual []plog.Logs, testID string, testNs string) error {
+	if len(actual) == 0 {
+		t.Fatal("logs: No logs received")
+	}
+
+	// Track if we found logs with entity event attributes
+	foundEntityEventLog := false
+
+	for _, current := range actual {
+		logs := plog.NewLogs()
+		current.CopyTo(logs)
+
+		for i := 0; i < logs.ResourceLogs().Len(); i++ {
+			rlogs := logs.ResourceLogs().At(i)
+
+			// Check for entity event logs in log records
+			for j := 0; j < rlogs.ScopeLogs().Len(); j++ {
+				scopeLogs := rlogs.ScopeLogs().At(j)
+				for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
+					logRecord := scopeLogs.LogRecords().At(k)
+
+					// Check if this log record has entity event attributes
+					if hasEntityEventAttributes(logRecord.Attributes()) {
+						foundEntityEventLog = true
+						t.Logf("Found entity event log with attributes")
+
+						// Verify required entity event attributes
+						checkEntityEventAttributes(t, logRecord.Attributes())
+					}
+				}
+			}
+		}
+	}
+
+	// Ensure we found at least one entity event log
+	require.True(t, foundEntityEventLog, "logs: No entity event logs found with required attributes")
+
+	return nil
+}
+
+// hasEntityEventAttributes checks if the log record contains entity event attributes
+func hasEntityEventAttributes(attrs pcommon.Map) bool {
+	eventType, hasEventType := attrs.Get("otel.entity.event.type")
+	entityType, hasEntityType := attrs.Get("otel.entity.type")
+
+	return hasEventType && hasEntityType &&
+		eventType.AsString() == "entity_state" &&
+		(entityType.AsString() == "host" || entityType.AsString() == "k8s.node" || entityType.AsString() == "k8s.pod")
+}
+
+// checkEntityEventAttributes verifies that required entity event attributes are present
+func checkEntityEventAttributes(t *testing.T, attrs pcommon.Map) {
+	// Check for required attributes using the expected list
+	for _, attrKey := range expectedEntityEventAttributes {
+		_, exists := attrs.Get(attrKey)
+		require.True(t, exists, "logs: entity event log missing required attribute: %s", attrKey)
+	}
+
+	// Verify specific attribute values
+	eventType, _ := attrs.Get("otel.entity.event.type")
+	require.Equal(t, "entity_state", eventType.AsString(), "logs: otel.entity.event.type should be 'entity_state'")
+
+	entityType, _ := attrs.Get("otel.entity.type")
+	require.Contains(t, validEntityTypes, entityType.AsString(), "logs: otel.entity.type should be one of %v", validEntityTypes)
+
+	interval, _ := attrs.Get("otel.entity.interval")
+	require.Greater(t, interval.Int(), int64(0), "logs: otel.entity.interval should be greater than 0")
+
+	// Log the found attributes for debugging
+	t.Logf("Entity event attributes found:")
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		if strings.HasPrefix(k, "otel.entity.") {
+			t.Logf("  %s: %v", k, v.AsRaw())
+		}
+		return true
+	})
 }
 
 func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) error {

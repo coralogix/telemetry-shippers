@@ -45,7 +45,7 @@ func newExpectedValue(mode expectedValueMode, value string) expectedValue {
 	}
 }
 
-func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
+func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink, lc *consumertest.LogsSink) func() {
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
 	cfg.HTTP = nil
@@ -53,12 +53,17 @@ func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 
 	_, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
 	require.NoError(t, err, "failed creating metrics receiver")
-	rcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
+	tracesRcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
 	require.NoError(t, err, "failed creating traces receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+	logsRcvr, err := f.CreateLogs(context.Background(), receivertest.NewNopSettings(), cfg, lc)
+	require.NoError(t, err, "failed creating logs receiver")
+
+	require.NoError(t, tracesRcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.NoError(t, logsRcvr.Start(context.Background(), componenttest.NewNopHost()))
 
 	return func() {
-		assert.NoError(t, rcvr.Shutdown(context.Background()))
+		assert.NoError(t, tracesRcvr.Shutdown(context.Background()))
+		assert.NoError(t, logsRcvr.Shutdown(context.Background()))
 	}
 }
 

@@ -510,3 +510,18 @@ func expectedTraces(testID string, testNs string) map[string]struct {
 		},
 	}
 }
+
+// Expected entity event attributes that should be present in log records
+var expectedEntityEventAttributes = []string{
+	"otel.entity.event.type",
+	"otel.entity.type",
+	"otel.entity.interval",
+	"otel.entity.id",
+}
+
+// Valid values for otel.entity.type
+var validEntityTypes = []string{
+	"host",
+	"k8s.node",
+	"k8s.pod",
+}
