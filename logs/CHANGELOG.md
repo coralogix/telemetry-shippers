@@ -56,6 +56,10 @@
 
 ## Fluent-Bit
 
+### v3.2.10-1 / 2025-5-6
+* [UPGRADE] Upgrade Fluentbit configuration to YAML in `k8s-manifests` and `k8s-helm`
+* [UPGRADE] Disable `ServiceMonitor` by default
+
 ### v3.2.10 / 2025-4-15
 * [REMOVE] Remove Coralogix plugin from Fluentbit image
 * [UPGRADE] Upgrade Fluentbit version to v3.2.10

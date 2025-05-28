@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.170"
+  version: "0.0.178"
 
   extensions:
     kubernetesDashboard:
@@ -17,23 +17,8 @@ opentelemetry-agent:
   enabled: true
   mode: daemonset
   fullnameOverride: coralogix-opentelemetry
-  extraVolumes:
-    - name: etcmachineid
-      hostPath:
-        path: /etc/machine-id
-    - name: varlibdbusmachineid
-      hostPath:
-        path: /var/lib/dbus/machine-id
-
-  extraVolumeMounts:
-    - mountPath: /etc/machine-id
-      mountPropagation: HostToContainer
-      name: etcmachineid
-      readOnly: true
-    - mountPath: /var/lib/dbus/machine-id
-      mountPropagation: HostToContainer
-      name: varlibdbusmachineid
-      readOnly: true
+  # extraVolumes: []
+  # extraVolumeMounts: []
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -93,31 +78,28 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.124.0
+      tag: v0.125.0
 
-  command:
-    name: otelcol-contrib
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: ""
+  # serviceAccount:
+  #   # Specifies whether a service account should be created
+  #   create: true
+  #   # Annotations to add to the service account
+  #   annotations: {}
+  #   # The name of the service account to use.
+  #   # If not set and create is true, a name is generated using the fullname template
+  #   name: ""
   clusterRole:
     name: "coralogix-opentelemetry-agent"
     clusterRoleBinding:
       name: "coralogix-opentelemetry-agent"
-  priorityClass:
-    # Specifies whether a priorityClass should be created.
-    create: false
-    # The name of the clusterRole to use.
-    # If not set a name is generated using the fullname template.
-    name: ""
-    # Sets the priority value of the priority class.
-    priorityValue: 1000000000
+  # priorityClass:
+  #   # Specifies whether a priorityClass should be created.
+  #   create: false
+  #   # The name of the clusterRole to use.
+  #   # If not set a name is generated using the fullname template.
+  #   name: ""
+  #   # Sets the priority value of the priority class.
+  #   priorityValue: 1000000000
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
 
@@ -172,65 +154,49 @@ opentelemetry-agent:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
     spanMetrics:
-      enabled: false
-      # transformStatements:
-      # - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
-      # - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
-      # - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
-      # - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
-      # - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
-      # - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
-      # - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
-      # Configures collector to add service.version to spanMetrics dimensions
-      serviceVersion:
-        enabled: true
-      errorTracking:
-        enabled: true
-      dbMetrics:
-        enabled: true
-        serviceVersion:
-          enabled: true
-        # extraDimensions:
-        #  - name: cgx.transaction
-        #  - name: cgx.transaction.root
-        # transformStatements:
-        # - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
-        # - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
-        # Configures collector to add service.version to spanMetrics dimensions
+      enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-      histogramBuckets:
-        [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
-      extraDimensions:
-        - name: http.method
-        - name: cgx.transaction
-        - name: cgx.transaction.root
-        - name: status_code
-        - name: db.namespace
-        - name: db.operation.name
-        - name: db.collection.name
-        - name: db.system
-      # Configures the collector to export span metrics with different histogram bucket options
-      # for different applications. Applications are selected and routed to different pipelines
-      # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
-      # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
+      # histogramBuckets:
+      #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+
+    #   transformStatements:
+    #     - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
+    #   transformStatements:
+    #     - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
+    #     - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
+    # Configures collector to add service.version to spanMetrics dimensions
+    #   serviceVersion:
+    #     enabled: true
+    #   errorTracking:
+    #     enabled: true
+    #   dbMetrics:
+    #     enabled: true
+    #     serviceVersion:
+    #       enabled: true
+
+    # Configures the collector to export span metrics with different histogram bucket options
+    # for different applications. Applications are selected and routed to different pipelines
+    # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
+    # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
     spanMetricsMulti:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-      extraDimensions:
-        - name: http.method
-        - name: cgx.transaction
-        - name: cgx.transaction.root
-        - name: status_code
-      defaultHistogramBuckets:
-        [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      # defaultHistogramBuckets:
+      #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
       configs: []
       #  - selector: route() where attributes["service.name"] == "one"
       #    histogramBuckets: [1s, 2s]
@@ -238,8 +204,8 @@ opentelemetry-agent:
       #    histogramBuckets: [5s, 10s]
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
-    reduceResourceAttributes:
-      enabled: false
+    # reduceResourceAttributes:
+    #   enabled: false
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: true
@@ -247,12 +213,33 @@ opentelemetry-agent:
     # Head sampling configuration for traces.
     # When enabled, this creates a separate pipeline for sampled traces using probabilistic sampler.
     # More info: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/probabilisticsamplerprocessor/README.md
-    headSampling:
+    # headSampling:
+    #   enabled: false
+    #   # Percentage of traces to sample (0-100)
+    #   percentage: 10
+    #   # Sampling mode - "proportional", "equalizing", "hash_seed"
+    #   mode: "proportional"
+
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    # Configures the collector to receive Jaeger data in all supported protocols.
+    # Adds the jaeger receiver to the traces pipeline with all protocols configured.
+    jaegerReceiver:
+      enabled: true
+    # Configures the collector to receive Zipkin data.
+    # Adds the zipkin receiver to the traces pipeline.
+    zipkinReceiver:
       enabled: false
-      # Percentage of traces to sample (0-100)
-      percentage: 10
-      # Sampling mode - "proportional", "equalizing", "hash_seed"
-      mode: "proportional"
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
   config:
     extensions:
       zpages:
@@ -269,57 +256,11 @@ opentelemetry-agent:
             endpoint: ${env:MY_POD_IP}:4317
           http:
             endpoint: ${env:MY_POD_IP}:4318
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:14250
-          thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
-          thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
-          thrift_binary:
-            endpoint: ${env:MY_POD_IP}:6832
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
     processors:
       batch:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -385,14 +326,10 @@ opentelemetry-agent:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
           receivers:
             - otlp
-            - prometheus
             - statsd
         traces:
           exporters:
@@ -400,21 +337,15 @@ opentelemetry-agent:
           processors:
             - memory_limiter
             - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - transform/semconv
             - batch
           receivers:
             - otlp
-            - zipkin
-            - jaeger
         logs:
           exporters:
             - coralogix
           processors:
             - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
           receivers:
             - otlp
@@ -436,12 +367,6 @@ opentelemetry-agent:
       servicePort: 8125
       hostPort: 8125
       protocol: UDP
-    jaeger-binary:
-      enabled: true
-      containerPort: 6832
-      servicePort: 6832
-      hostPort: 6832
-      protocol: TCP
     # In order to enable podMonitor, following part must be enabled in order to expose the required port:
     # metrics:
     #   enabled: true
@@ -486,17 +411,10 @@ opentelemetry-cluster-collector:
       scrapeAll: false
     kubernetesAttributes:
       enabled: true
-    mysql:
-      metrics:
-        enabled: false
-        instances:
-          - username: ""
-            password: ""
-            port: 3306
-      extraLogs:
-        enabled: false
-        volumeMountName: ""
-        mountPath: ""
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
@@ -508,9 +426,14 @@ opentelemetry-cluster-collector:
     # Enables Kubernetes Resource collection for for resource catalog
     kubernetesResources:
       enabled: true
-
-  command:
-    name: otelcol-contrib
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -579,15 +502,6 @@ opentelemetry-cluster-collector:
         metrics:
           k8s.pod.status_reason:
             enabled: true
-
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-infrastructure-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
     processors:
       batch:
         send_batch_size: 1024
@@ -605,20 +519,6 @@ opentelemetry-cluster-collector:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
       resource/kube-events:
         attributes:
           - key: service.name
@@ -689,15 +589,6 @@ opentelemetry-cluster-collector:
               - delete_key(attributes, "k8s.container.status.last_terminated_reason")
               - delete_key(attributes, "k8s.pod.qos_class")
               - delete_key(attributes, "k8s.kubelet.version")
-
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
       # Will get the k8s resource limits
       memory_limiter: null
 
@@ -752,16 +643,12 @@ opentelemetry-cluster-collector:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - metricstransform/k8s-dashboard
             - transform/k8s-dashboard
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
           receivers:
             - otlp
-            - prometheus
   tolerations:
     - operator: Exists
 
@@ -784,14 +671,6 @@ opentelemetry-cluster-collector:
     otlp:
       enabled: true
     otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
       enabled: false
     # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
     # metrics:
@@ -882,15 +761,22 @@ opentelemetry-gateway:
       enabled: true
       agentType: "gateway"
       clusterName: "{{.Values.global.clusterName}}"
-    kubernetesAttributes:
-      enabled: false
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-  command:
-    name: otelcol-contrib
-
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
   config:
     extensions:
       zpages:
@@ -945,45 +831,11 @@ opentelemetry-gateway:
             - "k8s.job.name"
             - "k8s.pod.name"
             - "k8s.node.name"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
       batch:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
       otlp:
         protocols:
           grpc:
@@ -1003,14 +855,9 @@ opentelemetry-gateway:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - transform/k8s_attributes
-            - resourcedetection/env
-            - resourcedetection/region
             - batch
-          receivers:
-            - prometheus
         traces:
           exporters:
             - coralogix
@@ -1027,14 +874,6 @@ opentelemetry-gateway:
     otlp:
       enabled: true
     otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
       enabled: false
 
 opentelemetry-receiver:
@@ -1074,15 +913,18 @@ opentelemetry-receiver:
       enabled: true
       agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
-    kubernetesAttributes:
-      enabled: false
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-  command:
-    name: otelcol-contrib
-
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
   config:
     extensions:
       zpages:
@@ -1153,29 +995,7 @@ opentelemetry-receiver:
         send_batch_size: 1024
         send_batch_max_size: 2048
         timeout: "1s"
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: metric
-            statements:
-              - replace_pattern(name, "_total$", "")
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "service_name") where attributes["service.name"] == "opentelemetry-collector"
-          - context: datapoint
-            statements:
-              - delete_key(attributes, "service_name") where resource.attributes["service.name"] == "opentelemetry-collector"
-              - delete_key(attributes, "otel_scope_name") where attributes["service.name"] == "opentelemetry-collector"
     receivers:
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets:
-                    - ${env:MY_POD_IP}:8888
       otlp:
         protocols:
           grpc:
@@ -1195,15 +1015,11 @@ opentelemetry-receiver:
             - coralogix
           processors:
             - memory_limiter
-            - transform/prometheus
             - k8sattributes
             - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
             - batch
-          receivers:
-            - prometheus
-
         metrics:
           exporters:
             - coralogix
@@ -1235,14 +1051,6 @@ opentelemetry-receiver:
     otlp:
       enabled: true
     otlp-http:
-      enabled: false
-    jaeger-compact:
-      enabled: false
-    jaeger-thrift:
-      enabled: false
-    jaeger-grpc:
-      enabled: false
-    zipkin:
       enabled: false
 
 coralogix-ebpf-agent:

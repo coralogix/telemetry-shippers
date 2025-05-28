@@ -23,7 +23,7 @@ opentelemetry-agent-windows:
     repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.124.1-windows-2019-amd64"
+    tag: "0.126.0-windows-2019-amd64"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
 
@@ -136,10 +136,11 @@ opentelemetry-agent-windows:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
-          # Configures the collector to export span metrics with different histogram bucket options
-      # for different applications. Applications are selected and routed to different pipelines
-      # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
-      # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
+    
+    # Configures the collector to export span metrics with different histogram bucket options
+    # for different applications. Applications are selected and routed to different pipelines
+    # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
+    # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
     spanMetricsMulti:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
@@ -160,7 +161,14 @@ opentelemetry-agent-windows:
     # This reduces target_info cardinality.
     reduceResourceAttributes:
       enabled: false
-
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
   config:
     extensions:
       zpages:
@@ -189,14 +197,6 @@ opentelemetry-agent-windows:
             endpoint: ${env:MY_POD_IP}:6831
           thrift_binary:
             endpoint: ${env:MY_POD_IP}:6832
-      prometheus:
-        config:
-          scrape_configs:
-          - job_name: opentelemetry-collector
-            scrape_interval: 30s
-            static_configs:
-              - targets:
-                  - ${env:MY_POD_IP}:8888
     processors:
       batch:
         send_batch_size: 1024
@@ -214,12 +214,6 @@ opentelemetry-agent-windows:
         detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
       k8sattributes:
         filter:
           node_from_env_var: KUBE_NODE_NAME
@@ -286,7 +280,6 @@ opentelemetry-agent-windows:
             - batch
           receivers:
             - otlp
-            - prometheus
             - hostmetrics
             - statsd
         traces:

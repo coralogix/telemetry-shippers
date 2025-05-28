@@ -2,6 +2,38 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.178 / 2025-05-22
+- [Feat] Update windows and target-allocator image
+
+### v0.0.177 / 2025-05-22
+- [Feat] Enable spanmetrics by default
+
+### v0.0.176 / 2025-05-19
+- [Feat] Update Collector to v0.126.0
+- [Update] `kubeletstatsreceiver`: set `collect_all_network_interfaces` on `pods`
+
+### v0.0.175 / 2025-05-19
+- [Fix] Fix utilization metric name and unit in `kubeletMetrics` preset to keep the metrics' backward compatibility for dashboards
+
+### v0.0.174 / 2025-05-16
+- [Chore] Remove unnecessary config form values.yaml
+- [Feat] Move to jaegerReceiver preset instead of configuring jaeger ports and receivers directly
+- [Feat] Move to zipkinReceiver preset instead of configuring zipkin ports and receivers directly
+- [Feat] Move to resourceDetection preset instead of configuring resourcedetection manually.
+
+### v0.0.173 / 2025-05-16
+- [Chore] Remove unnecessary config form values.yaml
+
+### v0.0.172 / 2025-05-15
+- [Feat] Update Collector to v0.125.0
+- [Fix] Configure `kubeletstatsreceiver` to enable network metrics collection from all available interfaces on Node level
+
+### v0.0.171 / 2025-05-09
+- [Fix] Fix target allocator namespace.
+- [Fix] Fix rendering of securityContext and podSecurityContext for Collector CRD.
+- [Feat] Add collectorMetrics preset to collect collector's own metrics using Prometheus receiver
+- [Feat] Add E2E test for the OTEL Operator
+
 ### v0.0.170 / 2025-04-25
 - [Feat] Update Collector to v0.124.1
 - [Breaking] We are moving to ghcr image registry instead of dockerhub, as OTel doesn't use dockerhub due to rate limits. Ref https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.123.1

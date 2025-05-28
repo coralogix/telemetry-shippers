@@ -4,6 +4,7 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
@@ -22,6 +24,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -53,6 +57,18 @@ func TestE2E_Agent(t *testing.T) {
 	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
 
 	testNs := nsObj.GetName()
+
+	// Create a pod in the namespace to trigger the otelcol_otelsvc_k8s_pod_deleted metric
+	podFile := filepath.Join(testDataDir, "pod.yaml")
+	buf, err = os.ReadFile(podFile)
+	require.NoErrorf(t, err, "failed to read pod object file %s", podFile)
+	podObj, err := xk8stest.CreateObject(k8sClient, buf)
+	require.NoErrorf(t, err, "failed to create k8s pod from file %s", podFile)
+	require.Eventually(t, func() bool {
+		pod, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(testNs).Get(context.Background(), podObj.GetName(), metav1.GetOptions{})
+		return err == nil && pod.Object["status"].(map[string]interface{})["phase"] == string(corev1.PodRunning)
+	}, time.Minute, time.Second)
+	xk8stest.DeleteObject(k8sClient, podObj)
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
@@ -210,6 +226,8 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesService
 	case "processorhelper":
 		compareMap = expectedResourceAttributesProcessorhelper
+	case "spanmetricsconnector":
+		compareMap = expectedResourceAttributesSpanmetricsconnector
 	default:
 		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	}
@@ -224,7 +242,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		}
 		require.True(t, ok, "metrics: unexpected attribute %v - scopeName: %s", k, scopeName)
 		if val != "" {
-			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v", k)
+			require.Equal(t, val, v.AsString(), "metrics: unexpected value for attribute %v - scopeName: %s", k, scopeName)
 		}
 		return true
 	})

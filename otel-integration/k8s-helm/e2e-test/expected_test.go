@@ -19,6 +19,8 @@ var expectedResourceScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                     false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer":                                         false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor":                                false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor":                                       false,
+	"spanmetricsconnector": false,
 
 	"go.opentelemetry.io/collector/exporter/exporterhelper":          false,
 	"go.opentelemetry.io/collector/processor/batchprocessor":         false,
@@ -29,9 +31,7 @@ var expectedResourceScopeNames = map[string]bool{
 	"go.opentelemetry.io/collector/service":                          false,
 }
 
-var unwantedScopeNames = map[string]struct{}{
-	"spanmetricsconnector": {},
-}
+var unwantedScopeNames = map[string]struct{}{}
 
 var expectedResourceAttributesKubeletstatreceiver = map[string]string{
 	"azure.resourcegroup.name": "",
@@ -184,6 +184,43 @@ var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
 	"service.instance.id":      "",
 }
 
+var expectedResourceAttributesSpanmetricsconnector = map[string]string{
+	"service.name":             "",
+	"service.version":          "",
+	"net.host.name":            "",
+	"server.address":           "",
+	"k8s.pod.ip":               "",
+	"net.host.port":            "",
+	"http.scheme":              "",
+	"server.port":              "",
+	"url.scheme":               "",
+	"cx.agent.type":            "",
+	"k8s_node_name":            "",
+	"service_instance_id":      "",
+	"cx.otel_integration.name": "coralogix-integration-helm",
+	"service_version":          "",
+	"k8s.cluster.name":         "otel-integration-agent-e2e",
+	"k8s.pod.name":             "",
+	"k8s.namespace.name":       "",
+	"k8s.daemonset.name":       "",
+	"k8s.node.name":            "otel-integration-agent-e2e-control-plane",
+	"host.name":                "",
+	"os.type":                  "linux",
+	"host.id":                  "",
+	"cloud.provider":           "azure",
+	"cloud.platform":           "azure_vm",
+	"cloud.region":             "",
+	"cloud.account.id":         "",
+	"azure.vm.name":            "",
+	"azure.vm.size":            "",
+	"azure.vm.scaleset.name":   "",
+	"azure.resourcegroup.name": "",
+	"service.instance.id":      "",
+	"k8s.container.name":       "",
+	"k8s.deployment.name":      "",
+	"k8s.job.name":             "",
+	"k8s.statefulset.name":     "",
+}
 var expectedResourceAttributesLoadscraper = map[string]string{
 	"k8s.cluster.name":         "otel-integration-agent-e2e",
 	"cx.otel_integration.name": "coralogix-integration-helm",
@@ -352,6 +389,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_batch_batch_size_trigger_send": false,
 	"otelcol_processor_batch_metadata_cardinality":    false,
 	"otelcol_processor_batch_timeout_trigger_send":    false,
+	"otelcol_processor_filter_spans.filtered_ratio":   false,
 	"otelcol_processor_incoming_items":                false,
 	"otelcol_processor_outgoing_items":                false,
 	"otelcol_receiver_accepted_log_records":           false,
@@ -402,6 +440,9 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_otelsvc_k8s_pod_added_ratio":             false,
 	"otelcol_otelsvc_k8s_pod_table_size_ratio":        false,
 	"otelcol_otelsvc_k8s_pod_updated_ratio":           false,
+	"otelcol_otelsvc_k8s_pod_deleted_ratio":           false,
+	"calls":                                           false,
+	"duration":                                        false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
