@@ -42,3 +42,4 @@ opentelemetry-agent:
         logs:
           exporters:
             - debug
+            - otlp

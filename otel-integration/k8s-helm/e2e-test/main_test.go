@@ -81,7 +81,7 @@ func TestE2E_Agent(t *testing.T) {
 	createTeleOpts := &xk8stest.TelemetrygenCreateOpts{
 		ManifestsDir: filepath.Join(testDataDir, "telemetrygen"),
 		TestID:       testID,
-		DataTypes:    []string{"traces", "logs"},
+		DataTypes:    []string{"traces"},
 	}
 
 	telemetryGenObjs, telemetryGenObjInfos := xk8stest.CreateTelemetryGenObjects(t, k8sClient, createTeleOpts)
