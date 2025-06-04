@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.180 / 2025-06-04
+- [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
+
 ### v0.0.179 / 2025-05-30
 - [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
 

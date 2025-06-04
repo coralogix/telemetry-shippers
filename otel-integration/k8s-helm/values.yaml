@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.179"
+  version: "0.0.180"
 
   extensions:
     kubernetesDashboard:
@@ -487,10 +487,12 @@ opentelemetry-cluster-collector:
           # exporters: []
           processors:
             - memory_limiter
-          # metrics:
-          #   exporters: []
-          #   processors: []
-          #   receivers: []
+          # receivers: []
+        metrics:
+          # exporters: []
+          processors:
+            - memory_limiter
+          # receivers: []
   tolerations:
     - operator: Exists
 
@@ -533,32 +535,14 @@ opentelemetry-gateway:
   service:
     enabled: true
     clusterIP: "None"
-  clusterRole:
-    name: "coralogix-opentelemetry-gateway"
-    create: true
-    clusterRoleBinding:
-      name: "coralogix-opentelemetry-gateway"
-    rules:
-    - apiGroups: [""]
-      resources: ["pods", "namespaces"]
-      verbs: ["get", "watch", "list"]
-    - apiGroups: ["apps"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
-    - apiGroups: ["extensions"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
+
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
         secretKeyRef:
           name: coralogix-keys
           key: PRIVATE_KEY
-    - name: KUBE_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
+
   # Extra config for the collector
   # This is used to add extra receivers, processors, exporters, and connectors
   # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
@@ -617,102 +601,63 @@ opentelemetry-gateway:
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
       enabled: true
+      pipeline: "metrics"
+
+    # Configures the collector to expose zPages for debugging.
+    # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
+    zpages:
+      enabled: true
+
+    # Configures the collector to expose pprof for profiling.
+    pprof:
+      enabled: true
+
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      # sendBatchSize: 1024
+      # sendBatchMaxSize: 2048
+      # timeout: "1s"
+
+    # Configures the collector to export data to Coralogix.
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
+    k8sResourceAttributes:
+      enabled: true
+      agentType: "gateway"
+
   config:
-    extensions:
-      zpages:
-        endpoint: localhost:55679
-      pprof:
-        endpoint: localhost:1777
-    exporters:
-      coralogix:
-        timeout: "30s"
-        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
-        domain: "{{ .Values.global.domain }}"
-        logs:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        metrics:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        traces:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        application_name: "{{ .Values.global.defaultApplicationName }}"
-        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
-        application_name_attributes:
-          - "k8s.namespace.name"
-          - "service.namespace"
-        subsystem_name_attributes:
-          - "k8s.deployment.name"
-          - "k8s.statefulset.name"
-          - "k8s.daemonset.name"
-          - "k8s.cronjob.name"
-          - "service.name"
-    processors:
-      # needed for self-monitored otel colector metrics
-      transform/k8s_attributes:
-        metric_statements:
-        - context: resource
-          statements:
-          - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
-          - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
-          - delete_key(attributes, "k8s.replicaset.name")
-      k8sattributes:
-        filter:
-          node_from_env_var: KUBE_NODE_NAME
-        extract:
-          metadata:
-            - "k8s.namespace.name"
-            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
-            - "k8s.replicaset.name"
-            - "k8s.statefulset.name"
-            - "k8s.daemonset.name"
-            - "k8s.cronjob.name"
-            - "k8s.job.name"
-            - "k8s.pod.name"
-            - "k8s.node.name"
-      batch:
-        send_batch_size: 1024
-        send_batch_max_size: 2048
-        timeout: "1s"
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:4317
-            # Default otlp grpc server message size limit is 4mib, which might be too low.
-            max_recv_msg_size_mib: 20
+    # extensions: {}
+    # exporters: {}
+    # processors: {}
+    # receivers: {}
     service:
       telemetry:
-        resource:
-          service.name: "opentelemetry-collector"
-          cx.agent.type: "gateway"
         logs:
           level: "{{ .Values.global.logLevel }}"
       pipelines:
         metrics:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
             - memory_limiter
-            - k8sattributes
-            - transform/k8s_attributes
-            - batch
         traces:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
             - memory_limiter
             - tail_sampling
-            - batch
-          receivers:
-            - otlp
+          # receivers: []
 
   tolerations:
     - operator: Exists
   ports:
-    otlp:
-      enabled: true
     otlp-http:
       enabled: false
 
@@ -765,12 +710,30 @@ opentelemetry-receiver:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
+      pipeline: "none"
+
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      # sendBatchSize: 1024
+      # sendBatchMaxSize: 2048
+      # timeout: "1s"
+
+    # Configures the collector to expose zPages for debugging.
+    # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
+    zpages:
+      enabled: true
+
+    # Configures the collector to expose pprof for profiling.
+    pprof:
+      enabled: true
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
   config:
-    extensions:
-      zpages:
-        endpoint: localhost:55679
-      pprof:
-        endpoint: localhost:1777
     exporters:
       coralogix:
         timeout: "30s"
@@ -831,17 +794,7 @@ opentelemetry-receiver:
         detectors: ["gcp", "ec2", "azure"]
         timeout: 2s
         override: true
-      batch:
-        send_batch_size: 1024
-        send_batch_max_size: 2048
-        timeout: "1s"
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:4317
-            # Default otlp grpc server message size limit is 4mib, which might be too low.
-            max_recv_msg_size_mib: 20
+    # receivers: {}
     service:
       telemetry:
         resource:
@@ -860,36 +813,30 @@ opentelemetry-receiver:
             - resourcedetection/env
             - resourcedetection/region
             - batch
+          receivers:
+            - prometheus
         metrics:
           exporters:
             - coralogix
           processors:
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
+          # receivers: []
         traces:
           exporters:
             - loadbalancing
           processors:
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
+          # receivers: []
         logs:
           exporters:
             - coralogix
           processors:
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
+          # receivers: []
 
   tolerations:
     - operator: Exists
   ports:
-    otlp:
-      enabled: true
     otlp-http:
       enabled: false
 
