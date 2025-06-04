@@ -1,13 +1,6 @@
 name: OpenTelemetry-Supervised-Collector
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - "otel-supervised-collector/Dockerfile"
-      - "otel-supervised-collector/**"
-      - ".github/workflows/otel-supervised-collector.yml"
   workflow_dispatch:
     inputs:
       push_image:
@@ -61,6 +54,5 @@ jobs:
             COLLECTOR_VERSION=${{ steps.set-image-version.outputs.version }}
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
-            ${{ env.DOCKERHUB_REGISTRY }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
