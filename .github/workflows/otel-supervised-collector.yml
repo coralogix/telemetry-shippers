@@ -1,0 +1,58 @@
+name: OpenTelemetry-Supervised-Collector
+
+on:
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: "Push image to registry"
+        required: false
+        default: false
+        type: boolean
+      dockerhub_registry:
+        description: "DockerHub registry path"
+        required: false
+        default: "coralogixrepo/otel-supervised-collector"
+        type: string
+
+env:
+  DOCKERHUB_REGISTRY: ${{ github.event.inputs.dockerhub_registry || 'coralogixrepo/otel-supervised-collector' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        if: github.event.inputs.push_image == true
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image version
+        id: set-image-version
+        run: |
+          version=$(grep -E '^ARG COLLECTOR_VERSION=' ./otel-supervised-collector/Dockerfile | cut -d'=' -f2)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "Detected collector version: ${version}"
+
+      - name: Build and Push Supervised Collector Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./otel-supervised-collector/
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event.inputs.push_image == true }}
+          build-args: |
+            COLLECTOR_VERSION=${{ steps.set-image-version.outputs.version }}
+          tags: |
+            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
