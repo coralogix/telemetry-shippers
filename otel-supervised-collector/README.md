@@ -7,6 +7,30 @@ This repository contains a containerized OpenTelemetry Collector with OpAMP supe
 - Docker (version 20.10+)
 - Docker Buildx (for multi-architecture builds)
 
+## Release
+
+> [!CAUTION]
+> This image is in alpha stage and under heavy development. It's not recommended
+> for use in production environments. Support will be provided only when it reaches
+> a stable release.
+
+The container image is built and pushed to Docker Hub via GitHub Actions.
+Images are available at [Docker Hub](https://hub.docker.com/r/coralogixrepo/otel-supervised-collector)
+and are tagged with the OpenTelemetry Collector version in the following format:
+
+```
+coralogixrepo/otel-supervised-collector:0.127.0
+```
+
+### Supported platforms
+
+The container image is built for the following platforms:
+
+- `linux/amd64`
+- `linux/arm64`
+
+Windows is not supported at the moment.
+
 ## Building
 
 The project uses a Makefile to build container images for the OpenTelemetry Collector
