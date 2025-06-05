@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.181"
+  version: "0.0.182"
 
   extensions:
     kubernetesDashboard:
@@ -667,32 +667,13 @@ opentelemetry-receiver:
   fullnameOverride: coralogix-opentelemetry-receiver
   service:
     enabled: true
-  clusterRole:
-    name: "coralogix-opentelemetry-receiver"
-    create: true
-    clusterRoleBinding:
-      name: "coralogix-opentelemetry-receiver"
-    rules:
-    - apiGroups: [""]
-      resources: ["pods", "namespaces"]
-      verbs: ["get", "watch", "list"]
-    - apiGroups: ["apps"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
-    - apiGroups: ["extensions"]
-      resources: ["replicasets"]
-      verbs: ["get", "list", "watch"]
+
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
         secretKeyRef:
           name: coralogix-keys
           key: PRIVATE_KEY
-    - name: KUBE_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
   presets:
     fleetManagement:
       enabled: true
@@ -710,6 +691,12 @@ opentelemetry-receiver:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
+      pipeline: "none"
+    k8sResourceAttributes:
+      enabled: true
+      agentType: "receiver"
+    resourceDetection:
+      enabled: true
       pipeline: "none"
 
     # Configuration for the batch processor.
@@ -733,67 +720,14 @@ opentelemetry-receiver:
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
+
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+      pipeline: "none"
   config:
-    exporters:
-      coralogix:
-        timeout: "30s"
-        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
-        domain: "{{ .Values.global.domain }}"
-        logs:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        metrics:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        traces:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        application_name: "{{ .Values.global.defaultApplicationName }}"
-        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
-        application_name_attributes:
-          - "k8s.namespace.name"
-          - "service.namespace"
-        subsystem_name_attributes:
-          - "k8s.deployment.name"
-          - "k8s.statefulset.name"
-          - "k8s.daemonset.name"
-          - "k8s.cronjob.name"
-          - "service.name"
-    processors:
-      # needed for self-monitored otel colector metrics
-      transform/k8s_attributes:
-        metric_statements:
-        - context: resource
-          statements:
-          - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
-          - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
-          - delete_key(attributes, "k8s.replicaset.name")
-      k8sattributes:
-        filter:
-          node_from_env_var: KUBE_NODE_NAME
-        extract:
-          metadata:
-            - "k8s.namespace.name"
-            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
-            - "k8s.replicaset.name"
-            - "k8s.statefulset.name"
-            - "k8s.daemonset.name"
-            - "k8s.cronjob.name"
-            - "k8s.job.name"
-            - "k8s.pod.name"
-            - "k8s.node.name"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
+    # exporters: {}
+    # processors: {}
     # receivers: {}
     service:
       telemetry:
@@ -808,8 +742,6 @@ opentelemetry-receiver:
             - coralogix
           processors:
             - memory_limiter
-            - k8sattributes
-            - transform/k8s_attributes
             - resourcedetection/env
             - resourcedetection/region
             - batch
