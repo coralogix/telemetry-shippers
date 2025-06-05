@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.181 / 2025-06-05
+- [Fix] Disable Coralogix exporter for tracing pipeline when tail-sampling is used.
+
 ### v0.0.180 / 2025-06-04
 - [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
 
