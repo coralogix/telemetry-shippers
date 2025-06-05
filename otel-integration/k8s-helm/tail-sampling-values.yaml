@@ -10,6 +10,11 @@ opentelemetry-agent:
   enabled: true
   mode: daemonset
   presets:
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+      pipeline: none
+
     loadBalancing:
       enabled: true
       routingKey: "traceID"
@@ -23,6 +28,12 @@ opentelemetry-agent:
         traces:
           exporters:
             - loadbalancing
+        logs:
+          exporters:
+            - coralogix
+        metrics:
+          exporters:
+            - coralogix
 
 opentelemetry-gateway:
   enabled: true

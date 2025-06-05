@@ -58,7 +58,7 @@ testing purposes and are not part of the released image.
 ### Configuration variables
 
 | Variable            | Description                            | Default                     |
-| ------------------- | -------------------------------------- | --------------------------- |
+|---------------------|----------------------------------------|-----------------------------|
 | `IMAGE_NAME`        | Container image name                   | `otel-supervised-collector` |
 | `IMAGE_TAG`         | Container image tag                    | `latest`                    |
 | `COLLECTOR_VERSION` | OpenTelemetry Collector version        | `0.127.0`                   |
@@ -77,16 +77,19 @@ testing purposes and are not part of the released image.
 ### Usage examples
 
 #### Basic build
+
 ```bash
 make build
 ```
 
 #### Build with a custom OpenTelemetry Collector version
+
 ```bash
 make build COLLECTOR_VERSION=0.128.0
 ```
 
 #### Build with custom image tag
+
 ```bash
 # Build with custom image tag
 make build IMAGE_TAG=v1.0.0
@@ -96,6 +99,7 @@ make build IMAGE_TAG=v1.0.0 IMAGE_NAME=supervised-collector COLLECTOR_VERSION=0.
 ```
 
 #### Multi-Architecture Builds
+
 ```bash
 # Build for multiple architectures (validates build but doesn't export)
 make build-multiarch
