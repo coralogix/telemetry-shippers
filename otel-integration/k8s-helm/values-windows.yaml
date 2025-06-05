@@ -117,6 +117,13 @@ opentelemetry-agent-windows:
       #     combineWith: ""
     kubernetesAttributes:
       enabled: true
+      podUid:
+        enabled: false
+      podStartTime:
+        enabled: false
+      nodeFilter:
+        enabled: true
+    
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
@@ -169,93 +176,53 @@ opentelemetry-agent-windows:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
+    
+    # Configures the collector to export data to Coralogix.
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    # Configures the collector to expose zPages for debugging.
+    # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
+    zpages:
+      enabled: true
+
+    # Configures the collector to expose pprof for profiling.
+    pprof:
+      enabled: true
+        # Configures the collector to receive Jaeger data in all supported protocols.
+    # Adds the jaeger receiver to the traces pipeline with all protocols configured.
+    jaegerReceiver:
+      enabled: true
+    # Configures the collector to receive Zipkin data.
+    # Adds the zipkin receiver to the traces pipeline.
+    zipkinReceiver:
+      enabled: true
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
+    # Configures the collector to receive StatsD metrics.
+    # Adds the statsd receiver to the metrics pipeline.
+    statsdReceiver:
+      enabled: true
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      # sendBatchSize: 1024
+      # sendBatchMaxSize: 2048
+      # timeout: "1s"
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
   config:
-    extensions:
-      zpages:
-        endpoint: localhost:55679
-      pprof:
-        endpoint: localhost:1777
+    # extensions: {}
+    # receivers:{}
+    processors: {}
 
-    receivers:
-      statsd:
-        endpoint: ${env:MY_POD_IP}:8125
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:4317
-          http:
-            endpoint: ${env:MY_POD_IP}:4318
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:14250
-          thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
-          thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
-          thrift_binary:
-            endpoint: ${env:MY_POD_IP}:6832
-    processors:
-      batch:
-        send_batch_size: 1024
-        send_batch_max_size: 2048
-        timeout: "1s"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
-      k8sattributes:
-        filter:
-          node_from_env_var: KUBE_NODE_NAME
-        extract:
-          metadata:
-            - "k8s.namespace.name"
-            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
-            - "k8s.replicaset.name"
-            - "k8s.statefulset.name"
-            - "k8s.daemonset.name"
-            - "k8s.cronjob.name"
-            - "k8s.job.name"
-            - "k8s.pod.name"
-            - "k8s.node.name"
-      # Will get the k8s resource limits
-      memory_limiter: null
-
-    exporters:
-      coralogix:
-        timeout: "30s"
-        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
-        domain: "{{ .Values.global.domain }}"
-        logs:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        metrics:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        traces:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        application_name: "{{ .Values.global.defaultApplicationName }}"
-        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
-        application_name_attributes:
-          - "k8s.namespace.name"
-          - "service.namespace"
-        subsystem_name_attributes:
-          - "k8s.deployment.name"
-          - "k8s.statefulset.name"
-          - "k8s.daemonset.name"
-          - "k8s.cronjob.name"
-          - "service.name"
+    # exporters: {}
 
     service:
       telemetry:
@@ -265,46 +232,23 @@ opentelemetry-agent-windows:
         logs:
           level: "{{ .Values.global.logLevel }}"
       extensions:
-      - zpages
-      - pprof
       - health_check
       pipelines:
         metrics:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
-            - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
-            - hostmetrics
-            - statsd
+          # receivers: []
         traces:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
-            - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
-            - zipkin
-            - jaeger
+          # receivers: []
         logs:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
-            - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
-            - batch
-          receivers:
-            - otlp
+            - memory_limiter
+          # receivers: []
   tolerations:
     - operator: Exists
 
@@ -315,23 +259,11 @@ opentelemetry-agent-windows:
     limits:
       cpu: 1
       memory: 2G
-
-  ports:
-    statsd:
-      enabled: true
-      containerPort: 8125
-      servicePort: 8125
-      hostPort: 8125
-      protocol: UDP
-    jaeger-binary:
-      enabled: true
-      containerPort: 6832
-      servicePort: 6832
-      hostPort: 6832
-      protocol: TCP
-    # In order to enable podMonitor, following part must be enabled in order to expose the required port:
-    # metrics:
-    #   enabled: true
+  
+  # In order to enable podMonitor, following part must be enabled in order to expose the required port:
+  # ports:
+  #   metrics:
+  #    enabled: true
 
   # podMonitor:
   #   enabled: true
