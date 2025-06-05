@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "warn"
   collectionInterval: "30s"
-  version: "0.0.182"
+  version: "0.0.183"
 
   extensions:
     kubernetesDashboard:
@@ -140,6 +140,8 @@ opentelemetry-agent:
         enabled: false
       podStartTime:
         enabled: false
+      nodeFilter:
+        enabled: true
 
     hostMetrics:
       enabled: true
@@ -233,7 +235,7 @@ opentelemetry-agent:
     # Configures the collector to receive Zipkin data.
     # Adds the zipkin receiver to the traces pipeline.
     zipkinReceiver:
-      enabled: false
+      enabled: true
     # Configures the collector to receive OTLP data.
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
@@ -375,8 +377,6 @@ opentelemetry-cluster-collector:
         enabled: false
       podStartTime:
         enabled: false
-      nodeFilter:
-        enabled: true
     # Configures resource detection processors to add system and environment information.
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:

@@ -3,6 +3,12 @@
 ## OpenTelemtry-Integration
 
 ### v0.0.182 / 2025-06-05
+- [Feat] Use newly added presets in windows instead of hardcoding stuff in values.yaml
+- [Fix] Cluster collector k8scluster shoudl not filter on NODE level
+- [Fix] fleetManagement preset automatically injects KUBE_NODE_NAME env variable.
+- [Fix] Agent k8scluster should filter on NODE level
+
+### v0.0.182 / 2025-06-05
 - [Feat] Use newly added presets in receiver instead of hardcoding stuff in values.yaml
 
 ### v0.0.181 / 2025-06-05
