@@ -3,9 +3,9 @@ global:
   clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
-  logLevel: "warn"
+  logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.183"
+  version: "0.0.184"
 
   extensions:
     kubernetesDashboard:
@@ -271,6 +271,10 @@ opentelemetry-agent:
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
       enabled: true
+
+    # Applies semantic convention transformations.
+    semconv:
+      enabled: true
   config:
     # extensions:
     #   zpages:
@@ -278,13 +282,7 @@ opentelemetry-agent:
     # receivers:
     #   statsd:
     #     endpoint: ${env:MY_POD_IP}:8125
-    processors:
-      transform/semconv:
-        error_mode: ignore
-        trace_statements:
-          - context: span
-            statements:
-              - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"] != nil
+    # processors: {}
     # exporters: {}
     service:
       telemetry:
@@ -297,18 +295,17 @@ opentelemetry-agent:
         - health_check
       pipelines:
         metrics:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
           # receivers: []
         traces:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
-            - transform/semconv
           # receivers: []
         logs:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
           # receivers: []
@@ -484,12 +481,12 @@ opentelemetry-cluster-collector:
         - health_check
       pipelines:
         logs:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
           # receivers: []
         metrics:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
           # receivers: []
@@ -645,11 +642,11 @@ opentelemetry-gateway:
           level: "{{ .Values.global.logLevel }}"
       pipelines:
         metrics:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
         traces:
-          # exporters: []
+          exporters: []
           processors:
             - memory_limiter
             - tail_sampling

@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.183 / 2025-06-05
+- [Feat] Use semconv preset in agent instead of hardcoded version in values.yaml
+- [Fix] gke/autopilot to not use hostEntity preset and resourceDetection preset.
+
 ### v0.0.182 / 2025-06-05
 - [Feat] Use newly added presets in windows instead of hardcoding stuff in values.yaml
 - [Fix] Cluster collector k8scluster shoudl not filter on NODE level
