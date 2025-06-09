@@ -2,6 +2,9 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.186 / 2025-06-09
+- [Feat] allow `dropManagedFields`, `periodicCollection` and `transformStatements` in preset.kubernetesResources
+
 ### v0.0.185 / 2025-06-06
 - [Feat] Allow filtering Kubernetes Resources using custom OTTL statements via `presets.kubernetesResources.filterStatements`
 

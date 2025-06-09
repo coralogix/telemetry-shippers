@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.185"
+  version: "0.0.186"
 
   extensions:
     kubernetesDashboard:
@@ -494,8 +494,8 @@ opentelemetry-cluster-collector:
     - operator: Exists
 
   startupProbe:
-    failureThreshold: 3
-    initialDelaySeconds: 15
+    failureThreshold: 4
+    initialDelaySeconds: 30
     periodSeconds: 15
     httpGet:
       port: 13133
