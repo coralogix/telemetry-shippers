@@ -96,18 +96,18 @@ Coralogix's **Kubernetes Complete Observability** provides a comprehensive solut
 
 View all of your nodes, pods and cluster metrics, pod logs, Kubernetes events, and your distributed traces pipeline. Take advantage of our Kubernetes Dashboard using our pre-configured OpenTelemetry Collector.
 
-Utilizing [OpenTelemetry](https://coralogix.com/docs/opentelemetry/getting-started/), we ensure seamless and automated data collection from various components of your stack. This enables you to monitor infrastructure health and gain insights into application behavior and inter-service dependencies. Troubleshoot issues, optimize performance and manage your cluster more effectively with a 360-degree view of your Kubernetes ecosystem.
+Utilizing OpenTelemetry, we ensure seamless and automated data collection from various components of your stack. This enables you to monitor infrastructure health and gain insights into application behavior and inter-service dependencies. Troubleshoot issues, optimize performance and manage your cluster more effectively with a 360-degree view of your Kubernetes ecosystem.
 
 ## Prerequisites
 
 - [Kubernetes](https://kubernetes.io/) (v1.24+) installed
-- [Helm](https://helm.sh/) (v3.9+) installed and configured
+- [Helm](https://helm.sh/) (v3.9+) installed and configured
 
 ### Secret key
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
 
-The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) under the secret key `PRIVATE_KEY`.
+The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/ under the secret key `PRIVATE_KEY`.
 This secret must exist in the same namespace where the Helm chart is installed.
 
 To create the secret, run the following command:
@@ -775,7 +775,7 @@ The following code creates a new environment variable (`NODE`) containing the no
 
 #### About global collection interval
 
-The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
+The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
 
 Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choice of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
 
@@ -828,25 +828,24 @@ presets:
       enabled: false
 ```
 
-> [!NOTE]
-> `errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
-> 
-> ```
-> http.status_code => http.response.status_code
-> ```
-> 
-> To do that, you can add the following configuration:
-> 
-> ```yaml
-> presets:
->   spanMetrics:
->      enabled: true
->      transformStatements:
->      - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
->      errorTracking:
->        enabled: true
-> ```
+!!! Note
+`errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
 
+```
+http.status_code => http.response.status_code
+```
+
+To do that, you can add the following configuration:
+
+```yaml
+presets:
+  spanMetrics:
+     enabled: true
+     transformStatements:
+     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+     errorTracking:
+       enabled: true
+```
 
 ##### SpanMetrics Database Monitoring
 
@@ -1613,13 +1612,13 @@ Components:
 
 To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
-#### Filtering specific services for Coralogix EBPF Agent
+#### Filtering Specific Services For Coralogix EBPF Agent
 
 By default, the coralogix-ebpf-agent will collect traffic from all services in the cluster.
-However, there are cases where you might want to filter by specific services or filter out specific services. You can use the
+but there are cases where you might want to filter specific services, or filter out specific services. you can use the
 `coralogix-ebpf-agent.ebpf_agent.sampler` parameter in `values.yaml` to change the service filtering behavior.
 
-For example, to collect only traffic coming from `carts-service` and `orders-service`:
+For example, collect only traffic coming from `carts-service` and `orders-service`:
 
 ```yaml
 coralogix-ebpf-agent:
@@ -1630,7 +1629,7 @@ coralogix-ebpf-agent:
       services_filter_type: "Allow"
 ```
 
-Another example, where we want to get all services besides `currencyservice`:
+In another example, a case of where we want get all services beside `currencyservice`
 
 ```yaml
 coralogix-ebpf-agent:
@@ -1641,10 +1640,10 @@ coralogix-ebpf-agent:
       services_filter_type: "Deny"
 ```
 
-#### What is considered a service by Coralogix EBPF Agent?
+#### What Is Considered A Service By Coralogix EBPF Agent?
 
-A service is defined by the top owner of the specific container that performed the network request, in most cases a Deployment, StatefulSet, DaemonSet, or CronJob.
-The name of the service is the name of that owner resource.
+A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
+the name of the service is the name of that owner resource.
 
 #### Enabling Coralogix EBPF with existing OpenTelemetry Collector
 
@@ -1920,6 +1919,15 @@ processors:
 
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
 
+## Dashboards
+
+Under the `dashboard` directory, there are:
+
+- Host Metrics Dashboard
+- Kubernetes Pod Dashboard
+- Span Metrics Dashboard
+- OTel-Agent Grafana dashboard
+
 ## Integration presets
 
 The `otel-integration` chart also provides support to integrate with different applications. The following integration presets are available.
@@ -2012,6 +2020,6 @@ Optional settings:
       mountPath: "/var/log/mysql"
 ```
 
-## Dependencies
+# Dependencies
 
 This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
