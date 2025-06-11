@@ -1,4 +1,4 @@
-ARG COLLECTOR_VERSION=0.127.0
+ARG COLLECTOR_VERSION=0.128.0
 
 FROM alpine:3.22 AS certs
 RUN apk --update add ca-certificates
