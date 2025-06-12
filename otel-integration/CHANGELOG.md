@@ -2,6 +2,11 @@
 
 ## OpenTelemtry-Integration
 
+### v0.0.187 / 2025-06-12
+- [Feat] Add an alpha `supervisor` preset under the `fleetManagement` preset
+- [Feat] Certain attributes related to the `fleetManagement` preset are now added
+  as non-identifying attributes even when `k8sResourceAttributes` preset is disabled.
+
 ### v0.0.186 / 2025-06-09
 - [Feat] allow `dropManagedFields`, `periodicCollection` and `transformStatements` in preset.kubernetesResources
 
