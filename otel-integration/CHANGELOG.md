@@ -1,6 +1,9 @@
 # Changelog
 
-## OpenTelemtry-Integration
+## OpenTelemetry-Integration
+
+### v0.0.188 / 2025-06-12
+- [Fix] Fix `image` template helper when using the Supervisor preset and when using the Collector CRDs.
 
 ### v0.0.187 / 2025-06-12
 - [Feat] Add an alpha `supervisor` preset under the `fleetManagement` preset
