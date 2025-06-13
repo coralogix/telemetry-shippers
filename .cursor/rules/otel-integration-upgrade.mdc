@@ -1,0 +1,49 @@
+---
+description: Upgrade the Coralogix Collector chart version in the Otel Integration
+globs:
+alwaysApply: false
+---
+# Coralogix OpenTelemetry Integration Chart Upgrade Process
+
+## Overview
+The [otel-integration/k8s-helm/Chart.yaml](mdc:otel-integration/k8s-helm/Chart.yaml) contains the main Helm chart for the Coralogix OpenTelemetry Integration (often called just otel-integration). This chart depends on multiple opentelemetry-collector subcharts. These opentelemetry-collector subcharts are based on the Coralogix Otel Collector chart.
+
+## Upgrade Process
+When upgrading the opentelemetry-collector chart version, follow these steps:
+
+### 1. Check Available Versions of the Coralogix Otel Collector Chart
+- Always check the opentelemetry-collector chart CHANGELOG at: https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/CHANGELOG.md
+- Only use versions listed in this CHANGELOG file
+- Ask the user to which version they want to upgrade to, if they didn't already ask for an specific upgrade.
+
+### 2. Update Coralogix Otel Integration Chart Version
+- Bump the otel-integration chart version in [otel-integration/k8s-helm/Chart.yaml](mdc:otel-integration/k8s-helm/Chart.yaml)
+- Bump the otel-integration chart version under the `global` key of @otel-integration/k8s-helm/values.yaml
+- Use semantic versioning (typically patch version bump: `X.Y.Z` becomes `X.Y.Z+1`)
+- If the Coralogix Otel Collector chart CHANGELOG includes a bump in the version of the Collector itself, do a minor version bump (`X.Y.Z` becomes `X.Y+1.0`)
+
+### 3. Update Dependencies
+Update ALL opentelemetry-collector dependencies in [otel-integration/k8s-helm/Chart.yaml](mdc:otel-integration/k8s-helm/Chart.yaml) to the new version:
+- `opentelemetry-agent`
+- `opentelemetry-agent-windows`
+- `opentelemetry-cluster-collector`
+- `opentelemetry-receiver`
+- `opentelemetry-gateway`
+
+### 4. Update Changelog
+- Add new entry to [otel-integration/CHANGELOG.md](mdc:otel-integration/CHANGELOG.md)
+- Use current date in YYYY-MM-DD format (get with `date +%Y-%m-%d`)
+- Use the new otel-integration chart version from step 2
+- Copy the entries from the opentelemetry-collector changelog
+- Follow the existing format: `### vX.Y.Z / YYYY-MM-DD`
+
+## Dependencies Structure
+The chart has these key dependencies:
+- **opentelemetry-collector**: Main collector charts (5 variants)
+- **coralogix-ebpf-agent**: eBPF agent for enhanced monitoring
+- **coralogix-ebpf-profiler**: eBPF profiler for performance analysis
+
+## Important Files
+- [otel-integration/k8s-helm/Chart.yaml](mdc:otel-integration/k8s-helm/Chart.yaml): Main chart definition
+- [otel-integration/CHANGELOG.md](mdc:otel-integration/CHANGELOG.md): Version history and changes
+- [otel-integration/UPGRADING.md](mdc:otel-integration/UPGRADING.md): Breaking changes and upgrade notes
