@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.190 / 2025-06-15
+- [Feat] Add opentelemetry-ebpf-instrumentation subchart.
+
 ### v0.0.189 / 2025-06-13
 - [Fix] Fix `command` template helper when using the Supervisor preset.
 
