@@ -829,6 +829,11 @@ coralogix-ebpf-profiler:
       requests:
         cpu: 100m
         memory: 128Mi
+
+opentelemetry-ebpf-instrumentation:
+  enabled: false
+  k8sCache:
+    replicas: 2
 #  priorityClass:
 #    create: false
 #    name: ""
