@@ -1301,6 +1301,7 @@ The OpenTelemetry EBPF Instrumentation includes a K8s Cache component that colle
 The K8s Cache Component is critical for large scale kubernetes clusters, as it allows takes load of the K8s API Server by isolating the calls to only the K8s Cache services.
 The K8s Cache is turned on by default, with 2 replicas for high availability. You can configure the number of replicas by setting `opentelemetry-ebpf-instrumentation.k8sCache.replicas` in the `values.yaml` file.
 to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file.
+Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation. 
 
 # How to use it
 
