@@ -1220,7 +1220,6 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 > [WARNING] - The Coralogix EBPF Agent is deprecated and will be removed in a future release. Please use [OpenTelemetry EBPF Instrumentation](#opentelemetry-ebpf-instrumentation) instead.
 
-
 The Coralogix EBPF Agent (`coralogix-ebpf-agent`) is an agent developed by Coralogix using EBPF to extract network traffic as spans (HTTP requests, SQL traffic, etc.), enabling APM capabilities without service instrumentation.
 To enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
@@ -1291,17 +1290,19 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 ## Opentelemetry EBPF Instrumentation
-The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans,  without requiring modifications to the application code.
+
+The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code.
 To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumenat.enabled` to `true` in the `values.yaml` file.
 
 for a full list of values for this chart, please look at [values.yaml])(https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
 
 ### K8s Cache
+
 The OpenTelemetry EBPF Instrumentation includes a K8s Cache component that collects Kubernetes metadata and enriches the telemetry data with Kubernetes labels. This allows you to correlate the telemetry data with Kubernetes resources, such as Pods, Nodes, and Namespaces.
 The K8s Cache Component is critical for large scale kubernetes clusters, as it allows takes load of the K8s API Server by isolating the calls to only the K8s Cache services.
 The K8s Cache is turned on by default, with 2 replicas for high availability. You can configure the number of replicas by setting `opentelemetry-ebpf-instrumentation.k8sCache.replicas` in the `values.yaml` file.
 to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file.
-Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation. 
+Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation.
 
 # How to use it
 
