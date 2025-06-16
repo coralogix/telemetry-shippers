@@ -342,6 +342,8 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"container.memory.rss":                            false,
 	"container.memory.usage":                          false,
 	"container.memory.working_set":                    false,
+	"k8s.node.allocatable_cpu":                        false,
+	"k8s.node.allocatable_memory":                     false,
 	"k8s.node.cpu.time":                               false,
 	"k8s.node.cpu.utilization":                        false,
 	"k8s.node.filesystem.available":                   false,
