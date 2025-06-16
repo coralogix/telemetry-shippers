@@ -775,7 +775,7 @@ The following code creates a new environment variable (`NODE`) containing the no
 
 #### About global collection interval
 
-The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal recommended global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
+The global collection interval (`global.collectionInterval`) is the interval in which the collector will collect metrics from the configured receivers. For most optimal default experience, we recommend using the 30 second interval set by the chart. However, if you'd prefer to collect metrics more (or less) often, you can adjust the interval by changing the `global.collectionInterval` value in the `values.yaml` file. The minimal global interval is `15s`. If you wish to use default value for *each* component set internally by the collector, you can remove the collection interval parameter from presets completely.
 
 Beware that using lower interval will result in more metric data points being sent to the backend, thus resulting in more costs. Note that the choice of the interval also has an effect on behavior of rate functions, for more see [here](https://www.robustperception.io/what-range-should-i-use-with-rate/).
 
@@ -792,7 +792,7 @@ Beware that using lower interval will result in more metric data points being se
 
 These settings imposes a hard limit of 2048 units (spans, metrics, logs) on the batch size, ensuring a balance between the recommended size of the batches and networking overhead.
 
-You may adjust these settings according to your needs, but when configuring the batch processor by yourself, it is important to be mindful of the size limites imposed by the Coraloigx endpoints (currently **max. 10 MB** after decompression - see [documentation](https://coralogix.com/docs/opentelemetry/#limits--quotas)).
+You may adjust these settings according to your needs, but when configuring the batch processor by yourself, it is important to be mindful of the size limits imposed by the Coralogix endpoints (currently **max. 10 MB** after decompression - see [documentation](https://coralogix.com/docs/opentelemetry/#limits--quotas)).
 
 More information on how to configure the batch processor can be found [here](https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/batchprocessor#batch-processor).
 
@@ -800,7 +800,7 @@ More information on how to configure the batch processor can be found [here](htt
 
 The collector provides a possibility to synthesize R.E.D (Request, Error, Duration) metrics based on the incoming span data. This can be useful to obtain extra metrics about the operations you have instrumented for tracing. For more information, please refer to the [OpenTelemetry Collector documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md).
 
-This feature is disabled by default and can be enabled by setting the `spanmetrics.enabled` value to `true` in the `values.yaml` file.
+This feature is enabled by default and can be disabled by setting the `spanmetrics.enabled` value to `false` in the `values.yaml` file.
 
 Beware that enabling the feature will result in creation of additional metrics. Depending on how you instrument your applications, this can result in a significant increase in the number of metrics. This is especially true for cases where the span name includes specific values, such as user IDs or UUIDs. Such instrumentation practice is [strongly discouraged](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#span).
 
@@ -828,24 +828,25 @@ presets:
       enabled: false
 ```
 
-!!! Note
-`errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+> [!NOTE]
+> `errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+> 
+> ```
+> http.status_code => http.response.status_code
+> ```
+> 
+> To do that, you can add the following configuration:
+> 
+> ```yaml
+> presets:
+>   spanMetrics:
+>      enabled: true
+>      transformStatements:
+>      - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
+>      errorTracking:
+>        enabled: true
+> ```
 
-```
-http.status_code => http.response.status_code
-```
-
-To do that, you can add the following configuration:
-
-```yaml
-presets:
-  spanMetrics:
-     enabled: true
-     transformStatements:
-     - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"] == nil
-     errorTracking:
-       enabled: true
-```
 
 ##### SpanMetrics Database Monitoring
 
@@ -1045,6 +1046,10 @@ Example:
 "msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
 ```
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 66a3d85 (add opentelemetry-ebpf-instrumentation (#597))
 # Tail Sampling with OpenTelemetry using Kubernetes
 
 This tutorial demonstrates how to configure a Kubernetes cluster, deploy OpenTelemetry to collect logs, metrics, and traces, and enable trace sampling. We will cover an example of enabling a tail sample for the Opentelemetry Demo Application and a more precise example using the small trace-generating application.
@@ -1668,6 +1673,21 @@ helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogi
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration  \
   --render-subchart-notes -f values-ebpf-profiler.yaml \  
 ```
+
+## Opentelemetry EBPF Instrumentation
+
+The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code.
+To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumenat.enabled` to `true` in the `values.yaml` file.
+
+for a full list of values for this chart, please look at [values.yaml])(https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
+
+### K8s Cache
+
+The OpenTelemetry EBPF Instrumentation includes a K8s Cache component that collects Kubernetes metadata and enriches the telemetry data with Kubernetes labels. This allows you to correlate the telemetry data with Kubernetes resources, such as Pods, Nodes, and Namespaces.
+The K8s Cache Component is critical for large scale kubernetes clusters, as it allows takes load of the K8s API Server by isolating the calls to only the K8s Cache services.
+The K8s Cache is turned on by default, with 2 replicas for high availability. You can configure the number of replicas by setting `opentelemetry-ebpf-instrumentation.k8sCache.replicas` in the `values.yaml` file.
+to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file.
+Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation.
 
 ## Opentelemetry EBPF Instrumentation
 
