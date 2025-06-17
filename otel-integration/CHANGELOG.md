@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.192 / 2025-06-17
+- [Feat] bump opentelemetry-ebpf-instrumentation version.
+
 ### v0.0.191 / 2025-06-16
 - [Fix] Recover metrics `k8s_node_allocatable_cpu__cpu` and `k8s_node_allocatable_memory__By` in `k8sclusterreceiver` on the collector side
 
