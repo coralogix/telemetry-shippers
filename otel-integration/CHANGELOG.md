@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.193 / 2025-06-22
+- [Feat] bump opentelemetry-ebpf-profiler version.
+
 ### v0.0.192 / 2025-06-17
 - [Feat] bump opentelemetry-ebpf-instrumentation version.
 
