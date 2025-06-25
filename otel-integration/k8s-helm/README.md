@@ -1512,7 +1512,23 @@ presets:
 
 ##### Note on Semantic Conventions for old OTEL SDKs
 
-The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0. If you are using older versions, you might need to transform some attributes, such as:
+The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0.
+
+| Language | SDK version with `dbMetrics` support |
+|----------|---------------------------------------------|
+| Go | v1.28.0+ |
+| Java | v1.41.0+ |
+| JavaScript | v1.26.0+ |
+| Python | v1.26.0+ |
+| .NET | v1.10.0+ |
+| C++ | v1.16.0+ |
+| PHP | v1.0.0+ |
+| Ruby | v1.4.0+ |
+| Rust | v0.25.0+ |
+| Swift | v1.10.0+ |
+| Erlang/Elixir | v1.3.0+ |
+
+If you are using older versions, you might need to transform some attributes, such as:
 
 ```
 db.sql.table => db.collection.name
