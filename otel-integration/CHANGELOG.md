@@ -1,6 +1,59 @@
 # Changelog
 
-## OpenTelemtry-Integration
+## OpenTelemetry-Integration
+
+### v0.0.193 / 2025-06-22
+- [Feat] bump opentelemetry-ebpf-profiler version.
+
+### v0.0.192 / 2025-06-17
+- [Feat] bump opentelemetry-ebpf-instrumentation version.
+
+### v0.0.191 / 2025-06-16
+- [Fix] Recover metrics `k8s_node_allocatable_cpu__cpu` and `k8s_node_allocatable_memory__By` in `k8sclusterreceiver` on the collector side
+
+### v0.0.190 / 2025-06-15
+- [Feat] Add opentelemetry-ebpf-instrumentation subchart.
+
+### v0.0.189 / 2025-06-13
+- [Fix] Fix `command` template helper when using the Supervisor preset.
+
+### v0.0.188 / 2025-06-12
+- [Fix] Fix `image` template helper when using the Supervisor preset and when using the Collector CRDs.
+
+### v0.0.187 / 2025-06-12
+- [Feat] Add an alpha `supervisor` preset under the `fleetManagement` preset
+- [Feat] Certain attributes related to the `fleetManagement` preset are now added
+  as non-identifying attributes even when `k8sResourceAttributes` preset is disabled.
+
+### v0.0.186 / 2025-06-09
+- [Feat] allow `dropManagedFields`, `periodicCollection` and `transformStatements` in preset.kubernetesResources
+
+### v0.0.185 / 2025-06-06
+- [Feat] Allow filtering Kubernetes Resources using custom OTTL statements via `presets.kubernetesResources.filterStatements`
+
+### v0.0.184 / 2025-06-06
+- [Feat] Use semconv preset in agent instead of hardcoded version in values.yaml
+- [Fix] gke/autopilot to not use hostEntity preset and resourceDetection preset.
+
+### v0.0.183 / 2025-06-05
+- [Feat] Use newly added presets in windows instead of hardcoding stuff in values.yaml
+
+### v0.0.182 / 2025-06-05
+- [Fix] Cluster collector k8scluster shoudl not filter on NODE level
+- [Fix] fleetManagement preset automatically injects KUBE_NODE_NAME env variable.
+- [Fix] Agent k8scluster should filter on NODE level
+
+### v0.0.182 / 2025-06-05
+- [Feat] Use newly added presets in receiver instead of hardcoding stuff in values.yaml
+
+### v0.0.181 / 2025-06-05
+- [Fix] Disable Coralogix exporter for tracing pipeline when tail-sampling is used.
+
+### v0.0.180 / 2025-06-04
+- [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
+
+### v0.0.179 / 2025-05-30
+- [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
 
 ### v0.0.178 / 2025-05-22
 - [Feat] Update windows and target-allocator image

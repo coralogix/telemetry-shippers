@@ -20,12 +20,19 @@ opentelemetry-agent:
   service:
     enabled: true
   presets:
+    # disable resourceDetection preset since GKE/autopilot 
+    # doesn't have access to /etc/machine-id
+    resourceDetection:
+      enabled: false
     logsCollection:
       enabled: true
       storeCheckpoints: false
     hostMetrics:
       # hostMetrics doesn't work because we cannot mount host
       # /proc and /sys filesystems
+      enabled: false
+    # requires hostmetrics
+    hostEntityEvents:
       enabled: false
   config:
     processors:
@@ -40,11 +47,21 @@ opentelemetry-agent:
     service:
       pipelines:
         metrics:
-          # get rid of host metrics here
-          receivers:
-            - otlp
-            - prometheus
-            - statsd
+          processors:
+            - memory_limiter
+            - resourcedetection/env
+            - resourcedetection/region
+        traces:
+          processors:
+            - memory_limiter
+            - resourcedetection/env
+            - resourcedetection/region
+        logs:
+          processors:
+            - memory_limiter
+            - resourcedetection/env
+            - resourcedetection/region
+
   resources:
     # slighly larger resource requests for gke/autopilot 
     # since it was dropping data
@@ -56,6 +73,11 @@ opentelemetry-agent:
       memory: 2G
 
 opentelemetry-cluster-collector:
+  presets:
+    # disable resourceDetection preset since GKE/autopilot 
+    # doesn't have access to /etc/machine-id
+    resourceDetection:
+      enabled: false
   config:
     processors:
       resourcedetection/env:
@@ -66,7 +88,18 @@ opentelemetry-cluster-collector:
         detectors: ["gcp"]
         timeout: 2s
         override: true
-
+    service:
+      pipelines:
+        metrics:
+          processors:
+            - memory_limiter
+            - resourcedetection/env
+            - resourcedetection/region
+        logs:
+          processors:
+            - memory_limiter
+            - resourcedetection/env
+            - resourcedetection/region
   enabled: true
 
 opentelemetry-agent-windows:
