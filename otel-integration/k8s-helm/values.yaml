@@ -71,7 +71,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.125.0
+      tag: v0.127.0
 
   # serviceAccount:
   #   # Specifies whether a service account should be created
