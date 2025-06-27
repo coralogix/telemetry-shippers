@@ -1046,10 +1046,6 @@ Example:
 "msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
 ```
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 66a3d85 (add opentelemetry-ebpf-instrumentation (#597))
 # Tail Sampling with OpenTelemetry using Kubernetes
 
 This tutorial demonstrates how to configure a Kubernetes cluster, deploy OpenTelemetry to collect logs, metrics, and traces, and enable trace sampling. We will cover an example of enabling a tail sample for the Opentelemetry Demo Application and a more precise example using the small trace-generating application.
