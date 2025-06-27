@@ -604,7 +604,7 @@ opentelemetry-agent:
 helm upgrade --install otel-integration coralogix-charts-virtual/otel-integration -f values.yaml -n $NAMESPACE
 ```
 
-### Installing the chart on GKE Autopilot clusters
+## Installing the chart on GKE Autopilot clusters
 
 GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 
