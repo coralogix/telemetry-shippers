@@ -1886,13 +1886,13 @@ import BatchSpanProcessor from "@opentelemetry/sdk-trace-base";
 tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 ```
 
-## Infrastructure monitoring
+# Infrastructure monitoring
 
-### Log Collection
+## Log Collection
 
 The default installation collects Kubernetes logs.
 
-### Kubernetes Events
+## Kubernetes Events
 
 Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster's resources — such as pods, deployments, or nodes — change state.
 
@@ -1929,11 +1929,11 @@ Under the `dashboard` directory, there are:
 - Span Metrics Dashboard
 - OTel-Agent Grafana dashboard
 
-## Integration presets
+# Integration presets
 
 The `otel-integration` chart also provides support to integrate with different applications. The following integration presets are available.
 
-### MySQL
+## MySQL
 
 The MySQL preset is able to collect metrics and extra logs (slow query log, general query log) from your MySQL instances. **Extra logs collection is available only when running the `otel-integration` as CRD with the OpenTelemetry Operator.**
 
