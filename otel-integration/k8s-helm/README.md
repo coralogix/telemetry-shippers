@@ -30,8 +30,6 @@ Integrating OpenTelemetry with Kubernetes enables comprehensive Kubernetes and a
 
 Depending on your needs, you can use both charts (default behavior) or decide to disable either one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
 
-![Kubernetes Observability OpenTelemetry Coralogix](https://coralogix.com/wp-content/uploads/2023/11/Excali-Diagram-1.svg)
-
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
 
 ## OpenTelemetry Agent
@@ -1435,7 +1433,7 @@ The Target Allocator discovers [Prometheus Operator](https://github.com/promethe
 
 Then, the Target Allocator detects available OpenTelemetry Collectors and distributes the targets among known collectors. As a result, the collectors routinely query the Target Allocator for their assigned metric targets to add to the scrape configuration.
 
-![OTel Collector](https://coralogix.com/wp-content/uploads/2024/06/Otel-Collector_Jun_20-2.svg)
+![OTel Collector](./static/otel_collector.svg)
 
 ### Allocation strategies
 
