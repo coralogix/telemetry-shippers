@@ -839,3 +839,18 @@ opentelemetry-ebpf-instrumentation:
 #    name: ""
 #    value: 1000000000
 #  tolerations: []
+
+coralogix-operator:
+  enabled: false
+#  secret:
+#    create: true
+#    secretKeyReference: {}
+#    data:
+#      apiKey: ""
+#  deployment:
+#    replicas: 1
+#  coralogixOperator:
+#    region: ""
+#    domain: ""
+#    labelSelector: {}
+#    namespaceSelector: {}

@@ -1304,6 +1304,16 @@ The K8s Cache is turned on by default, with 2 replicas for high availability. Yo
 to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file.
 Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation.
 
+## Coralogix Operator
+
+The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provides Kubernetes-native deployment
+and management for Coralogix, designed to simplify and automate the configuration of Coralogix APIs through
+Kubernetes custom resources definitions and controllers.
+
+### Enabling Coralogix Operator
+
+To enable the Coralogix Operator, set `coralogix-operator.enabled` to `true` in the `values.yaml` file.
+
 # How to use it
 
 ## Metrics
