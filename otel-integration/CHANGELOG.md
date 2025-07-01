@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.194 / 2025-06-27
+- [Feat] Upgrade OpenTelemetry Collector to `0.116.1`
+
 ### v0.0.193 / 2025-06-22
 - [Feat] bump opentelemetry-ebpf-profiler version.
 
