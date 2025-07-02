@@ -721,7 +721,7 @@ opentelemetry-receiver:
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-      pipeline: ["none"]
+      pipelines: ["none"]
   config:
     # exporters: {}
     # processors: {}
