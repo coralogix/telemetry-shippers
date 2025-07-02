@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.196 / 2025-07-02
+- [Breaking] Rewrite `presets.coralogixExporter.pipeline` from `string` to `array` to allow enabling exporter on 2 pipelines at once.
+
 ### v0.0.195 / 2025-07-02
 - [Fix] Support templating for `presets.resourceDetection.deploymentEnvironmentName`.
 
