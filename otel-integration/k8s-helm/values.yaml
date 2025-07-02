@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.195"
+  version: "0.0.196"
 
   extensions:
     kubernetesDashboard:
@@ -721,7 +721,7 @@ opentelemetry-receiver:
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-      pipeline: "none"
+      pipelines: ["none"]
   config:
     # exporters: {}
     # processors: {}

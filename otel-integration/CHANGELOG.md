@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.196 / 2025-07-02
+- [Feat] Add new variable `presets.coralogixExporter.pipelines` as an `array[string]` to allow enabling exporter on 2 pipelines at once. The old variable `presets.coralogixExporter.pipeline` is still available, but deprecated
+
 ### v0.0.195 / 2025-07-02
 - [Fix] Support templating for `presets.resourceDetection.deploymentEnvironmentName`.
 
