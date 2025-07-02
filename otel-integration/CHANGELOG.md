@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.195 / 2025-07-02
+- [Fix] Support templating for `presets.resourceDetection.deploymentEnvironmentName`.
+
 ### v0.0.194 / 2025-06-27
 - [Feat] Upgrade OpenTelemetry Collector to `0.116.1`
 
