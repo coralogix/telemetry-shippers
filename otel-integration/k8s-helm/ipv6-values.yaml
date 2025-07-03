@@ -41,7 +41,12 @@ opentelemetry-agent:
     service:
       telemetry:
         metrics:
-          address: "[${env:MY_POD_IP}]:8888"
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: "[${env:MY_POD_IP}]"
+                    port: 8888
 
 opentelemetry-cluster-collector:
   enabled: true
@@ -80,5 +85,20 @@ opentelemetry-cluster-collector:
     service:
       telemetry:
         metrics:
-          address: "[${env:MY_POD_IP}]:8888"
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: "[${env:MY_POD_IP}]"
+                    port: 8888
 
+coralogix-ebpf-profiler:
+  k8s_watcher:
+    http:
+      host: "[::]"
+  profiling:
+    profiling_otel_agent:
+      otel:
+        exporter:
+        # configure the opentelemetry collector endpoint here
+          endpoint: "[$(HOST_IP)]:4317"
