@@ -42,7 +42,7 @@ dependencies:
   - name: coralogix-ebpf-profiler
     alias: coralogix-ebpf-profiler
     version: "0.0.10"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts
+    repository: file:///Users/uriah.kremer/git/cx-profiler-agent/ebpf-otel-profiler/public-chart
     condition: coralogix-ebpf-profiler.enabled
   - name: opentelemetry-ebpf-instrumentation
     alias: opentelemetry-ebpf-instrumentation

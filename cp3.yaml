@@ -1,0 +1,31 @@
+k8s-watcher:
+  enabled: true
+opentelemetry-agent:
+  enabled: true
+  image:
+    tag : 0.125.0
+  presets:
+    profilesCollection:
+      enabled: true
+
+  command:
+    extraArgs: ["--feature-gates=service.profilesSupport"]
+
+coralogix-ebpf-profiler:
+  enabled: true
+  # profiling:
+  #   profiling_otel_agent:
+  #     command: ["/bin/bash"]
+  #     args: ["-c", "sleep infinity"]
+  #     # otel:
+      #   exporter:
+      #     endpoint: "[${env:HOST_IP}]:4317"
+#          /path/to/ebpf-profiler --collection-agent=${HOST_IP}:4317 --disable-tls
+# opentelemetry-agent:
+#   image:
+#     tag : 0.125.0
+
+opentelemetry-collector:
+  image:
+    tag : 0.125.0
+
