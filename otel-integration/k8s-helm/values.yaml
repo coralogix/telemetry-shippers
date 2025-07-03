@@ -88,7 +88,6 @@ opentelemetry-agent:
   # priorityClass:
   #   # Specifies whether a priorityClass should be created.
   #   create: false
-  #   # The name of the clusterRole to use.
   #   # If not set a name is generated using the fullname template.
   #   name: ""
   #   # Sets the priority value of the priority class.
@@ -345,7 +344,6 @@ opentelemetry-cluster-collector:
   # priorityClass:
   #   # Specifies whether a priorityClass should be created.
   #   create: false
-  #   # The name of the clusterRole to use.
   #   # If not set a name is generated using the fullname template.
   #   name: ""
   #   # Sets the priority value of the priority class.
