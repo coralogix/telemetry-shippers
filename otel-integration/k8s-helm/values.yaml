@@ -6,6 +6,7 @@ global:
   logLevel: "info"
   collectionInterval: "30s"
   version: "0.0.197"
+  deploymentEnvironmentName: ""
 
   extensions:
     kubernetesDashboard:
