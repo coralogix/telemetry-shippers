@@ -14,10 +14,6 @@ import (
 )
 
 const (
-	equal = iota
-	regex
-	exist
-
 	attributeMatchTypeEqual expectedValueMode = iota
 	attributeMatchTypeRegex
 	attributeMatchTypeExist
@@ -34,8 +30,8 @@ type expectedTrace struct {
 }
 
 type expectedValue struct {
-	mode  expectedValueMode
-	value string
+	mode  expectedValueMode `json:"mode"`
+	value string            `json:"value"`
 }
 
 func newExpectedValue(mode expectedValueMode, value string) expectedValue {
@@ -45,25 +41,23 @@ func newExpectedValue(mode expectedValueMode, value string) expectedValue {
 	}
 }
 
-func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink, lc *consumertest.LogsSink) func() {
+func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.TracesSink) func() {
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
 	cfg.HTTP = nil
 	cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
 
-	_, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
+	metricsRcvr, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
 	require.NoError(t, err, "failed creating metrics receiver")
 	tracesRcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
 	require.NoError(t, err, "failed creating traces receiver")
-	logsRcvr, err := f.CreateLogs(context.Background(), receivertest.NewNopSettings(), cfg, lc)
-	require.NoError(t, err, "failed creating logs receiver")
 
+	require.NoError(t, metricsRcvr.Start(context.Background(), componenttest.NewNopHost()))
 	require.NoError(t, tracesRcvr.Start(context.Background(), componenttest.NewNopHost()))
-	require.NoError(t, logsRcvr.Start(context.Background(), componenttest.NewNopHost()))
 
 	return func() {
+		assert.NoError(t, metricsRcvr.Shutdown(context.Background()))
 		assert.NoError(t, tracesRcvr.Shutdown(context.Background()))
-		assert.NoError(t, logsRcvr.Shutdown(context.Background()))
 	}
 }
 
@@ -82,16 +76,6 @@ func waitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())
 		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)
-		return count >= entriesNum
-	}, timeout, 1*time.Second, "failed to receive %d entries in %s",
-		entriesNum, timeout)
-}
-
-func waitForLogs(t *testing.T, entriesNum int, lc *consumertest.LogsSink) {
-	timeout := 5 * time.Minute // 5 minutes
-	require.Eventuallyf(t, func() bool {
-		count := len(lc.AllLogs())
-		t.Logf("Waiting for logs: got %d/%d", count, entriesNum)
 		return count >= entriesNum
 	}, timeout, 1*time.Second, "failed to receive %d entries in %s",
 		entriesNum, timeout)

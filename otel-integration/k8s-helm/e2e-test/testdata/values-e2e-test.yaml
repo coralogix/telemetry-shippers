@@ -39,7 +39,16 @@ opentelemetry-agent:
         traces:
           exporters:
             - otlp
-        logs:
+        metrics/resource_catalog:
           exporters:
-            - debug
             - otlp
+            - debug
+          processors:
+            - memory_limiter
+            - resource/metadata
+            - k8sattributes
+            - resourcedetection/entity
+            - resourcedetection/region
+            - transform/entity-event
+          receivers:
+            - hostmetrics

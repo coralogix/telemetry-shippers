@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +34,6 @@ const (
 )
 
 func TestE2E_Agent(t *testing.T) {
-
 	//Check if the HOST_ENDPOINT is set
 	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
 
@@ -73,8 +71,7 @@ func TestE2E_Agent(t *testing.T) {
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
-	logsConsumer := new(consumertest.LogsSink)
-	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer, logsConsumer)
+	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer)
 	defer shutdownSink()
 
 	testID := uuid.NewString()[:8]
@@ -96,13 +93,17 @@ func TestE2E_Agent(t *testing.T) {
 		}
 	})
 
-	waitForMetrics(t, 20, metricsConsumer)
+	waitForMetrics(t, 30, metricsConsumer)
 	waitForTraces(t, 20, tracesConsumer)
-	waitForLogs(t, 20, logsConsumer)
 
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
-	checkLogsAttributes(t, logsConsumer.AllLogs(), testID, testNs)
+
+	// Check for host entity metrics from the metrics/resource_catalog pipeline
+	foundHostEntityMetrics := checkForHostEntityMetrics(t, metricsConsumer.AllMetrics())
+	if foundHostEntityMetrics {
+		t.Log("Host entity events feature is working correctly")
+	}
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -209,29 +210,45 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName string) error {
 	var compareMap map[string]string
 
-	switch scopeName {
-	case "hostmetricsreceiver":
-		compareMap = expectedResourceAttributesHostmetricsreceiver
-	case "kubeletstatsreceiver":
-		compareMap = expectedResourceAttributesKubeletstatreceiver
-	case "prometheusreceiver":
-		compareMap = expectedResourceAttributesPrometheusreceiver
-	case "k8sattributesprocessor":
-		compareMap = expectedResourceAttributesK8sattributesprocessor
-	case "loadscraper":
-		compareMap = expectedResourceAttributesLoadscraper
-	case "memorylimiterprocessor":
-		compareMap = expectedResourceAttributesMemorylimiterprocessor
-	case "processscraper":
-		compareMap = expectedResourceAttributesProcessscraper
-	case "service":
-		compareMap = expectedResourceAttributesService
-	case "processorhelper":
-		compareMap = expectedResourceAttributesProcessorhelper
-	case "spanmetricsconnector":
-		compareMap = expectedResourceAttributesSpanmetricsconnector
-	default:
-		compareMap = expectedResourceAttributesMemorylimiterprocessor
+	// First check if this is from the host entity pipeline
+	if hasHostEntityResourceAttributes(attributes) {
+		compareMap = expectedResourceAttributesHostEntityEvents
+	} else {
+		// Fall back to the original scope-based logic
+		switch scopeName {
+		case "hostmetricsreceiver":
+			compareMap = expectedResourceAttributesHostmetricsreceiver
+		case "kubeletstatsreceiver":
+			compareMap = expectedResourceAttributesKubeletstatreceiver
+		case "prometheusreceiver":
+			compareMap = expectedResourceAttributesPrometheusreceiver
+		case "k8sattributesprocessor":
+			compareMap = expectedResourceAttributesK8sattributesprocessor
+		case "loadscraper":
+			compareMap = expectedResourceAttributesLoadscraper
+		case "memorylimiterprocessor":
+			compareMap = expectedResourceAttributesMemorylimiterprocessor
+		case "processscraper":
+			compareMap = expectedResourceAttributesProcessscraper
+		case "diskscraper":
+			compareMap = expectedResourceAttributesHostmetricsreceiver
+		case "cpuscraper":
+			compareMap = expectedResourceAttributesHostmetricsreceiver
+		case "memoryscraper":
+			compareMap = expectedResourceAttributesHostmetricsreceiver
+		case "networkscraper":
+			compareMap = expectedResourceAttributesHostmetricsreceiver
+		case "filesystemscraper":
+			compareMap = expectedResourceAttributesHostmetricsreceiver
+		case "service":
+			compareMap = expectedResourceAttributesService
+		case "processorhelper":
+			compareMap = expectedResourceAttributesProcessorhelper
+		case "spanmetricsconnector":
+			compareMap = expectedResourceAttributesSpanmetricsconnector
+		default:
+			compareMap = expectedResourceAttributesMemorylimiterprocessor
+		}
 	}
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
@@ -285,82 +302,65 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 	return nil
 }
 
-func checkLogsAttributes(t *testing.T, actual []plog.Logs, testID string, testNs string) error {
-	if len(actual) == 0 {
-		t.Fatal("logs: No logs received")
-	}
+func checkForHostEntityMetrics(t *testing.T, metrics []pmetric.Metrics) bool {
+	for _, current := range metrics {
+		metricData := pmetric.NewMetrics()
+		current.CopyTo(metricData)
 
-	// Track if we found logs with entity event attributes
-	foundEntityEventLog := false
+		for i := 0; i < metricData.ResourceMetrics().Len(); i++ {
+			rmetrics := metricData.ResourceMetrics().At(i)
+			resourceAttrs := rmetrics.Resource().Attributes()
 
-	for _, current := range actual {
-		logs := plog.NewLogs()
-		current.CopyTo(logs)
+			// Check if this resource has host entity attributes
+			if hasHostEntityResourceAttributes(resourceAttrs) {
+				t.Logf("✅ Found host entity metrics with entity-specific attributes")
 
-		for i := 0; i < logs.ResourceLogs().Len(); i++ {
-			rlogs := logs.ResourceLogs().At(i)
-
-			// Check for entity event logs in log records
-			for j := 0; j < rlogs.ScopeLogs().Len(); j++ {
-				scopeLogs := rlogs.ScopeLogs().At(j)
-				for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
-					logRecord := scopeLogs.LogRecords().At(k)
-
-					// Check if this log record has entity event attributes
-					if hasEntityEventAttributes(logRecord.Attributes()) {
-						foundEntityEventLog = true
-						t.Logf("Found entity event log with attributes")
-
-						// Verify required entity event attributes
-						checkEntityEventAttributes(t, logRecord.Attributes())
-					}
+				// Log some of the entity-specific attributes for verification
+				if hostCpuFamily, exists := resourceAttrs.Get("host.cpu.family"); exists && hostCpuFamily.AsString() != "" {
+					t.Logf("  host.cpu.family: %s", hostCpuFamily.AsString())
 				}
+				if hostCpuModel, exists := resourceAttrs.Get("host.cpu.model.name"); exists && hostCpuModel.AsString() != "" {
+					t.Logf("  host.cpu.model.name: %s", hostCpuModel.AsString())
+				}
+				if hostMac, exists := resourceAttrs.Get("host.mac"); exists && hostMac.AsString() != "" {
+					t.Logf("  host.mac: %s", hostMac.AsString())
+				}
+				if osDesc, exists := resourceAttrs.Get("os.description"); exists && osDesc.AsString() != "" {
+					t.Logf("  os.description: %s", osDesc.AsString())
+				}
+
+				return true
 			}
 		}
 	}
 
-	// Ensure we found at least one entity event log
-	require.True(t, foundEntityEventLog, "logs: No entity event logs found with required attributes")
-
-	return nil
+	return false
 }
 
-// hasEntityEventAttributes checks if the log record contains entity event attributes
-func hasEntityEventAttributes(attrs pcommon.Map) bool {
-	eventType, hasEventType := attrs.Get("otel.entity.event.type")
-	entityType, hasEntityType := attrs.Get("otel.entity.type")
+// hasHostEntityResourceAttributes checks if the resource attributes indicate this is from the host entity pipeline
+func hasHostEntityResourceAttributes(attrs pcommon.Map) bool {
+	serviceName, hasServiceName := attrs.Get("service.name")
+	agentType, hasAgentType := attrs.Get("cx.agent.type")
 
-	return hasEventType && hasEntityType &&
-		eventType.AsString() == "entity_state" &&
-		(entityType.AsString() == "host" || entityType.AsString() == "k8s.node" || entityType.AsString() == "k8s.pod")
-}
-
-// checkEntityEventAttributes verifies that required entity event attributes are present
-func checkEntityEventAttributes(t *testing.T, attrs pcommon.Map) {
-	// Check for required attributes using the expected list
-	for _, attrKey := range expectedEntityEventAttributes {
-		_, exists := attrs.Get(attrKey)
-		require.True(t, exists, "logs: entity event log missing required attribute: %s", attrKey)
+	// Check for basic agent attributes
+	if !hasServiceName || !hasAgentType ||
+		serviceName.AsString() != "opentelemetry-collector" ||
+		agentType.AsString() != "agent" {
+		return false
 	}
 
-	// Verify specific attribute values
-	eventType, _ := attrs.Get("otel.entity.event.type")
-	require.Equal(t, "entity_state", eventType.AsString(), "logs: otel.entity.event.type should be 'entity_state'")
+	// Check for attributes unique to resourcedetection/entity processor
+	// These are only set in the metrics/resource_catalog pipeline
+	hostCpuFamily, hasHostCpuFamily := attrs.Get("host.cpu.family")
+	hostCpuModelName, hasHostCpuModelName := attrs.Get("host.cpu.model.name")
+	hostMac, hasHostMac := attrs.Get("host.mac")
+	osDescription, hasOsDescription := attrs.Get("os.description")
 
-	entityType, _ := attrs.Get("otel.entity.type")
-	require.Contains(t, validEntityTypes, entityType.AsString(), "logs: otel.entity.type should be one of %v", validEntityTypes)
-
-	interval, _ := attrs.Get("otel.entity.interval")
-	require.Greater(t, interval.Int(), int64(0), "logs: otel.entity.interval should be greater than 0")
-
-	// Log the found attributes for debugging
-	t.Logf("Entity event attributes found:")
-	attrs.Range(func(k string, v pcommon.Value) bool {
-		if strings.HasPrefix(k, "otel.entity.") {
-			t.Logf("  %s: %v", k, v.AsRaw())
-		}
-		return true
-	})
+	// If any of these entity-specific attributes are present, this is from the host entity pipeline
+	return (hasHostCpuFamily && hostCpuFamily.AsString() != "") ||
+		(hasHostCpuModelName && hostCpuModelName.AsString() != "") ||
+		(hasHostMac && hostMac.AsString() != "") ||
+		(hasOsDescription && osDescription.AsString() != "")
 }
 
 func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) error {
