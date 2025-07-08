@@ -1,6 +1,6 @@
 # Kubernetes observability using OpenTelemetry
 
-Coralogix offers **Kubernetes Observability using OpenTelemetry** for comprehensive Kubernetes and application observability. Using our **OpenTelemetry Chart**, the integration enables you to simplify the collection of logs, metrics, and traces from the running application in your pods to the cluster-level components of your Kubernetes cluster, while enabling our [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
+Coralogix offers **Kubernetes Observability using OpenTelemetry** for comprehensive Kubernetes and application observability. Using our [OpenTelemetry Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm), the integration enables you to simplify the collection of logs, metrics, and traces from the running application in your pods to the cluster-level components of your Kubernetes cluster, while enabling our [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
 
 ## Observability explained
 
@@ -29,8 +29,6 @@ Application observability focuses on monitoring and understanding the behavior o
 Integrating OpenTelemetry with Kubernetes enables comprehensive Kubernetes and application observability. The OpenTelemetry Integration Chart is a solution that combines two dependent charts into a single Helm installation for Kubernetes clusters: the OpenTelemetry Agent and the OpenTelemetry Cluster Collector. Both are built on the OpenTelemetry Collector Helm Chart, but are configured for optimal performance while collecting different data sources from Kubernetes. Together, they simplify the collection of logs, metrics, and traces from the running application in pods to the cluster-level components of your Kubernetes cluster.
 
 Depending on your needs, you can use both charts (default behavior) or decide to disable either one under the `opentelemetry-agent` or `opentelemetry-cluster-collector` sections in the `values.yaml` file.
-
-![Kubernetes Observability OpenTelemetry Coralogix](https://coralogix.com/wp-content/uploads/2023/11/Excali-Diagram-1.svg)
 
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
 
@@ -1056,8 +1054,6 @@ The Target Allocator discovers [Prometheus Operator](https://github.com/promethe
 
 Then, the Target Allocator detects available OpenTelemetry Collectors and distributes the targets among known collectors. As a result, the collectors routinely query the Target Allocator for their assigned metric targets to add to the scrape configuration.
 
-![OTel Collector](https://coralogix.com/wp-content/uploads/2024/06/Otel-Collector_Jun_20-2.svg)
-
 ### Allocation strategies
 
 Upon query from collectors, the Target Allocator assigns metric endpoint targets according to a chosen allocation strategy. To align with our chart's Opentelemetry agent in DaemonSet mode, the allocation strategy `per node` is preconfigured. This assigns each target to the OpenTelemetry collector running on the same Node as the metric endpoint.
@@ -1303,6 +1299,16 @@ The K8s Cache Component is critical for large scale kubernetes clusters, as it a
 The K8s Cache is turned on by default, with 2 replicas for high availability. You can configure the number of replicas by setting `opentelemetry-ebpf-instrumentation.k8sCache.replicas` in the `values.yaml` file.
 to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file.
 Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation.
+
+## Coralogix Operator
+
+The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provides Kubernetes-native deployment
+and management for Coralogix, designed to simplify and automate the configuration of Coralogix APIs through
+Kubernetes custom resources definitions and controllers.
+
+### Enabling Coralogix Operator
+
+To enable the Coralogix Operator, set `coralogix-operator.enabled` to `true` in the `values.yaml` file.
 
 # How to use it
 

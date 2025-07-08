@@ -2,6 +2,20 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.197 / 2025-07-04
+- [Feat] Support global `deploymentEnvironmentName` for the resource detection preset.
+- [Feat] Update Collector to v0.129.1
+
+### v0.0.196 / 2025-07-03
+- [Feat] Add new variable `presets.coralogixExporter.pipelines` as an `array[string]` to allow enabling exporter on 2 pipelines at once. The old variable `presets.coralogixExporter.pipeline` is still available, but deprecated
+- [Feat] Add coralogix-operator subchart.
+
+### v0.0.195 / 2025-07-02
+- [Fix] Support templating for `presets.resourceDetection.deploymentEnvironmentName`.
+
+### v0.0.194 / 2025-06-27
+- [Feat] Upgrade OpenTelemetry Collector to `0.116.1`
+
 ### v0.0.193 / 2025-06-22
 - [Feat] bump opentelemetry-ebpf-profiler version.
 
