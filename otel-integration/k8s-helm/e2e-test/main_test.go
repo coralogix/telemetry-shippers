@@ -337,7 +337,6 @@ func checkForHostEntityMetrics(t *testing.T, metrics []pmetric.Metrics) bool {
 	return false
 }
 
-// hasHostEntityResourceAttributes checks if the resource attributes indicate this is from the host entity pipeline
 func hasHostEntityResourceAttributes(attrs pcommon.Map) bool {
 	serviceName, hasServiceName := attrs.Get("service.name")
 	agentType, hasAgentType := attrs.Get("cx.agent.type")
