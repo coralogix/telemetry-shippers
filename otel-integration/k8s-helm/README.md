@@ -105,8 +105,7 @@ Utilizing OpenTelemetry, we ensure seamless and automated data collection from v
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
 
-The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/ under the secret key `PRIVATE_KEY`.
-This secret must exist in the same namespace where the Helm chart is installed.
+The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/ under the secret key `PRIVATE_KEY`. **This secret must exist in the same namespace where the Helm chart is installed**.
 
 To create the secret, run the following command:
 
@@ -944,8 +943,7 @@ To deploy OpenTelemetry Collector in a separate "central" Kubernetes cluster for
 
 This deployment creates two key components:
 
-- `opentelemetry-receiver`. Receives OTLP data and sends metrics and logs directly to Coralogix while performing load balancing of span data sent to the `opentelemetry-gateway` deployment.
-  deployment.
+- `opentelemetry-receiver`. Receives OTLP data and sends metrics and logs directly to Coralogix while performing load balancing of span data sent to the `opentelemetry-gateway` deployment. deployment.
 - `opentelemetry-gateway`. Performs tail sampling decisions on the received span data before forwarding to Coralogix
 
 To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`, expose it using one of these methods:
@@ -1216,8 +1214,7 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 > [WARNING] - The Coralogix EBPF Agent is deprecated and will be removed in a future release. Please use [OpenTelemetry EBPF Instrumentation](#opentelemetry-ebpf-instrumentation) instead.
 
-The Coralogix EBPF Agent (`coralogix-ebpf-agent`) is an agent developed by Coralogix using EBPF to extract network traffic as spans (HTTP requests, SQL traffic, etc.), enabling APM capabilities without service instrumentation.
-To enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
+The Coralogix EBPF Agent (`coralogix-ebpf-agent`) is an agent developed by Coralogix using EBPF to extract network traffic as spans (HTTP requests, SQL traffic, etc.), enabling APM capabilities without service instrumentation. To enable the coralogix-ebpf-agent deployment, set `coralogix-ebpf-agent.enabled` to `true` in the `values.yaml` file.
 
 Components:
 - `coralogix-ebpf-agent`. The agent that extracts network traffic as spans, running as a daemonset.
@@ -1230,9 +1227,7 @@ To enable the coralogix EBPF agent, set `coralogix-ebpf-agent.enabled` to `true`
 
 #### Filtering Specific Services For Coralogix EBPF Agent
 
-By default, the coralogix-ebpf-agent will collect traffic from all services in the cluster.
-but there are cases where you might want to filter specific services, or filter out specific services. you can use the
-`coralogix-ebpf-agent.ebpf_agent.sampler` parameter in `values.yaml` to change the service filtering behavior.
+By default, the coralogix-ebpf-agent will collect traffic from all services in the cluster. but there are cases where you might want to filter specific services, or filter out specific services. you can use the `coralogix-ebpf-agent.ebpf_agent.sampler` parameter in `values.yaml` to change the service filtering behavior.
 
 For example, collect only traffic coming from `carts-service` and `orders-service`:
 
@@ -1258,13 +1253,11 @@ coralogix-ebpf-agent:
 
 #### What Is Considered A Service By Coralogix EBPF Agent?
 
-A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob.
-the name of the service is the name of that owner resource.
+A service is defined by the top owner of the specific container the performed the network request, in most cases a Deploymnet, StatefulSet, DaemonSet or CronJob. the name of the service is the name of that owner resource.
 
 #### Enabling Coralogix EBPF with existing OpenTelemetry Collector
 
-If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF agent.
-you can only deploy the ebpf agent and supply your existing OpenTelemetry Collector endpoint with this command:
+If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF agent. you can only deploy the ebpf agent and supply your existing OpenTelemetry Collector endpoint with this command:
 
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
@@ -1275,8 +1268,7 @@ helm upgrade --install otel-coralogix-central-collector coralogix-charts-virtual
 
 #### Enabling Coralogix EBPF profiler with existing OpenTelemetry Collector
 
-If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF profiler.
-You can only deploy the ebpf profiler and enable profiling pipeline with this command:
+If you already have an existing OpenTelemetry Collector deployment and you want to enable the Coralogix EBPF profiler. You can only deploy the ebpf profiler and enable profiling pipeline with this command:
 
 ```bash
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
@@ -1287,24 +1279,17 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 ## Opentelemetry EBPF Instrumentation
 
-The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code.
-To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumenat.enabled` to `true` in the `values.yaml` file.
+The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code. To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumenat.enabled` to `true` in the `values.yaml` file.
 
 for a full list of values for this chart, please look at [values.yaml])(https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
 
 ### K8s Cache
 
-The OpenTelemetry EBPF Instrumentation includes a K8s Cache component that collects Kubernetes metadata and enriches the telemetry data with Kubernetes labels. This allows you to correlate the telemetry data with Kubernetes resources, such as Pods, Nodes, and Namespaces.
-The K8s Cache Component is critical for large scale kubernetes clusters, as it allows takes load of the K8s API Server by isolating the calls to only the K8s Cache services.
-The K8s Cache is turned on by default, with 2 replicas for high availability. You can configure the number of replicas by setting `opentelemetry-ebpf-instrumentation.k8sCache.replicas` in the `values.yaml` file.
-to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file.
-Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation.
+The OpenTelemetry EBPF Instrumentation includes a K8s Cache component that collects Kubernetes metadata and enriches the telemetry data with Kubernetes labels. This allows you to correlate the telemetry data with Kubernetes resources, such as Pods, Nodes, and Namespaces. The K8s Cache Component is critical for large scale kubernetes clusters, as it allows takes load of the K8s API Server by isolating the calls to only the K8s Cache services. The K8s Cache is turned on by default, with 2 replicas for high availability. You can configure the number of replicas by setting `opentelemetry-ebpf-instrumentation.k8sCache.replicas` in the `values.yaml` file. to turn off the K8s Cache, set `opentelemetry-ebpf-instrumentation.k8sCache.replicas` to `0` in the `values.yaml` file. Turning off the k8s cache will still enrich data with k8s metadata, but it will do so by calling the K8s API Server directly from each replica of the OpenTelemetry EBPF Instrumentation.
 
 ## Coralogix Operator
 
-The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provides Kubernetes-native deployment
-and management for Coralogix, designed to simplify and automate the configuration of Coralogix APIs through
-Kubernetes custom resources definitions and controllers.
+The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provides Kubernetes-native deployment and management for Coralogix, designed to simplify and automate the configuration of Coralogix APIs through Kubernetes custom resources definitions and controllers.
 
 ### Enabling Coralogix Operator
 
@@ -1468,8 +1453,7 @@ presets:
       enabled: false
 ```
 
-!!! Note
-`errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
+!!! Note `errorTracking` only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions above v1.21.0. If you are using older versions, you might need to transform some attributes, such as:
 
 ```
 http.status_code => http.response.status_code
@@ -1520,19 +1504,19 @@ presets:
 
 The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0.
 
-| Language | SDK version with `dbMetrics` support |
-|----------|---------------------------------------------|
-| Go | v1.28.0+ |
-| Java | v1.41.0+ |
-| JavaScript | v1.26.0+ |
-| Python | v1.26.0+ |
-| .NET | v1.10.0+ |
-| C++ | v1.16.0+ |
-| PHP | v1.0.0+ |
-| Ruby | v1.4.0+ |
-| Rust | v0.25.0+ |
-| Swift | v1.10.0+ |
-| Erlang/Elixir | v1.3.0+ |
+| Language      | SDK version with `dbMetrics` support |
+|---------------|--------------------------------------|
+| Go            | v1.28.0+                             |
+| Java          | v1.41.0+                             |
+| JavaScript    | v1.26.0+                             |
+| Python        | v1.26.0+                             |
+| .NET          | v1.10.0+                             |
+| C++           | v1.16.0+                             |
+| PHP           | v1.0.0+                              |
+| Ruby          | v1.4.0+                              |
+| Rust          | v0.25.0+                             |
+| Swift         | v1.10.0+                             |
+| Erlang/Elixir | v1.3.0+                              |
 
 If you are using older versions, you might need to transform some attributes, such as:
 
@@ -1545,8 +1529,7 @@ db.cassandra.table => db.collection.name
 
 To do that, you can add the configuration below. It will take care of defining the `transform/spanmetrics` processor with those transform statements and adding it to the end of the `traces` pipeline, just before batching. This ensures that the transformations are applied to all spans before they are routed to the `spanmetrics` or `forward/db` connectors, putting all the spans on the same semantic convention.
 
-> [!IMPORTANT]
-> Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
+> [!IMPORTANT] Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
 
 ```yaml
     spanMetrics:
@@ -1677,8 +1660,7 @@ Once the installation is complete, verify that the Kube State Metrics metrics ar
 
 The integration connects to the Coralogix fleet management server through fleetManagement preset. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is enabled by default. You can disable it by setting the `presets.fleetManagement.enabled` property to `false`.
 
-> [!NOTE]
-> Important security considerations when enabling this feature:
+> [!NOTE] Important security considerations when enabling this feature:
 > - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
 > - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
 > - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
