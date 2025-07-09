@@ -313,22 +313,6 @@ func checkForHostEntityMetrics(t *testing.T, metrics []pmetric.Metrics) bool {
 
 			// Check if this resource has host entity attributes
 			if hasHostEntityResourceAttributes(resourceAttrs) {
-				t.Logf("✅ Found host entity metrics with entity-specific attributes")
-
-				// Log some of the entity-specific attributes for verification
-				if hostCpuFamily, exists := resourceAttrs.Get("host.cpu.family"); exists && hostCpuFamily.AsString() != "" {
-					t.Logf("  host.cpu.family: %s", hostCpuFamily.AsString())
-				}
-				if hostCpuModel, exists := resourceAttrs.Get("host.cpu.model.name"); exists && hostCpuModel.AsString() != "" {
-					t.Logf("  host.cpu.model.name: %s", hostCpuModel.AsString())
-				}
-				if hostMac, exists := resourceAttrs.Get("host.mac"); exists && hostMac.AsString() != "" {
-					t.Logf("  host.mac: %s", hostMac.AsString())
-				}
-				if osDesc, exists := resourceAttrs.Get("os.description"); exists && osDesc.AsString() != "" {
-					t.Logf("  os.description: %s", osDesc.AsString())
-				}
-
 				return true
 			}
 		}
