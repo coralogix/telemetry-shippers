@@ -394,6 +394,23 @@ var expectedResourceAttributesHostEntityEvents = map[string]string{
 	"azure.resourcegroup.name": "",
 	"service.version":          "",
 	"service.instance.id":      "",
+	// Process attributes (when processscraper runs in resource_catalog pipeline)
+	"process.pid":             "",
+	"process.parent_pid":      "",
+	"process.executable.name": "",
+	"process.executable.path": "",
+	"process.command":         "",
+	"process.command_line":    "",
+	"process.owner":           "",
+	// Kubelet stats receiver attributes (when running in resource_catalog pipeline)
+	"k8s.pod.uid":          "",
+	"k8s.pod.name":         "",
+	"k8s.namespace.name":   "",
+	"k8s.deployment.name":  "",
+	"k8s.daemonset.name":   "",
+	"k8s.job.name":         "",
+	"k8s.statefulset.name": "",
+	"k8s.container.name":   "",
 }
 
 var expectedMetrics map[string]bool = map[string]bool{

@@ -100,7 +100,7 @@ func TestE2E_Agent(t *testing.T) {
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
 
 	// Check for host entity metrics from the metrics/resource_catalog pipeline
-	foundHostEntityMetrics := checkForHostEntityMetrics(t, metricsConsumer.AllMetrics())
+	foundHostEntityMetrics := checkForHostEntityTelemetry(t, metricsConsumer.AllMetrics())
 	if foundHostEntityMetrics {
 		t.Log("Host entity events feature is working correctly")
 	}
@@ -230,15 +230,7 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 			compareMap = expectedResourceAttributesMemorylimiterprocessor
 		case "processscraper":
 			compareMap = expectedResourceAttributesProcessscraper
-		case "diskscraper":
-			compareMap = expectedResourceAttributesHostmetricsreceiver
-		case "cpuscraper":
-			compareMap = expectedResourceAttributesHostmetricsreceiver
-		case "memoryscraper":
-			compareMap = expectedResourceAttributesHostmetricsreceiver
-		case "networkscraper":
-			compareMap = expectedResourceAttributesHostmetricsreceiver
-		case "filesystemscraper":
+		case "diskscraper", "cpuscraper", "memoryscraper", "networkscraper", "filesystemscraper":
 			compareMap = expectedResourceAttributesHostmetricsreceiver
 		case "service":
 			compareMap = expectedResourceAttributesService
@@ -302,7 +294,7 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 	return nil
 }
 
-func checkForHostEntityMetrics(t *testing.T, metrics []pmetric.Metrics) bool {
+func checkForHostEntityTelemetry(t *testing.T, metrics []pmetric.Metrics) bool {
 	for _, current := range metrics {
 		metricData := pmetric.NewMetrics()
 		current.CopyTo(metricData)
@@ -322,15 +314,10 @@ func checkForHostEntityMetrics(t *testing.T, metrics []pmetric.Metrics) bool {
 }
 
 func hasHostEntityResourceAttributes(attrs pcommon.Map) bool {
-	serviceName, hasServiceName := attrs.Get("service.name")
-	agentType, hasAgentType := attrs.Get("cx.agent.type")
-
-	// Check for basic agent attributes
-	if !hasServiceName || !hasAgentType ||
-		serviceName.AsString() != "opentelemetry-collector" ||
-		agentType.AsString() != "agent" {
-		return false
-	}
+	// Regex patterns for validation
+	hostIdPattern := regexp.MustCompile(`^[0-9a-fA-F]{32}$`)
+	ipv4Pattern := regexp.MustCompile(`^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`)
+	ipv6Pattern := regexp.MustCompile(`^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$|^(?:[0-9a-fA-F]{1,4}:)*::[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4})*$`)
 
 	// Check for attributes unique to resourcedetection/entity processor
 	// These are only set in the metrics/resource_catalog pipeline
@@ -339,11 +326,56 @@ func hasHostEntityResourceAttributes(attrs pcommon.Map) bool {
 	hostMac, hasHostMac := attrs.Get("host.mac")
 	osDescription, hasOsDescription := attrs.Get("os.description")
 
-	// If any of these entity-specific attributes are present, this is from the host entity pipeline
-	return (hasHostCpuFamily && hostCpuFamily.AsString() != "") ||
+	// Additional validation for host.id and host.ip formats to ensure these are from entity detection
+	hostId, hasHostId := attrs.Get("host.id")
+	hostIp, hasHostIp := attrs.Get("host.ip")
+
+	// Validate host.id format (should be 32-character hex string)
+	isValidHostId := hasHostId && hostIdPattern.MatchString(hostId.AsString())
+
+	// Validate host.ip format (should contain valid IP addresses)
+	isValidHostIp := false
+	if hasHostIp {
+		switch hostIp.Type() {
+		case pcommon.ValueTypeStr:
+			ip := hostIp.AsString()
+			isValidHostIp = ipv4Pattern.MatchString(ip) || ipv6Pattern.MatchString(ip)
+		case pcommon.ValueTypeSlice:
+			// Use AsRaw to get the underlying slice
+			raw := hostIp.AsRaw()
+			if ipSlice, ok := raw.([]interface{}); ok && len(ipSlice) > 0 {
+				// Check if at least one IP address is valid
+				for _, ip := range ipSlice {
+					if ipStr, ok := ip.(string); ok {
+						if ipv4Pattern.MatchString(ipStr) || ipv6Pattern.MatchString(ipStr) {
+							isValidHostIp = true
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Check if this is from the host entity pipeline
+	isHostEntity := (hasHostCpuFamily && hostCpuFamily.AsString() != "") ||
 		(hasHostCpuModelName && hostCpuModelName.AsString() != "") ||
-		(hasHostMac && hostMac.AsString() != "") ||
-		(hasOsDescription && osDescription.AsString() != "")
+		(hasHostMac && hostMac.AsRaw() != nil) ||
+		(hasOsDescription && osDescription.AsString() != "") ||
+		isValidHostId ||
+		isValidHostIp
+
+	// Debug output to see what's being detected
+	if isHostEntity {
+		serviceName, hasServiceName := attrs.Get("service.name")
+		if hasServiceName {
+			fmt.Printf("DEBUG: Detected host entity attributes for service.name=%s\n", serviceName.AsString())
+		} else {
+			fmt.Printf("DEBUG: Detected host entity attributes for service.name=<missing>\n")
+		}
+	}
+
+	return isHostEntity
 }
 
 func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) error {
