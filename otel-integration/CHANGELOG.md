@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.199 / 2025-07-09
+- [Feat] add k8s ipv6 support for ebpf-profiler sub-chart, fix ipv6-values.yaml to support change in address fields.
+
 ### v0.0.198 / 2025-07-09
 - [Fix] Apply `transform/prometheus` rule only for metrics from the Collector itself.
 
