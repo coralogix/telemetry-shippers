@@ -2,8 +2,11 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.199 / 2025-07-10
-- [Feat] Extend E2E test for hostEntity preset via a metrics pipeline.
+### v0.0.200 / 2025-07-10
+- [Feat] Extend E2E test for hostEntity preset.
+
+### v0.0.199 / 2025-07-09
+- [Feat] add k8s ipv6 support for ebpf-profiler sub-chart, fix ipv6-values.yaml to support change in address fields.
 
 ### v0.0.198 / 2025-07-09
 - [Fix] Apply `transform/prometheus` rule only for metrics from the Collector itself.
