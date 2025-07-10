@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.199 / 2025-07-10
+- [Feat] Extend E2E test for hostEntity preset via a metrics pipeline.
+
 ### v0.0.198 / 2025-07-09
 - [Fix] Apply `transform/prometheus` rule only for metrics from the Collector itself.
 
