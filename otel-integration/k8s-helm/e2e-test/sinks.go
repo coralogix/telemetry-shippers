@@ -14,10 +14,6 @@ import (
 )
 
 const (
-	equal = iota
-	regex
-	exist
-
 	attributeMatchTypeEqual expectedValueMode = iota
 	attributeMatchTypeRegex
 	attributeMatchTypeExist
@@ -34,8 +30,8 @@ type expectedTrace struct {
 }
 
 type expectedValue struct {
-	mode  expectedValueMode
-	value string
+	mode  expectedValueMode `json:"mode"`
+	value string            `json:"value"`
 }
 
 func newExpectedValue(mode expectedValueMode, value string) expectedValue {
@@ -51,14 +47,17 @@ func startUpSinks(t *testing.T, mc *consumertest.MetricsSink, tc *consumertest.T
 	cfg.HTTP = nil
 	cfg.GRPC.NetAddr.Endpoint = "0.0.0.0:4317"
 
-	_, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
+	metricsRcvr, err := f.CreateMetrics(context.Background(), receivertest.NewNopSettings(), cfg, mc)
 	require.NoError(t, err, "failed creating metrics receiver")
-	rcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
+	tracesRcvr, err := f.CreateTraces(context.Background(), receivertest.NewNopSettings(), cfg, tc)
 	require.NoError(t, err, "failed creating traces receiver")
-	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
+
+	require.NoError(t, metricsRcvr.Start(context.Background(), componenttest.NewNopHost()))
+	require.NoError(t, tracesRcvr.Start(context.Background(), componenttest.NewNopHost()))
 
 	return func() {
-		assert.NoError(t, rcvr.Shutdown(context.Background()))
+		assert.NoError(t, metricsRcvr.Shutdown(context.Background()))
+		assert.NoError(t, tracesRcvr.Shutdown(context.Background()))
 	}
 }
 
