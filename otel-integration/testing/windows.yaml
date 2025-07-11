@@ -1,0 +1,20 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: otel-integration-windows-cluster
+  region: eu-west-1
+
+managedNodeGroups:
+  - name: linux-ng
+    instanceType: t3.small
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+
+  - name: windows-ng
+    amiFamily: WindowsServer2019FullContainer
+    instanceType: t3.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1

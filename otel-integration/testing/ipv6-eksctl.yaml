@@ -1,0 +1,24 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: otel-integration-windows-cluster
+  region: eu-west-1
+
+kubernetesNetworkConfig:
+  ipFamily: IPv6 # or IPv4
+
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: linux-ng
+    instanceType: t3.small
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+
