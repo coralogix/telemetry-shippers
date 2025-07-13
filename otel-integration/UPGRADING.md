@@ -1,6 +1,5 @@
 # Upgrade guidelines
 
-
 **Important Note for Tail-Sampling Configuration:**
 
 If you are using tail-sampling configuration, you must change the `coralogixExporter` preset pipelines to `none` to avoid conflicts with the tail-sampling setup:
@@ -13,6 +12,7 @@ opentelemetry-agent:
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
       pipelines: ["none"]
 ```
+
 See the [tail-sampling-values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/tail-sampling-values.yaml#L9-L21) for a complete example.
 
 These upgrade guidelines only contain instructions for version upgrades which require manual modifications on the user's side.
@@ -89,6 +89,7 @@ New presets added:
 | resourceDetection     | Configures resource detection processors to add system, environment and cloud information. Also configures volumes and volume mounts for the collector.                                                                                                                       |
 | semconv               | Applies semantic convention transformations.                                                                                                                                                                                                                                  |
 | k8sResourceAttributes | Configures Internal Collector's resource attributes for the collector.                                                                                                                                                                                                        |
+
 ## 0.0.89 to 0.0.90
 
 If you are providing your own configuration that relies on implicit conversion of types, this behavior is now deprecated and will not be supported in one of the future release (might cause your collectors to fail during start). Please update your configuration accordingly - to see which type casting behaviors are affected see the list [here](https://github.com/open-telemetry/opentelemetry-collector/issues/9532).
