@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.201 / 2025-07-13
+- [Feat] Bump `opentelemetry-ebpf-instrumentation` version to `0.1.2`
+
 ### v0.0.200 / 2025-07-10
 - [Fix] Remove deprecated match_once key from `spanMetricsMultiConfig` config.
 
