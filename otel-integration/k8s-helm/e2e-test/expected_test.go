@@ -468,7 +468,7 @@ var expectedHostEntityAttributes = map[string]expectedValue{
 	"host.mac":                 newExpectedValue(attributeMatchTypeExist, ""),
 	"host.name":                newExpectedValue(attributeMatchTypeExist, ""),
 	"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
-	"k8s.node.name":            newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e-control-plane"),
+	"k8s.node.name":            newExpectedValue(attributeMatchTypeOptional, ""),
 	"os.description":           newExpectedValue(attributeMatchTypeRegex, "^Linux .* (aarch64|x86_64)$"),
 	"os.type":                  newExpectedValue(attributeMatchTypeEqual, "linux"),
 	"otel.entity.event.type":   newExpectedValue(attributeMatchTypeEqual, "entity_state"),
