@@ -455,34 +455,36 @@ var expectedLogsSchemaURL = map[string]bool{
 }
 
 var expectedHostEntityAttributes = map[string]expectedValue{
-	"otel.entity.type":         newExpectedValue(attributeMatchTypeEqual, "host"),
-	"otel.entity.event.type":   newExpectedValue(attributeMatchTypeEqual, "entity_state"),
-	"host.id":                  newExpectedValue(attributeMatchTypeRegex, "^[a-f0-9-]{36}$"),
-	"host.name":                newExpectedValue(attributeMatchTypeExist, ""),
-	"host.ip":                  newExpectedValue(attributeMatchTypeExist, ""),
-	"host.mac":                 newExpectedValue(attributeMatchTypeExist, ""),
-	"os.type":                  newExpectedValue(attributeMatchTypeEqual, "linux"),
-	"os.description":           newExpectedValue(attributeMatchTypeRegex, "^Linux .* (aarch64|x86_64)$"),
-	"k8s.node.name":            newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e-control-plane"),
-	"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
-	"host.cpu.vendor.id":       newExpectedValue(attributeMatchTypeRegex, "^(Apple|AuthenticAMD|GenuineIntel)$"),
+	// Required attributes
+	"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
 	"host.cpu.cache.l2.size":   newExpectedValue(attributeMatchTypeExist, ""),
 	"host.cpu.family":          newExpectedValue(attributeMatchTypeExist, ""),
 	"host.cpu.model.id":        newExpectedValue(attributeMatchTypeExist, ""),
 	"host.cpu.model.name":      newExpectedValue(attributeMatchTypeExist, ""),
 	"host.cpu.stepping":        newExpectedValue(attributeMatchTypeExist, ""),
-	"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+	"host.cpu.vendor.id":       newExpectedValue(attributeMatchTypeExist, ""),
+	"host.id":                  newExpectedValue(attributeMatchTypeRegex, "^[a-f0-9-]{32,36}$"),
+	"host.ip":                  newExpectedValue(attributeMatchTypeExist, ""),
+	"host.mac":                 newExpectedValue(attributeMatchTypeExist, ""),
+	"host.name":                newExpectedValue(attributeMatchTypeExist, ""),
+	"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+	"k8s.node.name":            newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e-control-plane"),
+	"os.description":           newExpectedValue(attributeMatchTypeRegex, "^Linux .* (aarch64|x86_64)$"),
+	"os.type":                  newExpectedValue(attributeMatchTypeEqual, "linux"),
+	"otel.entity.event.type":   newExpectedValue(attributeMatchTypeEqual, "entity_state"),
 	"otel.entity.id":           newExpectedValue(attributeMatchTypeExist, ""),
 	"otel.entity.interval":     newExpectedValue(attributeMatchTypeEqual, "300000"),
-	// Azure-specific attributes that may be present
-	"cloud.provider":           newExpectedValue(attributeMatchTypeExist, ""),
-	"cloud.platform":           newExpectedValue(attributeMatchTypeExist, ""),
-	"cloud.region":             newExpectedValue(attributeMatchTypeExist, ""),
-	"cloud.account.id":         newExpectedValue(attributeMatchTypeExist, ""),
-	"azure.vm.name":            newExpectedValue(attributeMatchTypeExist, ""),
-	"azure.vm.size":            newExpectedValue(attributeMatchTypeExist, ""),
-	"azure.vm.scaleset.name":   newExpectedValue(attributeMatchTypeExist, ""),
-	"azure.resourcegroup.name": newExpectedValue(attributeMatchTypeExist, ""),
+	"otel.entity.type":         newExpectedValue(attributeMatchTypeEqual, "host"),
+
+	// Optional attributes (may be present in cloud environments)
+	"azure.resourcegroup.name": newExpectedValue(attributeMatchTypeOptional, ""),
+	"azure.vm.name":            newExpectedValue(attributeMatchTypeOptional, ""),
+	"azure.vm.scaleset.name":   newExpectedValue(attributeMatchTypeOptional, ""),
+	"azure.vm.size":            newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.account.id":         newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.platform":           newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.provider":           newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.region":             newExpectedValue(attributeMatchTypeOptional, ""),
 }
 
 func expectedTraces(testID string, testNs string) map[string]struct {

@@ -33,10 +33,6 @@ const (
 	testKubeConfig   = "/tmp/kind-otel-integration-agent-e2e"
 	kubeConfigEnvVar = "KUBECONFIG"
 
-	attributeMatchTypeEqual expectedValueMode = iota
-	attributeMatchTypeRegex
-	attributeMatchTypeExist
-
 	serviceNameAttribute = "service.name"
 )
 
@@ -314,8 +310,13 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 
 func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) error {
 	foundAttrs := make(map[string]bool)
-	for k := range kvs {
-		foundAttrs[k] = false
+	for k, v := range kvs {
+		// Optional attributes are considered found by default
+		if v.mode == attributeMatchTypeOptional || v.mode == attributeMatchTypeOptionalRegex {
+			foundAttrs[k] = true
+		} else {
+			foundAttrs[k] = false
+		}
 	}
 	var notFoundAttrs []string
 
@@ -333,6 +334,21 @@ func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) e
 				}
 			case attributeMatchTypeExist:
 				foundAttrs[k] = true
+			case attributeMatchTypeOptional:
+				// Attribute exists and is optional, so it's valid
+				foundAttrs[k] = true
+			case attributeMatchTypeOptionalRegex:
+				// Attribute exists and is optional, validate regex if provided
+				if val.value == "" {
+					foundAttrs[k] = true
+				} else {
+					matched, _ := regexp.MatchString(val.value, v.AsString())
+					if matched {
+						foundAttrs[k] = true
+					} else {
+						foundAttrs[k] = false
+					}
+				}
 			}
 		} else {
 			notFoundAttrs = append(notFoundAttrs, k)

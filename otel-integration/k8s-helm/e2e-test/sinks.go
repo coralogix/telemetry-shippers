@@ -16,6 +16,14 @@ import (
 
 type expectedValueMode int
 
+const (
+	attributeMatchTypeEqual expectedValueMode = iota
+	attributeMatchTypeRegex
+	attributeMatchTypeExist
+	attributeMatchTypeOptional
+	attributeMatchTypeOptionalRegex
+)
+
 type expectedValue struct {
 	mode  expectedValueMode
 	value string
