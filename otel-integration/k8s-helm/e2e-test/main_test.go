@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +32,12 @@ import (
 const (
 	testKubeConfig   = "/tmp/kind-otel-integration-agent-e2e"
 	kubeConfigEnvVar = "KUBECONFIG"
+
+	attributeMatchTypeEqual expectedValueMode = iota
+	attributeMatchTypeRegex
+	attributeMatchTypeExist
+
+	serviceNameAttribute = "service.name"
 )
 
 func TestE2E_Agent(t *testing.T) {
@@ -72,7 +79,28 @@ func TestE2E_Agent(t *testing.T) {
 
 	metricsConsumer := new(consumertest.MetricsSink)
 	tracesConsumer := new(consumertest.TracesSink)
-	shutdownSink := startUpSinks(t, metricsConsumer, tracesConsumer)
+	logsConsumer := new(consumertest.LogsSink)
+
+	shutdownSink := StartUpSinks(t, ReceiverSinks{
+		Metrics: &MetricSinkConfig{
+			Consumer: metricsConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4317,
+			},
+		},
+		Traces: &TraceSinkConfig{
+			Consumer: tracesConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4321,
+			},
+		},
+		Logs: &LogSinkConfig{
+			Consumer: logsConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4323,
+			},
+		},
+	})
 	defer shutdownSink()
 
 	testID := uuid.NewString()[:8]
@@ -94,11 +122,14 @@ func TestE2E_Agent(t *testing.T) {
 		}
 	})
 
+	waitForLogs(t, 1, logsConsumer)
 	waitForMetrics(t, 20, metricsConsumer)
-	waitForTraces(t, 20, tracesConsumer)
+	waitForTraces(t, 10, tracesConsumer)
 
+	checkSystemLogsAttributes(t, logsConsumer.AllLogs())
 	checkResourceMetrics(t, metricsConsumer.AllMetrics())
 	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
+
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -322,4 +353,60 @@ func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) e
 	}
 
 	return err
+}
+
+func checkSystemLogsAttributes(t *testing.T, actual []plog.Logs) error {
+	if len(actual) == 0 {
+		t.Fatal("No logs received")
+	}
+
+	foundHostEntityEvent := false
+
+	for _, current := range actual {
+		logs := plog.NewLogs()
+		current.CopyTo(logs)
+
+		for i := 0; i < logs.ResourceLogs().Len(); i++ {
+			rlogs := logs.ResourceLogs().At(i)
+
+			// Validate schema URL
+			_, ok := expectedLogsSchemaURL[rlogs.SchemaUrl()]
+			require.True(t, ok, "logs: schema_url %v does not match one of the expected values", rlogs.SchemaUrl())
+			if ok {
+				expectedLogsSchemaURL[rlogs.SchemaUrl()] = true
+			}
+
+			require.NotZero(t, rlogs.ScopeLogs().Len())
+			require.NotZero(t, rlogs.ScopeLogs().At(0).LogRecords().Len())
+
+			// Check scope logs for host entity events
+			for j := 0; j < rlogs.ScopeLogs().Len(); j++ {
+				scopeLogs := rlogs.ScopeLogs().At(j)
+
+				// Check individual log records
+				for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
+					logRecord := scopeLogs.LogRecords().At(k)
+					logAttrs := logRecord.Attributes()
+
+					// Check if this is a host entity event
+					if entityType, exists := logAttrs.Get("otel.entity.type"); exists && entityType.AsString() == "host" {
+						foundHostEntityEvent = true
+
+						// Validate expected host entity attributes using the expected values
+						assert.NoError(t, assertExpectedAttributes(logAttrs, expectedHostEntityAttributes))
+					}
+				}
+			}
+		}
+	}
+
+	// Ensure we found at least one host entity event
+	require.True(t, foundHostEntityEvent, "No host entity event found in logs")
+
+	// Verify all expected schema URLs were found
+	for name, expectedState := range expectedLogsSchemaURL {
+		require.True(t, expectedState, "logs: schema_url %v was not found in the actual logs", name)
+	}
+
+	return nil
 }

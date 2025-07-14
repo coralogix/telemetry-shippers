@@ -450,6 +450,32 @@ var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.25.0": false,
 }
 
+var expectedLogsSchemaURL = map[string]bool{
+	"https://opentelemetry.io/schemas/1.6.1": false,
+}
+
+var expectedHostEntityAttributes = map[string]expectedValue{
+	"otel.entity.type":         newExpectedValue(attributeMatchTypeEqual, "host"),
+	"otel.entity.event.type":   newExpectedValue(attributeMatchTypeEqual, "entity_state"),
+	"host.id":                  newExpectedValue(attributeMatchTypeRegex, "^[a-f0-9]{32}$"),
+	"host.name":                newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e-control-plane"),
+	"host.ip":                  newExpectedValue(attributeMatchTypeExist, ""),
+	"host.mac":                 newExpectedValue(attributeMatchTypeExist, ""),
+	"os.type":                  newExpectedValue(attributeMatchTypeEqual, "linux"),
+	"os.description":           newExpectedValue(attributeMatchTypeExist, ""),
+	"k8s.node.name":            newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e-control-plane"),
+	"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+	"host.cpu.vendor.id":       newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.cache.l2.size":   newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.family":          newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.model.id":        newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.model.name":      newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.stepping":        newExpectedValue(attributeMatchTypeEqual, "0"),
+	"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+	"otel.entity.id":           newExpectedValue(attributeMatchTypeExist, ""),
+	"otel.entity.interval":     newExpectedValue(attributeMatchTypeExist, ""),
+}
+
 func expectedTraces(testID string, testNs string) map[string]struct {
 	name    string
 	service string
