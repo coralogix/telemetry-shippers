@@ -14,8 +14,16 @@ opentelemetry-agent:
       collectionInterval: "30s"
   config:
     exporters:
-      otlp:
+      otlp/metrics:
         endpoint: "{{.Values.global.hostedEndpoint}}:4317"
+        tls:
+          insecure: true
+      otlp/traces:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4321"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
         tls:
           insecure: true
     extensions:
@@ -35,10 +43,10 @@ opentelemetry-agent:
       pipelines:
         metrics:
           exporters:
-            - otlp
+            - otlp/metrics
         traces:
           exporters:
-            - otlp
-        logs:
+            - otlp/traces
+        logs/resource_catalog:
           exporters:
-            - debug
+            - otlp/logs

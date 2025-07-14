@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.202 / 2025-07-14
+- [Feat] Add E2E test for hostEntityEvents preset.
+
 ### v0.0.201 / 2025-07-13
 - [Feat] Bump `opentelemetry-ebpf-instrumentation` version to `0.1.2`
 

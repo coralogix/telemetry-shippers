@@ -450,6 +450,43 @@ var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.25.0": false,
 }
 
+var expectedLogsSchemaURL = map[string]bool{
+	"https://opentelemetry.io/schemas/1.6.1": false,
+}
+
+var expectedHostEntityAttributes = map[string]expectedValue{
+	// Required attributes
+	"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
+	"host.cpu.cache.l2.size":   newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.family":          newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.model.id":        newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.model.name":      newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.stepping":        newExpectedValue(attributeMatchTypeExist, ""),
+	"host.cpu.vendor.id":       newExpectedValue(attributeMatchTypeExist, ""),
+	"host.id":                  newExpectedValue(attributeMatchTypeRegex, "^[a-f0-9-]{32,36}$"),
+	"host.ip":                  newExpectedValue(attributeMatchTypeExist, ""),
+	"host.mac":                 newExpectedValue(attributeMatchTypeExist, ""),
+	"host.name":                newExpectedValue(attributeMatchTypeExist, ""),
+	"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
+	"k8s.node.name":            newExpectedValue(attributeMatchTypeOptional, ""),
+	"os.description":           newExpectedValue(attributeMatchTypeRegex, "^Linux .* (aarch64|x86_64)$"),
+	"os.type":                  newExpectedValue(attributeMatchTypeEqual, "linux"),
+	"otel.entity.event.type":   newExpectedValue(attributeMatchTypeEqual, "entity_state"),
+	"otel.entity.id":           newExpectedValue(attributeMatchTypeExist, ""),
+	"otel.entity.interval":     newExpectedValue(attributeMatchTypeEqual, "300000"),
+	"otel.entity.type":         newExpectedValue(attributeMatchTypeEqual, "host"),
+
+	// Optional attributes (may be present in cloud environments)
+	"azure.resourcegroup.name": newExpectedValue(attributeMatchTypeOptional, ""),
+	"azure.vm.name":            newExpectedValue(attributeMatchTypeOptional, ""),
+	"azure.vm.scaleset.name":   newExpectedValue(attributeMatchTypeOptional, ""),
+	"azure.vm.size":            newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.account.id":         newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.platform":           newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.provider":           newExpectedValue(attributeMatchTypeOptional, ""),
+	"cloud.region":             newExpectedValue(attributeMatchTypeOptional, ""),
+}
+
 func expectedTraces(testID string, testNs string) map[string]struct {
 	name    string
 	service string
