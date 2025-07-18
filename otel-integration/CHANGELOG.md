@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.203 / 2025-07-16
+- [Feat] Add transactions preset to group spans into transactions and enable Coralogix transaction processor
+- [Feat] Add `networkMode` option to configure IPv4 or IPv6 endpoints
+- [Feat] Update Collector to v0.130.0
+- [Feat] Allow configuring `aggregation_cardinality_limit` for spanMetrics presets.
+- [Fix] Remove deprecated match_once key from `spanMetricsMultiConfig` config.
+
 ### v0.0.202 / 2025-07-14
 - [Feat] Add E2E test for hostEntityEvents preset.
 
