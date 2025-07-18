@@ -2,6 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.203 / 2025-07-18
+- [Fix] Skip prometheus receiver from collectorMetrics preset when PodMonitor or ServiceMonitor is enabled
+- [Fix] Remove extra blank lines when rendering container ports
+- [Feat] Allow disabling the /var/lib/dbus/machine-id mount via `presets.resourceDetection.dbusMachineId.enabled`
+- [Feat] Enable `without_units` in collector metrics preset
+- [Feat] Add transactions preset to group spans into transactions and enable Coralogix transaction processor
+- [Feat] Add `networkMode` option to configure IPv4 or IPv6 endpoints
+- [Feat] Update Collector to v0.130.0
+- [Feat] Allow configuring `aggregation_cardinality_limit` for spanMetrics presets.
+
 ### v0.0.202 / 2025-07-14
 - [Feat] Add E2E test for hostEntityEvents preset.
 
