@@ -20,7 +20,6 @@ When upgrading the opentelemetry-collector chart version, follow these steps:
 - Bump the otel-integration chart version in [otel-integration/k8s-helm/Chart.yaml](mdc:otel-integration/k8s-helm/Chart.yaml)
 - Bump the otel-integration chart version under the `global` key of @otel-integration/k8s-helm/values.yaml
 - Use semantic versioning (typically patch version bump: `X.Y.Z` becomes `X.Y.Z+1`)
-- If the Coralogix Otel Collector chart CHANGELOG includes a bump in the version of the Collector itself, do a minor version bump (`X.Y.Z` becomes `X.Y+1.0`)
 
 ### 3. Update Dependencies
 Update ALL opentelemetry-collector dependencies in [otel-integration/k8s-helm/Chart.yaml](mdc:otel-integration/k8s-helm/Chart.yaml) to the new version:
