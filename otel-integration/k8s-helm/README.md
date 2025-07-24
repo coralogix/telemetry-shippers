@@ -1026,7 +1026,7 @@ receivers:
 ### Additional Resources
 
 |                    |                                                                                                                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Documentation      | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](https://coralogix.com/docs/opentelemetry/tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/) |
 | OTLP Configuration | [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md)                                     |
 
@@ -1322,7 +1322,7 @@ In addition to standard metrics, the OpenTelemetry Integration provides the foll
 Provides information about the Pod QOS class.
 
 | Metric Type | Value | Labels |
-| ----------- | ----- | ------ |
+|-------------|-------|--------|
 | Gauge       | 1     | reason |
 
 ### kube_pod_status_reason
@@ -1330,7 +1330,7 @@ Provides information about the Pod QOS class.
 Provides information about the Kubernetes Pod Status.
 
 | Metric Type | Value | Labels |
-| ----------- | ----- | ------ |
+|-------------|-------|--------|
 | Gauge       | 1     | reason |
 
 Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, UnexpectedAdmissionError
@@ -1340,7 +1340,7 @@ Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, Unexpected
 Provides information about the Kubernetes Node.
 
 | Metric Type | Value | Labels              |
-| ----------- | ----- | ------------------- |
+|-------------|-------|---------------------|
 | Gauge       | 1     | k8s.kubelet.version |
 
 ### k8s.container.status.last_terminated_reason
@@ -1348,7 +1348,7 @@ Provides information about the Kubernetes Node.
 Provides information about Pod's last termination.
 
 | Metric Type | Value | Labels |
-| ----------- | ----- | ------ |
+|-------------|-------|--------|
 | Gauge       | 1     | reason |
 
 Example reason label keys: OOMKilled
@@ -1375,7 +1375,7 @@ Provides information about the Kubernetes version.
 Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
 
 | Protocol              | Port  |
-| --------------------- | ----- |
+|-----------------------|-------|
 | Zipkin                | 9411  |
 | Jaeger GRPC           | 6832  |
 | Jaeger Thrift binary  | 6832  |
@@ -1505,7 +1505,7 @@ presets:
 The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0.
 
 | Language      | SDK version with `dbMetrics` support |
-| ------------- | ------------------------------------ |
+|---------------|--------------------------------------|
 | Go            | v1.28.0+                             |
 | Java          | v1.41.0+                             |
 | JavaScript    | v1.26.0+                             |
@@ -1959,7 +1959,7 @@ OpenTelemetry tracing SDK supports two strategies to create an application trace
 Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
 | Span Processor      | Agent Memory Usage | Agent CPU Usage | Latency Samples |
-| ------------------- | ------------------ | --------------- | --------------- |
+|---------------------|--------------------|-----------------|-----------------|
 | SimpleSpanProcessor | 3.7 GB             | 0.5             | >1m40s          |
 | BatchSpanProcessor  | 600 MB             | 0.02            | >1s <10s        |
 
