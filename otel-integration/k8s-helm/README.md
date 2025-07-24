@@ -124,7 +124,7 @@ kind: Secret
 metadata:
   name: coralogix-keys
   namespace: <the-release-namespace>
-type: Opaque 
+type: Opaque
 ```
 
 ## Installation
@@ -873,7 +873,7 @@ This application is a small trace-generating application. We will demonstrate ho
 **STEP 1**. Create a file `go-traces-demo.yaml` and add the following:
 
 ```yaml
-apiVersion: apps/v1        
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: go-otel-traces-demo
@@ -889,13 +889,13 @@ spec:
     spec:
       containers:
         - name: go-otel-traces-demo
-          image: public.ecr.aws/c1s3k2h4/go-otel-traces-demo:latest  
-          imagePullPolicy: Always        
+          image: public.ecr.aws/c1s3k2h4/go-otel-traces-demo:latest
+          imagePullPolicy: Always
           env:
             - name: NODE_IP
               valueFrom:
                 fieldRef:
-                  fieldPath: status.hostIP         
+                  fieldPath: status.hostIP
             - name: CX_ENDPOINT
               value: $(NODE_IP):4317
 
@@ -1274,7 +1274,7 @@ If you already have an existing OpenTelemetry Collector deployment and you want 
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration  \
-  --render-subchart-notes -f values-ebpf-profiler.yaml \  
+  --render-subchart-notes -f values-ebpf-profiler.yaml \
 ```
 
 ## Opentelemetry EBPF Instrumentation
@@ -1432,7 +1432,7 @@ Beware that enabling the feature will result in creation of additional metrics. 
 In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
 
 ```yaml
-spanNameReplacePattern: 
+spanNameReplacePattern:
 - regex: "user-[0-9]+"
   replacement: "user-{id}"
 ```
@@ -1757,7 +1757,7 @@ For example, you drop the `label1` metric:
 
 ```yaml
 metric_relabel_configs:
-  - action: labeldrop 
+  - action: labeldrop
     regex: 'label1'
 ```
 
@@ -1773,7 +1773,7 @@ metric_relabel_configs:
 `'le' label on histogram metric is missing or empty.` Histogram metric contains multiple types. Typically, the metric library produces invalid metrics that are both a histogram and a summary, which is not allowed in Prometheus / OpenMetrics. For example:
 
 ```
-# HELP http_server_requests_seconds  
+# HELP http_server_requests_seconds
 # TYPE http_server_requests_seconds histogram
 http_server_requests_seconds_bucket{le="0.025",} 1
 http_server_requests_seconds_count{} 15.0
@@ -1807,28 +1807,118 @@ service:
               endpoint: ${env:MY_POD_IP}:4317
 ```
 
-# Filtering and reducing metrics cost
+# Filtering and reducing costs
 
-otel-integration has a couple of ways you can reduce the metric cost. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
+The Otel integration has a couple of ways you can reduce costs of telemetry data. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
+
+- azure.resourcegroup.name
+- azure.vm.name
+- azure.vm.scaleset.name
+- azure.vm.size
+- cloud.account.id
+- cloud.availability_zone
+- cloud.platform
+- cloud.provider
+- cloud.region
 - container.id
-- k8s.pod.uid
-- k8s.replicaset.uid
+- cx.otel_integration.name
+- faas.id
+- faas.instance
+- faas.name
+- faas.version
+- gcp.cloud_run.job.execution
+- gcp.cloud_run.job.task_index
+- gcp.gce.instance_group_manager.name
+- gcp.gce.instance_group_manager.region
+- gcp.gce.instance_group_manager.zone
+- host.image.id
+- host.type
+- k8s.cronjob.uid
 - k8s.daemonset.uid
 - k8s.deployment.uid
-- k8s.statefulset.uid
-- k8s.cronjob.uid
-- k8s.job.uid
 - k8s.hpa.uid
+- k8s.job.uid
 - k8s.namespace.uid
 - k8s.node.uid
+- k8s.pod.start_time
+- k8s.pod.uid
+- k8s.replicaset.uid
+- k8s.statefulset.uid
+- os.type
+- os.version
+- process.command
+- process.command_line
+- process.command_args
+- process.executable.name
+- process.executable.path
+- process.owner
+- process.pid
+- process.parent_pid
+- process.runtime.description
+- process.runtime.name
+- process.runtime.version
 - net.host.name
 - net.host.port
+- telemetry.distro.name (only removed from metrics and logs)
+- telemetry.distro.version (only removed from metrics and logs)
+- telemetry.sdk.language (only removed from metrics and logs)
+- telemetry.sdk.name (only removed from metrics and logs)
+- telemetry.sdk.version (only removed from metrics and logs)
 
 Kubernetes resource attributes are typically coming from [Kubernetes Attributes Processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md) and [Kubernetes Cluster receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver).
 
 While `net.host.name` and `net.host.port` is coming from Prometheus receiver, instead of using these attributes you can use the `service.instance.id` attribute, which has a combination of host and port.
 
-## Custom filtering
+Additionally, the `reduceLogAttributes` preset removes the following log record attributes that are typically not used:
+
+- log.iostream
+- log.file.path
+- logtag
+- time (only a timestamp, raw nanoseconds epoch time is still present)
+
+Coralogix recommends new customers to enable these two presets by default. Existing customers should consider enabling them on new deployments after analyzing the potential impact in alerts and dashboards that they already have.
+
+**Important disclaimer:** the default denylists in these presets can change between versions of the integration. If stability is important you should consider customizing them. Any change to the lists will be announced in the changelog and you can recheck them at any time.
+
+## Custom filtering of attributes
+
+The `reduceResourceAttributes` preset supports a custom denylist of attributes per pipeline. You can customize the denylists per signal like so:
+
+```yaml
+presets:
+  reduceResourceAttributes:
+    enabled: true
+    pipelines: ["metrics", "traces", "logs"] # the "all" pipeline is also supported
+    denylist:
+     metrics:
+      - custom_attribute_1
+      - custom_attribute_2
+    traces:
+      - custom_attribute_1
+      - custom_attribute_2
+    logs:
+      - custom_attribute_1
+      - custom_attribute_2
+```
+
+Note that when customizing the denylists you are completely overriding the default one. This means that if you just want to append a few attributes to it, you will have to repeat the default ones.
+
+## Custom filtering of log record attributes
+
+The `reduceLogAttributes` preset supports a custom denylist of log record attributes. You can customize the denylist like so:
+
+```yaml
+presets:
+  reduceLogAttributes:
+    enabled: true
+    denylist:
+      - custom_attribute_1
+      - custom_attribute_2
+```
+
+Note that when customizing the denylist you are completely overriding the default one. This means that if you just want to append a few attributes to it, you will have to repeat the default ones.
+
+## Custom filtering of metrics
 
 Alternatively, you can also use include / exclude filters to collect only metrics about needed objects. For example, the following configuration allows you to exclude `kube-*` and `default` namespace Kubernetes metrics. This filtering is available on many [mdatagen](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/mdatagen) based receiver.
 
@@ -1856,7 +1946,7 @@ processors:
     error_mode: ignore
     metrics:
       metric:
-        - name == "my.metric" 
+        - name == "my.metric"
         - resource.attributes["my_label"] == "abc123"
 ```
 
@@ -1972,7 +2062,7 @@ Optional settings:
 ```yaml
   mysql:
     metrics:
-      enabled: true 
+      enabled: true
       instances:
       - username: "otel-coralogix-collector"
         password: ${env:MYSQL_PASSWORD}
@@ -1988,7 +2078,7 @@ Optional settings:
 ```yaml
   mysql:
     metrics:
-      enabled: true 
+      enabled: true
       instances:
       - username: "otel-coralogix-collector"
         password: ${env:MYSQL_PASSWORD_INSTANCE_A}
