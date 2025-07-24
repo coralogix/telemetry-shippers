@@ -124,7 +124,7 @@ kind: Secret
 metadata:
   name: coralogix-keys
   namespace: <the-release-namespace>
-type: Opaque 
+type: Opaque
 ```
 
 ## Installation
@@ -873,7 +873,7 @@ This application is a small trace-generating application. We will demonstrate ho
 **STEP 1**. Create a file `go-traces-demo.yaml` and add the following:
 
 ```yaml
-apiVersion: apps/v1        
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: go-otel-traces-demo
@@ -889,13 +889,13 @@ spec:
     spec:
       containers:
         - name: go-otel-traces-demo
-          image: public.ecr.aws/c1s3k2h4/go-otel-traces-demo:latest  
-          imagePullPolicy: Always        
+          image: public.ecr.aws/c1s3k2h4/go-otel-traces-demo:latest
+          imagePullPolicy: Always
           env:
             - name: NODE_IP
               valueFrom:
                 fieldRef:
-                  fieldPath: status.hostIP         
+                  fieldPath: status.hostIP
             - name: CX_ENDPOINT
               value: $(NODE_IP):4317
 
@@ -1026,7 +1026,7 @@ receivers:
 ### Additional Resources
 
 |                    |                                                                                                                                                                        |
-|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Documentation      | [Introduction to Tail Sampling with Coralogix & OpenTelemetry](https://coralogix.com/docs/opentelemetry/tail-sampling/tail-sampling-with-coralogix-and-opentelemetry/) |
 | OTLP Configuration | [OTLP Receiver Configuration](https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md)                                     |
 
@@ -1274,7 +1274,7 @@ If you already have an existing OpenTelemetry Collector deployment and you want 
 helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
 
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration  \
-  --render-subchart-notes -f values-ebpf-profiler.yaml \  
+  --render-subchart-notes -f values-ebpf-profiler.yaml \
 ```
 
 ## Opentelemetry EBPF Instrumentation
@@ -1322,7 +1322,7 @@ In addition to standard metrics, the OpenTelemetry Integration provides the foll
 Provides information about the Pod QOS class.
 
 | Metric Type | Value | Labels |
-|-------------|-------|--------|
+| ----------- | ----- | ------ |
 | Gauge       | 1     | reason |
 
 ### kube_pod_status_reason
@@ -1330,7 +1330,7 @@ Provides information about the Pod QOS class.
 Provides information about the Kubernetes Pod Status.
 
 | Metric Type | Value | Labels |
-|-------------|-------|--------|
+| ----------- | ----- | ------ |
 | Gauge       | 1     | reason |
 
 Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, UnexpectedAdmissionError
@@ -1340,7 +1340,7 @@ Example reason label keys: Evicted, NodeAffinity, NodeLost, Shutdown, Unexpected
 Provides information about the Kubernetes Node.
 
 | Metric Type | Value | Labels              |
-|-------------|-------|---------------------|
+| ----------- | ----- | ------------------- |
 | Gauge       | 1     | k8s.kubelet.version |
 
 ### k8s.container.status.last_terminated_reason
@@ -1348,7 +1348,7 @@ Provides information about the Kubernetes Node.
 Provides information about Pod's last termination.
 
 | Metric Type | Value | Labels |
-|-------------|-------|--------|
+| ----------- | ----- | ------ |
 | Gauge       | 1     | reason |
 
 Example reason label keys: OOMKilled
@@ -1375,7 +1375,7 @@ Provides information about the Kubernetes version.
 Applications can send OTLP Metrics and Jaeger, Zipkin and OTLP traces to the local nodes, as `otel-agent` is using hostNetwork .
 
 | Protocol              | Port  |
-|-----------------------|-------|
+| --------------------- | ----- |
 | Zipkin                | 9411  |
 | Jaeger GRPC           | 6832  |
 | Jaeger Thrift binary  | 6832  |
@@ -1432,7 +1432,7 @@ Beware that enabling the feature will result in creation of additional metrics. 
 In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
 
 ```yaml
-spanNameReplacePattern: 
+spanNameReplacePattern:
 - regex: "user-[0-9]+"
   replacement: "user-{id}"
 ```
@@ -1505,7 +1505,7 @@ presets:
 The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0.
 
 | Language      | SDK version with `dbMetrics` support |
-|---------------|--------------------------------------|
+| ------------- | ------------------------------------ |
 | Go            | v1.28.0+                             |
 | Java          | v1.41.0+                             |
 | JavaScript    | v1.26.0+                             |
@@ -1757,7 +1757,7 @@ For example, you drop the `label1` metric:
 
 ```yaml
 metric_relabel_configs:
-  - action: labeldrop 
+  - action: labeldrop
     regex: 'label1'
 ```
 
@@ -1773,7 +1773,7 @@ metric_relabel_configs:
 `'le' label on histogram metric is missing or empty.` Histogram metric contains multiple types. Typically, the metric library produces invalid metrics that are both a histogram and a summary, which is not allowed in Prometheus / OpenMetrics. For example:
 
 ```
-# HELP http_server_requests_seconds  
+# HELP http_server_requests_seconds
 # TYPE http_server_requests_seconds histogram
 http_server_requests_seconds_bucket{le="0.025",} 1
 http_server_requests_seconds_count{} 15.0
@@ -1944,7 +1944,7 @@ processors:
     error_mode: ignore
     metrics:
       metric:
-        - name == "my.metric" 
+        - name == "my.metric"
         - resource.attributes["my_label"] == "abc123"
 ```
 
@@ -1957,7 +1957,7 @@ OpenTelemetry tracing SDK supports two strategies to create an application trace
 Picking the right tracing SDK span processor can have an impact on the performance of the collector. We switched our SDK span processor from SimpleSpanProcessor to BatchSpanProcessor and noticed a massive performance improvement in the collector:
 
 | Span Processor      | Agent Memory Usage | Agent CPU Usage | Latency Samples |
-|---------------------|--------------------|-----------------|-----------------|
+| ------------------- | ------------------ | --------------- | --------------- |
 | SimpleSpanProcessor | 3.7 GB             | 0.5             | >1m40s          |
 | BatchSpanProcessor  | 600 MB             | 0.02            | >1s <10s        |
 
@@ -2060,7 +2060,7 @@ Optional settings:
 ```yaml
   mysql:
     metrics:
-      enabled: true 
+      enabled: true
       instances:
       - username: "otel-coralogix-collector"
         password: ${env:MYSQL_PASSWORD}
@@ -2076,7 +2076,7 @@ Optional settings:
 ```yaml
   mysql:
     metrics:
-      enabled: true 
+      enabled: true
       instances:
       - username: "otel-coralogix-collector"
         password: ${env:MYSQL_PASSWORD_INSTANCE_A}
