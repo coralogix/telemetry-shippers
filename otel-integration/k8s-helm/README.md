@@ -1876,6 +1876,8 @@ Additionally, the `reduceLogAttributes` preset removes the following log record 
 - logtag
 - time (only a timestamp, raw nanoseconds epoch time is still present)
 
+Coralogix recommends new customers to enable these two presets by default. Existing customers should consider enabling them on new deployments after analyzing the potential impact in alerts and dashboards that they already have.
+
 **Important disclaimer:** the default denylists in these presets can change between versions of the integration. If stability is important you should consider customizing them. Any change to the lists will be announced in the changelog and you can recheck them at any time.
 
 ## Custom filtering of attributes
