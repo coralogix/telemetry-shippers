@@ -2,7 +2,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: otel-integration-windows-cluster
+  name: otel-integration-ipv6-cluster
   region: eu-west-1
 
 kubernetesNetworkConfig:

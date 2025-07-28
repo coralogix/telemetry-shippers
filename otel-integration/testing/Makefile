@@ -34,7 +34,7 @@ create-windows:
 # Clean up IPv6 cluster
 clean-ipv6:
 	@echo "Deleting IPv6 EKS cluster..."
-	eksctl delete cluster --name=otel-integration-windows-cluster --region=eu-west-1
+	eksctl delete cluster --name=otel-integration-ipv6-cluster --region=eu-west-1
 	@echo "IPv6 cluster deleted successfully!"
 
 # Clean up Windows cluster
