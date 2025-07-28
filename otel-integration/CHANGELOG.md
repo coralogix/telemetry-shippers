@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.204 / 2025-07-28
+- [Feat] Use networkMode in ipv6-values.yaml
+
 ### v0.0.203 / 2025-07-24
 - [Fix] Correct transform rule for `otelcol_otelsvc_k8s_pod_deleted_ratio` metric.
 - [Feat] Remove the attribute `cx.otel_integration.name` through the `reduceResourceAttributes` preset.
@@ -17,11 +20,9 @@
 - [Fix] `k8sResourceAttributes` preset works correctly when the `fleetManagement` preset is enabled.
 - [Feat] The `reduceResourceAttributes` preset now also removes attributes from traces and logs pipelines.
 - [Feat] The `reduceResourceAttributes` preset now removes a few more attributes.
-- [Fix] Remove `without_units` from collector metrics preset
 - [Fix] Skip prometheus receiver from collectorMetrics preset when PodMonitor or ServiceMonitor is enabled
 - [Fix] Remove extra blank lines when rendering container ports
 - [Feat] Allow disabling the /var/lib/dbus/machine-id mount via `presets.resourceDetection.dbusMachineId.enabled`
-- [Feat] Enable `without_units` in collector metrics preset
 - [Feat] Add transactions preset to group spans into transactions and enable Coralogix transaction processor
 - [Feat] Add `networkMode` option to configure IPv4 or IPv6 endpoints
 - [Feat] Update Collector to v0.130.0
