@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.205 / 2025-07-28
+- [Feat] Add support for profiles in the `reduceResourceAttributes` preset.
+- [Feat] Add `k8s.container.restart_count` to the `reduceResourceAttributes` preset.
+
 ### v0.0.204 / 2025-07-28
 - [Feat] Use networkMode in ipv6-values.yaml
 
