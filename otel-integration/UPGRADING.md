@@ -1,5 +1,15 @@
 # Upgrade guidelines
 
+These upgrade guidelines only contain instructions for version upgrades which require manual modifications on the user's side.
+If the version you want to upgrade to is not listed here, then there is nothing to do for you.
+Just upgrade and enjoy.
+
+When upgrading to new collector version please check OpenTelemetry collector release notes here:
+- https://github.com/open-telemetry/opentelemetry-collector/releases
+- https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
+
+## v0.0.195 to v0.0.196
+
 **Important Note for Tail-Sampling Configuration:**
 
 If you are using tail-sampling configuration, you must change the `coralogixExporter` preset pipelines to `none` to avoid conflicts with the tail-sampling setup:
@@ -14,14 +24,6 @@ opentelemetry-agent:
 ```
 
 See the [tail-sampling-values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/tail-sampling-values.yaml#L9-L21) for a complete example.
-
-These upgrade guidelines only contain instructions for version upgrades which require manual modifications on the user's side.
-If the version you want to upgrade to is not listed here, then there is nothing to do for you.
-Just upgrade and enjoy.
-
-When upgrading to new collector version please check OpenTelemetry collector release notes here:
-- https://github.com/open-telemetry/opentelemetry-collector/releases
-- https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
 
 ## v0.0.177 to v0.0.184
 
