@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.206 / 2025-08-04
+
+- [Feat] Add k8sattributes support for profiles.
+
 ### v0.0.205 / 2025-07-28
 - [Feat] Add support for profiles in the `reduceResourceAttributes` preset.
 - [Feat] Add `k8s.container.restart_count` to the `reduceResourceAttributes` preset.
