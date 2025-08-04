@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.207 / 2025-08-05
+- [Feat] remove `coralogix-ebpf-agent` subchart, as now we recommend using `opentelemetry-ebpf-instrumentation` chart.
+
 ### v0.0.206 / 2025-08-04
 
 - [Feat] Add k8sattributes support for profiles.
