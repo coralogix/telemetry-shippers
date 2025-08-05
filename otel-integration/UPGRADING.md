@@ -8,6 +8,10 @@ When upgrading to new collector version please check OpenTelemetry collector rel
 - https://github.com/open-telemetry/opentelemetry-collector/releases
 - https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
 
+## v0.0.206 to v0.0.207
+
+`coralogix-ebpf-agent` has been removed in favor of using `opentelemetry-ebpf-instrumentation` which can be configured to be deployed by setting `opentelemetry-ebpf-instrumentation.enabled` to `true`.
+
 ## v0.0.195 to v0.0.196
 
 **Important Note for Tail-Sampling Configuration:**
