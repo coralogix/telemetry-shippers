@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.206"
+  version: "0.0.207"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -769,42 +769,6 @@ opentelemetry-receiver:
   ports:
     otlp-http:
       enabled: false
-
-coralogix-ebpf-agent:
-  enabled: false
-  ebpf_agent:
-    debug: false
-    debug_modules:
-      - Otel
-    otel:
-      exporter:
-        max_queue_size: 10240
-        max_concurrent_exports: 3
-      sampler:
-        services_filter: []
-        services_filter_type: "Allow"  # Deny for blacklist
-    resources:
-      limits:
-        cpu: "1"
-        memory: 2Gi
-      requests:
-        cpu: 100m
-        memory: 128Mi
-  k8s_watcher:
-    replicaCount: 1
-    debug: false
-    resources:
-      limits:
-        cpu: "1"
-        memory: 2Gi
-      requests:
-        cpu: 100m
-        memory: 128Mi
-  priorityClass:
-    create: false
-    name: ""
-    value: 1000000000
-  tolerations: []
 
 coralogix-ebpf-profiler:
   enabled: false

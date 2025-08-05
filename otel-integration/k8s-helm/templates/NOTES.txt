@@ -5,3 +5,8 @@
 {{- if eq .Values.global.clusterName "" }}
 {{ fail "[ERROR] 'global.clusterName' must be set with your Kubernetes cluster name." }}
 {{ end }}
+
+{{- $ebpf := index .Values "coralogix-ebpf-agent" }}
+{{- if and $ebpf (eq (index $ebpf "enabled") true) }}
+{{ fail "[ERROR] 'coralogix-ebpf-agent' is deprecated. For ebpf instrumentation use 'opentelemetry-ebpf-agent.enabled' instead." }}
+{{ end }}
