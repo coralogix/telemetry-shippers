@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.208 / 2025-08-05
+- [Fix] `headSampling` preset correctly removes `coralogix` exporter from the `traces` pipeline.
+- [Feat] Add compactMetrics option to spanMetrics preset.
+
 ### v0.0.207 / 2025-08-05
 - [Feat] remove `coralogix-ebpf-agent` subchart, as now we recommend using `opentelemetry-ebpf-instrumentation` chart.
 
