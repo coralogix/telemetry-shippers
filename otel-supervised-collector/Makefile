@@ -3,11 +3,12 @@
 # Default values
 IMAGE_NAME ?= otel-supervised-collector
 IMAGE_TAG ?= latest
-COLLECTOR_VERSION ?= 0.128.0
+COLLECTOR_VERSION ?= 0.131.1
+SUPERVISOR_VERSION ?= 0.131.0
 PLATFORMS ?= linux/amd64,linux/arm64
 
 # Docker build arguments
-DOCKER_BUILDARGS := --build-arg COLLECTOR_VERSION=$(COLLECTOR_VERSION)
+DOCKER_BUILDARGS := --build-arg COLLECTOR_VERSION=$(COLLECTOR_VERSION) --build-arg SUPERVISOR_VERSION=$(SUPERVISOR_VERSION)
 
 FULL_IMAGE_NAME = $(IMAGE_NAME):$(IMAGE_TAG)
 
@@ -48,12 +49,15 @@ help:
 	@echo 'Variables:'
 	@echo '  IMAGE_NAME             Docker image name (default: otel-supervised-collector)'
 	@echo '  IMAGE_TAG              Docker image tag (default: latest)'
-	@echo '  COLLECTOR_VERSION      OpenTelemetry Collector version (default: 0.127.0)'
+	@echo '  COLLECTOR_VERSION      OpenTelemetry Collector version (default: 0.131.1)'
+	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: 0.131.0)'
 	@echo '  PLATFORMS              Target platforms for multi-arch builds (default: linux/amd64,linux/arm64)'
 	@echo ''
 	@echo 'Examples:'
 	@echo '  make build'
-	@echo '  make build COLLECTOR_VERSION=0.128.0'
+	@echo '  make build COLLECTOR_VERSION=0.131.1'
+	@echo '  make build SUPERVISOR_VERSION=0.131.0'
+	@echo '  make build COLLECTOR_VERSION=0.131.1 SUPERVISOR_VERSION=0.131.0'
 	@echo '  make build IMAGE_TAG=v1.0.0' IMAGE_NAME=supervised-collector
 	@echo '  make build-multiarch'
 	@echo '  make build-multiarch-push'
