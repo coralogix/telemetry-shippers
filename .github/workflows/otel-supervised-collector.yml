@@ -50,8 +50,6 @@ jobs:
           context: ./otel-supervised-collector/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event.inputs.push_image == 'true' }}
-          build-args: |
-            COLLECTOR_VERSION=${{ steps.set-image-version.outputs.version }}
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
           cache-from: type=gha
