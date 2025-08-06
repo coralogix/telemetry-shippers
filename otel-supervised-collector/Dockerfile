@@ -1,10 +1,11 @@
-ARG COLLECTOR_VERSION=0.128.0
+ARG COLLECTOR_VERSION=0.131.1
+ARG SUPERVISOR_VERSION=0.131.0
 
 FROM alpine:3.22 AS certs
 RUN apk --update add ca-certificates
 RUN mkdir -p /etc/otelcol-contrib/supervisor-data
 
-FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-opampsupervisor:${COLLECTOR_VERSION} AS supervisor
+FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
 
 FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${COLLECTOR_VERSION} AS collector
 
