@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.210 / 2025-08-07
+- [Fix] `profilesCollection` preset correctly adds `coralogix` exporter to `profiles` pipeline.
+
 ### v0.0.209 / 2025-08-07
 - [Feat] add option to drop compact duration histogram in spanMetrics preset.
 
