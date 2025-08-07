@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.212 / 2025-08-07
+- [Fix] Resource attributes of the Collector's logs in the `filelog` receiver are correctly set.
+
 ### v0.0.211 / 2025-08-07
 - [Feat] update `opentelemetry-ebpf-profiler` to commit [b93e1ec4](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/commit/b93e1ec4daedd7063c107162c146e3172de82e6e)
 - [Feat] `opentelemetry-ebpf-profiler`: Remove k8s-watcher and redis componentes,
