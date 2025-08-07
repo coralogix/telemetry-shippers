@@ -2,8 +2,11 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.209 / 2025-08-07
+### v0.0.210 / 2025-08-07
 - [Feat] add option to drop compact duration histogram in spanMetrics preset.
+
+### v0.0.209 / 2025-08-07
+- [Feat] new `opentelemetry-ebpf-profiler` version
 
 ### v0.0.208 / 2025-08-05
 - [Fix] `headSampling` preset correctly removes `coralogix` exporter from the `traces` pipeline.
