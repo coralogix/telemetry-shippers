@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+    "maps"
+    "slices"
 )
 
 // TestE2E_ClusterCollector_Metrics verifies that the cluster-collector exports metrics
@@ -157,8 +159,8 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 			matched++
 		}
 	}
-	// Print the set of metric names we saw to help future adjustments
-	t.Logf("Observed metric names: %v", keys(namesFound))
+    // Print the set of metric names we saw to help future adjustments
+    t.Logf("Observed metric names: %v", slices.Collect(maps.Keys(namesFound)))
 	// Coverage summary
 	uncovered := make([]string, 0)
 	for name := range namesFound {
@@ -171,15 +173,6 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 	// Require a healthy subset to reduce flakiness while ensuring broad coverage
 	require.GreaterOrEqual(t, matched, 25, "did not observe sufficient cluster-collector metrics")
 	return nil
-}
-
-// keys returns the keys of a string set map for logging purposes.
-func keys(m map[string]struct{}) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	return out
 }
 
 // sample returns up to n items from the list for logging without flooding output.
