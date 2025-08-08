@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-    "maps"
-    "slices"
+	"maps"
+	"slices"
 )
 
 // TestE2E_ClusterCollector_Metrics verifies that the cluster-collector exports metrics
@@ -159,8 +159,8 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 			matched++
 		}
 	}
-    // Print the set of metric names we saw to help future adjustments
-    t.Logf("Observed metric names: %v", slices.Collect(maps.Keys(namesFound)))
+	// Print the set of metric names we saw to help future adjustments
+	t.Logf("Observed metric names: %v", slices.Collect(maps.Keys(namesFound)))
 	// Coverage summary
 	uncovered := make([]string, 0)
 	for name := range namesFound {
