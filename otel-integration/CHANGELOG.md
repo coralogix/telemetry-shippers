@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.213 / 2025-08-08
+- [Feat] Update Collector to v0.131.1
+
 ### v0.0.212 / 2025-08-07
 - [Fix] Resource attributes of the Collector's logs in the `filelog` receiver are correctly set.
 
