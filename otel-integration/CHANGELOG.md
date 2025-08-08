@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### Unreleased
+- [Feat] Add E2E test for cluster-collector metrics and values override to route OTLP to local sinks for testing.
+
 ### v0.0.213 / 2025-08-08
 - [Feat] Update Collector to v0.131.1
 
