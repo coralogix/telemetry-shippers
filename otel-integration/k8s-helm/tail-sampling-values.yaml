@@ -13,7 +13,7 @@ opentelemetry-agent:
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-      pipelines: ["none"]
+      pipelines: ["metrics", "logs"]
 
     loadBalancing:
       enabled: true
@@ -28,12 +28,6 @@ opentelemetry-agent:
         traces:
           exporters:
             - loadbalancing
-        logs:
-          exporters:
-            - coralogix
-        metrics:
-          exporters:
-            - coralogix
 
 opentelemetry-gateway:
   enabled: true
