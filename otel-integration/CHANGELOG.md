@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.214 / 2025-08-11
+- [Feat] Add affinity, tolerations, and nodeSelector to the `opentelemetry-ebpf-instrumentation` k8s-cache deployment.
+
 ### v0.0.213 / 2025-08-08
 - [Feat] Update Collector to v0.131.1
 
