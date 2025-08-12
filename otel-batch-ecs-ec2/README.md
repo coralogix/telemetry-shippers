@@ -81,10 +81,10 @@ You can create the job definition using **AWS Console UI** or **AWS CLI**.
 The following JSON file defines an AWS Batch job using **ECS orchestration** with a sidecar container for OpenTelemetry Collector.
 
 [batch-job-definition.json](./batch-job-definition.json)
-23-
+
 It is generic and reusable so please update the placeholders and **application container** as needed.
 
-```json
+```bash
 aws batch register-job-definition --cli-input-json file://batch-job-definition.json
 ```
 
