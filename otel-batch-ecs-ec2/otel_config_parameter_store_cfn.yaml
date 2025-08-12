@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation template for Coralogix OpenTelemetry Collector as a sidecar using AWS Batch
+
+Parameters:
+  StorageType:
+    Type: String
+    Default: ParameterStoreAdvanced
+    Description: 'The storage used for the OTEL config.yaml. Can be one of: ParameterStore, ParameterStoreAdvanced'
+    AllowedValues:
+      - ParameterStore
+      - ParameterStoreAdvanced
+
+  ParameterName:
+    Type: String
+    Default: 'CX_OTEL_ECS_EC2_BATCH_config.yaml'
+    Description: 'The name of the Parameter Store you intend to create and use.'
+    AllowedPattern: '^([\/]?[a-zA-Z0-9_.-]+)?(\/[a-zA-Z0-9_.-]+){0,14}$'
+    MaxLength: 300
+
+Conditions:
+  UseParameterStoreAdvanced: !Equals [!Ref StorageType, "ParameterStoreAdvanced"]
+
+Resources:
+  BatchOtelTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecsTaskExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: otel-secrets-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterName}
+
+  OTELConfigParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Ref ParameterName
+      Description: Configuration parameter for Coralogix OTEL Collector
+      Type: String
+      Value: |
+        receivers:
+          awsecscontainermetrics: { collection_interval: 10s }
+          otlp:
+            protocols:
+              grpc: { endpoint: 0.0.0.0:4317, max_recv_msg_size_mib: 20 }
+              http: { endpoint: 0.0.0.0:4318 }
+          fluentforward/socket: { endpoint: unix:///var/run/fluent.sock }
+
+        processors:
+          transform/firelens:
+            log_statements:
+              - context: log
+                statements:
+                  - merge_maps(cache, ParseJSON(body), "insert") where IsMatch(body, "^\\{")
+                  - set(body, cache["message"]) where cache["message"] != nil
+                  - set(trace_id.string, cache["trace_id"]) where cache["trace_id"] != nil
+                  - set(span_id.string, cache["span_id"]) where cache["span_id"] != nil
+                  - set(severity_number, SEVERITY_NUMBER_INFO) where IsMatch(cache["level"], "(?i)info")
+                  - set(severity_number, SEVERITY_NUMBER_WARN) where IsMatch(cache["level"], "(?i)warn")
+                  - set(severity_number, SEVERITY_NUMBER_ERROR) where IsMatch(cache["level"], "(?i)err")
+                  - set(severity_number, SEVERITY_NUMBER_DEBUG) where IsMatch(cache["level"], "(?i)debug")
+                  - set(severity_number, SEVERITY_NUMBER_TRACE) where IsMatch(cache["level"], "(?i)trace")
+                  - set(severity_number, cache["severity_number"]) where cache["severity_number"] != nil
+                  - set(resource.attributes["container_name"], attributes["container_name"])
+                  - set(resource.attributes["container_id"], attributes["container_id"])
+                  - delete_key(attributes, "container_id")
+                  - delete_key(attributes, "container_name")
+                  - delete_matching_keys(cache, "^(message|trace_id|span_id|severity_number)$")
+                  - merge_maps(attributes, cache, "insert")
+          batch: { send_batch_max_size: 2048, send_batch_size: 1024, timeout: 1s }
+          resource/metadata:
+            attributes:
+              - action: upsert
+                key: cx.otel_integration.name
+                value: coralogix-integration-batch-ecs
+          resourcedetection:
+            detectors: [system, env, ec2, ecs]
+            override: false
+            timeout: 2s
+            system:
+              resource_attributes:
+                host.id: { enabled: false }
+                host.cpu.cache.l2.size: { enabled: true }
+                host.cpu.stepping: { enabled: true }
+                host.cpu.model.name: { enabled: true }
+                host.cpu.model.id: { enabled: true }
+                host.cpu.family: { enabled: true }
+                host.cpu.vendor.id: { enabled: true }
+                host.mac: { enabled: true }
+                host.ip: { enabled: true }
+                os.description: { enabled: true }
+
+        exporters:
+          coralogix:
+            application_name: ${CX_APPLICATION_NAME}
+            application_name_attributes: [aws.ecs.task.family, service.namespace]
+            domain: ${CX_DOMAIN}
+            private_key: ${CX_PRIVATE_KEY}
+            subsystem_name: 'aws-batch-ecs'
+            subsystem_name_attributes: [service.name, aws.ecs.docker.name, container_name]
+            timeout: 30s
+
+        service:
+          pipelines:
+            logs/fluentforward:
+              receivers: [fluentforward/socket]
+              processors: [transform/firelens, resource/metadata, resourcedetection, batch]
+              exporters: [coralogix]
+            metrics:
+              receivers: [awsecscontainermetrics]
+              processors: [resource/metadata, resourcedetection, batch]
+              exporters: [coralogix]
+            traces:
+              receivers: [otlp]
+              processors: [resource/metadata, resourcedetection,batch]
+              exporters: [coralogix]
+      Tier: !If
+        - UseParameterStoreAdvanced   # If it's "ParameterStoreAdvanced", set Tier to Advanced
+        - Advanced
+        - Standard
+
+Outputs:
+  OTELConfigParameterArn:
+    Description: ARN of the OTEL Configuration Parameter Store
+    Value: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterName}
+    Export:
+      Name: !Sub ${AWS::StackName}-OTELConfigParameterArn
