@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.215 / 2025-08-12
+- [Fix] Tail sampling values: correct Coralogix preset pipelines syntax.
+
 ### v0.0.214 / 2025-08-11
 - [Feat] Add affinity, tolerations, and nodeSelector to the `opentelemetry-ebpf-instrumentation` k8s-cache deployment.
 
