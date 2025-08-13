@@ -1,0 +1,67 @@
+# Tail-sampling E2E overrides: ensure
+# - agent logs/metrics go directly to local OTLP sinks
+# - agent traces use loadbalancing exporter targeting the gateway
+# - gateway tail-sampling passes all traces and exports them to the local traces sink
+
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
+opentelemetry-agent:
+  presets:
+    loadBalancing:
+      enabled: true
+      routingKey: "traceID"
+      hostname: coralogix-opentelemetry-gateway
+  config:
+    exporters:
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+        logs/resource_catalog:
+          exporters:
+            - otlp/logs
+        traces:
+          exporters:
+            - loadbalancing
+
+opentelemetry-gateway:
+  enabled: true
+  replicaCount: 2
+  config:
+    exporters:
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
+        tls:
+          insecure: true
+      otlp/traces:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4321"
+        tls:
+          insecure: true
+    processors:
+      tail_sampling:
+        policies:
+          - name: pass-all
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 100
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+        traces:
+          exporters:
+            - otlp/traces
+
+
