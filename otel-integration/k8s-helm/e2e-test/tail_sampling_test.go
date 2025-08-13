@@ -1,20 +1,22 @@
 package e2e
 
 import (
-	"context"
-	"os"
-	"path/filepath"
-	"testing"
-	"time"
+    "context"
+    "os"
+    "path/filepath"
+    "testing"
+    "time"
+    "strings"
 
-	"github.com/google/uuid"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
-	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/consumer/consumertest"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/pmetric"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "github.com/google/uuid"
+    "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
+    "github.com/stretchr/testify/require"
+    "go.opentelemetry.io/collector/consumer/consumertest"
+    "go.opentelemetry.io/collector/pdata/pcommon"
+    "go.opentelemetry.io/collector/pdata/pmetric"
+    corev1 "k8s.io/api/core/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // TestE2E_TailSampling validates a tail-sampling setup where:
@@ -41,10 +43,37 @@ func TestE2E_TailSampling(t *testing.T) {
 	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
 	require.NoErrorf(t, err, "failed to read namespace object file %s", nsFile)
-	nsObj, err := xk8stest.CreateObject(k8sClient, buf)
-	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
+    _, err = xk8stest.CreateObject(k8sClient, buf)
+    if err != nil {
+        // Handle CI races with existing/terminating namespace
+        if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "being deleted") {
+            require.Eventually(t, func() bool {
+                ns, getErr := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("namespaces")).Get(context.Background(), "e2e", metav1.GetOptions{})
+                if apierrors.IsNotFound(getErr) {
+                    // Try to create again
+                    _, createErr := xk8stest.CreateObject(k8sClient, buf)
+                    if createErr == nil || (createErr != nil && strings.Contains(createErr.Error(), "already exists")) {
+                        return true
+                    }
+                    return false
+                }
+                if getErr != nil {
+                    return false
+                }
+                // Ensure not terminating
+                if md, ok := ns.Object["metadata"].(map[string]any); ok {
+                    if _, terminating := md["deletionTimestamp"]; terminating {
+                        return false
+                    }
+                }
+                return true
+            }, 2*time.Minute, time.Second, "failed to ensure namespace 'e2e' exists and is ready")
+        } else {
+            require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
+        }
+    }
 
-	testNs := nsObj.GetName()
+    testNs := "e2e"
 
 	// Create a short-lived pod to stimulate k8s event/metrics paths (same as agent test)
 	podFile := filepath.Join(testDataDir, "pod.yaml")
@@ -98,12 +127,13 @@ func TestE2E_TailSampling(t *testing.T) {
 		xk8stest.WaitForTelemetryGenToStart(t, k8sClient, info.Namespace, info.PodLabelSelectors, info.Workload, info.DataType)
 	}
 
-	t.Cleanup(func() {
-		require.NoErrorf(t, xk8stest.DeleteObject(k8sClient, nsObj), "failed to delete namespace %s", testNs)
-		for _, obj := range telemetryGenObjs {
-			require.NoErrorf(t, xk8stest.DeleteObject(k8sClient, obj), "failed to delete object %s", obj.GetName())
-		}
-	})
+    t.Cleanup(func() {
+        // Best-effort cleanup to reduce flakiness between parallel tests
+        for _, obj := range telemetryGenObjs {
+            _ = xk8stest.DeleteObject(k8sClient, obj)
+        }
+        _ = k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("namespaces")).Delete(context.Background(), testNs, metav1.DeleteOptions{})
+    })
 
 	// Expect logs/metrics directly from the agent exporters, and traces from the gateway
 	waitForLogs(t, 1, logsConsumer)
