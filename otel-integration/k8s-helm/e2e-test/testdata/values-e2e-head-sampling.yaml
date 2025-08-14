@@ -1,0 +1,44 @@
+# Head-sampling E2E overrides (0% head sampling -> expect no spans)
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
+opentelemetry-agent:
+  presets:
+    headSampling:
+      enabled: true
+      percentage: 0
+      mode: "proportional"
+    coralogixExporter:
+      enabled: true
+      pipelines: ["metrics", "logs"]
+  config:
+    exporters:
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
+        tls:
+          insecure: true
+      otlp/traces-e2e:
+        endpoint: "{{.Values.global.hostedEndpoint}}:7321"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+        logs/resource_catalog:
+          exporters:
+            - otlp/logs
+        traces:
+          exporters:
+            - otlp/traces-e2e
+
+opentelemetry-gateway:
+  enabled: false
+
+
