@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/consumer/consumertest"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -65,7 +66,7 @@ func TestE2E_TailSampling_Simple(t *testing.T) {
 	_ = nsObj.GetName()
 
 	// Local OTLP sink for traces, must match values-e2e-tail-sampling.yaml (6321)
-	tracesConsumer := newTracesSink()
+	tracesConsumer := new(consumertest.TracesSink)
 	shutdownSink := StartUpSinks(t, ReceiverSinks{
 		Traces: &TraceSinkConfig{
 			Consumer: tracesConsumer,
