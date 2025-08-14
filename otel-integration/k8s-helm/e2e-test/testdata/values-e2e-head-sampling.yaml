@@ -1,0 +1,56 @@
+# Head-sampling E2E overrides
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
+opentelemetry-agent:
+  presets:
+    # Enable probabilistic head sampling at 0%
+    headSampling:
+      enabled: true
+      percentage: 0
+      mode: "proportional"
+    # Route via gateway not needed; spans are sampled at head
+    coralogixExporter:
+      enabled: true
+      pipelines: ["metrics", "logs"]
+  config:
+    exporters:
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+        logs/resource_catalog:
+          exporters:
+            - otlp/logs
+        traces:
+          exporters:
+            - otlp/traces-e2e
+
+opentelemetry-gateway:
+  enabled: false
+
+# Local exporter to test sink on 7321
+opentelemetry-receiver:
+  enabled: true
+  presets:
+    otlpReceiver:
+      enabled: true
+    coralogixExporter:
+      enabled: false
+  config:
+    exporters:
+      otlp/traces-e2e:
+        endpoint: "{{.Values.global.hostedEndpoint}}:7321"
+        tls:
+          insecure: true
+
