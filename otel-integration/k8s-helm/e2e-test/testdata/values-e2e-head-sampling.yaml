@@ -24,6 +24,10 @@ opentelemetry-agent:
         endpoint: "{{.Values.global.hostedEndpoint}}:4323"
         tls:
           insecure: true
+      otlp/traces-e2e:
+        endpoint: "{{.Values.global.hostedEndpoint}}:7321"
+        tls:
+          insecure: true
     service:
       pipelines:
         metrics:
@@ -38,19 +42,4 @@ opentelemetry-agent:
 
 opentelemetry-gateway:
   enabled: false
-
-# Local exporter to test sink on 7321
-opentelemetry-receiver:
-  enabled: true
-  presets:
-    otlpReceiver:
-      enabled: true
-    coralogixExporter:
-      enabled: false
-  config:
-    exporters:
-      otlp/traces-e2e:
-        endpoint: "{{.Values.global.hostedEndpoint}}:7321"
-        tls:
-          insecure: true
 
