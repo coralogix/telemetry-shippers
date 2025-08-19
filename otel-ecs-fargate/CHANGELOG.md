@@ -7,6 +7,7 @@
 <!-- ### version / full date -->
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
+
 ### 0.0.3 / 2025-08-19
 
 * [UPDATE] Added spanmetrics for ECS Fargate.
