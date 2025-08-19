@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.216 / 2025-08-19
+- [Feat] Add Kubernetes service resolver to load balancing preset and required RBAC.
+
 ### v0.0.215 / 2025-08-12
 - [Fix] Tail sampling values: correct Coralogix preset pipelines syntax.
 
