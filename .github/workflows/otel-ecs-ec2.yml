@@ -1,0 +1,42 @@
+name: OpenTelemetry-ECS-EC2-Chart
+
+on:
+  push:
+    branches: master
+    paths:
+    - 'otel-ecs-ec2/**'
+
+env:
+  CHART_VERSION: $(yq eval '.version' otel-ecs-ec2/Chart.yaml)
+  CHART_NAME: ecs-ec2-integration
+  ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
+  ARTIFACTORY_USERNAME: integrations-actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2.4.0
+      -
+        name: Setup Helm Repo
+        run: |
+          helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
+          helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+          helm dependency build ./otel-ecs-ec2/
+          cd otel-ecs-ec2
+          helm package .
+      -
+        name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v2.1.0
+        with:
+          version: 2.12.1
+      -
+        name: use-jfrog-cli
+        run: |
+          cd otel-ecs-ec2
+          jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
+
+
