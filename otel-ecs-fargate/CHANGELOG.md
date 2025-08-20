@@ -8,6 +8,11 @@
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
 
+### 0.0.3 / 2025-08-19
+
+* [UPDATE] Added spanmetrics for ECS Fargate.
+* [FIX] Fix metrics syntax.
+
 ### 0.0.2 / 2024-11-25
 
 * [UPDATE] Added configs for ECS Fargate Resource Catalog support
