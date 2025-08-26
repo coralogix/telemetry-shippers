@@ -4,7 +4,7 @@ variable "ecs_cluster_name" {
 }
 
 variable "aws_region" {
-  description = "AWS region for the provider configuration (default: eu-west-1)"
+  description = "AWS region for the provider configuration (default: null)"
   type        = string
   default     = null
 }

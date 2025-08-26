@@ -89,7 +89,7 @@ variable "health_check_start_period" {
 }
 
 variable "aws_region" {
-  description = "AWS region for the provider configuration (default: us-east-1)"
+  description = "AWS region for the provider configuration (default: null)"
   type        = string
   default     = null
 }

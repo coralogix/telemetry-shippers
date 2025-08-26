@@ -3,7 +3,7 @@
 TF ?= terraform
 AWS_PROFILE ?= research
 AWS_REGION ?= eu-west-1
-CLUSTER ?= povilas
+CLUSTER ?= ""
 API_KEY ?= cxtp_example_key_replace_me
 TFVARS_EXAMPLE ?= \
   -var="ecs_cluster_name=$(CLUSTER)" \

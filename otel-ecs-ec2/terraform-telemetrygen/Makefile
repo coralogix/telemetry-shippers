@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 
 TF ?= terraform
-AWS_PROFILE ?= research
+AWS_PROFILE ?= ""
 AWS_REGION ?= eu-west-1
-CLUSTER ?= povilas
+CLUSTER ?= ""
 DESIRED ?= 1
 RATE ?= 50
 DURATION ?= 120s
