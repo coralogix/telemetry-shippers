@@ -1,0 +1,235 @@
+global:
+  domain: "eu2.coralogix.com"
+  clusterName: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+  logLevel: "info"
+  collectionInterval: "30s"
+  version: "0.0.1"
+  deploymentEnvironmentName: ""
+
+opentelemetry-agent:
+  distribution: "ecs"
+  enabled: true
+  mode: daemonset
+  # Extra config for the collector
+  # This is used to add extra receivers, processors, exporters, and connectors
+  # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
+  # Processors are added at the end of the pipeline before batching.
+  # You cannot use this to add new pipelines, instead use the
+  # config.service.pipelines field to add new pipelines.
+  extraConfig: {}
+  # extraConfig:
+  #   receivers:
+  #     otlp/3:
+  #       protocols:
+  #         grpc:
+  #           endpoint: ${env:MY_POD_IP}:4317
+  #         http:
+  #           endpoint: ${env:MY_POD_IP}:4318
+  #   processors:
+  #     batch: {}
+  #   exporters:
+  #     debug/2: {}
+  #   connectors:
+  #     spanmetrics/2:
+  #       metrics:
+  #         enabled: true
+  #   service:
+  #     pipelines:
+  #       logs:
+  #         receivers:
+  #         - otlp/3
+  #         processors:
+  #         - batch/2
+  #         exporters:
+  #         - debug/2
+  #       metrics:
+  #         receivers:
+  #         - otlp/3
+  #         - spanmetrics/2
+
+
+  hostNetwork: true
+
+  presets:
+    metadata:
+      enabled: true
+      clusterName: ""
+      integrationName: "coralogix-integration-ecs-ec2"
+    fleetManagement:
+      enabled: true
+      agentType: "agent"
+      clusterName: "{{.Values.global.clusterName}}"
+    ecsAttributesContainerLogs:
+      enabled: true
+    ecsLogsCollection:
+      enabled: true
+      forceFlushPeriod: "0"
+    # Adds AWS ECS Container Metrics Daemon receiver and wires it to metrics pipeline
+    awsecscontainermetricsdReceiver:
+      enabled: true
+
+    hostMetrics:
+      enabled: true
+      # Enables process metrics scraping.
+      # Disabled by default, requires privilleged mode
+      process:
+        enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+    spanMetrics:
+      enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+      # histogramBuckets:
+      #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+
+    #   transformStatements:
+    #     - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+    #     - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.mongodb.collection"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"]) where attributes["db.collection.name"] == nil
+    #     - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
+    #   transformStatements:
+    #     - replace_pattern(attributes["db.query.text"], "\\d+", "?") # removes potential IDs for the attribute
+    #     - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
+    # Configures collector to add service.version to spanMetrics dimensions
+    #   serviceVersion:
+    #     enabled: true
+    #   errorTracking:
+    #     enabled: true
+    #   dbMetrics:
+    #     enabled: true
+    #     serviceVersion:
+    #       enabled: true
+
+    # Configures the collector to export span metrics with different histogram bucket options
+    # for different applications. Applications are selected and routed to different pipelines
+    # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
+    # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
+    spanMetricsMulti:
+      enabled: false
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+      # defaultHistogramBuckets:
+      #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      configs: []
+      #  - selector: route() where attributes["service.name"] == "one"
+      #    histogramBuckets: [1s, 2s]
+      #  - selector: route() where attributes["service.name"] == "two"
+      #    histogramBuckets: [5s, 10s]
+    # Removes uids and other uneeded attributes from metric resources.
+    # This reduces target_info cardinality.
+    # reduceResourceAttributes:
+    #   enabled: false
+     # Configures Host Metrics receiver to collect Entity Events.
+    hostEntityEvents:
+      enabled: true
+
+    # Head sampling configuration for traces.
+    # When enabled, this creates a separate pipeline for sampled traces using probabilistic sampler.
+    # More info: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/probabilisticsamplerprocessor/README.md
+    # headSampling:
+    #   enabled: false
+    #   # Percentage of traces to sample (0-100)
+    #   percentage: 10
+    #   # Sampling mode - "proportional", "equalizing", "hash_seed"
+    #   mode: "proportional"
+
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    # Configures the collector to receive Jaeger data in all supported protocols.
+    # Adds the jaeger receiver to the traces pipeline with all protocols configured.
+    jaegerReceiver:
+      enabled: true
+    # Configures the collector to receive Zipkin data.
+    # Adds the zipkin receiver to the traces pipeline.
+    zipkinReceiver:
+      enabled: true
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
+    # Configures the collector to receive StatsD metrics.
+    # Adds the statsd receiver to the metrics pipeline.
+    statsdReceiver:
+      enabled: true
+
+    # Configures the collector to expose zPages for debugging.
+    # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
+    zpages:
+      enabled: true
+
+    # Configures the collector to expose pprof for profiling.
+    pprof:
+      enabled: true
+
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      # sendBatchSize: 1024
+      # sendBatchMaxSize: 2048
+      # timeout: "1s"
+
+    # Configures the collector to export data to Coralogix.
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
+
+    # Applies semantic convention transformations.
+    semconv:
+      enabled: true
+  config:
+    # extensions:
+    #   zpages:
+    #     endpoint: localhost:55679
+    # receivers:
+    #   statsd:
+    #     endpoint: ${env:MY_POD_IP}:8125
+    # processors: {}
+    # exporters: {}
+    service:
+      telemetry:
+        resource:
+          service.name: "opentelemetry-collector"
+          cx.agent.type: "agent"
+        logs:
+          level: "{{ .Values.global.logLevel }}"
+      extensions:
+        - health_check
+      pipelines:
+        metrics:
+          exporters: []
+          processors:
+            - memory_limiter
+          # receivers: []
+        traces:
+          exporters: []
+          processors:
+            - memory_limiter
+          # receivers: []
+        logs:
+          exporters: []
+          processors:
+            - memory_limiter
+          # receivers: []

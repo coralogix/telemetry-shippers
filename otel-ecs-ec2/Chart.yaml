@@ -1,0 +1,21 @@
+apiVersion: v2
+name: ecs-ec2-integration
+description: ECS-EC2 OpenTelemetry Integration
+version: 0.0.1
+keywords:
+  - OpenTelemetry Collector
+  - OpenTelemetry Agent
+  - OpenTelemetry Integration
+  - ECS-EC2
+  - Coralogix
+dependencies:
+  - name: opentelemetry-collector
+    alias: opentelemetry-agent
+    version: "0.119.7"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-agent.enabled
+sources:
+  - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
+maintainers:
+  - name: Coralogix
+    email: platform@coralogix.com
