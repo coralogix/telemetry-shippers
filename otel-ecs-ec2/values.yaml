@@ -134,9 +134,99 @@ opentelemetry-agent:
       #    histogramBuckets: [5s, 10s]
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
+
     reduceResourceAttributes:
       enabled: true
-     # Configures Host Metrics receiver to collect Entity Events.
+      pipelines: ["all"]
+      denylist:
+        metrics:
+          - cloud.account.id
+          - cloud.availability_zone
+          - cloud.platform
+          - cloud.provider
+          - cloud.region
+          - container.id
+          - cx.otel_integration.name
+          - host.image.id
+          - host.type
+          - os.type
+          - os.version
+          - process.command
+          - process.command_line
+          - process.command_args
+          - process.executable.name
+          - process.executable.path
+          - process.owner
+          - process.pid
+          - process.parent_pid
+          - process.runtime.description
+          - process.runtime.name
+          - process.runtime.version
+          - net.host.name
+          - net.host.port
+          - telemetry.distro.name
+          - telemetry.distro.version
+          - telemetry.sdk.language
+          - telemetry.sdk.name
+          - telemetry.sdk.version
+          - aws.ecs.task.definition.version
+          - aws.ecs.task.known.status
+        traces:
+          - cloud.account.id
+          - cloud.availability_zone
+          - cloud.platform
+          - cloud.provider
+          - cloud.region
+          - container.id
+          - cx.otel_integration.name
+          - host.image.id
+          - host.type
+          - os.type
+          - os.version
+          - process.command
+          - process.command_line
+          - process.command_args
+          - process.executable.name
+          - process.executable.path
+          - process.owner
+          - process.pid
+          - process.parent_pid
+          - process.runtime.description
+          - process.runtime.name
+          - process.runtime.version
+          - aws.ecs.task.definition.version
+          - aws.ecs.task.known.status
+        logs:
+          - cloud.account.id
+          - cloud.availability_zone
+          - cloud.platform
+          - cloud.provider
+          - cloud.region
+          - container.id
+          - cx.otel_integration.name
+          - host.image.id
+          - host.type
+          - os.type
+          - os.version
+          - process.command
+          - process.command_line
+          - process.command_args
+          - process.executable.name
+          - process.executable.path
+          - process.owner
+          - process.pid
+          - process.parent_pid
+          - process.runtime.description
+          - process.runtime.name
+          - process.runtime.version
+          - telemetry.distro.name
+          - telemetry.distro.version
+          - telemetry.sdk.language
+          - telemetry.sdk.name
+          - telemetry.sdk.version
+          - aws.ecs.task.definition.version
+          - aws.ecs.task.known.status
+        # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: true
 
