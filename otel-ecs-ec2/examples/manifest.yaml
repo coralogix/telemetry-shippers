@@ -1,0 +1,628 @@
+---
+# Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecs-ec2-example-opentelemetry-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.119.7
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: ecs-ec2-example
+    app.kubernetes.io/version: "0.131.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecs-ec2-example-opentelemetry-agent-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.119.7
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: ecs-ec2-example
+    app.kubernetes.io/version: "0.131.1"
+    app.kubernetes.io/managed-by: Helm
+    
+data:
+  relay: |
+    connectors:
+      forward/db: {}
+      spanmetrics:
+        aggregation_cardinality_limit: 100000
+        dimensions:
+        - name: http.method
+        - name: cgx.transaction
+        - name: cgx.transaction.root
+        - name: status_code
+        - name: db.namespace
+        - name: db.operation.name
+        - name: db.collection.name
+        - name: db.system
+        - name: http.response.status_code
+        - name: rpc.grpc.status_code
+        - name: service.version
+        histogram:
+          explicit:
+            buckets:
+            - 1ms
+            - 4ms
+            - 10ms
+            - 20ms
+            - 50ms
+            - 100ms
+            - 200ms
+            - 500ms
+            - 1s
+            - 2s
+            - 5s
+        metrics_expiration: 5m
+        metrics_flush_interval: '30s'
+        namespace: ""
+      spanmetrics/db:
+        aggregation_cardinality_limit: 100000
+        dimensions:
+        - name: db.namespace
+        - name: db.operation.name
+        - name: db.collection.name
+        - name: db.system
+        - name: service.version
+        histogram:
+          explicit:
+            buckets:
+            - 100us
+            - 1ms
+            - 2ms
+            - 2.5ms
+            - 4ms
+            - 6ms
+            - 10ms
+            - 100ms
+            - 250ms
+        metrics_expiration: 5m
+        metrics_flush_interval: '30s'
+        namespace: db
+    exporters:
+      coralogix:
+        application_name: otel
+        application_name_attributes:
+        - aws.ecs.cluster
+        - aws.ecs.task.definition.family
+        domain: eu2.coralogix.com
+        logs:
+          headers:
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.1
+        metrics:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.1
+        private_key: ${env:CORALOGIX_PRIVATE_KEY}
+        profiles:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.1
+        subsystem_name: integration
+        subsystem_name_attributes:
+        - aws.ecs.container.name
+        - aws.ecs.docker.name
+        - docker.name
+        timeout: 30s
+        traces:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.1
+      coralogix/resource_catalog:
+        application_name: resource
+        domain: eu2.coralogix.com
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.1
+            x-coralogix-ingress: metadata-as-otlp-logs/v1
+        private_key: ${CORALOGIX_PRIVATE_KEY}
+        subsystem_name: catalog
+        timeout: 30s
+      debug: {}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      opamp:
+        agent_description:
+          include_resource_attributes: true
+          non_identifying_attributes:
+            cx.agent.type: agent
+            cx.cluster.name: ''
+            helm.chart.opentelemetry-agent.version: 0.119.7
+        server:
+          http:
+            endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+            headers:
+              Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+            polling_interval: 2m
+      pprof:
+        endpoint: localhost:1777
+      zpages:
+        endpoint: localhost:55679
+    processors:
+      batch:
+        send_batch_max_size: 2048
+        send_batch_size: 1024
+        timeout: 1s
+      ecsattributes/container-logs:
+        container_id:
+          sources:
+          - log.file.path
+      filter/db_spanmetrics:
+        traces:
+          span:
+          - attributes["db.system"] == nil
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      resource/metadata:
+        attributes:
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-ecs-ec2
+      resourcedetection/entity:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.cpu.cache.l2.size:
+              enabled: true
+            host.cpu.family:
+              enabled: true
+            host.cpu.model.id:
+              enabled: true
+            host.cpu.model.name:
+              enabled: true
+            host.cpu.stepping:
+              enabled: true
+            host.cpu.vendor.id:
+              enabled: true
+            host.id:
+              enabled: true
+            host.ip:
+              enabled: true
+            host.mac:
+              enabled: true
+            os.description:
+              enabled: true
+        timeout: 2s
+      resourcedetection/env:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+        timeout: 2s
+      resourcedetection/region:
+        detectors:
+        - gcp
+        - ec2
+        - azure
+        override: true
+        timeout: 2s
+      transform/entity-event:
+        error_mode: silent
+        log_statements:
+        - context: log
+          statements:
+          - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+          - merge_maps(attributes, resource.attributes, "insert")
+        - context: resource
+          statements:
+          - keep_keys(attributes, [""])
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
+            "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: resource
+          statements:
+          - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(attributes, "service_name") where attributes["service.name"] ==
+            "opentelemetry-collector"
+        - context: datapoint
+          statements:
+          - delete_key(attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
+            == "opentelemetry-collector"
+      transform/semconv:
+        error_mode: ignore
+        trace_statements:
+        - context: span
+          statements:
+          - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
+            != nil
+    receivers:
+      awsecscontainermetricsd: {}
+      filelog:
+        force_flush_period: 0
+        include:
+        - /hostfs/var/lib/docker/containers/*/*.log
+        include_file_name: false
+        include_file_path: true
+        operators:
+        - default: move_log_file_path
+          id: docker_log_json_parser
+          routes:
+          - expr: body matches "^\\{\"log\".*\\}"
+            output: json_parser
+          type: router
+        - output: recombine
+          parse_from: body
+          parse_to: body
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%fZ'
+            parse_from: body.time
+          type: json_parser
+        - combine_field: body.log
+          combine_with: ""
+          force_flush_period: 10s
+          id: recombine
+          is_last_entry: body.log endsWith "\n"
+          on_error: send
+          output: move_log_file_path
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - from: attributes["log.file.path"]
+          id: move_log_file_path
+          to: resource["log.file.path"]
+          type: move
+        start_at: end
+      hostmetrics:
+        collection_interval: '30s'
+        root_path: /
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.utilization:
+                enabled: true
+          disk: null
+          filesystem:
+            exclude_fs_types:
+              fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+              match_type: strict
+            exclude_mount_points:
+              match_type: regexp
+              mount_points:
+              - /dev/*
+              - /proc/*
+              - /sys/*
+              - /run/k3s/containerd/*
+              - /run/containerd/runc/*
+              - /var/lib/docker/*
+              - /var/lib/kubelet/*
+              - /snap/*
+          load: null
+          memory:
+            metrics:
+              system.memory.utilization:
+                enabled: true
+          network: null
+          process:
+            metrics:
+              process.cpu.utilization:
+                enabled: true
+              process.memory.utilization:
+                enabled: true
+              process.threads:
+                enabled: true
+            mute_process_exe_error: true
+            mute_process_name_error: true
+            mute_process_user_error: true
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+          thrift_binary:
+            endpoint: 0.0.0.0:6832
+          thrift_compact:
+            endpoint: 0.0.0.0:6831
+          thrift_http:
+            endpoint: 0.0.0.0:14268
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: 0.0.0.0:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: '30s'
+            static_configs:
+            - targets:
+              - 0.0.0.0:8888
+      statsd:
+        endpoint: 0.0.0.0:8125
+      zipkin:
+        endpoint: 0.0.0.0:9411
+    service:
+      extensions:
+      - health_check
+      - opamp
+      - zpages
+      - pprof
+      pipelines:
+        logs:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - ecsattributes/container-logs
+          - batch
+          receivers:
+          - filelog
+          - otlp
+        logs/resource_catalog:
+          exporters:
+          - coralogix/resource_catalog
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/entity
+          - resourcedetection/region
+          - transform/entity-event
+          receivers:
+          - hostmetrics
+        metrics:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - transform/prometheus
+          - batch
+          receivers:
+          - hostmetrics
+          - spanmetrics
+          - spanmetrics/db
+          - prometheus
+          - awsecscontainermetricsd
+          - otlp
+          - statsd
+        traces:
+          exporters:
+          - spanmetrics
+          - forward/db
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - transform/semconv
+          - batch
+          receivers:
+          - jaeger
+          - zipkin
+          - otlp
+        traces/db:
+          exporters:
+          - spanmetrics/db
+          processors:
+          - filter/db_spanmetrics
+          - batch
+          receivers:
+          - forward/db
+      telemetry:
+        logs:
+          encoding: json
+          level: 'info'
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 8888
+        resource:
+          cx.agent.type: agent
+          service.name: opentelemetry-collector
+---
+# Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ecs-ec2-example-opentelemetry-agent-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.119.7
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: ecs-ec2-example
+    app.kubernetes.io/version: "0.131.1"
+    app.kubernetes.io/managed-by: Helm
+    
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-agent
+      app.kubernetes.io/instance: ecs-ec2-example
+      component: agent-collector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: e7d9b9375c471450c05650bb155ab042d55ee0f0935916495cdbb74c51483a9d
+        
+      labels:
+        app.kubernetes.io/name: opentelemetry-agent
+        app.kubernetes.io/instance: ecs-ec2-example
+        component: agent-collector
+        
+    spec:
+      
+      serviceAccountName: ecs-ec2-example-opentelemetry-agent
+      securityContext:
+        {}
+      containers:
+        - name: opentelemetry-agent
+          command:
+            - /otelcol-contrib
+            - --config=/conf/relay.yaml
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            privileged: true
+          image: "coralogixrepo/coralogix-otel-collector:v0.5.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: jaeger-binary
+              containerPort: 6832
+              protocol: TCP
+              hostPort: 6832
+            - name: jaeger-compact
+              containerPort: 6831
+              protocol: UDP
+              hostPort: 6831
+            - name: jaeger-grpc
+              containerPort: 14250
+              protocol: TCP
+              hostPort: 14250
+            - name: jaeger-thrift
+              containerPort: 14268
+              protocol: TCP
+              hostPort: 14268
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+              hostPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+              hostPort: 4318
+            - name: statsd
+              containerPort: 8125
+              protocol: UDP
+              hostPort: 8125
+            - name: zipkin
+              containerPort: 9411
+              protocol: TCP
+              hostPort: 9411
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "k8s.node.name=$(K8S_NODE_NAME)"
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          volumeMounts:
+            - mountPath: /conf
+              name: opentelemetry-agent-configmap
+            - name: hostfs
+              mountPath: /hostfs
+              readOnly: true
+              mountPropagation: HostToContainer
+            - mountPath: /etc/machine-id
+              mountPropagation: HostToContainer
+              name: etcmachineid
+              readOnly: true
+            - mountPath: /var/lib/dbus/machine-id
+              mountPropagation: HostToContainer
+              name: varlibdbusmachineid
+              readOnly: true
+      volumes:
+        - name: opentelemetry-agent-configmap
+          configMap:
+            name: ecs-ec2-example-opentelemetry-agent-agent
+            items:
+              - key: relay
+                path: relay.yaml
+        - name: hostfs
+          hostPath:
+            path: /
+        - name: etcmachineid
+          hostPath:
+            path: /etc/machine-id
+        - name: varlibdbusmachineid
+          hostPath:
+            path: /var/lib/dbus/machine-id
+      nodeSelector:
+        kubernetes.io/os: linux
+      hostNetwork: true

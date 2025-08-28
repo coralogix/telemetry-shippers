@@ -99,7 +99,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        cx.cluster.name: 'ec2'
+        cx.cluster.name: ''
         helm.chart.opentelemetry-agent.version: 0.119.7
     server:
       http:
@@ -249,6 +249,9 @@ receivers:
   awsecscontainermetricsd: {}
   filelog:
     force_flush_period: 0
+    multiline:
+      line_start_pattern: ^[^\s].*
+      omit_pattern: true
     include:
     - /hostfs/var/lib/docker/containers/*/*.log
     include_file_name: false

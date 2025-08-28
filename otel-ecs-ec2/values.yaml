@@ -5,13 +5,16 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.1"
+  version: "0.0.2"
   deploymentEnvironmentName: ""
 
 opentelemetry-agent:
   distribution: "ecs"
   enabled: true
   mode: daemonset
+  image:
+    repository: coralogixrepo/coralogix-otel-collector
+    tag: v0.5.0
   # Extra config for the collector
   # This is used to add extra receivers, processors, exporters, and connectors
   # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
@@ -66,6 +69,9 @@ opentelemetry-agent:
     ecsLogsCollection:
       enabled: true
       forceFlushPeriod: "0"
+      # multiline:
+      #  lineStartPattern: "^[^\\s].*"
+      #  omitPattern: true
     # Adds AWS ECS Container Metrics Daemon receiver and wires it to metrics pipeline
     awsecscontainermetricsdReceiver:
       enabled: true
@@ -128,8 +134,8 @@ opentelemetry-agent:
       #    histogramBuckets: [5s, 10s]
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
-    # reduceResourceAttributes:
-    #   enabled: false
+    reduceResourceAttributes:
+      enabled: true
      # Configures Host Metrics receiver to collect Entity Events.
     hostEntityEvents:
       enabled: true
