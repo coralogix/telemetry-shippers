@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.217 / 2025-09-01
+- [Feat] Update Collector to v0.119.10
+
 ### v0.0.216 / 2025-08-19
 - [Feat] Add Kubernetes service resolver to load balancing preset and required RBAC.
 
