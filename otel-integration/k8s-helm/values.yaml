@@ -392,6 +392,11 @@ opentelemetry-cluster-collector:
     # Enables Kubernetes Resource collection for for resource catalog
     kubernetesResources:
       enabled: true
+      # OTTL filter statements for filtering out resources by name regex
+      filterStatements:
+        # Filter out pods given a regex. This example is for telemetrygen pods.
+        # - 'body["object"]["kind"] == "Pod" and IsMatch(body["object"]["metadata"]["name"], "telemetrygen.*")'
+        # - 'body["kind"] == "Pod" and IsMatch(body["metadata"]["name"], "telemetrygen.*")'
     # Configures the collector to collect its own metrics using Prometheus receiver.
     # Adds the prometheus receiver to the metrics pipeline with a scrape config
     # targeting the collector's metrics endpoint.
