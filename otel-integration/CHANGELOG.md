@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.216 / 2025-08-29
+- [Feat] Add support for EKS Fargate.
+- [Feat] Add `eks` detector to `resource/region` processor.
+- [Feat] Profiling: improve service name detection by otel conventions.
+
 ### v0.0.216 / 2025-08-19
 - [Feat] Add Kubernetes service resolver to load balancing preset and required RBAC.
 

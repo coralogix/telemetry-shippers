@@ -5,14 +5,18 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.216"
+  version: "0.0.217"
   deploymentEnvironmentName: ""
 
   extensions:
     kubernetesDashboard:
       enabled: true
 
-# set distribution to openshift for openshift clusters
+# Set distribution for:
+# - openshift
+# - eks/fargate
+# - gke/autopilot
+
 distribution: ""
 opentelemetry-agent:
   enabled: true
@@ -819,3 +823,179 @@ coralogix-operator:
 #    domain: ""
 #    labelSelector: {}
 #    namespaceSelector: {}
+
+# OpenTelemetry Agent for EKS Fargate
+# Collects logs and metrics from Fargate pods
+opentelemetry-agent-eks-fargate:
+  enabled: false
+  fullnameOverride: "otel-agent-eks-fargate"
+  mode: statefulset
+  replicaCount: 1
+  networkMode: "ipv4"
+  distribution: "eks/fargate"
+
+  presets:
+    # Configures metadata collection for EKS Fargate
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-helm"
+
+    # Configures the collector to export data to Coralogix.
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      timeout: "60s"
+
+    # Configures EKS Fargate specific collection
+    eksFargate:
+      monitoringCollector: false
+      kubeletStats:
+        collectionInterval: "{{.Values.global.collectionInterval}}"
+      initContainer:
+        enabled: true
+        image:
+          repository: "public.ecr.aws/aws-cli/aws-cli"
+          tag: "2.28.17"
+
+    # Configures Kubernetes attributes processor
+    kubernetesAttributes:
+      enabled: true
+
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
+      maxRecvMsgSizeMiB: 20
+
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
+      dbusMachineId:
+        enabled: false
+
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+
+  ports:
+    metrics:
+      enabled: true
+
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 1
+      memory: 2Gi
+
+  podSecurityContext:
+    fsGroup: 65534
+
+# OpenTelemetry Agent for EKS Fargate Monitoring
+# Separate collector deployment for monitoring metrics collection
+opentelemetry-agent-eks-fargate-monitoring:
+  enabled: false
+  fullnameOverride: "otel-agent-eks-fargate-monitoring"
+  mode: deployment
+  replicaCount: 1
+  distribution: "eks/fargate"
+
+  config:
+    exporters: {}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      memory_ballast: {}
+    receivers: {}
+    processors:
+      memory_limiter: null
+    service:
+      telemetry:
+        logs:
+          encoding: json
+      extensions:
+        - health_check
+
+  presets:
+    # Configures metadata collection for EKS Fargate monitoring
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-helm"
+
+    # Configures the collector to export data to Coralogix.
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      timeout: "60s"
+
+    # Configures EKS Fargate monitoring collector
+    eksFargate:
+      monitoringCollector: true
+      kubeletStats:
+        collectionInterval: "{{.Values.global.collectionInterval}}"
+
+    # Configures Kubernetes attributes processor
+    kubernetesAttributes:
+      enabled: false
+
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
+      maxRecvMsgSizeMiB: 20
+
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
+      dbusMachineId:
+        enabled: false
+
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 1
+      memory: 2Gi
+
+  podSecurityContext:
+    fsGroup: 65534
+
+  ports:
+    metrics:
+      enabled: true
