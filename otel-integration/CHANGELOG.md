@@ -2,6 +2,12 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.218 / 2025-09-03
+- [Fix] Fix quoting issue with EKS Fargate `collectionInterval`.
+- [Fix] Fix `otel_annotations` field intendation for `k8sattributes/profiles`.
+- [Feat] loadBalancing preset: add `pipelines` option to select pipelines (logs, metrics, traces, profiles). Default is ["traces"].
+- [Feature] Profiling: add `serviceLabels` and `serviceAnnotations` options to `profilesCollection` preset, to allow for custom service name detection.
+
 ### v0.0.216 / 2025-08-29
 - [Feat] Add support for EKS Fargate.
 - [Feat] Add `eks` detector to `resource/region` processor.
