@@ -1,5 +1,5 @@
 name: Sync with integration-definitions
-on: 
+on:
   push:
     branches: [master]
     paths:
@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Get the new version
         id: New_version
@@ -60,7 +60,13 @@ jobs:
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_version.outputs.Chart_version }}
-          last_version=$(grep  "revision: " ./integrations/otel-agent-k8s/manifest.yaml | tail -n 1 | grep -oE '[^ ]+$')
+          last_version=$(
+            awk '
+              /^[[:space:]]*-[[:space:]]+revision:/ { if (rev && !testing) last=rev; rev=$NF; testing=0 }
+              /[[:space:]]testing:[[:space:]]*true/  { testing=1 }
+              END { if (rev && !testing) last=rev; if (last) print last; else exit 1 }
+            ' ./integrations/otel-agent-k8s/manifest.yaml
+          )
           integration_version=$(echo $last_version | sed 's/+.*//')
           mkdir -p integrations/otel-agent-k8s/v${integration_version}+${template_version}
           cp integrations/otel-agent-k8s/v$last_version/commands.yaml integrations/otel-agent-k8s/v${integration_version}+${template_version}/
@@ -98,7 +104,7 @@ jobs:
           file_pattern: '*.yaml *.md'
         env:
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
-  
+
       - name: Create pull request
         if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
         run: |
