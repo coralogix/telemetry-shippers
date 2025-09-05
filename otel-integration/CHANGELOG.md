@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.219 / 2025-09-05
+- [Feat] Coralogix exporter: add exporter helper settings (retry_on_failure, sending_queue); flatten values to `presets.coralogixExporter.retryOnFailure` and `sendingQueue`; add example and schema support.
+
 ### v0.0.218 / 2025-09-03
 - [Fix] Fix quoting issue with EKS Fargate `collectionInterval`.
 - [Fix] Fix `otel_annotations` field intendation for `k8sattributes/profiles`.
