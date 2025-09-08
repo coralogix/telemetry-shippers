@@ -608,7 +608,7 @@ helm upgrade --install otel-integration coralogix-charts-virtual/otel-integratio
 
 GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 
-Notable important differences from regular `otel-integration` are:
+Notable important differences from the regular `otel-integration` are:
 
 - Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
 - Kubernetes Dashboard does not work, due to missing Host Metrics.
@@ -1749,7 +1749,7 @@ service:
 
 # Filtering and reducing costs
 
-The Otel integration has a couple of ways you can reduce costs of telemetry data. One simple way is to enable the`reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
+The Otel integration has a couple of ways you can reduce costs of telemetry data. One simple way is to enable the `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
 
 - azure.resourcegroup.name
 - azure.vm.name
