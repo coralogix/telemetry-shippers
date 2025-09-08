@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.220 / 2025-09-08
+- [CHORE] Bump Collector to 0.134.1
+
 ### v0.0.219 / 2025-09-05
 - [Feat] Coralogix exporter: add exporter helper settings (retry_on_failure, sending_queue); flatten values to `presets.coralogixExporter.retryOnFailure` and `sendingQueue`; add example and schema support.
 
