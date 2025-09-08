@@ -4,12 +4,13 @@ import (
 	"os"
 	"testing"
 
+	"maps"
+	"slices"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"maps"
-	"slices"
 )
 
 // TestE2E_ClusterCollector_Metrics verifies that the cluster-collector exports metrics
@@ -101,8 +102,10 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 		"otelcol_exporter_sent_log_records":              false,
 		"otelcol_exporter_send_failed_log_records":       false,
 		"otelcol_receiver_accepted_metric_points":        false,
+		"otelcol_receiver_failed_metric_points":          false,
 		"otelcol_receiver_refused_metric_points":         false,
 		"otelcol_receiver_accepted_log_records":          false,
+		"otelcol_receiver_failed_log_records":            false,
 		"otelcol_receiver_refused_log_records":           false,
 		"otelcol_processor_incoming_items":               false,
 		"otelcol_processor_outgoing_items":               false,
