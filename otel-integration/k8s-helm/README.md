@@ -105,7 +105,7 @@ Utilizing OpenTelemetry, we ensure seamless and automated data collection from v
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
 
-The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/ under the secret key `PRIVATE_KEY`. **This secret must exist in the same namespace where the Helm chart is installed**.
+The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix the [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) under the secret key `PRIVATE_KEY`. **This secret must exist in the same namespace where the Helm chart is installed**.
 
 To create the secret, run the following command:
 
