@@ -238,6 +238,7 @@ global:
 ```
 
 Configure these values:
+
 - `domain`: Specify your [OpenTelemetry endpoint](https://coralogix.com/docs/integrations/coralogix-endpoints/) for the **domain** associated with your Coralogix account.
 - `clusterName`: A required identifier for your cluster
 
@@ -608,6 +609,7 @@ helm upgrade --install otel-integration coralogix-charts-virtual/otel-integratio
 GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 
 Notable important differences from regular `otel-integration` are:
+
 - Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
 - Kubernetes Dashboard does not work, due to missing Host Metrics.
 - Host networking and host ports are not available, users need to send tracing spans through Kubernetes Service. The Service uses `internalTrafficPolicy: Local`, to send traffic to locally running agents.
@@ -921,6 +923,7 @@ Head sampling is a feature that allows you to sample traces at the collection po
 When used in combination with tail sampling, head sampling is applied first at the agent level. The sampled traces are then forwarded to the tail sampling collectors, where additional sampling decisions can be made. This means that tail sampling will only see and process the traces that have already passed through head sampling.
 
 The sampling configuration:
+
 - Creates a new 'traces/sampled' pipeline in addition to the main traces pipeline
 - Applies probabilistic sampling based on the configured percentage
 - Supports different sampling modes:
@@ -950,6 +953,7 @@ This deployment creates two key components:
 - `opentelemetry-gateway`. Performs tail sampling decisions on the received span data before forwarding to Coralogix
 
 To enable other Kubernetes clusters to send data to the `opentelemetry-receiver`, expose it using one of these methods:
+
 - Service of type LoadBalancer
 - Ingress object configuration
 - Manual load balancer configuration
@@ -1745,7 +1749,7 @@ service:
 
 # Filtering and reducing costs
 
-The Otel integration has a couple of ways you can reduce costs of telemetry data. One simple way is to enable `reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
+The Otel integration has a couple of ways you can reduce costs of telemetry data. One simple way is to enable the`reduceResourceAttributes` preset, which removes the following list of resource attributes that are typically not used:
 
 - azure.resourcegroup.name
 - azure.vm.name
@@ -1963,10 +1967,12 @@ The metrics collection has to be enabled by setting the `metrics.enabled` to `tr
 Each MySQL instance is configured in the `metrics.instances` section. You can configure multiple instances, if you have more than one instance you'd like to monitor.
 
 Required instance settings:
+
 - `username`: The username of the database user that will be used to collect metrics.
 - `password`: The password of the database user that will be used to collect metrics. We strongly recommend to provide this via a Kuberetes secret as an environment variable, e.g `MYSQL_PASSWORD`, which should be provided in the `extraEnv` section of the chart. This parameter should be passed in format `${env:MYSQL_PASSWORD}` in order for the collector to be able to read it.
 
 Optional instance settings:
+
 - `port`: The port of the MySQL instance. Defaults to `3306`. Unless you use non-standard port, there is no need to set this parameter.
 - `labelSelectors`: A list of label selectors to select the pods that run the MySQL instances. If you wish to monitor mutiple instance, the selectors will determine which pods belong to a given instance.
 
@@ -1981,10 +1987,12 @@ kubectl patch sts <YOUR_MYSQL_INSTANCE_NAME> -p '{"spec": {"template":{"metadata
 ```
 
 Required settings:
+
 - `volumeMountName`: specifies the name of the volume mount. It should correspond to the volume name of the MySQL data volume.
 - `mountPath`: specifies the path at which to mount the volume. This should correspond the mount path of your MySQL data volume. Provide this parameter without trailing slash.
 
 Optional settings:
+
 - `logFilesPath`: specifies which directory to watch for log files. This will typically be the MySQL data directory, such as `/var/lib/mysql`. If not specified, the value of `mountPath` will be used.
 - `logFilesExtension`: specifies which file extensions to watch for. Defaults to `.log`.
 
