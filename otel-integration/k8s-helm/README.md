@@ -332,8 +332,8 @@ For more information on presets, refer to the documentation in [values.yaml](htt
 # example
 opentelemetry-agent:
 ...
-   presets:
-    # LogsCollection preset enables a configured filelog receiver to read all container logged console output (/var/log/pods/*/*/*.log).
+  presets:
+    # LogsCollection preset enables a configured filelog receiver to read all containers' logged console output (/var/log/pods/*/*/*.log).
     logsCollection:
       enabled: true
     # KubernetesAttributes preset collects Kubernetes metadata such as k8s.pod.name, k8s.namespace.name, and k8s.node.name. It also adjusts the ClusterRole with appropriate RBAC roles to query the Kubernetes API.
