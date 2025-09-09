@@ -6,7 +6,7 @@ variable "ecs_cluster_name" {
 variable "image_version" {
   description = "The Coralogix Open Telemetry Distribution Image Version/Tag. See: https://hub.docker.com/r/coralogixrepo/coralogix-otel-collector/tags"
   type        = string
-  default     = "v0.5.0"
+  default     = "v0.5.1"
 }
 
 variable "image" {
