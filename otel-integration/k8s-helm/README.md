@@ -80,13 +80,13 @@ The OpenTelemetry Integration chart enables the collection of essential metrics 
 
 If collecting these metrics is not required, you can disable them by setting `global.extensions.kubernetesDashboard.enabled` to `false` in the `values.yaml` file.
 
-## Next Steps
+## Next steps
 
 View our **basic configuration** instructions [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
 
 **Advanced configuration** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/).
 
-# Kubernetes Complete Observability: basic configuration
+# Kubernetes Complete Observability: Basic configuration
 
 Coralogix's **Kubernetes Complete Observability** provides a comprehensive solution for full-stack observability in your Kubernetes environment.
 
@@ -133,7 +133,7 @@ type: Opaque
 
 For UI-based installation check [Kubernetes Complete Observability](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
 
-### Helm based installation
+### Helm-based installation
 
 **STEP 1**. First, make sure to add our Helm charts repository to the local repos list with the following command:
 
@@ -206,7 +206,7 @@ index.go:366: skipping loading invalid entry for chart "otel-integration" \<vers
 
 This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
 
-# Kubernetes complete observability: advanced configuration
+# Kubernetes complete observability: Advanced configuration
 
 Coralogix provides [Kubernetes Observability using OpenTelemetry](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-observability-using-opentelemetry/) for comprehensive monitoring of your Kubernetes clusters and applications. This guide explains advanced configuration options for optimizing your Kubernetes observability setup.
 
@@ -382,7 +382,7 @@ ports:
 
 #### Configuring auto-instrumented JavaScript applications
 
-The following examples demonstrate how to configure an [Auto-Instrumented JavaScript application](https://opentelemetry.io/docs/instrumentation/js/automatic/) to send traces to the agent pod's gRPC receiver.
+The following examples demonstrate how to configure an [auto-instrumented JavaScript application](https://opentelemetry.io/docs/instrumentation/js/automatic/) to send traces to the agent pod's gRPC receiver.
 
 **STEP 1**. Set the Kubernetes environment variables of the JavaScript application's deployment/pod as in the example below. Define the `OTEL_EXPORTER_OTLP_ENDPOINT` as the configured `NODE_IP` and `OTLP_PORT`. Configure `OTEL_TRACES_EXPORTER` to send in the `otlp` format. Choose `OTEL_EXPORTER_OTLP_PRO` as `grpc`.
 
@@ -640,7 +640,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f gke-autopilot-values.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-### Installing the chart on IPV6-only clusters
+### Installing the chart on IPv6-only clusters
 
 To run otel-integration inside an IPv6-only cluster, you need to install the chart using the `ipv6-values.yaml` file.
 
@@ -681,7 +681,7 @@ This tutorial demonstrates how to configure a Kubernetes cluster, deploy OpenTel
 
 ![Tail Sampling architecture diagram](./static/tail-sampling-architecture.png)
 
-## How it Works
+## How it works
 
 The Kubernetes OpenTelemetry Integration consists of the following components:
 
@@ -792,11 +792,11 @@ coralogix-opentelemetry-gateway-65dfbb5567-zbprd   1/1     Running   0          
 
 You should end up with as many opentelemetry-agent pods as you have nodes in your cluster, and 3 opentelemetry-gateway pods.
 
-## Install Test Application Environment
+## Install test application environment
 
 In the next section, we will describe the process for installing 2 application environments, the OpenTelemetry Demo Application and a Small Trace Generating. You do not need to install both these examples.
 
-### Install OpenTelemetry Demo
+### Install OpenTelemetry demo
 
 **STEP 1**. Add the Helm chart for the OpenTelemetry Demo Application.
 
@@ -868,7 +868,7 @@ NOTES:
 
 ```
 
-### Install the Small Trace-Generating Application
+### Install the small trace-generating application
 
 This application is a small trace-generating application. We will demonstrate how to connect it to the Coralogix OpenTelemetry Agent to enable tail sampling.
 
@@ -1587,7 +1587,7 @@ Next, configure opentelemetry-cluster-collector to scrape Kube State Metrics via
 helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration . --values values-cluster-ksm.yaml
 ```
 
-Once the installation is complete, verify that the Kube State Metrics metrics are being scraped and ingested inside Coralogix.
+Once the installation is complete, verify that the Kube State Metrics are being scraped and ingested inside Coralogix.
 
 ### Connecting to Coralogix fleet management
 
@@ -1907,13 +1907,13 @@ tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 
 # Infrastructure monitoring
 
-## Log Collection
+## Log collection
 
 Default installation collects Kubernetes logs.
 
-## Kubernetes Events
+## Kubernetes events
 
-Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster's resources — such as pods, deployments, or nodes — change state.
+Kubernetes events provide a rich source of information. These objects can be used to monitor your application and cluster state, respond to failures, and perform diagnostics. The events are generated when the cluster's resources—such as pods, deployments, or nodes—change state.
 
 Whenever something happens inside your cluster, it produces an events object that provides visibility into your cluster. However, Kubernetes events don't persist throughout your cluster lifecycle, as there's no mechanism for retention. They're short-lived and only available for one hour after the event is generated.
 
@@ -1925,7 +1925,7 @@ On the OpenTelemetry config, you will find a new pipeline named `logs/kube-event
 
 By default, there's a transform processor named `transform/kube-events` which is removing some unneeded fields, but feel free to override this and add back some fields or even remove fields that are not needed at all on your specific use case.
 
-### Filtering Events
+### Filtering events
 
 On large-scale environments, you may have hundreds or even millions of events per hour, and maybe you don't need all of them, with that in mind you can leverage another OpenTelemetry processor to filter the events and don't send it to Coralogix, below you can find a config sample.
 
@@ -2033,4 +2033,4 @@ Optional settings:
 
 # Dependencies
 
-This chart uses [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
+This chart uses the [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
