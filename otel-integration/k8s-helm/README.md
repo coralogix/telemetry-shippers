@@ -54,7 +54,7 @@ The agent comes with several pre-configured processors and receivers:
 
 - [Span Metrics](https://coralogix.com/docs/user-guides/apm/getting-started/span-metrics/). Converts optional traces into requests, duration, and error metrics using the span metrics processor.
 
-- [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension).Investigate latency and error issues by navigating to the pod's localhost:55516 web server. Relevant routes are described in the [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes).
+- [Zpages Extension](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension). Investigate latency and error issues by navigating to the pod's localhost:55516 web server. Relevant routes are described in the [OpenTelemetry documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension#exposed-zpages-routes).
 
 ## OpenTelemetry Cluster Collector
 
@@ -72,7 +72,7 @@ The OpenTelemetry Cluster Collector retrieves data from the cluster level, inclu
 
 ## Kubernetes Dashboard
 
-The OpenTelemetry Integration chart enables the collection of essential metrics needed for the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) setup. The [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver#kubernetes-cluster-receiver) is an essential part that provides cluster-level metrics and entity events from the Kubernetes API server. It can report real-time metrics of allocatable resource types such as CPU.memory, network and disk usage of nodes and pods and give an update on node conditions (e.g. `Ready`, `MemoryPressure`). As a whole, the metrics gathered are useful for the Kubernetes Dashboard to report on the health of your cluster.
+The OpenTelemetry Integration chart enables the collection of essential metrics needed for the [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/) setup. The [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver#kubernetes-cluster-receiver) is an essential part that provides cluster-level metrics and entity events from the Kubernetes API server. It can report real-time metrics of allocatable resource types such as CPU, memory, network and disk usage of nodes and pods and give an update on node conditions (e.g. `Ready`, `MemoryPressure`). As a whole, the metrics gathered are useful for the Kubernetes Dashboard to report on the health of your cluster.
 
 > [!NOTE]
 >
@@ -429,7 +429,7 @@ receivers:
 
 Processors are generally used to process logs, metrics, and traces before the data is exported. This may include, for example, modifying or altering attributes or sampling traces.
 
-In the example below, a `k8sattributes` processor is used to automatically discovers k8s resources (pods), extract metadata from them and add the extracted metadata to the relevant logs, metrics and spans as resource attributes.
+In the example below, a `k8sattributes` processor is used to automatically discover k8s resources (pods), extract metadata from them, and add the extracted metadata to the relevant logs, metrics, and spans as resource attributes.
 
 ```yaml
 # default in values.yaml
