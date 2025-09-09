@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.3 / 2025-09-09
+
+* [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.1` (aligned in Helm values, example manifest, and Terraform `image_version` default).
+
 ### 0.0.2 / 2025-08-28
 
 * [FEATURE] Enable resource reduction preset by default to reduce metrics/resource cardinality (`presets.reduceResourceAttributes.enabled=true`).
