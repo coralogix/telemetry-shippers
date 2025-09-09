@@ -423,6 +423,7 @@ receivers:
 ```
 
 > [!NOTE]
+>
 > - `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
 > - The agent is also preconfigured to collect data from `jaeger`.
 
@@ -452,6 +453,7 @@ processors:
 ```
 
 > [!NOTE]
+>
 > - The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
 > - More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
 
@@ -557,6 +559,7 @@ The last two presets collect important host information to enrich the catalog. T
 ```
 
 > [!NOTE]
+>
 > - The `hostMetrics` process preset is detailed in the Agent presets section above.
 > - It is recommended to use the `hostMetric` preset only on agent collectors. Applying this preset to other collector types may result in duplicate host metrics.
 
@@ -602,7 +605,7 @@ opentelemetry-agent:
 helm upgrade --install otel-integration coralogix-charts-virtual/otel-integration -f values.yaml -n $NAMESPACE
 ```
 
-## Installing the chart on GKE Autopilot clusters.
+## Installing the chart on GKE Autopilot clusters
 
 GKE Autopilot has limited access to host filesystems, host networking and host ports. Due to this some features of OpenTelemetry Collector do not work. More information about limitations is available in [GKE Autopilot security capabilities document](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 
@@ -703,6 +706,7 @@ To ensure optimal performance:
 - Define custom [tail sampling policies](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) to control which spans are collected.
 
 > [!NOTE]
+>
 > - When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
 > - When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
 
@@ -1219,7 +1223,7 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code. To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumenat.enabled` to `true` in the `values.yaml` file.
 
-for a full list of values for this chart, please look at [values.yaml])(https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
+for a full list of values for this chart, please look at [values.yaml](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
 
 ### K8s Cache
 
@@ -1596,6 +1600,7 @@ Once the installation is complete, verify that the Kube State Metrics metrics ar
 The integration connects to the Coralogix fleet management server through fleetManagement preset. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is enabled by default. You can disable it by setting the `presets.fleetManagement.enabled` property to `false`.
 
 > [!NOTE] Important security considerations when enabling this feature:
+>
 > - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
 > - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
 > - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
