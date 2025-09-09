@@ -105,8 +105,7 @@ Utilizing [OpenTelemetry](https://coralogix.com/docs/opentelemetry/getting-start
 
 Follow the [private key tutorial](https://coralogix.com/docs/private-key/) to obtain your secret key.
 
-The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) under the secret key `PRIVATE_KEY`.
-**This secret must exist in the same namespace where the Helm chart is installed**.
+The OpenTelemetry Agent requires a Kubernetes secret named `coralogix-keys`, which must contain your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/user-guides/account-management/api-keys/send-your-data-api-key/) under the secret key `PRIVATE_KEY`. **This secret must exist in the same namespace where the Helm chart is installed**.
 
 To create the secret, run the following command:
 
@@ -423,7 +422,6 @@ receivers:
 ```
 
 > [!NOTE]
->
 > - `${MY_POD_IP}` is a container environment variable that is mapped to the pod's IP address.
 > - The agent is also preconfigured to collect data from `jaeger`.
 
@@ -453,7 +451,6 @@ processors:
 ```
 
 > [!NOTE]
->
 > - The `k8sattributes` processor is enabled by default at the `preset` level as `kubernetesAttributes` and further extended in the default [`values`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-agent/k8s-helm/values.yaml)[.](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml)[`yaml`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/values.yaml).
 > - More information can be found in the [Kubernetes Attributes Processor README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/k8sattributesprocessor/README.md).
 
@@ -559,7 +556,6 @@ The last two presets collect important host information to enrich the catalog. T
 ```
 
 > [!NOTE]
->
 > - The `hostMetrics` process preset is detailed in the Agent presets section above.
 > - It is recommended to use the `hostMetric` preset only on agent collectors. Applying this preset to other collector types may result in duplicate host metrics.
 
@@ -706,7 +702,6 @@ To ensure optimal performance:
 - Define custom [tail sampling policies](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/tailsamplingprocessor) to control which spans are collected.
 
 > [!NOTE]
->
 > - When running in OpenShift environments, set `distribution: "openshift"` in your `values.yaml`
 > - When running in Windows environments, use the `values-windows-tailsampling.yaml` values file
 
@@ -1395,8 +1390,7 @@ presets:
       enabled: false
 ```
 
-> [!NOTE]
-> The `errorTracking` feature works only with OpenTelemetry SDKs that support OpenTelemetry Semantic Conventions version v1.21.0 or later. If you are using an older SDK version, you may need to transform certain attributes (for example, `http.status_code` to `http.response.status_code`).
+> [!NOTE] The `errorTracking` feature works only with OpenTelemetry SDKs that support OpenTelemetry Semantic Conventions version v1.21.0 or later. If you are using an older SDK version, you may need to transform certain attributes (for example, `http.status_code` to `http.response.status_code`).
 >
 > To perform this transformation, add the following configuration:
 >
@@ -1600,7 +1594,6 @@ Once the installation is complete, verify that the Kube State Metrics metrics ar
 The integration connects to the Coralogix fleet management server through fleetManagement preset. This connection happens through the OpAMP extension of the Collector and the endpoint used is: `https://ingress.<CORALOGIX_DOMAIN>/opamp/v1`. This feature is enabled by default. You can disable it by setting the `presets.fleetManagement.enabled` property to `false`.
 
 > [!NOTE] Important security considerations when enabling this feature:
->
 > - Because this extension shares your Collector's configuration with the fleet management server, it's important to ensure that any secret contained in it is using the environment variable expansion syntax.
 > - The default capabilities of the OpAMP extension **do not** include remote configuration or packages.
 > - By default, the extension will pool the server every 2 minutes. Additional network requests might be made between the server and the Collector, depending on the configuration on both sides.
