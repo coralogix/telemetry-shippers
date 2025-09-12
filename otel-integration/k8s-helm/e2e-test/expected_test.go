@@ -370,6 +370,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"k8s.pod.network.io":                              false,
 	"otelcol_exporter_queue_capacity":                 false,
 	"otelcol_exporter_queue_size":                     false,
+	"otelcol_exporter_queue_batch_send_size":          false,
 	"otelcol_exporter_send_failed_log_records":        false,
 	"otelcol_exporter_send_failed_metric_points":      false,
 	"otelcol_exporter_send_failed_spans":              false,
@@ -451,6 +452,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.4.0":  false,
 	"https://opentelemetry.io/schemas/1.25.0": false,
+	"https://opentelemetry.io/schemas/1.37.0": false,
 }
 
 var expectedLogsSchemaURL = map[string]bool{
