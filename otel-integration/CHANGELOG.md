@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.222 / 2025-09-16
+- [Feat] add spanmetrics.dbMetrics compact option.
+
 ### v0.0.221 / 2025-09-10
 - [CHORE] Bump Collector to 0.135.0
 - [Breaking] Otel Collector metrics have changed otelcol_processor_filter_logs.filtered => otelcol_processor_filter_logs.filtered_ratio, telcol_processor_filter_datapoints.filtered => otelcol_processor_filter_datapoints.filtered_ratio
