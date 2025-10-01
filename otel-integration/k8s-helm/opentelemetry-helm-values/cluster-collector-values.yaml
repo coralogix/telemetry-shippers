@@ -1,0 +1,399 @@
+command:
+  name: "otelcol-contrib"
+
+replicaCount: 1
+config:
+  exporters:
+    coralogix:
+      application_name: otel
+      application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+      domain: app.staging.coralogix.net
+      logs:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+      metrics:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+      private_key: ${env:CORALOGIX_PRIVATE_KEY}
+      profiles:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+      subsystem_name: integration
+      subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - service.name
+      timeout: 30s
+      traces:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+    coralogix/resource_catalog:
+      application_name: resource
+      domain: app.staging.coralogix.net
+      logs:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+          x-coralogix-ingress: metadata-as-otlp-logs/v1
+      private_key: ${CORALOGIX_PRIVATE_KEY}
+      subsystem_name: catalog
+      timeout: 30s
+    debug: {}
+
+  extensions:
+    health_check:
+      endpoint: ${env:MY_POD_IP}:13133
+    pprof:
+      endpoint: localhost:1777
+    zpages:
+      endpoint: localhost:55679
+
+  processors:
+    batch:
+      send_batch_max_size: 2048
+      send_batch_size: 1024
+      timeout: 1s
+    filter/workflow:
+      error_mode: silent
+      logs:
+        log_record:
+          - body["object"]["kind"] == "Pod" and not IsMatch(String(body["object"]["metadata"]["ownerReferences"]), ".*StatefulSet.*|.*ReplicaSet.*|.*Job.*|.*DaemonSet.*")
+          - body["kind"] == "Pod" and not IsMatch(String(body["metadata"]["ownerReferences"]), ".*StatefulSet.*|.*ReplicaSet.*|.*Job.*|.*DaemonSet.*")
+    k8sattributes:
+      extract:
+        metadata:
+          - k8s.namespace.name
+          - k8s.replicaset.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+      passthrough: false
+      pod_association:
+        - sources:
+            - from: resource_attribute
+              name: k8s.pod.ip
+        - sources:
+            - from: resource_attribute
+              name: k8s.pod.uid
+        - sources:
+            - from: connection
+        - sources:
+            - from: resource_attribute
+              name: k8s.job.name
+    memory_limiter:
+      check_interval: 5s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+    resource/metadata:
+      attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'EKS-test-otel'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+    resourcedetection/env:
+      detectors:
+        - system
+        - env
+      override: false
+      system:
+        resource_attributes:
+          host.id:
+            enabled: true
+      timeout: 2s
+    resourcedetection/region:
+      detectors:
+        - gcp
+        - ec2
+        - azure
+        - eks
+      eks:
+        node_from_env_var: K8S_NODE_NAME
+      override: true
+      timeout: 2s
+    resourcedetection/resource_catalog:
+      azure:
+        resource_attributes:
+          azure.resourcegroup.name:
+            enabled: false
+          azure.vm.name:
+            enabled: false
+          azure.vm.scaleset.name:
+            enabled: false
+          azure.vm.size:
+            enabled: false
+          host.id:
+            enabled: false
+          host.name:
+            enabled: false
+      detectors:
+        - eks
+        - aks
+        - gcp
+        - ec2
+        - azure
+      ec2:
+        resource_attributes:
+          host.id:
+            enabled: false
+          host.image.id:
+            enabled: false
+          host.name:
+            enabled: false
+          host.type:
+            enabled: false
+      gcp:
+        resource_attributes:
+          host.id:
+            enabled: false
+          host.name:
+            enabled: false
+          host.type:
+            enabled: false
+          k8s.cluster.name:
+            enabled: false
+      override: true
+      timeout: 2s
+    transform/entity-event:
+      error_mode: silent
+      log_statements:
+        - context: log
+          statements:
+            - set(attributes["otel.entity.interval"], Milliseconds(Duration("1h")))
+    transform/k8s_attributes:
+      log_statements:
+        - context: resource
+          statements:
+            - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+            - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+            - delete_key(attributes, "k8s.replicaset.name")
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+            - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+            - delete_key(attributes, "k8s.replicaset.name")
+      trace_statements:
+        - context: resource
+          statements:
+            - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+            - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+            - delete_key(attributes, "k8s.replicaset.name")
+
+  receivers:
+    k8sobjects/resource_catalog:
+      objects:
+        - group: ""
+          mode: pull
+          name: namespaces
+        - group: ""
+          mode: pull
+          name: nodes
+        - group: ""
+          mode: pull
+          name: persistentvolumeclaims
+        - group: ""
+          mode: pull
+          name: persistentvolumes
+        - group: ""
+          mode: pull
+          name: pods
+        - group: ""
+          mode: pull
+          name: services
+        - group: apps
+          mode: pull
+          name: daemonsets
+        - group: apps
+          mode: pull
+          name: deployments
+        - group: apps
+          mode: pull
+          name: replicasets
+        - group: apps
+          mode: pull
+          name: statefulsets
+        - group: autoscaling
+          mode: pull
+          name: horizontalpodautoscalers
+        - group: batch
+          mode: pull
+          name: cronjobs
+        - group: batch
+          mode: pull
+          name: jobs
+        - group: extensions
+          mode: pull
+          name: ingresses
+        - group: networking.k8s.io
+          mode: pull
+          name: ingresses
+        - group: policy
+          mode: pull
+          name: poddisruptionbudgets
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: clusterrolebindings
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: clusterroles
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: rolebindings
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: roles
+        - group: ""
+          mode: watch
+          name: namespaces
+        - group: ""
+          mode: watch
+          name: nodes
+        - group: ""
+          mode: watch
+          name: persistentvolumeclaims
+        - group: ""
+          mode: watch
+          name: persistentvolumes
+        - group: ""
+          mode: watch
+          name: pods
+        - group: apps
+          mode: watch
+          name: daemonsets
+        - group: apps
+          mode: watch
+          name: deployments
+        - group: apps
+          mode: watch
+          name: replicasets
+        - group: apps
+          mode: watch
+          name: statefulsets
+        - group: autoscaling
+          mode: watch
+          name: horizontalpodautoscalers
+        - group: batch
+          mode: watch
+          name: cronjobs
+        - group: batch
+          mode: watch
+          name: jobs
+        - group: extensions
+          mode: watch
+          name: ingresses
+        - group: networking.k8s.io
+          mode: watch
+          name: ingresses
+        - group: policy
+          mode: watch
+          name: poddisruptionbudgets
+        - group: rbac.authorization.k8s.io
+          mode: watch
+          name: clusterrolebindings
+        - group: rbac.authorization.k8s.io
+          mode: watch
+          name: clusterroles
+        - group: rbac.authorization.k8s.io
+          mode: watch
+          name: rolebindings
+        - group: rbac.authorization.k8s.io
+          mode: watch
+          name: roles
+    otlp:
+      protocols:
+        grpc:
+          endpoint: ${env:MY_POD_IP}:4317
+          max_recv_msg_size_mib: 20
+        http:
+          endpoint: ${env:MY_POD_IP}:4318
+
+  service:
+    extensions:
+      - health_check
+      - zpages
+      - pprof
+    pipelines:
+      logs:
+        exporters:
+          - coralogix
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/k8s_attributes
+          - batch
+        receivers:
+          - otlp
+      logs/resource_catalog:
+        exporters:
+          - coralogix/resource_catalog
+        processors:
+          - memory_limiter
+          - resourcedetection/resource_catalog
+          - transform/entity-event
+          - filter/workflow
+          - resource/metadata
+          - batch
+        receivers:
+          - k8sobjects/resource_catalog
+      metrics:
+        exporters:
+          - coralogix
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/k8s_attributes
+          - batch
+        receivers:
+          - otlp
+      traces:
+        exporters:
+          - debug
+          - coralogix
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/k8s_attributes
+          - batch
+        receivers:
+          - otlp
+    telemetry:
+      logs:
+        encoding: json
+        level: 'info'
+      resource:
+        cx.agent.type: cluster-collector
+        service.name: opentelemetry-collector
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+serviceAccount:
+  create: true
+  annotations: {}
+extraEnvs:
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+
+

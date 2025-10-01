@@ -32,6 +32,18 @@ Depending on your needs, you can use both charts (default behavior) or decide to
 
 Additionally, the OpenTelemetry Integration chart enables the collection of telemetry data needed for the Kubernetes Dashboard setup. This dashboard is a powerful web-based interface for monitoring and managing Kubernetes clusters. It provides real-time CPU, memory, network, and disk usage metrics for nodes and pods. Users can track resource trends, optimize workload placement, and troubleshoot issues effectively. The dashboard also displays Kubernetes events for quick problem identification and resolution. Streamlining cluster management ensures efficient performance and smooth operation of applications.
 
+## Alternative: Vanilla OpenTelemetry Collector with Coralogix
+
+For users who prefer to use the upstream OpenTelemetry Collector Helm chart directly, we provide pre-configured values files in the [`opentelemetry-helm-values/`](./opentelemetry-helm-values/) directory. These values files enable you to deploy the vanilla `open-telemetry/opentelemetry-collector` chart with Coralogix exporters configured for both agent (DaemonSet) and cluster collector (Deployment) modes.
+
+This approach gives you:
+- Direct use of the upstream OpenTelemetry Collector Helm chart
+- Pre-configured Coralogix exporters and processors
+- Agent and cluster collector deployment options
+- Full compatibility with upstream chart features and updates
+
+See [`opentelemetry-helm-values/README.md`](./opentelemetry-helm-values/README.md) for installation instructions.
+
 ## OpenTelemetry Agent
 
 The OpenTelemetry Agent simplifies the collection of logs, metrics, and traces from applications running in your Kubernetes cluster. It is configured to deploy as a `daemonset` and runs on every node in the cluster. The agent maps metadata - such as Kubernetes attributes, Kubelet metrics, and host data - to the collected telemetry. This is particularly beneficial for high-traffic clusters or when utilizing our [APM capabilities](https://coralogix.com/docs/opentelemetry/integrations/apm-kubernetes/).

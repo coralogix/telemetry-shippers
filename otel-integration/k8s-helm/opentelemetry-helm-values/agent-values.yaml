@@ -1,0 +1,360 @@
+command:
+  name: "otelcol-contrib"
+
+presets:
+  hostMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+config:
+  exporters:
+    coralogix:
+      application_name: otel
+      application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+      domain: app.staging.coralogix.net
+      logs:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+      metrics:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+      private_key: ${env:CORALOGIX_PRIVATE_KEY}
+      profiles:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+      subsystem_name: integration
+      subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - service.name
+      timeout: 30s
+      traces:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+    coralogix/resource_catalog:
+      application_name: resource
+      domain: app.staging.coralogix.net
+      logs:
+        headers:
+          X-Coralogix-Distribution: helm-otel-integration/0.0.224
+          x-coralogix-ingress: metadata-as-otlp-logs/v1
+      private_key: ${CORALOGIX_PRIVATE_KEY}
+      subsystem_name: catalog
+      timeout: 30s
+    debug: {}
+
+  extensions:
+    health_check:
+      endpoint: ${env:MY_POD_IP}:13133
+    pprof:
+      endpoint: localhost:1777
+    zpages:
+      endpoint: localhost:55679
+
+  processors:
+    batch:
+      send_batch_max_size: 2048
+      send_batch_size: 1024
+      timeout: 1s
+    k8sattributes:
+      extract:
+        metadata:
+          - k8s.namespace.name
+          - k8s.replicaset.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+      filter:
+        node_from_env_var: K8S_NODE_NAME
+      passthrough: false
+      pod_association:
+        - sources:
+            - from: resource_attribute
+              name: k8s.pod.ip
+        - sources:
+            - from: resource_attribute
+              name: k8s.pod.uid
+        - sources:
+            - from: connection
+        - sources:
+            - from: resource_attribute
+              name: k8s.job.name
+    memory_limiter:
+      check_interval: 5s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+    resource/metadata:
+      attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'EKS-test-otel'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+    resourcedetection/entity:
+      detectors:
+        - system
+        - env
+      override: false
+      system:
+        resource_attributes:
+          host.cpu.cache.l2.size:
+            enabled: true
+          host.cpu.family:
+            enabled: true
+          host.cpu.model.id:
+            enabled: true
+          host.cpu.model.name:
+            enabled: true
+          host.cpu.stepping:
+            enabled: true
+          host.cpu.vendor.id:
+            enabled: true
+          host.id:
+            enabled: true
+          host.ip:
+            enabled: true
+          host.mac:
+            enabled: true
+          os.description:
+            enabled: true
+      timeout: 2s
+    resourcedetection/env:
+      detectors:
+        - system
+        - env
+      override: false
+      system:
+        resource_attributes:
+          host.id:
+            enabled: true
+      timeout: 2s
+    resourcedetection/region:
+      detectors:
+        - gcp
+        - ec2
+        - azure
+        - eks
+      eks:
+        node_from_env_var: K8S_NODE_NAME
+      override: true
+      timeout: 2s
+    transform/entity-event:
+      error_mode: silent
+      log_statements:
+        - context: log
+          statements:
+            - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+            - merge_maps(attributes, resource.attributes, "insert")
+        - context: resource
+          statements:
+            - keep_keys(attributes, [""])
+    transform/k8s_attributes:
+      log_statements:
+        - context: resource
+          statements:
+            - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+            - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+            - delete_key(attributes, "k8s.replicaset.name")
+      metric_statements:
+        - context: resource
+          statements:
+            - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+            - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+            - delete_key(attributes, "k8s.replicaset.name")
+      trace_statements:
+        - context: resource
+          statements:
+            - set(attributes["k8s.deployment.name"], attributes["k8s.replicaset.name"])
+            - replace_pattern(attributes["k8s.deployment.name"], "^(.*)-[0-9a-zA-Z]+$", "$$1") where attributes["k8s.replicaset.name"] != nil
+            - delete_key(attributes, "k8s.replicaset.name")
+    transform/semconv:
+      error_mode: ignore
+      trace_statements:
+        - context: span
+          statements:
+            - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"] != nil
+
+  receivers:
+    hostmetrics:
+      collection_interval: '30s'
+      root_path: /hostfs
+      scrapers:
+        cpu:
+          metrics:
+            system.cpu.utilization:
+              enabled: true
+        disk: null
+        filesystem:
+          exclude_fs_types:
+            fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+            match_type: strict
+          exclude_mount_points:
+            match_type: regexp
+            mount_points:
+              - /dev/*
+              - /proc/*
+              - /sys/*
+              - /run/k3s/containerd/*
+              - /run/containerd/runc/*
+              - /var/lib/docker/*
+              - /var/lib/kubelet/*
+              - /snap/*
+        load: null
+        memory:
+          metrics:
+            system.memory.utilization:
+              enabled: true
+        network: null
+        process:
+          metrics:
+            process.cpu.utilization:
+              enabled: true
+            process.memory.utilization:
+              enabled: true
+            process.threads:
+              enabled: true
+          mute_process_exe_error: true
+          mute_process_name_error: true
+          mute_process_user_error: true
+    jaeger:
+      protocols:
+        grpc:
+          endpoint: ${env:MY_POD_IP}:14250
+        thrift_binary:
+          endpoint: ${env:MY_POD_IP}:6832
+        thrift_compact:
+          endpoint: ${env:MY_POD_IP}:6831
+        thrift_http:
+          endpoint: ${env:MY_POD_IP}:14268
+    otlp:
+      protocols:
+        grpc:
+          endpoint: ${env:MY_POD_IP}:4317
+          max_recv_msg_size_mib: 20
+        http:
+          endpoint: ${env:MY_POD_IP}:4318
+    zipkin:
+      endpoint: ${env:MY_POD_IP}:9411
+
+  service:
+    extensions:
+      - health_check
+      - zpages
+      - pprof
+    pipelines:
+      logs:
+        exporters: []
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/k8s_attributes
+          - batch
+        receivers:
+          - otlp
+      logs/resource_catalog:
+        exporters:
+          - coralogix/resource_catalog
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - k8sattributes
+          - resourcedetection/entity
+          - resourcedetection/region
+          - transform/entity-event
+        receivers:
+          - hostmetrics
+      metrics:
+        exporters:
+          - coralogix
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/k8s_attributes
+          - batch
+        receivers:
+          - hostmetrics
+          - otlp
+      traces:
+        exporters: []
+        processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/k8s_attributes
+          - transform/semconv
+          - batch
+        receivers:
+          - jaeger
+          - zipkin
+          - otlp
+    telemetry:
+      logs:
+        encoding: json
+        level: 'info'
+      resource:
+        cx.agent.type: agent
+        service.name: opentelemetry-collector
+resources:
+  limits:
+    cpu: 200m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+serviceAccount:
+  create: true
+  annotations: {}
+extraVolumes:
+  - name: hostfs
+    hostPath:
+      path: /
+extraVolumeMounts:
+  - name: hostfs
+    mountPath: /hostfs
+    readOnly: true
+extraEnvs:
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+
+
