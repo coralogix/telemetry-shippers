@@ -47,7 +47,7 @@ resource "aws_ecs_task_definition" "telemetrygen" {
 }
 
 resource "aws_cloudwatch_log_group" "telemetrygen" {
-  name              = "/ecs/telemetrygen"
+  name              = "/ecs/telemetrygen-${random_string.id.result}"
   retention_in_days = 7
   tags              = var.tags
 }
