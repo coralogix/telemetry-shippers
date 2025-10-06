@@ -11,7 +11,7 @@ MIN_SIZE ?= 1
 MAX_SIZE ?= 2
 TFVARS_EXAMPLE ?= \
   -var="cluster_name=$(CLUSTER_NAME)" \
-  -var="region=$(REGION)" \
+  -var="region=$(AWS_REGION)" \
   -var="instance_type=$(INSTANCE_TYPE)" \
   -var="desired_capacity=$(DESIRED_CAPACITY)" \
   -var="min_size=$(MIN_SIZE)" \
