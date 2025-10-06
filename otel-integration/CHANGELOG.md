@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.225 / 2025-10-02
+- [Feat] Add vanilla OpenTelemetry Collector Helm chart support with pre-configured values files for agent (DaemonSet) and cluster collector (Deployment) modes
+- [Feat] Add `opentelemetry-helm-values/` directory with `agent-values.yaml` and `cluster-collector-values.yaml` for direct use with upstream `open-telemetry/opentelemetry-collector` chart
+- [Docs] Update AGENTS.md with deployment options documentation
+
 ### v0.0.224 / 2025-09-24
 - [CHORE] Bump Collector to 0.136.0
 

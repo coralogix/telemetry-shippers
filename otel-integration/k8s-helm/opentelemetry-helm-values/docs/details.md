@@ -28,4 +28,3 @@ Files:
 - pipelines: `logs/resource_catalog` → `coralogix/resource_catalog`; metrics/logs/traces → `coralogix`.
 - resources: higher than agent.
 - serviceAccount/env: dedicated SA; `K8S_NODE_NAME` provided.
-
