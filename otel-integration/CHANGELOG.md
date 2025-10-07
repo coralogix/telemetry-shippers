@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.225 / 2025-09-29
+- [Feat] Add `resource/metadata` processor to profiles pipeline when `profilesCollection` preset is enabled.
+- [Feat] update `opentelemetry-ebpf-profiler` to commit [0018abf5](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/commit/0018abf5f36d53f38eef235564b0acc42da6f69f) to support proto v1.8.0
+
 ### v0.0.224 / 2025-09-24
 - [CHORE] Bump Collector to 0.136.0
 
