@@ -2,6 +2,10 @@
 
 ## OpenTelemtry-Agent
 
+### v0.0.38 / 2025-10-08
+
+* [FEATURE] Enable `k8sResourceAttributes` preset by default
+
 ### v0.0.37 / 2023-10-06
 
 * [CHORE] Bump Collector to 0.85.0
