@@ -390,6 +390,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_batch_batch_size_trigger_send": false,
 	"otelcol_processor_batch_metadata_cardinality":    false,
 	"otelcol_processor_batch_timeout_trigger_send":    false,
+	"otelcol_processor_filter_datapoints.filtered":    false,
 	"otelcol_processor_filter_spans.filtered_ratio":   false,
 	"otelcol_processor_incoming_items":                false,
 	"otelcol_processor_outgoing_items":                false,
