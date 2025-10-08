@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.225"
+  version: "0.0.226"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -106,6 +106,9 @@ opentelemetry-agent:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
+    k8sResourceAttributes:
+      enabled: true
+      agentType: "agent"
     fleetManagement:
       enabled: true
       agentType: "agent"

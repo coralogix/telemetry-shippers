@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.226 / 2025-10-08
+- [Feat] Enable the `k8sResourceAttributes` preset for the otel agent by default.
+
 ### v0.0.225 / 2025-10-07
 - [CHORE] Bump Collector to 0.137.0
 
