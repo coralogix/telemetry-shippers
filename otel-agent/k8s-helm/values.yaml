@@ -53,6 +53,8 @@ opentelemetry-collector:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-otel-agent-helm"
+    k8sResourceAttributes:
+      enabled: true
 
   extraEnvs:
   - name: CORALOGIX_PRIVATE_KEY
