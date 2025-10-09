@@ -185,9 +185,9 @@ service:
       processors: [resource/metadata, resourcedetection, batch]
       receivers: [otlp]
     traces/sampled:
-      receivers: [forward/sampled]
-      processors: [probabilistic_sampler, batch]
       exporters: [coralogix]
+      processors: [probabilistic_sampler, batch]
+      receivers: [forward/sampled]
     traces/db:
       exporters: [spanmetrics/db]
       processors: [filter/db_spanmetrics, batch]
