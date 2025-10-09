@@ -1,5 +1,6 @@
 connectors:
   forward/sampled: {}
+  forward/db: {}
   spanmetrics:
     namespace: ""
     histogram:
@@ -23,6 +24,29 @@ connectors:
       dimensions:
         - name: exception.type
         - name: exception.message
+  spanmetrics/db:
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: db.namespace
+    - name: db.operation.name
+    - name: db.collection.name
+    - name: db.system
+    - name: service.version
+    histogram:
+      explicit:
+        buckets:
+        - 100us
+        - 1ms
+        - 2ms
+        - 2.5ms
+        - 4ms
+        - 6ms
+        - 10ms
+        - 100ms
+        - 250ms
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: db
 
 receivers:
   fluentforward/socket: { endpoint: unix:///var/run/fluent.sock }
@@ -114,6 +138,26 @@ processors:
       - context: resource
         statements:
           - keep_keys(attributes, [""])
+  filter/db_spanmetrics:
+    traces:
+      span:
+      - attributes["db.system"] == nil
+  # This is an example of how to transform DB spanmetrics to appear in Coralogix APM
+  # Used for old instrumentation versions with outdated Semantic Conventions
+  # When used, please append the processor to the traces/db pipeline, before batching, like so:
+  #   processors: [filter/db_spanmetrics, transform/db_spanmetrics, batch]
+  # For more information, see: https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#spanmetrics-database-monitoring
+  # transform/db_spanmetrics:
+  #   error_mode: ignore
+  #   trace_statements:
+  #     - context: span
+  #       statements:
+  #         - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
+  #         - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
+  #         - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
+  #         - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil
+  #         - set(attributes["db.collection.name"], attributes["db.redis.database_index"]) where attributes["db.collection.name"] == nil
+  #         - set(attributes["db.collection.name"], attributes["aws_dynamodb.table_names"]) where attributes["db.collection.name"] == nil
 
 exporters:
   debug: { verbosity: detailed }
@@ -151,15 +195,19 @@ service:
     metrics:
       exporters: [coralogix]
       processors: [resource/metadata, resourcedetection, batch]
-      receivers: [otlp, awsecscontainermetrics, prometheus, hostmetrics, spanmetrics]
+      receivers: [otlp, awsecscontainermetrics, prometheus, hostmetrics, spanmetrics, spanmetrics/db]
     traces:
-      exporters: [forward/sampled, spanmetrics]
+      exporters: [forward/sampled, spanmetrics, forward/db]
       processors: [resource/metadata, resourcedetection, batch]
       receivers: [otlp]
     traces/sampled:
-      receivers: [forward/sampled]
-      processors: [probabilistic_sampler, batch]
       exporters: [coralogix]
+      processors: [probabilistic_sampler, batch]
+      receivers: [forward/sampled]
+    traces/db:
+      exporters: [spanmetrics/db]
+      processors: [filter/db_spanmetrics, batch]
+      receivers: [forward/db]
   telemetry:
     logs: { level: "warn", encoding: json }
     metrics:
