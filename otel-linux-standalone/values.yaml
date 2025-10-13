@@ -1,0 +1,118 @@
+global:
+  domain: "eu2.coralogix.com"
+  clusterName: "povilas-linux-standalone"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "linux"
+  logLevel: "debug"
+  collectionInterval: "30s"
+  version: "0.0.1"
+  deploymentEnvironmentName: "development"
+
+opentelemetry-agent:
+  enabled: true
+  distribution: "linux/standalone"
+  hostNetwork: true
+
+  presets:
+    hostMetrics:
+      enabled: true
+      process:
+        enabled: true
+    batch:
+      enabled: true
+    resourceDetection:
+      enabled: true
+
+  extraVolumeMounts:
+    - name: journald-run
+      mountPath: /run/log/journal
+      readOnly: true
+    - name: journald-var
+      mountPath: /var/log/journal
+      readOnly: true
+  extraVolumes:
+    - name: journald-run
+      hostPath:
+        path: /run/log/journal
+        type: DirectoryOrCreate
+    - name: journald-var
+      hostPath:
+        path: /var/log/journal
+        type: DirectoryOrCreate
+
+  config:
+    receivers:
+      hostmetrics:
+        collection_interval: "30s"
+        root_path: /
+      journald:
+        directory: /var/log/journal
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: "0.0.0.0:4318"
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-collector
+              scrape_interval: 30s
+              static_configs:
+                - targets:
+                    - "0.0.0.0:8888"
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+        spike_limit_mib: 256
+      resourcedetection/ec2:
+        detectors: ["ec2"]
+        timeout: 10s
+        override: false
+      batch:
+        timeout: 1s
+        send_batch_size: 512
+    exporters:
+      debug/verbose:
+        verbosity: detailed
+    extensions:
+      health_check:
+        endpoint: "0.0.0.0:13133"
+    service:
+      telemetry:
+        logs:
+          level: "debug"
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: "0.0.0.0"
+                    port: 8888
+        resource:
+          service.name: "povilas-linux-collector"
+          service.namespace: "standalone-linux"
+          cx.agent.type: "agent"
+      extensions:
+        - health_check
+      pipelines:
+        logs/journald:
+          receivers:
+            - journald
+          processors:
+            - memory_limiter
+            - resourcedetection/ec2
+            - batch
+          exporters:
+            - debug/verbose
+        metrics/host:
+          receivers:
+            - hostmetrics
+          processors:
+            - memory_limiter
+            - resourcedetection/ec2
+            - batch
+          exporters:
+            - debug/verbose

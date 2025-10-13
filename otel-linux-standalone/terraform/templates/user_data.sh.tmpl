@@ -1,0 +1,47 @@
+#!/bin/bash
+set -euo pipefail
+
+exec > >(tee /var/log/otel-bootstrap.log | logger -t otel-bootstrap) 2>&1
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -y
+apt-get install -y curl ca-certificates
+
+curl -fsSL -o /tmp/otelcol-contrib.deb "${otel_deb_url}"
+if ! dpkg -i /tmp/otelcol-contrib.deb; then
+  apt-get install -f -y
+  dpkg -i /tmp/otelcol-contrib.deb
+fi
+
+if getent group systemd-journal >/dev/null 2>&1; then
+  usermod -a -G systemd-journal otelcol-contrib || true
+fi
+if getent group adm >/dev/null 2>&1; then
+  usermod -a -G adm otelcol-contrib || true
+fi
+
+install -d -m 0755 /etc/otelcol-contrib
+install -d -m 0755 /etc/systemd/system/otelcol-contrib.service.d
+
+cat <<'EOF' >/etc/otelcol-contrib/config.yaml
+${otel_config}
+EOF
+
+cat <<'EOF' >/etc/systemd/system/otelcol-contrib.service.d/override.conf
+[Service]
+SupplementaryGroups=systemd-journal adm
+EOF
+
+chown otelcol-contrib:otelcol-contrib /etc/otelcol-contrib/config.yaml
+chmod 0644 /etc/otelcol-contrib/config.yaml
+
+systemctl daemon-reload
+systemctl enable otelcol-contrib.service
+systemctl restart otelcol-contrib.service
+
+sleep 5
+systemctl is-active --quiet otelcol-contrib.service
+systemctl status otelcol-contrib.service --no-pager
+systemctl show otelcol-contrib.service -p User -p Group -p SupplementaryGroups
+id otelcol-contrib || true
