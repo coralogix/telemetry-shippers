@@ -1,0 +1,45 @@
+global:
+  domain: "eu2.coralogix.com"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "linux"
+  logLevel: "info"
+  collectionInterval: "30s"
+  version: "0.0.1"
+  # deploymentEnvironmentName: "development"
+
+opentelemetry-agent:
+  enabled: true
+  distribution: "standalone"
+  presets:
+    hostMetrics:
+      enabled: true
+      process:
+        enabled: true
+    batch:
+      enabled: true
+    resourceDetection:
+      enabled: true
+      # detectors:
+      #   cloud:
+      #     - ec2
+    journaldReceiver:
+      enabled: true
+    otlpReceiver:
+      enabled: true
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+  config:
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+    # exporters:
+      #debug:
+      # verbosity: detailed
+    service:
+      telemetry:
+        resource:
+          service.name: "opentelemetry-collector"
+        logs:
+          level: "info"
