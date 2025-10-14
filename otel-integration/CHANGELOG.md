@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.228 / 2025-10-14
+- [Feat] Enable compact metrics for span-derived database metrics by default.
+
 ### v0.0.227 / 2025-10-08
 - [Feat] Enable the compact span metrics preset by default.
 - [FIX] Route the logs router default path through a continuation stage so extra filelog operators always run and drop the now-redundant export noop stage.
