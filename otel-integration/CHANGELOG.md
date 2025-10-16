@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.229 / 2025-10-16
+- [FIX] compact metrics unit name change. compact_duration_count -> compact_duration_ms_count, compact_duration_sum -> compact_duration_ms_sum, db_compact_duration_count -> db_compact_duration_ms_count, compact_duration_sum -> compact_duration_ms_sum
+- [Feat] Allow configuring resource detection detectors for environment and cloud metadata.
+- [Feat] Add standalone distribution option that binds Prometheus endpoints to 0.0.0.0 and scrapes host metrics from the root filesystem.
+
 ### v0.0.228 / 2025-10-14
 - [Feat] Enable compact metrics for span-derived database metrics by default.
 
