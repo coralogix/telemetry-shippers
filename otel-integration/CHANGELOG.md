@@ -2,6 +2,14 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.230 / 2025-10-20
+- [Feat] Add `prometheusMulti` preset for scraping multiple Prometheus targets with optional custom labels.
+- [Fix] Emit Prometheus multi-target jobs using the provided target name and only apply CX labels when explicitly configured.
+- [Chore] Standalone example enables the `prometheusMulti` preset with contrasting target configurations.
+- [Feat] Add `journaldReceiver` preset for systemd journal logs with optional directory, unit, and match filters.
+- [Feat] Allow conditional resource attribute removals in the `reduceResourceAttributes` preset via denylist entry conditions.
+- [Feat] Add `spanMetricsSanitization` preset to provide span name, URL, and database statement sanitization when span metrics presets are enabled.
+
 ### v0.0.229 / 2025-10-16
 - [FIX] compact metrics unit name change. compact_duration_count -> compact_duration_ms_count, compact_duration_sum -> compact_duration_ms_sum, db_compact_duration_count -> db_compact_duration_ms_count, compact_duration_sum -> compact_duration_ms_sum
 - [Feat] Allow configuring resource detection detectors for environment and cloud metadata.
