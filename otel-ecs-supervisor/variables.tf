@@ -44,7 +44,7 @@ variable "subsystem_name" {
 variable "container_image" {
   description = "Container image for the supervisor"
   type        = string
-  default     = "ghcr.io/iblancasa/otel-supervised-collector:0.131.1"
+  default     = "coralogixrepo/otel-supervised-collector:0.137.0"
 }
 
 variable "use_entrypoint_script" {
