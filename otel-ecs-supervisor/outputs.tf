@@ -43,3 +43,13 @@ output "coralogix_private_key_parameter_arn" {
   value       = var.coralogix_private_key != "" ? aws_ssm_parameter.coralogix_private_key[0].arn : null
   sensitive   = true
 }
+
+output "ecs_cluster_id" {
+  description = "ID of the ECS cluster used by the supervisor"
+  value       = var.create_ecs_cluster ? aws_ecs_cluster.supervisor[0].id : var.ecs_cluster_id
+}
+
+output "ecs_cluster_arn" {
+  description = "ARN of the ECS cluster (if created by this module)"
+  value       = var.create_ecs_cluster ? aws_ecs_cluster.supervisor[0].arn : null
+}

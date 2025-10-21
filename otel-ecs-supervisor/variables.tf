@@ -67,13 +67,13 @@ variable "collector_config" {
 }
 
 variable "vpc_id" {
-  description = "VPC ID for security group creation (required for Fargate)"
+  description = "Optional VPC ID; defaults to the AWS account's default VPC when empty."
   type        = string
   default     = ""
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for ECS service (required for Fargate)"
+  description = "Optional list of subnet IDs; defaults to the default VPC subnets when empty."
   type        = list(string)
   default     = []
 }
@@ -90,10 +90,28 @@ variable "allowed_cidr_blocks" {
   default     = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 }
 
+variable "create_ecs_cluster" {
+  description = "Set to true to create a dedicated ECS cluster for the supervisor"
+  type        = bool
+  default     = false
+}
+
+variable "ecs_cluster_name" {
+  description = "Name to assign to the ECS cluster when create_ecs_cluster is true (defaults to name_prefix)"
+  type        = string
+  default     = ""
+}
+
 variable "ecs_cluster_id" {
   description = "ECS cluster ID/name"
   type        = string
   default     = "default"
+}
+
+variable "ecs_capacity_count" {
+  description = "Number of EC2 container instances to maintain when launch_type is EC2 and the module creates the cluster"
+  type        = number
+  default     = 1
 }
 
 variable "launch_type" {

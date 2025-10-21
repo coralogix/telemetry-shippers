@@ -1,14 +1,19 @@
 # Example Terraform variables file
 # Copy this file to terraform.tfvars and update with your values
 
-# Required variables
-vpc_id         = "vpc-12345678"
-subnet_ids     = ["subnet-12345678", "subnet-87654321"]
-ecs_cluster_id = "my-cluster"
+# Cluster configuration
+create_ecs_cluster = true
+ecs_capacity_count = 1
+# ecs_cluster_name = "otel-supervisor-cluster"
+# ecs_cluster_id   = "existing-cluster"
+
+# Optional networking overrides (defaults use the account's default VPC and subnets)
+# vpc_id     = "vpc-12345678"
+# subnet_ids = ["subnet-12345678", "subnet-87654321"]
 
 # Coralogix configuration
 coralogix_domain                      = "eu2.coralogix.com"
-coralogix_private_key_ssm_parameter   = "/coralogix/private-key"
+coralogix_private_key   = "cxtp_8DgfhFf49DQHgXPvrVmVCaLqjvwl0A"
 application_name                      = "my-app"
 subsystem_name                        = "ecs"
 
@@ -17,7 +22,7 @@ subsystem_name                        = "ecs"
 
 # Resource configuration
 name_prefix    = "coralogix"
-launch_type    = "FARGATE"
+launch_type    = "EC2"
 cpu            = 512
 memory         = 1024
 desired_count  = 1

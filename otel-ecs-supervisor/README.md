@@ -78,6 +78,17 @@ The supervisor automatically reports to Coralogix:
 - **Collector metrics** and performance
 - **Application telemetry** (logs, metrics, traces)
 
+## ECS Cluster Options
+
+- `create_ecs_cluster` — set to `true` to let this module provision a dedicated ECS cluster.
+- `ecs_cluster_name` — optional override for the created cluster name (defaults to `name_prefix`).
+- `ecs_cluster_id` — supply the ARN or name of an existing cluster when you reuse infrastructure.
+
+## EC2 Capacity
+
+- `ecs_capacity_count` — number of EC2 container instances to keep running when `launch_type` is `EC2` (set to `0` to skip capacity provisioning).
+- Default VPC and subnets are used automatically when none are supplied, and instances run on the latest ECS-optimized Amazon Linux 2 AMI with the `t3.micro` size.
+
 ## Troubleshooting
 
 ```bash
