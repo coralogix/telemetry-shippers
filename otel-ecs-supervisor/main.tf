@@ -13,13 +13,16 @@ terraform {
 }
 
 data "aws_vpc" "default" {
+  count   = var.vpc_id == "" ? 1 : 0
   default = true
 }
 
 data "aws_subnets" "default" {
+  count = var.vpc_id == "" && length(var.subnet_ids) == 0 ? 1 : 0
+
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+    values = [data.aws_vpc.default[0].id]
   }
 
   filter {
@@ -71,8 +74,10 @@ locals {
 
   container_entry_point = var.use_entrypoint_script ? ["/bin/sh", "-c"] : ["/opampsupervisor"]
   ecs_cluster_name      = var.ecs_cluster_name != "" ? var.ecs_cluster_name : local.name_prefix
-  service_vpc_id        = var.vpc_id != "" ? var.vpc_id : data.aws_vpc.default.id
-  service_subnet_ids    = length(var.subnet_ids) > 0 ? var.subnet_ids : data.aws_subnets.default.ids
+  default_vpc_id        = try(data.aws_vpc.default[0].id, null)
+  default_subnet_ids    = try(data.aws_subnets.default[0].ids, [])
+  service_vpc_id        = var.vpc_id != "" ? var.vpc_id : local.default_vpc_id
+  service_subnet_ids    = length(var.subnet_ids) > 0 ? var.subnet_ids : local.default_subnet_ids
   ecs_capacity_enabled  = var.create_ecs_cluster && var.launch_type == "EC2" && var.ecs_capacity_count > 0
 }
 
