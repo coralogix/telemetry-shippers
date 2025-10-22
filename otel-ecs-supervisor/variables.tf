@@ -76,6 +76,11 @@ variable "subnet_ids" {
   description = "Optional list of subnet IDs; defaults to the default VPC subnets when empty."
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = length(var.subnet_ids) == 0 || var.vpc_id != ""
+    error_message = "vpc_id must be provided when supplying subnet_ids."
+  }
 }
 
 variable "security_group_id" {
