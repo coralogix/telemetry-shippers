@@ -11,6 +11,7 @@ Terraform module that creates an Amazon ECS cluster with an optional EC2 capacit
 - Optional ECS capacity provider attached to the cluster with managed scaling settings.
 
 ## Usage
+
 ```hcl
 module "ecs_cluster_ec2" {
   source = "../modules/ecs-cluster-ec2"
