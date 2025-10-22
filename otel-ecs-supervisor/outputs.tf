@@ -46,10 +46,15 @@ output "coralogix_private_key_parameter_arn" {
 
 output "ecs_cluster_id" {
   description = "ID of the ECS cluster used by the supervisor"
-  value       = var.create_ecs_cluster ? aws_ecs_cluster.supervisor[0].id : var.ecs_cluster_id
+  value       = var.create_ecs_cluster ? module.ecs_cluster[0].cluster_id : var.ecs_cluster_id
 }
 
 output "ecs_cluster_arn" {
   description = "ARN of the ECS cluster (if created by this module)"
-  value       = var.create_ecs_cluster ? aws_ecs_cluster.supervisor[0].arn : null
+  value       = var.create_ecs_cluster ? module.ecs_cluster[0].cluster_arn : null
+}
+
+output "ecs_capacity_provider_name" {
+  description = "Name of the ECS capacity provider (if created)"
+  value       = var.create_ecs_cluster && local.ecs_capacity_enabled ? module.ecs_cluster[0].capacity_provider_name : null
 }

@@ -76,11 +76,6 @@ locals {
   ecs_capacity_enabled  = var.create_ecs_cluster && var.launch_type == "EC2" && var.ecs_capacity_count > 0
 }
 
-data "aws_ssm_parameter" "ecs_ami" {
-  count = local.ecs_capacity_enabled ? 1 : 0
-  name  = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
-}
-
 # Validation check
 resource "null_resource" "validate_private_key" {
   count = local.private_key_methods_count == 0 ? 1 : 0
@@ -110,152 +105,18 @@ resource "aws_cloudwatch_log_group" "supervisor" {
   tags = var.tags
 }
 
-# ECS Cluster (optional)
-resource "aws_ecs_cluster" "supervisor" {
-  count = var.create_ecs_cluster ? 1 : 0
-  name  = local.ecs_cluster_name
+module "ecs_cluster" {
+  count  = var.create_ecs_cluster ? 1 : 0
+  source = "./modules/ecs-cluster-ec2"
 
-  setting {
-    name  = "containerInsights"
-    value = "disabled"
-  }
-
-  tags = merge({
-    Name = local.ecs_cluster_name
-  }, var.tags)
-}
-
-# EC2 capacity (optional)
-resource "aws_security_group" "ecs_instances" {
-  count       = local.ecs_capacity_enabled ? 1 : 0
-  name        = "${local.name_prefix}-ecs-instances"
-  description = "Security group for ECS container instances"
-  vpc_id      = local.service_vpc_id
-
-  ingress {
-    from_port   = 4317
-    to_port     = 4317
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
-  }
-
-  ingress {
-    from_port   = 4318
-    to_port     = 4318
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
-  }
-
-  ingress {
-    from_port   = 13133
-    to_port     = 13133
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
-  }
-
-  ingress {
-    from_port   = 8888
-    to_port     = 8888
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge({
-    Name = "${local.name_prefix}-ecs-instances"
-  }, var.tags)
-}
-
-resource "aws_iam_role" "ecs_instance" {
-  count = local.ecs_capacity_enabled ? 1 : 0
-  name  = "${local.name_prefix}-ecs-instance-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-
-  tags = var.tags
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_instance_service" {
-  count      = local.ecs_capacity_enabled ? 1 : 0
-  role       = aws_iam_role.ecs_instance[0].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_instance_ssm" {
-  count      = local.ecs_capacity_enabled ? 1 : 0
-  role       = aws_iam_role.ecs_instance[0].name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_instance_profile" "ecs_instance" {
-  count = local.ecs_capacity_enabled ? 1 : 0
-  name  = "${local.name_prefix}-ecs-instance-profile"
-  role  = aws_iam_role.ecs_instance[0].name
-}
-
-resource "aws_launch_template" "ecs" {
-  count = local.ecs_capacity_enabled ? 1 : 0
-
-  name_prefix   = "${local.name_prefix}-lt-"
-  image_id      = jsondecode(data.aws_ssm_parameter.ecs_ami[0].value).image_id
-  instance_type = "t3.micro"
-
-  iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance[0].name
-  }
-
-  vpc_security_group_ids = [aws_security_group.ecs_instances[0].id]
-
-  user_data = base64encode(<<-EOT
-    #!/bin/bash
-    echo ECS_CLUSTER=${local.ecs_cluster_name} >> /etc/ecs/ecs.config
-  EOT
-  )
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge({
-      Name = "${local.name_prefix}-ecs-instance"
-    }, var.tags)
-  }
-}
-
-resource "aws_autoscaling_group" "ecs" {
-  count = local.ecs_capacity_enabled ? 1 : 0
-
-  name                = "${local.name_prefix}-asg"
-  min_size            = var.ecs_capacity_count
-  max_size            = var.ecs_capacity_count
-  desired_capacity    = var.ecs_capacity_count
-  vpc_zone_identifier = local.service_subnet_ids
-
-  launch_template {
-    id      = aws_launch_template.ecs[0].id
-    version = "$Latest"
-  }
-
-  tag {
-    key                 = "Name"
-    value               = "${local.name_prefix}-ecs-instance"
-    propagate_at_launch = true
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
+  name_prefix         = local.name_prefix
+  cluster_name        = local.ecs_cluster_name
+  enable_capacity     = local.ecs_capacity_enabled
+  ecs_capacity_count  = var.ecs_capacity_count
+  vpc_id              = local.service_vpc_id
+  subnet_ids          = local.service_subnet_ids
+  allowed_cidr_blocks = var.allowed_cidr_blocks
+  tags                = var.tags
 }
 
 # ECS Task Execution Role
@@ -502,7 +363,7 @@ resource "aws_security_group" "supervisor" {
 resource "aws_ecs_service" "supervisor" {
   count           = var.create_service ? 1 : 0
   name            = "${local.name_prefix}-supervisor"
-  cluster         = var.create_ecs_cluster ? aws_ecs_cluster.supervisor[0].id : var.ecs_cluster_id
+  cluster         = var.create_ecs_cluster ? module.ecs_cluster[0].cluster_id : var.ecs_cluster_id
   task_definition = aws_ecs_task_definition.supervisor.arn
   desired_count   = var.desired_count
   launch_type     = var.launch_type
