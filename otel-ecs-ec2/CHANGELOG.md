@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.0.4 / 2025-10-22
+
+* [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.2` (aligned in Helm values, example manifest, and Terraform `image_version` default).
+
 ## ecs-ec2-integration
 
 ### 0.0.3 / 2025-09-09
