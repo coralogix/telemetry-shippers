@@ -1,0 +1,292 @@
+#!/bin/bash
+set -euo pipefail
+
+exec > >(tee /var/log/otel-bootstrap.log | logger -t otel-bootstrap) 2>&1
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -y
+apt-get install -y curl ca-certificates rsyslog
+
+%{ if enable_demo_workloads }
+apt-get install -y python3 python3-pip python3-prometheus-client
+
+python3 -m pip install --upgrade pip
+python3 -m pip install --no-cache-dir opentelemetry-sdk==1.25.0 opentelemetry-exporter-otlp==1.25.0 opentelemetry-api==1.25.0
+%{ endif }
+
+ln -sf /var/log/syslog /var/log/messages
+
+%{ if enable_demo_workloads }
+install -d -m 0755 /opt
+
+cat <<'EOF' >/opt/demo_metrics_service.py
+#!/usr/bin/env python3
+import os, random, time
+from prometheus_client import CollectorRegistry, Counter, Gauge, Summary, start_http_server
+
+service = os.environ.get("SERVICE_NAME", "demo-service")
+port = int(os.environ.get("METRICS_PORT", "9101"))
+registry = CollectorRegistry()
+uptime = Gauge("demo_service_up", "Heartbeat metric for demo services", ["service"], registry=registry)
+latency = Summary("demo_request_latency_seconds", "Synthetic latency per request", ["service"], registry=registry)
+requests = Counter("demo_requests_total", "Synthetic requests processed", ["service"], registry=registry)
+start_http_server(port, registry=registry)
+
+while True:
+    uptime.labels(service).set(1)
+    sample = random.random()
+    latency.labels(service).observe(sample)
+    requests.labels(service).inc()
+    time.sleep(5)
+EOF
+chmod 0755 /opt/demo_metrics_service.py
+
+cat <<'EOF' >/opt/demo_otlp_app.py
+#!/usr/bin/env python3
+import os, random, socket, time
+from datetime import datetime
+from opentelemetry import metrics, trace
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+service = os.environ.get("SERVICE_NAME", "demo-otlp")
+endpoint = os.environ.get("OTLP_ENDPOINT", "127.0.0.1:4317")
+if not endpoint.startswith("http"):
+    endpoint = f"http://{endpoint}"
+resource = Resource.create({"service.instance.id": socket.gethostname(), "demo.workload": service})
+
+trace_provider = TracerProvider(resource=resource)
+trace_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint, insecure=True)))
+trace.set_tracer_provider(trace_provider)
+tracer = trace.get_tracer("demo-otlp")
+
+metric_exporter = OTLPMetricExporter(endpoint=endpoint, insecure=True)
+reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=5000)
+meter_provider = MeterProvider(resource=resource, metric_readers=[reader])
+metrics.set_meter_provider(meter_provider)
+meter = metrics.get_meter("demo-otlp")
+counter = meter.create_counter("demo_otlp_iterations_total")
+histogram = meter.create_histogram("demo_otlp_latency_seconds")
+
+i = 0
+while True:
+    i += 1
+    start = time.perf_counter()
+    with tracer.start_as_current_span("demo.operation") as span:
+        span.set_attribute("demo.iteration", i)
+        span.set_attribute("demo.service", service)
+        span.add_event("cycle.start", {"timestamp": datetime.utcnow().isoformat()})
+        work = random.random()
+        delay = 0.05 + work / 8
+        time.sleep(delay)
+        span.add_event("cycle.finish", {"work": work, "sleep": delay})
+    counter.add(1, {"demo.service": service})
+    histogram.record(time.perf_counter() - start, {"demo.service": service})
+    time.sleep(5)
+EOF
+chmod 0755 /opt/demo_otlp_app.py
+
+cat <<'EOF' >/usr/local/bin/demo-logger.sh
+#!/bin/bash
+set -euo pipefail
+
+IDENT="$${1:-demo-logger}"
+
+while true; do
+  /usr/bin/systemd-cat -t "$IDENT" /bin/echo "demo logger single line $(date --iso-8601=seconds)"
+  printf 'demo logger multiline start %s\n{"service":"%s","iteration":"%s"}\ndemo logger multiline end\n' \
+    "$(date --iso-8601=seconds)" "$IDENT" "$(uuidgen)" | /usr/bin/systemd-cat -t "$IDENT"
+  sleep 5
+done
+EOF
+chmod 0755 /usr/local/bin/demo-logger.sh
+
+cat <<'EOF' >/etc/systemd/system/demo-logger.service
+[Unit]
+Description=Demo logger for journald vs filelog comparison
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/demo-logger.sh demo-logger
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=demo-logger
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat <<'EOF' >/etc/systemd/system/demo-mysql-metrics.service
+[Unit]
+Description=Demo Prometheus exporter (mysql workload)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=PYTHONUNBUFFERED=1
+Environment=SERVICE_NAME=mysql
+Environment=METRICS_PORT=9101
+ExecStart=/usr/bin/python3 /opt/demo_metrics_service.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=demo-mysql-metrics
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat <<'EOF' >/etc/systemd/system/demo-backend-metrics.service
+[Unit]
+Description=Demo Prometheus exporter (backend workload)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=PYTHONUNBUFFERED=1
+Environment=SERVICE_NAME=backend
+Environment=METRICS_PORT=9102
+ExecStart=/usr/bin/python3 /opt/demo_metrics_service.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=demo-backend-metrics
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat <<'EOF' >/etc/systemd/system/demo-otlp-app.service
+[Unit]
+Description=Demo OTLP emitter application
+After=otelcol-contrib.service network-online.target
+Wants=network-online.target
+Requires=otelcol-contrib.service
+
+[Service]
+Type=simple
+Environment=PYTHONUNBUFFERED=1
+Environment=SERVICE_NAME=demo-otlp
+Environment=OTLP_ENDPOINT=127.0.0.1:4317
+ExecStart=/usr/bin/python3 /opt/demo_otlp_app.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=demo-otlp-app
+
+[Install]
+WantedBy=multi-user.target
+EOF
+%{ endif }
+
+curl -fsSL -o /tmp/otelcol-contrib.deb "${otel_deb_url}"
+if ! dpkg -i /tmp/otelcol-contrib.deb; then
+  apt-get install -f -y
+  dpkg -i /tmp/otelcol-contrib.deb
+fi
+
+if getent group systemd-journal >/dev/null 2>&1; then
+  usermod -a -G systemd-journal otelcol-contrib || true
+fi
+if getent group adm >/dev/null 2>&1; then
+  usermod -a -G adm otelcol-contrib || true
+fi
+
+install -d -m 0755 /etc/otelcol-contrib
+install -d -m 0755 /etc/systemd/system/otelcol-contrib.service.d
+
+cat <<'EOF' >/tmp/otel-config.b64
+${otel_config_b64}
+EOF
+base64 -d /tmp/otel-config.b64 | gunzip > /etc/otelcol-contrib/config.yaml
+rm /tmp/otel-config.b64
+
+cat <<EOF >/etc/systemd/system/otelcol-contrib.service.d/override.conf
+[Service]
+SupplementaryGroups=systemd-journal adm
+%{ if coralogix_api_key != "" }Environment="CORALOGIX_PRIVATE_KEY=${coralogix_api_key}"%{ endif }
+EOF
+
+chown otelcol-contrib:otelcol-contrib /etc/otelcol-contrib/config.yaml
+chmod 0644 /etc/otelcol-contrib/config.yaml
+
+systemctl daemon-reload
+systemctl enable otelcol-contrib.service
+%{ if enable_demo_workloads }
+systemctl enable demo-logger.service demo-mysql-metrics.service demo-backend-metrics.service demo-otlp-app.service
+%{ endif }
+systemctl start otelcol-contrib.service
+sleep 5
+systemctl is-active --quiet otelcol-contrib.service
+
+%{ if enable_demo_workloads }
+systemctl start demo-logger.service demo-mysql-metrics.service demo-backend-metrics.service demo-otlp-app.service
+sleep 5
+for svc in demo-logger.service demo-mysql-metrics.service demo-backend-metrics.service demo-otlp-app.service; do
+  systemctl is-active --quiet "$svc"
+done
+%{ endif }
+
+%{ if enable_telemetrygen }
+# Install telemetrygen alongside the collector for local traffic generation
+apt-get install -y git tar
+
+GO_VERSION=${telemetrygen_go_version}
+curl -fsSL -o /tmp/go$${GO_VERSION}.linux-amd64.tar.gz "https://go.dev/dl/go$${GO_VERSION}.linux-amd64.tar.gz"
+rm -rf /usr/local/go
+tar -C /usr/local -xzf /tmp/go$${GO_VERSION}.linux-amd64.tar.gz
+
+export PATH=/usr/local/go/bin:$PATH
+export GOPATH=/root/go
+export GOBIN=/root/go/bin
+export GOCACHE=/root/.cache/go-build
+export HOME=/root
+mkdir -p "$GOBIN" "$GOCACHE"
+
+go install github.com/open-telemetry/opentelemetry-collector-contrib/cmd/telemetrygen@${telemetrygen_version}
+install -m 0755 "$GOBIN/telemetrygen" /usr/local/bin/telemetrygen
+
+cat <<'EOF' >/etc/systemd/system/telemetrygen.service
+[Unit]
+Description=Telemetry Generator (eco-system)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=HOME=/root
+Environment=PATH=/usr/local/bin:/usr/local/go/bin:/usr/bin:/bin:/root/go/bin
+ExecStart=/usr/local/bin/telemetrygen traces --otlp-endpoint ${telemetrygen_endpoint}%{ if telemetrygen_insecure } --otlp-insecure%{ endif } --rate ${telemetrygen_rate} --service ${telemetrygen_service_name} --duration ${telemetrygen_duration}
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable telemetrygen.service
+systemctl restart telemetrygen.service
+
+sleep 5
+systemctl is-active --quiet telemetrygen.service
+systemctl status telemetrygen.service --no-pager
+journalctl -u telemetrygen.service -n 20 --no-pager || true
+%{ endif }

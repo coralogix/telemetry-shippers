@@ -1,0 +1,19 @@
+apiVersion: v2
+name: linux-standalone
+description: Standalone Linux OpenTelemetry Collector configuration
+version: 0.0.1
+keywords:
+  - OpenTelemetry Collector
+  - Coralogix
+  - Linux
+dependencies:
+  - name: opentelemetry-collector
+    alias: opentelemetry-agent
+    version: "0.121.12"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-agent.enabled
+sources:
+  - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
+maintainers:
+  - name: Coralogix
+    email: platform@coralogix.com
