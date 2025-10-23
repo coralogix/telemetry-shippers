@@ -12,6 +12,25 @@ terraform {
   }
 }
 
+data "aws_vpc" "default" {
+  count   = var.vpc_id == "" ? 1 : 0
+  default = true
+}
+
+data "aws_subnets" "default" {
+  count = var.vpc_id == "" && length(var.subnet_ids) == 0 ? 1 : 0
+
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default[0].id]
+  }
+
+  filter {
+    name   = "default-for-az"
+    values = ["true"]
+  }
+}
+
 # Local values for common configurations
 locals {
   name_prefix = var.name_prefix
@@ -54,6 +73,12 @@ locals {
   ]
 
   container_entry_point = var.use_entrypoint_script ? ["/bin/sh", "-c"] : ["/opampsupervisor"]
+  ecs_cluster_name      = var.ecs_cluster_name != "" ? var.ecs_cluster_name : local.name_prefix
+  default_vpc_id        = try(data.aws_vpc.default[0].id, null)
+  default_subnet_ids    = try(data.aws_subnets.default[0].ids, [])
+  service_vpc_id        = var.vpc_id != "" ? var.vpc_id : local.default_vpc_id
+  service_subnet_ids    = length(var.subnet_ids) > 0 ? var.subnet_ids : local.default_subnet_ids
+  ecs_capacity_enabled  = var.create_ecs_cluster && var.launch_type == "EC2" && var.ecs_capacity_count > 0
 }
 
 # Validation check
@@ -83,6 +108,20 @@ resource "aws_cloudwatch_log_group" "supervisor" {
   retention_in_days = var.log_retention_days
 
   tags = var.tags
+}
+
+module "ecs_cluster" {
+  count  = var.create_ecs_cluster ? 1 : 0
+  source = "./modules/ecs-cluster-ec2"
+
+  name_prefix         = local.name_prefix
+  cluster_name        = local.ecs_cluster_name
+  enable_capacity     = local.ecs_capacity_enabled
+  ecs_capacity_count  = var.ecs_capacity_count
+  vpc_id              = local.service_vpc_id
+  subnet_ids          = local.service_subnet_ids
+  allowed_cidr_blocks = var.allowed_cidr_blocks
+  tags                = var.tags
 }
 
 # ECS Task Execution Role
@@ -295,7 +334,7 @@ resource "aws_security_group" "supervisor" {
   count       = var.launch_type == "FARGATE" && var.security_group_id == "" ? 1 : 0
   name        = "${local.name_prefix}-supervisor-sg"
   description = "Security group for OpenTelemetry Supervisor"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.service_vpc_id
 
   # Allow inbound OTLP traffic
   ingress {
@@ -329,7 +368,7 @@ resource "aws_security_group" "supervisor" {
 resource "aws_ecs_service" "supervisor" {
   count           = var.create_service ? 1 : 0
   name            = "${local.name_prefix}-supervisor"
-  cluster         = var.ecs_cluster_id
+  cluster         = var.create_ecs_cluster ? module.ecs_cluster[0].cluster_id : var.ecs_cluster_id
   task_definition = aws_ecs_task_definition.supervisor.arn
   desired_count   = var.desired_count
   launch_type     = var.launch_type
@@ -337,7 +376,7 @@ resource "aws_ecs_service" "supervisor" {
   dynamic "network_configuration" {
     for_each = var.launch_type == "FARGATE" ? [1] : []
     content {
-      subnets          = var.subnet_ids
+      subnets          = local.service_subnet_ids
       security_groups  = [var.security_group_id != "" ? var.security_group_id : aws_security_group.supervisor[0].id]
       assign_public_ip = var.assign_public_ip
     }
