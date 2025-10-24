@@ -16,6 +16,11 @@ capabilities:
 
 agent:
   executable: /otelcol-contrib
+  description:
+    non_identifying_attributes:
+      cx.agent.type: "ecs"
+      cx.cluster.name: "${ecs_cluster_name}"
+      cx.otel.agent.attributes: "true"
   # This adds CLI arguments to the Collector.
   args:
     - ''

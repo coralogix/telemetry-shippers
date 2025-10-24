@@ -49,19 +49,29 @@ locals {
     null
   )
 
+  # ECS cluster name (needed for template rendering)
+  ecs_cluster_name      = var.ecs_cluster_name != "" ? var.ecs_cluster_name : local.name_prefix
+  default_vpc_id        = try(data.aws_vpc.default[0].id, null)
+  default_subnet_ids    = try(data.aws_subnets.default[0].ids, [])
+  service_vpc_id        = var.vpc_id != "" ? var.vpc_id : local.default_vpc_id
+  service_subnet_ids    = length(var.subnet_ids) > 0 ? var.subnet_ids : local.default_subnet_ids
+  ecs_capacity_enabled  = var.create_ecs_cluster && var.launch_type == "EC2" && var.ecs_capacity_count > 0
+
   # Default supervisor configuration
   supervisor_config = templatefile("${path.module}/templates/supervisor.yaml", {
     coralogix_domain      = var.coralogix_domain
     coralogix_private_key = "$${PRIVATE_KEY}"
     application_name      = var.application_name
     subsystem_name        = var.subsystem_name
+    ecs_cluster_name      = local.ecs_cluster_name
   })
 
   # Default collector configuration
   collector_config = templatefile("${path.module}/templates/collector.yaml", {
-    coralogix_domain = var.coralogix_domain
-    application_name = var.application_name
-    subsystem_name   = var.subsystem_name
+    coralogix_domain  = var.coralogix_domain
+    application_name  = var.application_name
+    subsystem_name    = var.subsystem_name
+    ecs_cluster_name  = local.ecs_cluster_name
   })
 
 
@@ -73,12 +83,6 @@ locals {
   ]
 
   container_entry_point = var.use_entrypoint_script ? ["/bin/sh", "-c"] : ["/opampsupervisor"]
-  ecs_cluster_name      = var.ecs_cluster_name != "" ? var.ecs_cluster_name : local.name_prefix
-  default_vpc_id        = try(data.aws_vpc.default[0].id, null)
-  default_subnet_ids    = try(data.aws_subnets.default[0].ids, [])
-  service_vpc_id        = var.vpc_id != "" ? var.vpc_id : local.default_vpc_id
-  service_subnet_ids    = length(var.subnet_ids) > 0 ? var.subnet_ids : local.default_subnet_ids
-  ecs_capacity_enabled  = var.create_ecs_cluster && var.launch_type == "EC2" && var.ecs_capacity_count > 0
 }
 
 # Validation check
