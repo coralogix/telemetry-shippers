@@ -288,7 +288,7 @@ opentelemetry-agent:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
     # pipelines: ["metrics", "logs"] # uncomment this to use the loadbalancing exporter for traces
-    
+
     # Configures resource detection processors to add system and environment information.
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
@@ -338,7 +338,7 @@ opentelemetry-agent:
             - memory_limiter
           # receivers: []
         traces:
-          exporters: [loadbalancing]
+          exporters: []
           processors:
             - memory_limiter
           # receivers: []
