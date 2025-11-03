@@ -2,6 +2,11 @@
 
 ## ecs-ec2-integration
 
+### 0.0.4 / 2025-11-03
+
+* [FEATURE] Add support for tail sampling with gateway deployment via `opentelemetry-gateway` configuration.
+* [FEATURE] Add load balancing configuration for trace routing to gateway (`presets.loadBalancing`).
+
 ### 0.0.3 / 2025-09-09
 
 * [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.1` (aligned in Helm values, example manifest, and Terraform `image_version` default).
