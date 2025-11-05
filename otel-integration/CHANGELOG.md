@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.233 / 2025-11-05
+- [CHORE] Bump Collector to 0.139.0
+
 ### v0.0.232 / 2025-10-22
 - [Feat] `opentelemetry-ebpf-instrumentation` - Increase http, postgres default buffer sizes, add graphql payload extraction
 
