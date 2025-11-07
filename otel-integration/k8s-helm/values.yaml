@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.232"
+  version: "0.0.233"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -113,6 +113,14 @@ opentelemetry-agent:
       enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
+      # Custom non-identifying attributes to add to the agent description.
+      # These attributes will be included in the non_identifying_attributes section
+      # for both supervisor and OpAMP extensions.
+      # Example:
+      #   customAttributes:
+      #     environment: "production"
+      #     team: "platform"
+      customAttributes: {}
 
     logsCollection:
       enabled: true
@@ -364,6 +372,14 @@ opentelemetry-cluster-collector:
       enabled: true
       agentType: "cluster-collector"
       clusterName: "{{.Values.global.clusterName}}"
+      # Custom non-identifying attributes to add to the agent description.
+      # These attributes will be included in the non_identifying_attributes section
+      # for both supervisor and OpAMP extensions.
+      # Example:
+      #   customAttributes:
+      #     environment: "production"
+      #     team: "platform"
+      customAttributes: {}
     clusterMetrics:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
@@ -595,6 +611,14 @@ opentelemetry-gateway:
       enabled: true
       agentType: "gateway"
       clusterName: "{{.Values.global.clusterName}}"
+      # Custom non-identifying attributes to add to the agent description.
+      # These attributes will be included in the non_identifying_attributes section
+      # for both supervisor and OpAMP extensions.
+      # Example:
+      #   customAttributes:
+      #     environment: "production"
+      #     team: "platform"
+      customAttributes: {}
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
@@ -689,6 +713,14 @@ opentelemetry-receiver:
       enabled: true
       agentType: "receiver"
       clusterName: "{{.Values.global.clusterName}}"
+      # Custom non-identifying attributes to add to the agent description.
+      # These attributes will be included in the non_identifying_attributes section
+      # for both supervisor and OpAMP extensions.
+      # Example:
+      #   customAttributes:
+      #     environment: "production"
+      #     team: "platform"
+      customAttributes: {}
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
