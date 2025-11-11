@@ -2,6 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.233 / 2025-11-07
+- [Fix] Derive Coralogix application and subsystem names from `service.namespace` and `service.name` when using the standalone distribution.
+- [Fix] Emit Coralogix OTLP headers with the `helm-otel-standalone` distribution tag when the standalone distribution is selected.
+- [Feat] Add `filelogMulti` preset for configuring multiple filelog receivers with Coralogix resource annotations.
+- [Feat] Allow `filelogMulti` receivers to derive Coralogix application and subsystem names from resource attributes after custom operators run.
+- [Feat] Allow `additionalEndpoints` option to `coralogixExporter` preset to add additional Coralogix endpoints.
+- [Feat] extend opamp extension and resource catalog exporter to support additional endpoints.
+- [Feat] Allow `filelogMulti` preset receivers to configure multiline log parsing.
+- [Feat] Allow setting custom non-identifying attributes for both supervisor and OpAMP extensions via `fleetManagement.customAttributes` preset.
+
 ### v0.0.232 / 2025-10-22
 - [Feat] `opentelemetry-ebpf-instrumentation` - Increase http, postgres default buffer sizes, add graphql payload extraction
 
