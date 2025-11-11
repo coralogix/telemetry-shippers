@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.234 / 2025-11-11
+- [Fix] Keep compact spanmetrics and database histograms by default by setting `dropHistogram` to `false`.
+- [Feat] Make the `fleetManagement.supervisor` preset ship a minimal collector config that only wires the OpAMP extension so the supervisor can connect to the Coralogix OpAMP backend.
+
 ### v0.0.233 / 2025-11-07
 - [Fix] Derive Coralogix application and subsystem names from `service.namespace` and `service.name` when using the standalone distribution.
 - [Fix] Emit Coralogix OTLP headers with the `helm-otel-standalone` distribution tag when the standalone distribution is selected.
