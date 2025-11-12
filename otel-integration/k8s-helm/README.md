@@ -663,6 +663,148 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values.yaml -f ipv6-values.yaml
 ```
 
+### Installing the chart on EKS Fargate clusters
+
+AWS EKS Fargate is a serverless compute engine for Kubernetes that removes the need to provision and manage EC2 instances. Since Fargate pods run in an isolated environment, some collector features require special configuration.
+
+#### Prerequisites
+
+Before installing the chart on EKS Fargate, ensure the following:
+
+1. **CoreDNS addon**: The EKS cluster must have the CoreDNS addon installed for DNS resolution to work. If your cluster doesn't have CoreDNS, install it using:
+
+   ```bash
+   CLUSTER_VERSION=$(aws eks describe-cluster --name <cluster-name> --region <region> --query 'cluster.version' --output text)
+   COREDNS_VERSION=$(aws eks describe-addon-versions --addon-name coredns --kubernetes-version $CLUSTER_VERSION --region <region> --query 'addons[0].addonVersions[0].addonVersion' --output text)
+   aws eks create-addon --cluster-name <cluster-name> --addon-name coredns --addon-version $COREDNS_VERSION --region <region>
+   ```
+
+2. **Fargate Profile**: A Fargate profile must be created for the namespace where you plan to deploy the collectors. If you're deploying to the `default` namespace, create a Fargate profile:
+
+   ```bash
+   aws eks create-fargate-profile \
+     --cluster-name <cluster-name> \
+     --region <region> \
+     --fargate-profile-name default \
+     --pod-execution-role-arn <pod-execution-role-arn> \
+     --subnets <subnet-id-1> <subnet-id-2> <subnet-id-3> \
+     --selectors namespace=default
+   ```
+
+3. **VPC DNS Settings**: Ensure DNS support and DNS hostnames are enabled for your VPC:
+
+   ```bash
+   aws ec2 modify-vpc-attribute --vpc-id <vpc-id> --enable-dns-support
+   aws ec2 modify-vpc-attribute --vpc-id <vpc-id> --enable-dns-hostnames
+   ```
+
+Notable important differences from the regular `otel-integration` are:
+
+- Host metrics receiver is not available, though you still get some metrics about the host through `kubeletstats` receiver.
+- Host networking and host ports are not available, users need to send tracing spans through Kubernetes Service.
+- Log collection via hostPath mounts is not supported due to Fargate limitations.
+- The collector requires the `K8S_NODE_NAME` environment variable to be set for proper node identification and kubelet stats collection.
+
+#### Deployment Modes
+
+There are two primary deployment patterns for EKS Fargate:
+
+1. **Per-namespace collector** (`opentelemetry-agent-eks-fargate`): Deploy the OpenTelemetry Collector as a StatefulSet in each Fargate namespace where your applications run. This collector will collect your application's telemetry data (traces, metrics, and logs) and also gather kubelet stats metrics from its own Fargate node. This is the recommended approach when you want to deploy the collector alongside your applications in Fargate.
+
+2. **Centralized monitoring collector** (`opentelemetry-agent-eks-fargate-monitoring`): Deploy a dedicated OpenTelemetry Collector as a Deployment that acts as a centralized infrastructure monitoring component. This collector automatically discovers all Fargate nodes in the cluster and collects kubelet stats metrics from each of them. It uses the receiver creator to dynamically discover kubelet endpoints and filters metrics to only collect from Fargate nodes. This pattern is useful when you want to monitor the infrastructure separately from application telemetry, or when you want a single collector to gather node-level metrics across all Fargate pods in the cluster.
+
+   **Why is this needed?** Due to Fargate networking restrictions, a pod cannot communicate with its own kubelet endpoint to collect its own metrics. The per-namespace collector uses an init container to label its node with `OTEL-collector-node=true`, and the centralized monitoring collector specifically targets nodes with this label to collect the missing kubelet stats metrics. This workaround ensures complete infrastructure monitoring coverage across all Fargate nodes.
+
+#### Installation
+
+First, make sure to add our Helm charts repository to the local repo list using the following command:
+
+```bash
+helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+```
+
+To get the updated Helm charts from the added repository, run:
+
+```bash
+helm repo update
+```
+
+Install the chart with the `values-eks-fargate.yaml` file. You must provide the required global values (`clusterName` and `domain`). You can either adjust the main `values.yaml` file with these values and then pass it to the `helm upgrade` command:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values.yaml -f values-eks-fargate.yaml
+```
+
+Or you can provide the values directly in the command line by passing them with the `--set` flag:
+
+```bash
+helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-integration \
+  --render-subchart-notes -f values-eks-fargate.yaml \
+  --set global.clusterName=<cluster_name> \
+  --set global.domain=<coralogix-endpoint>
+```
+
+> [!NOTE]
+> The `global.domain` value must be set to your [Coralogix endpoint domain](https://coralogix.com/docs/integrations/coralogix-endpoints/) (e.g., `coralogix.com`, `coralogix.us`, `coralogix.in`, etc.). If you have the domain stored in the `CORALOGIX_DOMAIN` environment variable, you can use `--set global.domain=$CORALOGIX_DOMAIN`.
+
+#### Configuration
+
+The `values-eks-fargate.yaml` file enables both deployment modes by default. To use only one mode, you can disable the other:
+
+- To use only the per-namespace collector, set `opentelemetry-agent-eks-fargate-monitoring.enabled: false` in your values file.
+- To use only the centralized monitoring collector, set `opentelemetry-agent-eks-fargate.enabled: false` in your values file.
+
+The EKS Fargate preset configuration is nested under each collector's configuration. For the per-namespace collector (`opentelemetry-agent-eks-fargate`):
+
+```yaml
+opentelemetry-agent-eks-fargate:
+  presets:
+    eksFargate:
+      # Set to false for per-namespace collectors
+      monitoringCollector: false
+      kubeletStats:
+        # Collection interval for kubelet stats metrics
+        collectionInterval: "30s"
+      initContainer:
+        enabled: true
+        image:
+          repository: "public.ecr.aws/aws-cli/aws-cli"
+          tag: "2.28.17"
+```
+
+For the centralized monitoring collector (`opentelemetry-agent-eks-fargate-monitoring`):
+
+```yaml
+opentelemetry-agent-eks-fargate-monitoring:
+  presets:
+    eksFargate:
+      # Set to true for centralized monitoring collector
+      monitoringCollector: true
+      kubeletStats:
+        # Collection interval for kubelet stats metrics
+        collectionInterval: "30s"
+```
+
+#### Required Environment Variables
+
+When using EKS Fargate, the `K8S_NODE_NAME` environment variable is automatically configured in each collector's configuration. For example, in `opentelemetry-agent-eks-fargate`:
+
+```yaml
+opentelemetry-agent-eks-fargate:
+  extraEnvs:
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+```
+
+The same configuration is also present in `opentelemetry-agent-eks-fargate-monitoring`. This variable is used by the resource detection processor to identify the node and by the receiver creator to collect kubelet stats.
+
+Note: Due to Fargate limitations, these options will not work:
+- `presets.hostMetrics`
+- `presets.logsCollection` (container log collection via hostPath mounts)
+
 ### Next steps
 
 **Validation** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/validation/).
