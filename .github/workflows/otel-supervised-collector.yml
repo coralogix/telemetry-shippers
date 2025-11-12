@@ -8,14 +8,22 @@ on:
         required: false
         default: false
         type: boolean
-      dockerhub_registry:
-        description: "DockerHub registry path"
+      image_name:
+        description: "Image name (no organization or tag should be provided)"
         required: false
-        default: "coralogixrepo/otel-supervised-collector"
+        default: "otel-supervised-collector"
         type: string
-
+      registry_org:
+          description: "Container registry and organization"
+          required: false
+          default: "docker.io/coralogixrepo"
+          type: choice
+          options:
+            - docker.io/coralogixrepo
+            - cgx.jfrog.io/cgx-docker-repo
 env:
-  DOCKERHUB_REGISTRY: ${{ github.event.inputs.dockerhub_registry || 'coralogixrepo/otel-supervised-collector' }}
+  IMAGE_NAME: ${{ github.event.inputs.image_name || 'otel-supervised-collector' }}
+  REGISTRY_ORG: ${{ github.event.inputs.registry_org || 'docker.io/coralogixrepo' }}
 
 jobs:
   build:
@@ -25,11 +33,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Login to DockerHub
-        if: github.event.inputs.push_image == 'true'
+        if: github.event.inputs.push_image == 'true' && github.event.inputs.registry_org == 'docker.io/coralogixrepo'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to CGX JFrog
+        if: github.event.inputs.push_image == 'true' && github.event.inputs.registry_org == 'cgx.jfrog.io/cgx-docker-repo'
+        uses: docker/login-action@v3
+        with:
+          registry: cgx.jfrog.io
+          username: ${{ secrets.JFROG_USER }}
+          password: ${{ secrets.JFROG_PASSWORD }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -41,7 +57,7 @@ jobs:
         id: set-image-version
         run: |
           version=$(grep -E '^ARG COLLECTOR_VERSION=' ./otel-supervised-collector/Dockerfile | cut -d'=' -f2)
-          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Detected collector version: ${version}"
 
       - name: Build and Push Supervised Collector Image
@@ -51,6 +67,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event.inputs.push_image == 'true' }}
           tags: |
-            ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.set-image-version.outputs.version }}
+            ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
