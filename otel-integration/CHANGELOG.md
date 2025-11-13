@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.236 / 2025-11-13
+- [Fix] Use new container image in the Supervisor preset hosted in Coralogix' JFrog instance.
+
 ### v0.0.235 / 2025-11-12
 - [Fix] Default `deployment.environment.name` to `global.clusterName` when the resource detection preset's `deploymentEnvironmentName` stays empty and preserve it when span metrics' compact pipelines drop resource keys so the cluster identity remains set.
 
