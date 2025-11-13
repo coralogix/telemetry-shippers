@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.2"
+  version: "0.0.4"
   deploymentEnvironmentName: ""
 
 opentelemetry-agent:
@@ -287,6 +287,8 @@ opentelemetry-agent:
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    # pipelines: ["metrics", "logs"] # uncomment this to use the loadbalancing exporter for traces
+
     # Configures resource detection processors to add system and environment information.
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
@@ -295,6 +297,22 @@ opentelemetry-agent:
     # Applies semantic convention transformations.
     semconv:
       enabled: true
+
+    # Load balancing configuration for tail sampling
+
+    loadBalancing:
+      enabled: false
+      routingKey: "traceID"
+      hostname: "coralogix-opentelemetry-gateway"
+      awsCloudMap:
+        enabled: false
+        namespace: "cx-otel"
+        serviceName: "grpc-gateway"
+        interval: "10s"
+        port: 4317
+      dnsResolverInterval: "10s"
+      dnsResolverTimeout: "5s"
+
   config:
     # extensions:
     #   zpages:
@@ -328,4 +346,90 @@ opentelemetry-agent:
           exporters: []
           processors:
             - memory_limiter
+          # receivers: []
+
+# Gateway configuration for tail sampling
+
+opentelemetry-gateway:
+  enabled: false
+  distribution: "ecs"
+  mode: deployment
+  fullnameOverride: coralogix-opentelemetry-gateway
+  replicaCount: 1
+  
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      value: ${env:CORALOGIX_PRIVATE_KEY}
+
+  presets:
+    fleetManagement:
+      enabled: true
+      agentType: "gateway"
+      clusterName: "{{.Values.global.clusterName}}"
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-ecs-ec2-gateway"
+    
+    # Configures the collector to collect its own metrics using Prometheus receiver
+    collectorMetrics:
+      enabled: true
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    
+    # Configures resource detection processors to add system and environment information
+    resourceDetection:
+      enabled: true
+      pipeline: "metrics"
+
+    # Configures the collector to expose zPages for debugging
+    zpages:
+      enabled: true
+
+    # Configures the collector to expose pprof for profiling
+    pprof:
+      enabled: true
+
+    # Configuration for the batch processor
+    batch:
+      enabled: true
+
+    # Configures the collector to export data to Coralogix
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    # Configures the collector to receive OTLP data
+    otlpReceiver:
+      enabled: true
+
+  config:
+    processors:
+      tail_sampling:
+        policies:
+          [
+            {
+              name: errors-policy,
+              type: status_code,
+              status_code: {status_codes: [ERROR]}
+            },
+            {
+              name: randomized-policy,
+              type: probabilistic,
+              probabilistic: {sampling_percentage: 10}
+            },
+          ]
+    service:
+      telemetry:
+        logs:
+          level: "{{ .Values.global.logLevel }}"
+      pipelines:
+        metrics:
+          exporters: []
+          processors:
+            - memory_limiter
+        traces:
+          exporters: []
+          processors:
+            - memory_limiter
+            - tail_sampling
           # receivers: []
