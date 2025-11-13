@@ -14,13 +14,13 @@ on:
         default: "otel-supervised-collector"
         type: string
       registry_org:
-          description: "Container registry and organization"
-          required: false
-          default: "docker.io/coralogixrepo"
-          type: choice
-          options:
-            - docker.io/coralogixrepo
-            - cgx.jfrog.io/cgx-docker-repo
+        description: "Container registry and organization"
+        required: false
+        default: "docker.io/coralogixrepo"
+        type: choice
+        options:
+          - docker.io/coralogixrepo
+          - cgx.jfrog.io/cgx-docker-prod
 env:
   IMAGE_NAME: ${{ github.event.inputs.image_name || 'otel-supervised-collector' }}
   REGISTRY_ORG: ${{ github.event.inputs.registry_org || 'docker.io/coralogixrepo' }}
