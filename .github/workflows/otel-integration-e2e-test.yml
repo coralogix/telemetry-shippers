@@ -1,4 +1,6 @@
 name: Otel Integration Helm Lint And Install Test
+permissions:
+  contents: read
 
 on:
   pull_request:
