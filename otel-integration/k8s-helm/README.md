@@ -1,3 +1,5 @@
+<!-- split path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md" -->
+
 # Kubernetes observability using OpenTelemetry
 
 Coralogix offers **Kubernetes Observability using OpenTelemetry** for comprehensive Kubernetes and application observability. Using our [OpenTelemetry Chart](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm), the integration enables you to simplify the collection of logs, metrics, and traces from the running application in your pods to the cluster-level components of your Kubernetes cluster, while enabling our [Kubernetes Dashboard](https://coralogix.com/docs/user-guides/monitoring-and-insights/kubernetes-dashboard/kubernetes-dashboard/).
@@ -85,6 +87,9 @@ If collecting these metrics is not required, you can disable them by setting `gl
 View our **basic configuration** instructions [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
 
 **Advanced configuration** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/).
+
+<!-- /split -->
+<!-- split path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md" -->
 
 # Kubernetes Complete Observability: Basic configuration
 
@@ -205,6 +210,9 @@ index.go:366: skipping loading invalid entry for chart "otel-integration" \<vers
 ```
 
 This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
+
+<!-- /split -->
+<!-- split path="kubernetes-observability/advanced-configuration/index.md" -->
 
 # Kubernetes complete observability: Advanced configuration
 
@@ -1374,6 +1382,9 @@ The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provid
 
 To enable the Coralogix Operator, set `coralogix-operator.enabled` to `true` in the `values.yaml` file.
 
+<!-- /split -->
+<!-- split path="kubernetes-observability/how-to-use-it/index.md" -->
+
 # How to use it
 
 ## Metrics
@@ -1758,6 +1769,9 @@ Example:
 "msg":"failed getting host info","otelcol.component.id":"opamp","otelcol.component.kind":"Extension","error":"The system cannot find the file specified.","
 ```
 
+<!-- /split -->
+<!-- split path="kubernetes-observability/troubleshooting/index.md" -->
+
 # Troubleshooting
 
 ## Limits & quotas
@@ -1881,6 +1895,9 @@ service:
               protocol: grpc/protobuf
               endpoint: ${env:MY_POD_IP}:4317
 ```
+
+<!-- /split -->
+<!-- split path="kubernetes-observability/filtering-and-reducing-costs/index.md" -->
 
 # Filtering and reducing costs
 
@@ -2025,6 +2042,9 @@ processors:
         - resource.attributes["my_label"] == "abc123"
 ```
 
+<!-- /split -->
+<!-- split path="kubernetes-observability/performance-of-the-collector/index.md" -->
+
 # Performance of the Collector
 
 ## Picking the right tracing SDK span processor
@@ -2046,6 +2066,9 @@ In addition, it improved the buffer performance of the collector, when we used t
 import BatchSpanProcessor from "@opentelemetry/sdk-trace-base";
 tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 ```
+
+<!-- /split -->
+<!-- split path="kubernetes-observability/infrastructure-monitoring/index.md" -->
 
 # Infrastructure monitoring
 
@@ -2080,6 +2103,9 @@ processors:
 ```
 
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
+
+<!-- /split -->
+<!-- split path="kubernetes-observability/integration-presets/index.md" -->
 
 # Integration presets
 
@@ -2173,6 +2199,11 @@ Optional settings:
       mountPath: "/var/log/mysql"
 ```
 
+<!-- /split -->
+<!-- split path="kubernetes-observability/dependencies/index.md" -->
+
 # Dependencies
 
 This chart uses the [openetelemetry-collector](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) Helm chart.
+
+<!-- /split -->
