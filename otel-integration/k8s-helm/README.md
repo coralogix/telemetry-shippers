@@ -1,4 +1,4 @@
-<!-- split path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md" -->
+<!-- split path=&#34;kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md&#34; -->
 
 # Kubernetes observability using OpenTelemetry
 
@@ -89,7 +89,8 @@ View our **basic configuration** instructions [here](https://coralogix.com/docs/
 **Advanced configuration** instructions can be found [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/advanced-configuration/).
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md&#34; -->
 
 # Kubernetes Complete Observability: Basic configuration
 
@@ -212,7 +213,8 @@ index.go:366: skipping loading invalid entry for chart "otel-integration" \<vers
 This is a known validation bug in Helm (see this [issue](https://github.com/helm/helm/issues/12748)). The warning messages do not impact the installation process, and the chart will be installed successfully. To avoid these warnings, we recommend upgrading to the latest Helm version or using a version that is not affected by this issue.
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/advanced-configuration/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/advanced-configuration/index.md&#34; -->
 
 # Kubernetes complete observability: Advanced configuration
 
@@ -1383,7 +1385,8 @@ The [Coralogix Operator](https://github.com/coralogix/coralogix-operator) provid
 To enable the Coralogix Operator, set `coralogix-operator.enabled` to `true` in the `values.yaml` file.
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/how-to-use-it/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/how-to-use-it/index.md&#34; -->
 
 # How to use it
 
@@ -1770,7 +1773,8 @@ Example:
 ```
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/troubleshooting/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/troubleshooting/index.md&#34; -->
 
 # Troubleshooting
 
@@ -1897,7 +1901,8 @@ service:
 ```
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/filtering-and-reducing-costs/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/filtering-and-reducing-costs/index.md&#34; -->
 
 # Filtering and reducing costs
 
@@ -2043,7 +2048,8 @@ processors:
 ```
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/performance-of-the-collector/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/performance-of-the-collector/index.md&#34; -->
 
 # Performance of the Collector
 
@@ -2068,7 +2074,8 @@ tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 ```
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/infrastructure-monitoring/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/infrastructure-monitoring/index.md&#34; -->
 
 # Infrastructure monitoring
 
@@ -2105,7 +2112,8 @@ processors:
 This configuration is filtering out any event that has the field `reason` with one of those values `BackoffLimitExceeded|FailedScheduling|Unhealthy`, for more information about the `filter` processor feel free to check the official documentation [here](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/filterprocessor).
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/integration-presets/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/integration-presets/index.md&#34; -->
 
 # Integration presets
 
@@ -2200,7 +2208,8 @@ Optional settings:
 ```
 
 <!-- /split -->
-<!-- split path="kubernetes-observability/dependencies/index.md" -->
+
+<!-- split path=&#34;kubernetes-observability/dependencies/index.md&#34; -->
 
 # Dependencies
 
