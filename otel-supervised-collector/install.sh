@@ -163,6 +163,12 @@ telemetry:
       - /var/log/opampsupervisor/opampsupervisor.log
 EOF
 
+- If you are using the env var syntax `${env:CORALOGIX_PRIVATE_KEY}`, you need to
+  add the env var at the end of `/etc/opampsupervisor/opampsupervisor.conf`:
+  sudo tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null <<'EOF'
+CORALOGIX_PRIVATE_KEY="<YOUR_CORALOGIX_PRIVATE_KEY>"
+EOF
+
 - Create a minimal Collector config if you don't have one yet:
     sudo tee /etc/opampsupervisor/collector.yaml >/dev/null <<'EOF'
 receivers:

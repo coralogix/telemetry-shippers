@@ -70,8 +70,12 @@ telemetry:
 
 IMPORTANT: You can only use the `${env:CORALOGIX_PRIVATE_KEY}` syntax in the
 configuration file to load it from an environment variable. Note that this will
-require additional changes in the systemd unit file to pass the environment
-variable to the Collector process.
+require additional changes in the `/etc/opampsupervisor/opampsupervisor.conf`
+file to pass the environment variable to the Supervisor process. Just append
+the following line to the file:
+```
+CORALOGIX_PRIVATE_KEY="<YOUR_CORALOGIX_PRIVATE_KEY>"
+```
 
 Now, create a basic empty configuration file for the Collector at `/etc/opampsupervisor/collector.yaml`:
 
