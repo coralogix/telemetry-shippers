@@ -115,7 +115,7 @@ Next steps:
 server:
   endpoint: "https://ingress.<YOUR_CORALOGIX_DOMAIN_URL>/opamp/v1"
   headers:
-    Authorization: "Bearer $${env:CORALOGIX_PRIVATE_KEY}"
+    Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
   tls:
     insecure_skip_verify: true
 
@@ -146,7 +146,7 @@ agent:
 
   # This adds env vars to the Collector process.
   env:
-    CORALOGIX_PRIVATE_KEY: "$${env:CORALOGIX_PRIVATE_KEY}"
+    CORALOGIX_PRIVATE_KEY: "${env:CORALOGIX_PRIVATE_KEY}"
 
 # The storage can be used for many things:
 # - It stores configuration sent by the OpAMP server so that new collector
