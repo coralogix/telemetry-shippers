@@ -4,7 +4,7 @@
 
 - A running Linux machine
   - Only Debian or RPM based Linux distributions are supported
-  - Only x86_64 architecture is supported (until the next official Collector release)
+  - Only amd64 and arm64 architectures are supported
 - `curl` and `tar` commands are available
 
 ## Installation
