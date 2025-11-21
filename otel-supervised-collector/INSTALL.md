@@ -20,9 +20,9 @@ Copy it or create a new one and edit it to your needs. Here's a handy example:
 
 ```yaml
 server:
-  endpoint: "https://<YOUR_CORALOGIX_DOMAIN_URL>/opamp/v1"
+  endpoint: "https://ingress.<YOUR_CORALOGIX_DOMAIN_URL>/opamp/v1"
   headers:
-    Authorization: "Bearer <YOUR_CORALOGIX_PRIVATE_KEY>"
+    Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
   tls:
     insecure_skip_verify: true
 
@@ -53,7 +53,7 @@ agent:
 
   # This adds env vars to the Collector process.
   env:
-    CORALOGIX_PRIVATE_KEY: "<YOUR_CORALOGIX_PRIVATE_KEY>"
+    CORALOGIX_PRIVATE_KEY: "${env:CORALOGIX_PRIVATE_KEY}"
 
 # The storage can be used for many things:
 # - It stores configuration sent by the OpAMP server so that new collector
@@ -68,22 +68,40 @@ telemetry:
       - /var/log/opampsupervisor/opampsupervisor.log
 ```
 
-IMPORTANT: You can only use the `${env:CORALOGIX_PRIVATE_KEY}` syntax in the
-configuration file to load it from an environment variable. Note that this will
-require additional changes in the `/etc/opampsupervisor/opampsupervisor.conf`
-file to pass the environment variable to the Supervisor process. Just append
-the following line to the file:
-```
+Now append the `CORALOGIX_PRIVATE_KEY` environment variable to the
+`/etc/opampsupervisor/opampsupervisor.conf` file to pass the environment
+variable to the Supervisor process:
+
+```sh
 CORALOGIX_PRIVATE_KEY="<YOUR_CORALOGIX_PRIVATE_KEY>"
 ```
 
 Now, create a basic empty configuration file for the Collector at `/etc/opampsupervisor/collector.yaml`:
 
 ```yaml
-receivers: {}
-processors: {}
-exporters: {}
-service: {}
+receivers:
+  nop:
+exporters:
+  nop:
+extensions:
+  health_check:
+    endpoint: 127.0.0.1:13133
+service:
+  extensions:
+    - health_check
+  telemetry:
+    logs:
+      encoding: json
+  pipelines:
+    traces:
+      receivers: [nop]
+      exporters: [nop]
+    metrics:
+      receivers: [nop]
+      exporters: [nop]
+    logs:
+      receivers: [nop]
+      exporters: [nop]
 ```
 
 # Running it
