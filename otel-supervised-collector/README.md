@@ -58,7 +58,7 @@ testing purposes and are not part of the released image.
 ### Configuration variables
 
 | Variable             | Description                            | Default                     |
-|----------------------|----------------------------------------|-----------------------------|
+| -------------------- | -------------------------------------- | --------------------------- |
 | `IMAGE_NAME`         | Container image name                   | `otel-supervised-collector` |
 | `IMAGE_TAG`          | Container image tag                    | `latest`                    |
 | `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | `0.140.1`                   |
