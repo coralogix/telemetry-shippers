@@ -21,6 +21,11 @@ The script will:
 3. Configure the Supervisor to connect to Coralogix
 4. Create a default Collector configuration
 
+- By default the script fetches the latest recommended version from this repository's `master` branch.
+  If that network fetch fails or you want to pin a specific release, set the `VERSION` environment
+  variable before running the script, e.g. `VERSION=0.140.1 ./install.sh`. This bypasses the fetch
+  and uses the value you provide.
+
 ## Configuration
 
 The installation script sets up the initial configuration at `/etc/opampsupervisor/config.yaml`.

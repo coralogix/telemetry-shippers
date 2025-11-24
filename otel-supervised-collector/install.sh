@@ -1,9 +1,9 @@
 #!/bin/sh
 set -eu
 
-DEFAULT_VERSION="${VERSION:-0.140.1}"
-SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_VERSION}"
-COLLECTOR_VERSION="${COLLECTOR_VERSION:-$SUPERVISOR_VERSION}"
+DEFAULT_VERSION=""
+SUPERVISOR_VERSION=""
+COLLECTOR_VERSION=""
 
 ARCH=$(uname -m)
 # if arch is aarch64, change to arm64
@@ -26,6 +26,16 @@ require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     fail "Missing required command: $1"
   fi
+}
+
+fetch_default_version() {
+  version_url="https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-supervised-collector/CURRENT_VERSION"
+  version=$(curl -fsSL "$version_url") || fail "Unable to fetch default version from $version_url. Set VERSION and rerun to skip fetching."
+  version=$(printf "%s" "$version" | tr -d '[:space:]')
+  if [ -z "$version" ]; then
+    fail "Fetched default version is empty from $version_url. Set VERSION and rerun to skip fetching."
+  fi
+  printf "%s" "$version"
 }
 
 ensure_sudo() {
@@ -243,6 +253,10 @@ main() {
   require_cmd uname
   require_cmd tar
   require_cmd curl
+
+  DEFAULT_VERSION="${VERSION:-$(fetch_default_version)}"
+  SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_VERSION}"
+  COLLECTOR_VERSION="${COLLECTOR_VERSION:-$SUPERVISOR_VERSION}"
 
   check_arch
   ensure_sudo

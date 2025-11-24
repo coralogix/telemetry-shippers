@@ -3,8 +3,8 @@
 # Default values
 IMAGE_NAME ?= otel-supervised-collector
 IMAGE_TAG ?= latest
-COLLECTOR_VERSION ?= 0.140.1
-SUPERVISOR_VERSION ?= 0.140.1
+SUPERVISOR_VERSION ?= $(shell cat CURRENT_VERSION)
+COLLECTOR_VERSION ?= $(SUPERVISOR_VERSION)
 PLATFORMS ?= linux/amd64,linux/arm64
 
 # Docker build arguments

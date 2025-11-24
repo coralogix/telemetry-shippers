@@ -57,14 +57,14 @@ testing purposes and are not part of the released image.
 
 ### Configuration variables
 
-| Variable             | Description                            | Default                     |
-|----------------------|----------------------------------------|-----------------------------|
-| `IMAGE_NAME`         | Container image name                   | `otel-supervised-collector` |
-| `IMAGE_TAG`          | Container image tag                    | `latest`                    |
-| `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | `0.140.1`                   |
-| `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `0.140.1`                   |
-| `REGISTRY`           | Container registry (optional)          | (empty)                     |
-| `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`   |
+| Variable             | Description                            | Default                      |
+|----------------------|----------------------------------------|------------------------------|
+| `IMAGE_NAME`         | Container image name                   | `otel-supervised-collector`  |
+| `IMAGE_TAG`          | Container image tag                    | `latest`                     |
+| `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `$(cat CURRENT_VERSION)`     |
+| `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | Same as `SUPERVISOR_VERSION` |
+| `REGISTRY`           | Container registry (optional)          | (empty)                      |
+| `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`    |
 
 ### Available targets
 
@@ -86,13 +86,13 @@ make build
 #### Build with a custom OpenTelemetry Collector version
 
 ```bash
-make build COLLECTOR_VERSION=0.140.1
+make build COLLECTOR_VERSION=$(cat CURRENT_VERSION)
 ```
 
 #### Build with a custom OpAMP Supervisor version
 
 ```bash
-make build SUPERVISOR_VERSION=0.140.1
+make build SUPERVISOR_VERSION=$(cat CURRENT_VERSION)
 ```
 
 #### Build with custom image tag
@@ -102,7 +102,7 @@ make build SUPERVISOR_VERSION=0.140.1
 make build IMAGE_TAG=v1.0.0
 
 # Build with all custom settings
-make build IMAGE_TAG=v1.0.0 IMAGE_NAME=supervised-collector COLLECTOR_VERSION=0.140.1
+make build IMAGE_TAG=v1.0.0 IMAGE_NAME=supervised-collector COLLECTOR_VERSION=$(cat CURRENT_VERSION)
 ```
 
 #### Multi-Architecture Builds
@@ -115,7 +115,7 @@ make build-multiarch
 make build-multiarch PLATFORMS=linux/amd64,linux/arm64,linux/arm/v7
 
 # Build multi-arch with specific OTEL version and push
-make build-multiarch-push COLLECTOR_VERSION=0.140.1
+make build-multiarch-push COLLECTOR_VERSION=$(cat CURRENT_VERSION)
 ```
 
 > **Note:**
