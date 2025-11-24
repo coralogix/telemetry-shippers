@@ -105,19 +105,16 @@ install_collector() {
   $SUDO mv -f ./otelcol-contrib /usr/local/bin/otelcol-contrib
 }
 
-print_summary() {
-  cat <<'SUMMARY'
-Installation complete.
+configure_supervisor() {
+  log "Configuring OpAMP Supervisor..."
+  $SUDO mkdir -p /etc/opampsupervisor
 
-Next steps:
-- Copy the example supervisor config:
-    sudo cp /etc/opampsupervisor/config.example.yaml /etc/opampsupervisor/config.yaml
-- Edit the supervisor config to your needs. Here's a handy example:
-    sudo tee /etc/opampsupervisor/config.yaml >/dev/null <<'EOF'
+  # Create config.yaml
+  $SUDO tee /etc/opampsupervisor/config.yaml >/dev/null <<EOF
 server:
-  endpoint: "https://ingress.<YOUR_CORALOGIX_DOMAIN_URL>/opamp/v1"
+  endpoint: "https://ingress.${CORALOGIX_DOMAIN}/opamp/v1"
   headers:
-    Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
+    Authorization: "Bearer \${env:CORALOGIX_PRIVATE_KEY}"
   tls:
     insecure_skip_verify: true
 
@@ -148,7 +145,7 @@ agent:
 
   # This adds env vars to the Collector process.
   env:
-    CORALOGIX_PRIVATE_KEY: "${env:CORALOGIX_PRIVATE_KEY}"
+    CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
 
 # The storage can be used for many things:
 # - It stores configuration sent by the OpAMP server so that new collector
@@ -163,14 +160,16 @@ telemetry:
       - /var/log/opampsupervisor/opampsupervisor.log
 EOF
 
-- If you are using the env var syntax `${env:CORALOGIX_PRIVATE_KEY}`, you need to
-  add the env var at the end of `/etc/opampsupervisor/opampsupervisor.conf`:
-  sudo tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null <<'EOF'
-CORALOGIX_PRIVATE_KEY="<YOUR_CORALOGIX_PRIVATE_KEY>"
+  # Configure env var for the service
+  log "Configuring Supervisor environment variables..."
+  $SUDO tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null <<EOF
+CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}"
 EOF
+}
 
-- Create a minimal Collector config if you don't have one yet:
-    sudo tee /etc/opampsupervisor/collector.yaml >/dev/null <<'EOF'
+configure_collector() {
+  log "Creating default Collector configuration..."
+  $SUDO tee /etc/opampsupervisor/collector.yaml >/dev/null <<'EOF'
 receivers:
   nop:
 exporters:
@@ -195,14 +194,33 @@ service:
       receivers: [nop]
       exporters: [nop]
 EOF
-- Start and verify the service:
-    sudo systemctl start opampsupervisor
+}
+
+start_service() {
+  log "Starting OpAMP Supervisor service..."
+  $SUDO systemctl daemon-reload
+  $SUDO systemctl enable opampsupervisor
+  $SUDO systemctl restart opampsupervisor
+}
+
+print_summary() {
+  cat <<'SUMMARY'
+Installation and configuration complete. Service has been started.
+
+You can check the status and logs with:
     sudo systemctl status opampsupervisor --no-pager
     sudo tail -f /var/log/opampsupervisor/opampsupervisor.log
 SUMMARY
 }
 
 main() {
+  if [ -z "${CORALOGIX_PRIVATE_KEY:-}" ]; then
+    fail "CORALOGIX_PRIVATE_KEY environment variable is required."
+  fi
+  if [ -z "${CORALOGIX_DOMAIN:-}" ]; then
+    fail "CORALOGIX_DOMAIN environment variable is required."
+  fi
+
   require_cmd uname
   require_cmd tar
   require_cmd curl
@@ -217,6 +235,10 @@ main() {
 
   install_supervisor "$pkg_type"
   install_collector
+
+  configure_supervisor
+  configure_collector
+  start_service
 
   print_summary
 }
