@@ -3,8 +3,8 @@
 # Default values
 IMAGE_NAME ?= otel-supervised-collector
 IMAGE_TAG ?= latest
-COLLECTOR_VERSION ?= 0.140.1
-SUPERVISOR_VERSION ?= 0.140.1
+SUPERVISOR_VERSION ?= $(shell cat CURRENT_VERSION)
+COLLECTOR_VERSION ?= $(SUPERVISOR_VERSION)
 PLATFORMS ?= linux/amd64,linux/arm64
 
 # Docker build arguments
@@ -49,8 +49,8 @@ help:
 	@echo 'Variables:'
 	@echo '  IMAGE_NAME             Docker image name (default: otel-supervised-collector)'
 	@echo '  IMAGE_TAG              Docker image tag (default: latest)'
-	@echo '  COLLECTOR_VERSION      OpenTelemetry Collector version (default: 0.140.1)'
-	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: 0.140.1)'
+	@echo '  COLLECTOR_VERSION      OpenTelemetry Collector version (default: contents of CURRENT_VERSION)'
+	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: contents of CURRENT_VERSION)'
 	@echo '  PLATFORMS              Target platforms for multi-arch builds (default: linux/amd64,linux/arm64)'
 	@echo ''
 	@echo 'Examples:'
