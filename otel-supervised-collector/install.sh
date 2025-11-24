@@ -162,6 +162,10 @@ EOF
 
   # Configure env var for the service
   log "Configuring Supervisor environment variables..."
+  # Ensure idempotency: remove existing key if present
+  if [ -f /etc/opampsupervisor/opampsupervisor.conf ]; then
+    $SUDO sed -i '/CORALOGIX_PRIVATE_KEY/d' /etc/opampsupervisor/opampsupervisor.conf
+  fi
   $SUDO tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null <<EOF
 CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}"
 EOF
@@ -213,6 +217,21 @@ You can check the status and logs with:
 SUMMARY
 }
 
+check_and_remove_installed() {
+  pkg_type="$1"
+  if [ "$pkg_type" = "deb" ]; then
+    if dpkg -s opampsupervisor >/dev/null 2>&1; then
+      log "Warning: opampsupervisor is already installed. Removing it..."
+      $SUDO dpkg -P opampsupervisor || $SUDO dpkg -r opampsupervisor
+    fi
+  else
+    if rpm -q opampsupervisor >/dev/null 2>&1; then
+      log "Warning: opampsupervisor is already installed. Removing it..."
+      $SUDO rpm -e opampsupervisor
+    fi
+  fi
+}
+
 main() {
   if [ -z "${CORALOGIX_PRIVATE_KEY:-}" ]; then
     fail "CORALOGIX_PRIVATE_KEY environment variable is required."
@@ -228,6 +247,8 @@ main() {
   check_arch
   ensure_sudo
   pkg_type=$(detect_pkg_type)
+
+  check_and_remove_installed "$pkg_type"
 
   workdir=$(mktemp -d 2>/dev/null || mktemp -d -t opampsupervisor)
   trap 'rm -rf "$workdir"' EXIT INT HUP TERM
