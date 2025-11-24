@@ -20,15 +20,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
       - name: Check for version change
         id: check
         run: |
+          BEFORE_SHA="${{ github.event.before }}"
+
+          # If for some reason BEFORE_SHA is empty (e.g. new branch), default to true
+          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+             echo "New branch or unknown state, assuming change."
+             echo "changed=true" >> "$GITHUB_OUTPUT"
+             exit 0
+          fi
+
+          echo "Fetching previous commit $BEFORE_SHA..."
+          git fetch origin "$BEFORE_SHA" --depth=1
+
+          echo "Comparing versions between $BEFORE_SHA and HEAD"
+
           # Get previous version
-          # Use || true to handle case where file didn't exist in previous commit
-          git show HEAD~1:otel-supervised-collector/CURRENT_VERSION > old_ver 2>/dev/null || echo "" > old_ver
+          git show "$BEFORE_SHA":otel-supervised-collector/CURRENT_VERSION > old_ver 2>/dev/null || echo "" > old_ver
 
           # Get current version
           cat otel-supervised-collector/CURRENT_VERSION > new_ver
