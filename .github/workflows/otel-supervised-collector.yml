@@ -16,13 +16,42 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for version change
+        id: check
+        run: |
+          # Get previous version
+          # Use || true to handle case where file didn't exist in previous commit
+          git show HEAD~1:otel-supervised-collector/CURRENT_VERSION > old_ver 2>/dev/null || echo "" > old_ver
+
+          # Get current version
+          cat otel-supervised-collector/CURRENT_VERSION > new_ver
+
+          # Compare stripping all whitespace
+          OLD=$(tr -d '[:space:]' < old_ver)
+          NEW=$(tr -d '[:space:]' < new_ver)
+
+          if [ "$OLD" != "$NEW" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version changed from '$OLD' to '$NEW'"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No version change detected (ignoring whitespace)"
+          fi
+
       - name: Trigger Release workflow (CGX JFrog)
+        if: steps.check.outputs.changed == 'true'
         run: |
           gh workflow run otel-supervised-collector-release.yml \
            --ref master \
            -f push_image=true \
            -f registry_org=cgx.jfrog.io/coralogix-docker-images
       - name: Trigger Release workflow (Docker Hub)
+        if: steps.check.outputs.changed == 'true'
         run: |
           gh workflow run otel-supervised-collector-release.yml \
            --ref master \
