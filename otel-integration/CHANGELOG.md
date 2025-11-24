@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.240 / 2025-11-24
+- [CHORE] Update Target Allocator image to v0.140.0
+- [CHORE] Update Windows image to v0.140.1
+
 ### v0.0.239 / 2025-11-21
 - [CHORE] Bump Collector to 0.140.1
 
