@@ -12,9 +12,7 @@
 Use the `install.sh` script to install the Supervised Collector. You need to provide your Coralogix Private Key and Domain.
 
 ```sh
-export CORALOGIX_PRIVATE_KEY="<YOUR_PRIVATE_KEY>"
-export CORALOGIX_DOMAIN="<YOUR_DOMAIN>" # e.g. coralogix.com, coralogix.us, etc.
-curl -fsSL https://raw.githubusercontent.com/coralogix/otel-supervised-collector/master/install.sh | sh
+CORALOGIX_PRIVATE_KEY="<YOUR_PRIVATE_KEY>" CORALOGIX_DOMAIN="<YOUR_DOMAIN>" bash -c "$(curl -fsSL https://raw.githubusercontent.com/coralogix/otel-supervised-collector/master/install.sh)"
 ```
 
 The script will:
