@@ -1,5 +1,6 @@
-ARG COLLECTOR_VERSION=0.140.1
-ARG SUPERVISOR_VERSION=0.140.1
+# Version args must be provided (e.g., via Makefile which reads CURRENT_VERSION)
+ARG COLLECTOR_VERSION
+ARG SUPERVISOR_VERSION
 
 FROM alpine:3.22 AS certs
 RUN apk --update add ca-certificates
