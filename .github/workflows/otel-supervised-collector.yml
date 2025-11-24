@@ -1,4 +1,6 @@
 name: OpenTelemetry-Supervised-Collector
+permissions:
+  contents: read
 
 on:
   push:
