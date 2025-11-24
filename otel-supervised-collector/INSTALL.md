@@ -28,7 +28,6 @@ It uses the provided environment variables to authenticate with Coralogix.
 
 You can customize the collector configuration by editing `/etc/opampsupervisor/collector.yaml`.
 
-
 # Running it
 
 To run the Supervisor, use the following command:
