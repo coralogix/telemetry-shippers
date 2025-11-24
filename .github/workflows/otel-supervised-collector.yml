@@ -1,72 +1,30 @@
 name: OpenTelemetry-Supervised-Collector
 
 on:
-  workflow_dispatch:
-    inputs:
-      push_image:
-        description: "Push image to registry"
-        required: false
-        default: false
-        type: boolean
-      image_name:
-        description: "Image name (no organization or tag should be provided)"
-        required: false
-        default: "otel-supervised-collector"
-        type: string
-      registry_org:
-        description: "Container registry and organization"
-        required: false
-        default: "docker.io/coralogixrepo"
-        type: choice
-        options:
-          - docker.io/coralogixrepo
-          - cgx.jfrog.io/coralogix-docker-images
-env:
-  IMAGE_NAME: ${{ github.event.inputs.image_name || 'otel-supervised-collector' }}
-  REGISTRY_ORG: ${{ github.event.inputs.registry_org || 'docker.io/coralogixrepo' }}
+  push:
+    branches:
+      - master
+    paths:
+    - 'otel-supervised-collector/CURRENT_VERSION'
 
 jobs:
-  build:
+  trigger-release:
+    permissions:
+      actions: write
+      contents: read
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Login to DockerHub
-        if: github.event.inputs.push_image == 'true' && github.event.inputs.registry_org == 'docker.io/coralogixrepo'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Login to CGX JFrog
-        if: github.event.inputs.push_image == 'true' && github.event.inputs.registry_org == 'cgx.jfrog.io/coralogix-docker-images'
-        uses: docker/login-action@v3
-        with:
-          registry: cgx.jfrog.io
-          username: ${{ secrets.JFROG_USER }}
-          password: ${{ secrets.JFROG_PASSWORD }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set image version
-        id: set-image-version
+      - name: Trigger Release workflow (CGX JFrog)
         run: |
-          version=$(grep -E '^ARG COLLECTOR_VERSION=' ./otel-supervised-collector/Dockerfile | cut -d'=' -f2)
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "Detected collector version: ${version}"
-
-      - name: Build and Push Supervised Collector Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./otel-supervised-collector/
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event.inputs.push_image == 'true' }}
-          tags: |
-            ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          gh workflow run otel-supervised-collector-release.yml \
+           --ref master \
+           -f push_image=true \
+           -f registry_org=cgx.jfrog.io/coralogix-docker-images
+      - name: Trigger Release workflow (Docker Hub)
+        run: |
+          gh workflow run otel-supervised-collector-release.yml \
+           --ref master \
+           -f push_image=true \
+           -f registry_org=docker.io/coralogixrepo
