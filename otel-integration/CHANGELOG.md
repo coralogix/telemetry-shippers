@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.242 / 2025-11-25
+- [Feature] add `k8s.container.name` attribute to profiles
+- [Feature] update profiler to [v0.0.202547](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/releases/tag/v0.0.202547) to support proto v1.9.0
+
 ### v0.0.241 / 2025-11-25
 - [Fix] Fix cluster name rendering in Supervisor configuration.
 
