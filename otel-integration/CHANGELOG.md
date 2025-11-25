@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.241 / 2025-11-25
+- [Fix] Fix cluster name rendering in Supervisor configuration.
+
 ### v0.0.240 / 2025-11-24
 - [CHORE] Update Target Allocator image to v0.140.0
 - [CHORE] Update Windows image to v0.140.1
