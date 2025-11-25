@@ -11,9 +11,14 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.119.8"
+    version: "0.120.5"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
+  - name: opentelemetry-collector
+    alias: opentelemetry-gateway
+    version: "0.120.5"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-gateway.enabled
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
