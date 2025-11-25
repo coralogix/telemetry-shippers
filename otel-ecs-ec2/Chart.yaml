@@ -1,7 +1,7 @@
 apiVersion: v2
 name: ecs-ec2-integration
 description: ECS-EC2 OpenTelemetry Integration
-version: 0.0.4
+version: 0.0.5
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent
