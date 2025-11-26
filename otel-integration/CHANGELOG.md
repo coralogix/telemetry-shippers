@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.244 / 2025-11-26
+- [Change] Disable database statement sanitization in the span metrics sanitization preset by default. Currently sanitization is over agressive and replaces everything with a *, instead of obfuscating sensitive data.
+- [Feat] Add `nodeSelector` option to `targetAllocator` preset.
+
 ### v0.0.243 / 2025-11-26
 - [Change] Narrow default span metrics database sanitization to SQL, Redis, and Memcached statements.
 - [Fix] Grant EndpointSlice RBAC permissions when enabling the Kubernetes resolver for the loadbalancing exporter.
