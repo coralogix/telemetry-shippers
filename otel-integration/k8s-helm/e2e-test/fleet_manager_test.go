@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -25,7 +26,12 @@ func TestE2E_FleetManager(t *testing.T) {
 		testServerAddr = hostedAddr
 	}
 
-	err = testServer.start(fmt.Sprintf("%s:4320", testServerAddr))
+	listenAddr := testServerAddr
+	if _, err := net.ResolveIPAddr("ip", testServerAddr); err != nil {
+		listenAddr = "0.0.0.0"
+	}
+
+	err = testServer.start(fmt.Sprintf("%s:4320", listenAddr))
 	assert.NoError(t, err)
 	t.Cleanup(func() {
 		_ = testServer.stop()
