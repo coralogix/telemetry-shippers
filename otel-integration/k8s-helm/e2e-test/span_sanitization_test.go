@@ -225,6 +225,16 @@ func buildSanitizationSpanInputs(testID string) ([]syntheticSpan, []spanSanitiza
 		sanitized   string
 	}{
 		{
+			serviceName: service("okey"),
+			name:        "okey-dokey-0",
+			kind:        trace.SpanKindClient,
+			attrs: []attribute.KeyValue{
+				attribute.String("http.method", "GET"),
+				attribute.String("http.request.method", "GET"),
+			},
+			sanitized: "okey-dokey-0",
+		},
+		{
 			serviceName: service("http"),
 			name:        "GET /orders/123456/detail/7890",
 			kind:        trace.SpanKindServer,
