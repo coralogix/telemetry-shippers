@@ -335,6 +335,8 @@ opentelemetry-agent:
 
 The multi-instanced OpenTelemetry Agent can be deployed across multiple nodes as a `daemonset`. It provides presets for collecting host metrics, Kubernetes attributes, and Kubelet metrics. When logs, metrics, and traces are generated from a pod, the collector enriches them with the metadata associated with the hosting machine. This metadata is very useful for linking infrastructure issues with performance degradation in services.
 
+Enabling the **transactions preset** groups all spans in a trace into Coralogix transactions, automatically tagging spans with the `cgx.transaction` identifier and marking transaction roots via `cgx.transaction.root`. This unlocks the transactions and service flows views without any extra manual configuration.
+
 For more information on presets, refer to the documentation in [values.yaml](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml#L129)
 
 ```yaml
@@ -357,6 +359,10 @@ opentelemetry-agent:
     # KubeletMetrics enables the kubeletstats receiver to collect node, pod and container metrics from the Kubernetes API. It also adjusts the ClusterRole with appropriate RBAC roles.
     kubeletMetrics:
       enabled: true
+    # Transactions preset groups all spans in a trace and enables the Coralogix transaction processor.
+    transactions:
+      enabled: true
+      waitDuration: 30s
 ```
 
 For example, setting the `kubeletMetrics` preset to `true` will configure the `kubeletstats` receiver to pull node, pod, container, and volume metrics from the API server of the host's kubelet. The metrics will be sent to the metric pipeline.
