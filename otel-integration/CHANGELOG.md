@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.246 / 2025-12-02
+- [Change] Bump OBI image to v0.2.0
+- [Fix] Fixes in OBI default config
+
 ### v0.0.245 / 2025-12-01
 - [Fix] Increase the Supervisor config apply timeout to 30 seconds (previously 5 seconds). This should match the default heartbeat interval.
 
