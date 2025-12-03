@@ -79,6 +79,65 @@ func TestE2E_TransactionsPreset(t *testing.T) {
 	t.Log("Transaction spans verified successfully")
 }
 
+func TestE2E_TransactionsPreset_Disabled(t *testing.T) {
+	// By default, we enable transactions. We have a separate test to disable
+	// transactions. This test should be run only in that case.
+	if os.Getenv("RUN_TRANSACTIONS_DISABLED_E2E") != "1" {
+		t.Skip("set RUN_TRANSACTIONS_DISABLED_E2E=1 to run this test")
+	}
+
+	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+
+	kubeconfigPath := testKubeConfig
+	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {
+		kubeconfigPath = kubeConfigFromEnv
+	}
+
+	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
+	require.NoError(t, err)
+
+	tracesConsumer := new(consumertest.TracesSink)
+	shutdownSinks := StartUpSinks(t, ReceiverSinks{
+		Traces: &TraceSinkConfig{
+			Consumer: tracesConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4321,
+			},
+		},
+	})
+	defer shutdownSinks()
+
+	agentNamespace := agentCollectorNamespace()
+	t.Logf("Waiting for agent collector in namespace=%s", agentNamespace)
+	waitForAgentCollectorPod(t, k8sClient, agentNamespace)
+	t.Log("Agent collector is running with transactions preset disabled")
+
+	localPort, stopPF := startPortForward(
+		t,
+		kubeconfigPath,
+		agentNamespace,
+		fmt.Sprintf("svc/%s", agentServiceName()),
+		4317,
+	)
+	defer stopPF()
+	t.Logf("Port forward established on 127.0.0.1:%d -> %s/%s:4317", localPort, agentNamespace, agentServiceName())
+
+	ctx, cancel := context.WithTimeout(context.Background(), transactionEmitTimeout)
+	defer cancel()
+
+	serviceName := fmt.Sprintf("transactions-disabled-%s", uuid.NewString()[:8])
+	t.Logf("Emitting trace for service=%s via endpoint=127.0.0.1:%d", serviceName, localPort)
+	traceID, err := emitTransactionTrace(ctx, fmt.Sprintf("127.0.0.1:%d", localPort), serviceName)
+	require.NoError(t, err)
+	t.Logf("Trace emitted (traceID=%s)", traceID.String())
+
+	waitForTracesWithTimeout(t, 1, tracesConsumer, transactionTraceWaitTimeout)
+	t.Log("Traces received, verifying absence of transaction attributes")
+
+	verifyTransactionSpansAbsence(t, tracesConsumer, serviceName, traceID)
+	t.Log("Transaction spans absence verified successfully")
+}
+
 func emitTransactionTrace(ctx context.Context, endpoint, serviceName string) (pcommon.TraceID, error) {
 	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithEndpoint(endpoint),
@@ -160,6 +219,42 @@ func verifyTransactionSpans(t *testing.T, sink *consumertest.TracesSink, service
 	}
 
 	require.Failf(t, "missing transaction spans", "expected spans for %s but none observed before timeout; most recent resources=%+v", serviceName, lastSamples)
+}
+
+func verifyTransactionSpansAbsence(t *testing.T, sink *consumertest.TracesSink, serviceName string, expectedTraceID pcommon.TraceID) {
+	t.Helper()
+
+	deadline := time.Now().Add(transactionTraceWaitTimeout)
+	var lastSamples []map[string]any
+
+	for time.Now().Before(deadline) {
+		spansByName, traceIDs, unmatched := collectTransactionSpans(sink.AllTraces(), serviceName)
+		if len(traceIDs) == 0 {
+			lastSamples = unmatched
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		require.Lenf(t, traceIDs, 1, "expected a single trace ID for %s spans, got %v", serviceName, traceIDs)
+		require.True(t, spansShareTraceID(spansByName, expectedTraceID), "not all spans belonged to the emitted trace")
+
+		for name, span := range spansByName {
+			txAttr, hasTransaction := span.Attributes().Get("cgx.transaction")
+			rootAttr, hasRoot := span.Attributes().Get("cgx.transaction.root")
+			if name == "transactions-prelabeled" {
+				require.Truef(t, hasTransaction, "pre-labeled span %q lost cgx.transaction attribute", name)
+				require.Equal(t, "pre-set-transaction", txAttr.AsString(), "unexpected pre-labeled transaction name")
+				require.Truef(t, hasRoot, "pre-labeled span %q lost cgx.transaction.root attribute", name)
+				require.True(t, rootAttr.Bool(), "pre-labeled span root marker must remain true")
+				continue
+			}
+			require.Falsef(t, hasTransaction, "span %q unexpectedly has cgx.transaction attribute", name)
+			require.Falsef(t, hasRoot, "span %q unexpectedly has cgx.transaction.root attribute", name)
+		}
+		return
+	}
+
+	require.Failf(t, "missing spans", "expected spans for %s but none observed before timeout; most recent resources=%+v", serviceName, lastSamples)
 }
 
 func collectTransactionSpans(batches []ptrace.Traces, serviceName string) (map[string]ptrace.Span, map[string]struct{}, []map[string]any) {

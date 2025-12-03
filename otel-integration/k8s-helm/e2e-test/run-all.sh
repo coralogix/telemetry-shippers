@@ -492,11 +492,65 @@ run_workflow_mode() {
         done
         log_error "Pod status:"
         kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
-    else
-        log_success "Workflow-mode tests PASSED (duration: ${workflow_duration}s)"
+        return $exit_code
     fi
 
-    return $exit_code
+    log_success "Workflow-mode tests PASSED (duration: ${workflow_duration}s)"
+
+    if ! run_transactions_disabled_test; then
+        return 1
+    fi
+
+    return 0
+}
+
+run_transactions_disabled_test() {
+    log_test "========================================"
+    log_test "Workflow Mode: Transactions Preset Disabled"
+    log_test "========================================"
+
+    uninstall_chart
+
+    local disabled_values="./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-transactions-disabled.yaml"
+    if ! install_chart "$disabled_values" "component=agent-collector"; then
+        log_error "Failed to install chart for transactions disabled workflow."
+        return 1
+    fi
+
+    export KUBECONFIG="${KUBECONFIG_PATH}"
+    export HOSTENDPOINT="${HOSTENDPOINT}"
+    export RUN_TRANSACTIONS_DISABLED_E2E=1
+
+    local test_start_time
+    test_start_time=$(date +%s)
+
+    (
+        cd "${E2E_TEST_DIR}" || exit 1
+        go clean -testcache
+        go test -v -run='^TestE2E_TransactionsPreset_Disabled$' ./...
+    )
+    local exit_code=$?
+    local test_end_time
+    test_end_time=$(date +%s)
+    local test_duration=$((test_end_time - test_start_time))
+
+    unset RUN_TRANSACTIONS_DISABLED_E2E
+
+    if [ $exit_code -ne 0 ]; then
+        log_error "Transactions preset disabled test FAILED (duration: ${test_duration}s, exit code: ${exit_code})"
+        log_warning "Collecting pod logs..."
+        for pod in $(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
+            log_error "===== Last 50 log lines for pod: $pod ====="
+            kubectl logs --tail=50 "$pod" 2>/dev/null || true
+            echo
+        done
+        log_error "Pod status:"
+        kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
+        return 1
+    fi
+
+    log_success "Transactions preset disabled test PASSED (duration: ${test_duration}s)"
+    return 0
 }
 
 # Print summary
@@ -541,6 +595,7 @@ main() {
         # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
         "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
         "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+        "TestE2E_TransactionsPreset_Disabled:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     )
 
     TOTAL_TESTS=${#test_configs[@]}
