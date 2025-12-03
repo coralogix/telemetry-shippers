@@ -50,7 +50,7 @@ jobs:
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml \
           -f ./e2e-test/testdata/values-e2e-cluster-collector.yaml
-          kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
       - name: Run E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
@@ -73,7 +73,7 @@ jobs:
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml \
           -f ./e2e-test/testdata/values-e2e-transactions-disabled.yaml
-          kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
       - name: Run transactions-disabled E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
