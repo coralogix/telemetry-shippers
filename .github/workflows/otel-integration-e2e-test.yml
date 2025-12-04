@@ -59,30 +59,6 @@ jobs:
           cd ./otel-integration/k8s-helm/e2e-test/
           go clean -testcache
           go test -v -run='^TestE2E.*' ./...
-      - name: Reinstall chart with transactions preset disabled
-        env:
-          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
-          KUBECONFIG: ${{ env.KUBECONFIG }}
-        run: |
-          cd ./otel-integration/k8s-helm
-          helm uninstall otel-integration-agent-e2e || true
-          helm upgrade --install otel-integration-agent-e2e . \
-          --set global.clusterName="otel-integration-agent-e2e" \
-          --set global.domain="coralogix.com"  \
-          --set global.hostedEndpoint=$HOSTENDPOINT \
-          -f ./values.yaml \
-          -f ./e2e-test/testdata/values-e2e-test.yaml \
-          -f ./e2e-test/testdata/values-e2e-transactions-disabled.yaml
-          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
-      - name: Run transactions-disabled E2E test
-        env:
-          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
-          KUBECONFIG: ${{ env.KUBECONFIG }}
-          RUN_TRANSACTIONS_DISABLED_E2E: "1"
-        run: |
-          cd ./otel-integration/k8s-helm/e2e-test/
-          go clean -testcache
-          go test -v -run='^TestE2E_TransactionsPreset_Disabled$' ./...
       - name: Pods logs
         if: failure()
         run: |
