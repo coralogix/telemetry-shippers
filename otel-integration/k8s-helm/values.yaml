@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.246"
+  version: "0.0.247"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -159,6 +159,10 @@ opentelemetry-agent:
       nodeFilter:
         enabled: true
 
+    kubernetesExtraMetrics:
+      enabled: true
+      perNode: true
+      scrapeAll: false
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
@@ -387,7 +391,7 @@ opentelemetry-cluster-collector:
         enabled: true
     kubernetesEvents:
       enabled: true
-    kubernetesExtraMetrics:
+    kubernetesApiServerMetrics:
       enabled: true
       scrapeAll: false
     otlpReceiver:

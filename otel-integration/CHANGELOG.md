@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.247 / 2025-12-04
+- [Breaking] Split `kubernetesExtraMetrics` preset: now only handles cAdvisor metrics scraping. API server scraping moved to `kubernetesApiServerMetrics` preset.
+- [Feat] Add `kubernetesApiServerMetrics` preset to scrape Kubernetes API server metrics separately from cAdvisor metrics.
+
 ### v0.0.246 / 2025-12-02
 - [Change] Bump OBI image to v0.2.0
 - [Fix] Fixes in OBI default config
