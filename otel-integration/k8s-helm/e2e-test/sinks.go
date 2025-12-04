@@ -130,7 +130,10 @@ func waitForMetrics(t *testing.T, entriesNum int, mc *consumertest.MetricsSink) 
 
 // waitForTraces waits for the specified number of traces to be received
 func waitForTraces(t *testing.T, entriesNum int, tc *consumertest.TracesSink) {
-	timeout := 10 * time.Minute
+	waitForTracesWithTimeout(t, entriesNum, tc, 10*time.Minute)
+}
+
+func waitForTracesWithTimeout(t *testing.T, entriesNum int, tc *consumertest.TracesSink, timeout time.Duration) {
 	require.Eventuallyf(t, func() bool {
 		count := len(tc.AllTraces())
 		t.Logf("Waiting for traces: got %d/%d", count, entriesNum)

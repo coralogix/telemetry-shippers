@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -20,12 +19,12 @@ func TestE2E_FleetManager(t *testing.T) {
 	testServer, err := newOpampTestServer()
 	assert.NoError(t, err)
 
-	testServerAddr := "localhost"
-	if hostedAddr := os.Getenv("HOSTENDPOINT"); hostedAddr != "" {
-		testServerAddr = hostedAddr
-	}
+	// Always listen on all interfaces so pods that connect through HOSTENDPOINT
+	// (for example host.docker.internal) can reach the test OpAMP server even if
+	// that hostname does not resolve locally.
+	listenAddr := "0.0.0.0:4320"
 
-	err = testServer.start(fmt.Sprintf("%s:4320", testServerAddr))
+	err = testServer.start(listenAddr)
 	assert.NoError(t, err)
 	t.Cleanup(func() {
 		_ = testServer.stop()

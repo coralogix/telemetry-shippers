@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -36,14 +37,49 @@ const (
 	serviceNameAttribute = "service.name"
 )
 
-func TestE2E_Agent(t *testing.T) {
+type agentScenarioResult struct {
+	logs      []plog.Logs
+	metrics   []pmetric.Metrics
+	traces    []ptrace.Traces
+	namespace string
+	testID    string
+}
 
-	//Check if the HOST_ENDPOINT is set
+var (
+	agentScenarioMu     sync.Mutex
+	cachedAgentScenario *agentScenarioResult
+)
+
+func TestE2E_Agent(t *testing.T) {
+	scenario := getAgentScenario(t)
+
+	checkSystemLogsAttributes(t, scenario.logs)
+	checkResourceMetrics(t, scenario.metrics)
+	checkTracesAttributes(t, scenario.traces, scenario.testID, scenario.namespace)
+}
+
+func getAgentScenario(t *testing.T) agentScenarioResult {
+	t.Helper()
+
+	agentScenarioMu.Lock()
+	defer agentScenarioMu.Unlock()
+
+	if cachedAgentScenario != nil {
+		return *cachedAgentScenario
+	}
+
+	scenario := collectAgentScenario(t)
+	cachedAgentScenario = &scenario
+	return scenario
+}
+
+func collectAgentScenario(t *testing.T) agentScenarioResult {
+	t.Helper()
+
 	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
 
 	testDataDir := filepath.Join("testdata")
 
-	// Get the kubeconfig path from env
 	kubeconfigPath := testKubeConfig
 	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {
 		kubeconfigPath = kubeConfigFromEnv
@@ -52,7 +88,6 @@ func TestE2E_Agent(t *testing.T) {
 	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
 	require.NoError(t, err)
 
-	// Create the namespace specific for the test
 	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
 	require.NoErrorf(t, err, "failed to read namespace object file %s", nsFile)
@@ -61,7 +96,6 @@ func TestE2E_Agent(t *testing.T) {
 
 	testNs := nsObj.GetName()
 
-	// Create a pod in the namespace to trigger the otelcol_otelsvc_k8s_pod_deleted metric
 	podFile := filepath.Join(testDataDir, "pod.yaml")
 	buf, err = os.ReadFile(podFile)
 	require.NoErrorf(t, err, "failed to read pod object file %s", podFile)
@@ -122,10 +156,40 @@ func TestE2E_Agent(t *testing.T) {
 	waitForMetrics(t, 20, metricsConsumer)
 	waitForTraces(t, 10, tracesConsumer)
 
-	checkSystemLogsAttributes(t, logsConsumer.AllLogs())
-	checkResourceMetrics(t, metricsConsumer.AllMetrics())
-	checkTracesAttributes(t, tracesConsumer.AllTraces(), testID, testNs)
+	return agentScenarioResult{
+		logs:      cloneLogs(logsConsumer.AllLogs()),
+		metrics:   cloneMetrics(metricsConsumer.AllMetrics()),
+		traces:    cloneTraces(tracesConsumer.AllTraces()),
+		namespace: testNs,
+		testID:    testID,
+	}
+}
 
+func cloneMetrics(input []pmetric.Metrics) []pmetric.Metrics {
+	copied := make([]pmetric.Metrics, len(input))
+	for i := range input {
+		copied[i] = pmetric.NewMetrics()
+		input[i].CopyTo(copied[i])
+	}
+	return copied
+}
+
+func cloneTraces(input []ptrace.Traces) []ptrace.Traces {
+	copied := make([]ptrace.Traces, len(input))
+	for i := range input {
+		copied[i] = ptrace.NewTraces()
+		input[i].CopyTo(copied[i])
+	}
+	return copied
+}
+
+func cloneLogs(input []plog.Logs) []plog.Logs {
+	copied := make([]plog.Logs, len(input))
+	for i := range input {
+		copied[i] = plog.NewLogs()
+		input[i].CopyTo(copied[i])
+	}
+	return copied
 }
 
 func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
@@ -326,11 +390,15 @@ func assertExpectedAttributes(attrs pcommon.Map, kvs map[string]expectedValue) e
 			case attributeMatchTypeEqual:
 				if val.value == v.AsString() {
 					foundAttrs[k] = true
+				} else {
+					fmt.Printf("attribute %s expected %q got %q\n", k, val.value, v.AsString())
 				}
 			case attributeMatchTypeRegex:
 				matched, _ := regexp.MatchString(val.value, v.AsString())
 				if matched {
 					foundAttrs[k] = true
+				} else {
+					fmt.Printf("attribute %s regex %q did not match %q\n", k, val.value, v.AsString())
 				}
 			case attributeMatchTypeExist:
 				foundAttrs[k] = true
