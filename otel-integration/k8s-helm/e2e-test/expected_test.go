@@ -280,7 +280,7 @@ var expectedResourceAttributesPrometheusreceiver = map[string]string{
 	"server.port":                 "",
 	"service.version":             "",
 	"service_instance_id":         "",
-	"service.name":                "opentelemetry-collector",
+	"service.name":                "", // Allow both "opentelemetry-collector" and "kubernetes-cadvisor"
 	"url.scheme":                  "",
 	"cx.agent.type":               "",
 	"service.instance.id":         "",
@@ -345,8 +345,8 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 }
 
 var expectedMetrics map[string]bool = map[string]bool{
-	"db.calls":                                                   true,
-	"db.duration":                                                true,
+	"db.calls":                                                  true,
+	"db.duration":                                               true,
 	"container.cpu.time":                                        false,
 	"container.cpu.utilization":                                 false,
 	"container.filesystem.available":                            false,
@@ -406,6 +406,8 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_batch_batch_size_trigger_send":           false,
 	"otelcol_processor_batch_metadata_cardinality":              false,
 	"otelcol_processor_batch_timeout_trigger_send":              false,
+	"otelcol_processor_filter_datapoints.filtered":              false,
+	"otelcol_processor_filter_datapoints.filtered_ratio":        false,
 	"otelcol_processor_filter_spans.filtered_ratio":             false,
 	"otelcol_processor_groupbytrace_conf_num_traces_ratio":      false,
 	"otelcol_processor_groupbytrace_event_latency_milliseconds": false,
