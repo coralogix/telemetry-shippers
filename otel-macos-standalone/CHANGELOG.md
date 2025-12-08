@@ -1,0 +1,7 @@
+# Changelog
+
+## otel-macos-standalone
+
+### v0.0.1 / 2025-12-08
+- [Feat] Add macOS standalone OpenTelemetry Collector chart with Coralogix exporter, host metrics, OTLP receiver, and macOS system log parsing defaults.
+- [Feat] Provide macOS launchd installer/uninstaller scripts that download otelcol-contrib and inject `CORALOGIX_PRIVATE_KEY` at runtime.

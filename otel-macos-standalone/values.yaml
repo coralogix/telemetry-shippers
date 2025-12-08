@@ -1,0 +1,95 @@
+global:
+  domain: "coralogix.com"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "macos"
+  logLevel: "info"
+  collectionInterval: "30s"
+  version: "0.0.1"
+
+opentelemetry-agent:
+  enabled: true
+  distribution: "macos"
+  presets:
+    metadata:
+      enabled: true
+      integrationName: "coralogix-macos-standalone"
+    hostEntityEvents:
+      enabled: true
+    fleetManagement:
+      enabled: true
+      # customAttributes: {}
+      agentType: "agent"
+
+    hostMetrics:
+      enabled: true
+      process:
+        enabled: true
+    batch:
+      enabled: true
+    resourceDetection:
+      enabled: true
+      region:
+        enabled: false
+      detectors:
+        env:
+          - system
+          - env
+    macosSystemLogs:
+      enabled: true
+      #dynamicSubsystemName: false
+    otlpReceiver:
+      enabled: true
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    # Configures the collector to scrape metrics from multiple Prometheus targets.
+    # Adds a prometheus receiver to the metrics pipeline that scrapes each configured target
+    # and optionally annotates the samples with application and subsystem labels.
+    prometheusMulti:
+      enabled: false
+      scrapeInterval: "15s"
+      targets: []
+      # - name: mysql
+      #   applicationName: ""
+      #   subsystemName: ""
+      #   ip: "127.0.0.1"
+      #   port: 9104
+      #   extraLabels: {}
+    # Configures the collector with multiple filelog receivers.
+    # Each receiver collects from a custom include list and can annotate entries
+    # with Coralogix resource attributes.
+    filelogMulti:
+      enabled: false
+      receivers: []
+      # - name: backend-logs
+      #   include:
+      #     - /var/log/messages
+      #   exclude: []
+      #   forceFlushPeriod: "0"
+      #   startAt: beginning
+      #   multiline:
+      #     lineStartPattern: "^\\d{4}-"
+      #     lineEndPattern: "END$"
+      #     omitPattern: false
+      #   applicationName: ""
+      #   subsystemName: ""
+      #   applicationNameAttribute: ""
+      #   subsystemNameAttribute: ""
+      #   extraOperators:
+      #     - type: regex_parser
+      #       regex: '^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$'
+      #       timestamp:
+      #         parse_from: attributes.time
+      #         layout: '%Y-%m-%d %H:%M:%S'
+      #       severity:
+      #         parse_from: attributes.sev
+  config:
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+    service:
+      telemetry:
+        resource:
+          service.name: "opentelemetry-collector"
+        logs:
+          level: "info"
