@@ -1,0 +1,4 @@
+opentelemetry-agent:
+  presets:
+    transactions:
+      enabled: false

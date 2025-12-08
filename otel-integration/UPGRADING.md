@@ -8,7 +8,7 @@ When upgrading to new collector version please check OpenTelemetry collector rel
 - https://github.com/open-telemetry/opentelemetry-collector/releases
 - https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
 
-## v0.0.246 to v0.0.247
+## v0.0.247 to v0.0.248
 
 The `kubernetesExtraMetrics` preset has been split into two separate presets:
 - `kubernetesExtraMetrics`: Now only handles cAdvisor metrics scraping and is enabled by default on agents

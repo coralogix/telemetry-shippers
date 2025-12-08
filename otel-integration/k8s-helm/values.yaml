@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.247"
+  version: "0.0.248"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -179,6 +179,9 @@ opentelemetry-agent:
       metricsExpiration: 5m
       # histogramBuckets:
       #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+    transactions:
+      enabled: true
+      waitDuration: 30s
 
     #   transformStatements:
     #     - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil

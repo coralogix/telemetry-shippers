@@ -4,6 +4,9 @@ global:
   hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent:
+  # The transactions e2e test port-forwards to the agent service, so keep it enabled.
+  service:
+    enabled: true
   presets:
     hostMetrics:
       enabled: true
@@ -26,6 +29,15 @@ opentelemetry-agent:
         endpoint: "{{.Values.global.hostedEndpoint}}:4323"
         tls:
           insecure: true
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            # Bind to all interfaces so kubectl port-forward (which listens on 127.0.0.1)
+            # can reach the agent even though the collector defaults to ${env:MY_POD_IP}.
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
     extensions:
       opamp:
         server:
