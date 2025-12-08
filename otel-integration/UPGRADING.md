@@ -8,6 +8,31 @@ When upgrading to new collector version please check OpenTelemetry collector rel
 - https://github.com/open-telemetry/opentelemetry-collector/releases
 - https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
 
+## v0.0.247 to v0.0.248
+
+The `kubernetesExtraMetrics` preset has been split into two separate presets:
+- `kubernetesExtraMetrics`: Now only handles cAdvisor metrics scraping and is enabled by default on agents
+- `kubernetesApiServerMetrics`: New preset for Kubernetes API server metrics scraping that is enabled by default on the cluster-collector
+
+If you were previously using `kubernetesExtraMetrics` to scrape both cAdvisor and API server metrics, you will need to enable both presets (enabled by default):
+
+```yaml
+opentelemetry-agent:
+  presets:
+    kubernetesExtraMetrics:
+      enabled: true
+      scrapeAll: false  # Controls cAdvisor metrics filtering
+    kubernetesApiServerMetrics:
+      enabled: true
+      scrapeAll: false  # Controls API server metrics filtering
+
+opentelemetry-cluster-collector:
+  presets:
+    kubernetesApiServerMetrics:
+      enabled: true
+      scrapeAll: false
+```
+
 ## v0.0.206 to v0.0.207
 
 `coralogix-ebpf-agent` has been removed in favor of using `opentelemetry-ebpf-instrumentation` which can be configured to be deployed by setting `opentelemetry-ebpf-instrumentation.enabled` to `true`.

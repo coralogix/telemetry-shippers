@@ -67,14 +67,6 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 		"k8s.container.memory_limit":                  false,
 		"k8s.container.memory_request":                false,
 		"k8s.container.status.last_terminated_reason": false,
-		// Container filesystem & cgroups
-		"container_fs_usage_bytes":                  false,
-		"container_fs_reads_total":                  false,
-		"container_fs_writes_total":                 false,
-		"container_fs_reads_bytes_total":            false,
-		"container_fs_writes_bytes_total":           false,
-		"container_cpu_cfs_periods_total":           false,
-		"container_cpu_cfs_throttled_periods_total": false,
 		// Deployments / ReplicaSets
 		"k8s.deployment.desired":   false,
 		"k8s.deployment.available": false,
