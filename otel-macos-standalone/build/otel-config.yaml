@@ -1,0 +1,334 @@
+exporters:
+  coralogix:
+    application_name: otel
+    application_name_attributes:
+    - service.namespace
+    domain: coralogix.com
+    logs:
+      headers:
+        X-Coralogix-Distribution: helm-otel-macos/0.0.1
+    metrics:
+      headers:
+        X-Coralogix-Distribution: helm-otel-macos/0.0.1
+    private_key: ${env:CORALOGIX_PRIVATE_KEY}
+    profiles:
+      headers:
+        X-Coralogix-Distribution: helm-otel-macos/0.0.1
+    subsystem_name: macos
+    subsystem_name_attributes:
+    - service.name
+    timeout: 30s
+    traces:
+      headers:
+        X-Coralogix-Distribution: helm-otel-macos/0.0.1
+  coralogix/resource_catalog:
+    application_name: resource
+    domain: coralogix.com
+    logs:
+      headers:
+        X-Coralogix-Distribution: helm-otel-macos/0.0.1
+        x-coralogix-ingress: metadata-as-otlp-logs/v1
+    private_key: ${CORALOGIX_PRIVATE_KEY}
+    subsystem_name: catalog
+    timeout: 30s
+  debug: {}
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  opamp:
+    agent_description:
+      include_resource_attributes: true
+      non_identifying_attributes:
+        cx.agent.type: agent
+        helm.chart.opentelemetry-agent.version: 0.126.5
+    server:
+      http:
+        endpoint: https://ingress.coralogix.com/opamp/v1
+        headers:
+          Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+        polling_interval: 2m
+processors:
+  batch:
+    send_batch_max_size: 2048
+    send_batch_size: 1024
+    timeout: 1s
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  resource/metadata:
+    attributes:
+    - action: upsert
+      key: cx.otel_integration.name
+      value: coralogix-macos-standalone
+  resourcedetection/entity:
+    detectors:
+    - system
+    - env
+    override: false
+    system:
+      resource_attributes:
+        host.cpu.cache.l2.size:
+          enabled: true
+        host.cpu.family:
+          enabled: true
+        host.cpu.model.id:
+          enabled: true
+        host.cpu.model.name:
+          enabled: true
+        host.cpu.stepping:
+          enabled: true
+        host.cpu.vendor.id:
+          enabled: true
+        host.id:
+          enabled: true
+        host.ip:
+          enabled: true
+        host.mac:
+          enabled: true
+        os.description:
+          enabled: true
+    timeout: 2s
+  resourcedetection/env:
+    detectors:
+    - system
+    - env
+    override: false
+    system:
+      resource_attributes:
+        host.id:
+          enabled: true
+    timeout: 2s
+  transform/entity-event:
+    error_mode: silent
+    log_statements:
+    - context: log
+      statements:
+      - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+      - merge_maps(attributes, resource.attributes, "insert")
+    - context: resource
+      statements:
+      - keep_keys(attributes, [""])
+  transform/prometheus:
+    error_mode: ignore
+    metric_statements:
+    - context: metric
+      statements:
+      - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+        "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+        "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+        "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
+        "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+        "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+    - context: resource
+      statements:
+      - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
+        == "opentelemetry-collector"
+      - delete_key(attributes, "service_name") where attributes["service.name"] ==
+        "opentelemetry-collector"
+    - context: datapoint
+      statements:
+      - delete_key(attributes, "service_name") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
+        == "opentelemetry-collector"
+receivers:
+  filelog/macos-system-log:
+    include:
+    - /var/log/system.log
+    operators:
+    - regex: ^(?P<timestamp>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>[^\s]+)\s+(?P<app>[A-Za-z0-9._-]+)(?:\[(?P<pid>\d+)\])?:\s+(?P<msg>.*)$
+      type: regex_parser
+    - layout: Jan _2 15:04:05
+      layout_type: gotime
+      parse_from: attributes.timestamp
+      type: time_parser
+    - from: attributes.host
+      to: resource["host.name"]
+      type: move
+    - from: attributes.app
+      to: resource["app"]
+      type: move
+    - from: resource["app"]
+      to: resource["cx.subsystem.name"]
+      type: copy
+    - from: attributes.pid
+      to: resource["process.pid"]
+      type: move
+    - field: attributes.timestamp
+      type: remove
+    - from: attributes.msg
+      to: body
+      type: move
+    start_at: beginning
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk: null
+      filesystem:
+        exclude_fs_types:
+          fs_types:
+          - autofs
+          - binfmt_misc
+          - bpf
+          - cgroup2
+          - configfs
+          - debugfs
+          - devpts
+          - devtmpfs
+          - fusectl
+          - hugetlbfs
+          - iso9660
+          - mqueue
+          - nsfs
+          - overlay
+          - proc
+          - procfs
+          - pstore
+          - rpc_pipefs
+          - securityfs
+          - selinuxfs
+          - squashfs
+          - sysfs
+          - tracefs
+          match_type: strict
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+          - /dev/*
+          - /proc/*
+          - /sys/*
+          - /run/k3s/containerd/*
+          - /run/containerd/runc/*
+          - /var/lib/docker/*
+          - /var/lib/kubelet/*
+          - /snap/*
+      load: null
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network: null
+      process:
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.threads:
+            enabled: true
+        mute_process_exe_error: true
+        mute_process_name_error: true
+        mute_process_user_error: true
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 20
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: opentelemetry-collector
+        scrape_interval: 30s
+        static_configs:
+        - targets:
+          - 0.0.0.0:8888
+service:
+  extensions:
+  - health_check
+  - opamp
+  pipelines:
+    logs:
+      exporters:
+      - debug
+      - coralogix
+      processors:
+      - memory_limiter
+      - resource/metadata
+      - resourcedetection/env
+      - batch
+      receivers:
+      - filelog/macos-system-log
+      - otlp
+    logs/resource_catalog:
+      exporters:
+      - coralogix/resource_catalog
+      processors:
+      - memory_limiter
+      - resource/metadata
+      - resourcedetection/entity
+      - transform/entity-event
+      receivers:
+      - hostmetrics
+    metrics:
+      exporters:
+      - debug
+      - coralogix
+      processors:
+      - memory_limiter
+      - resource/metadata
+      - resourcedetection/env
+      - transform/prometheus
+      - batch
+      receivers:
+      - hostmetrics
+      - prometheus
+      - otlp
+    traces:
+      exporters:
+      - debug
+      - coralogix
+      processors:
+      - memory_limiter
+      - resource/metadata
+      - resourcedetection/env
+      - batch
+      receivers:
+      - otlp
+  telemetry:
+    logs:
+      encoding: json
+      level: info
+    metrics:
+      readers:
+      - pull:
+          exporter:
+            prometheus:
+              host: 0.0.0.0
+              port: 8888
+    resource:
+      service.name: opentelemetry-collector
+
