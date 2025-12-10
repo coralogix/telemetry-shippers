@@ -317,6 +317,78 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-windows.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
+## Service pipelines
+
+The [OpenTelemetry Collector Configuration](https://opentelemetry.io/docs/collector/configuration/) guides you to initialise components and then add them to the pipelines in the `service` section. It is important to ensure that the telemetry type is supported. For example, the [prometheus](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#prometheus-receiver) receiver documentation in the [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#prometheus-receiver) states that it only supports `metrics`. Therefore, the following `prometheus` receiver can only be defined under `receivers` and added to the `metrics` pipelines in the `service` block to enable it.
+
+``` yaml
+opentelemetry-agent:
+...
+	config:
+		receivers:
+			prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-infrastructure-collector
+              scrape_interval: 30s
+              static_configs:
+                - targets:
+                    - ${MY_POD_IP}:8888
+
+		...
+	  service:
+	    pipelines:
+				logs:
+					...
+				metrics:
+					receivers:
+					- prometheus
+	      traces:
+						...
+
+```
+
+## Coralogix exporter
+
+In both charts, you have the option to configure the sending of logs, metrics, and / or traces to Coralogix. This can be done by configuring the [Coralogix Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/coralogixexporter) for different pipelines. The default `values.yaml` file includes all three options, but you can customize it by removing the `coralogix` exporter from the `pipelines` configuration for either `logs`, `metrics`, or `traces`.
+
+The following `opentelemetry-agent` exporter configuration also applies to the `opentelemetry-cluster-collector`:
+
+``` yaml
+global:
+  domain: "<coralogix-domain>"
+  clusterName: "<cluster-name>"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "integration"
+...
+opentelemetry-agent:
+...
+  config:
+	...
+    exporters:
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+				## Values set in "global" section
+        domain: "{{ '{{' }} .Values.global.domain }}"
+				application_name: "{{ '{{' }} .Values.global.defaultApplicationName }}"
+        subsystem_name: "{{ '{{' }} .Values.global.defaultSubsystemName }}"
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - coralogix
+							...
+        traces:
+          exporters:
+            - coralogix
+							...
+        logs:
+          exporters:
+            - coralogix
+
+```
+
 ## OpenTelemetry Agent
 
 The OpenTelemetry Agent is enabled and deployed as a `daemonset` by default. This creates an Agent pod per node. Allowing the collection of logs, metrics, and traces from application pods to be sent to OpenTelemetry pods hosted on the same node and spreads the ingestion load across the cluster. Be aware that the OpenTelemetry Agent pods consumes resources (e.g., CPU & memory) from each node on which it runs.
