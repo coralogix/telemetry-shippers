@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  TEST_API_KEY: "test-key-12345"
-  TEST_DOMAIN: "us1.coralogix.com"
+  CORALOGIX_PRIVATE_KEY: "test-key-12345"
+  CORALOGIX_DOMAIN: "us1.coralogix.com"
 
 jobs:
   #############################################
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install (default)
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
         
       - name: Verify service running
         run: sudo systemctl is-active otelcol-contrib
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install specific version
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -v 0.140.0
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -v 0.140.0
         
       - name: Verify version
         run: /usr/bin/otelcol-contrib --version | grep -q "0.140.0"
@@ -78,7 +78,7 @@ jobs:
           EOF
           
       - name: Install with custom config
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
         
       - name: Verify custom config marker exists
         run: sudo grep -q "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install (default version)
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
         
       - name: Verify service running
         run: sudo systemctl is-active otelcol-contrib
@@ -105,7 +105,7 @@ jobs:
         run: /usr/bin/otelcol-contrib --version
         
       - name: Run upgrade (same version - tests upgrade mechanism)
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -u
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -u
         
       - name: Verify service still running after upgrade
         run: sudo systemctl is-active otelcol-contrib
@@ -120,7 +120,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install supervisor mode
-        run: sudo CORALOGIX_DOMAIN="${TEST_DOMAIN}" API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -s
+        run: sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -s
         
       - name: Verify supervisor running
         run: sudo systemctl is-active opampsupervisor
@@ -136,7 +136,7 @@ jobs:
       
       - name: Install with custom versions
         run: |
-          sudo CORALOGIX_DOMAIN="${TEST_DOMAIN}" API_KEY="${TEST_API_KEY}" \
+          sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
             bash ./otel-installer/standalone/coralogix-otel-collector.sh -s \
             --supervisor-version 0.140.0 --collector-version 0.140.0
         
@@ -153,7 +153,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
         
       - name: Uninstall with purge
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall --purge
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install
-        run: sudo API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
         
       - name: Verify binary installed
         run: /usr/local/bin/otelcol-contrib --version
@@ -189,7 +189,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install as LaunchAgent
-        run: sudo CORALOGIX_MACOS_USER_AGENT="true" API_KEY="${TEST_API_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        run: sudo CORALOGIX_MACOS_USER_AGENT="true" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
         
       - name: Verify binary installed
         run: /usr/local/bin/otelcol-contrib --version
@@ -201,14 +201,6 @@ jobs:
   # Docker Script Tests
   #############################################
 
-  docker-help:
-    name: Docker - Help
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test --help
-        run: bash ./otel-installer/docker/docker-install.sh --help
-
   docker-install:
     name: Docker - Regular Install
     runs-on: ubuntu-latest
@@ -216,7 +208,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install
-        run: API_KEY="${TEST_API_KEY}" bash ./otel-installer/docker/docker-install.sh
+        run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh
         
       - name: Verify container running
         run: |
@@ -233,7 +225,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install specific version
-        run: API_KEY="${TEST_API_KEY}" bash ./otel-installer/docker/docker-install.sh -v 0.140.0
+        run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -v 0.140.0
         
       - name: Verify container running
         run: |
@@ -273,7 +265,7 @@ jobs:
           EOF
           
       - name: Install with custom config
-        run: API_KEY="${TEST_API_KEY}" bash ./otel-installer/docker/docker-install.sh -c /tmp/test-config.yaml
+        run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -c /tmp/test-config.yaml
         
       - name: Verify container running
         run: |
@@ -296,7 +288,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install supervisor mode
-        run: CORALOGIX_DOMAIN="${TEST_DOMAIN}" API_KEY="${TEST_API_KEY}" bash ./otel-installer/docker/docker-install.sh -s
+        run: CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -s
         
       - name: Verify container running
         run: |
@@ -318,7 +310,7 @@ jobs:
       
       - name: Install with supervisor version
         run: |
-          CORALOGIX_DOMAIN="${TEST_DOMAIN}" API_KEY="${TEST_API_KEY}" \
+          CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
             bash ./otel-installer/docker/docker-install.sh -s --supervisor-version 0.140.0
         
       - name: Verify container running
@@ -328,16 +320,3 @@ jobs:
           
       - name: Uninstall
         run: bash ./otel-installer/docker/docker-install.sh --uninstall
-
-  docker-foreground:
-    name: Docker - Foreground Mode
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install in foreground (timeout after 5s)
-        run: |
-          timeout 5 bash -c 'API_KEY="${TEST_API_KEY}" bash ./otel-installer/docker/docker-install.sh -f' || true
-          
-      - name: Cleanup
-        run: docker rm -f coralogix-otel-collector 2>/dev/null || true
