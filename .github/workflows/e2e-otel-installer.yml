@@ -83,11 +83,11 @@ jobs:
       - name: Install with custom config
         run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
         
-      - name: Verify custom config marker exists
-        run: sudo grep -q "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
-        
-      - name: Verify otlp receiver in config (not nop)
-        run: sudo grep -q "otlp:" /etc/otelcol-contrib/config.yaml
+      - name: Verify custom config loaded
+        run: |
+          sudo cat /etc/otelcol-contrib/config.yaml
+          sudo grep "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
+          sudo grep "otlp:" /etc/otelcol-contrib/config.yaml
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
