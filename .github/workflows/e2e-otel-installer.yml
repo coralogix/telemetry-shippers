@@ -42,11 +42,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Check no pre-existing installation
+        run: |
+          which otelcol-contrib 2>/dev/null || echo "No otelcol-contrib in PATH"
+          dpkg -l | grep otelcol || echo "No otelcol packages installed"
+      
       - name: Install specific version
         run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -v 0.140.0
         
+      - name: Check installed package version
+        run: dpkg -l | grep otelcol
+        
       - name: Verify version
-        run: otelcol-contrib --version | grep "0.140.0"
+        run: |
+          /usr/bin/otelcol-contrib --version
+          /usr/bin/otelcol-contrib --version | grep "0.140.0"
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
