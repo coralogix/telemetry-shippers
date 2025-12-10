@@ -323,10 +323,9 @@ The [OpenTelemetry Collector Configuration](https://opentelemetry.io/docs/collec
 
 ```yaml
 opentelemetry-agent:
-...
-	config:
-		receivers:
-			prometheus:
+  config:
+    receivers:
+      prometheus:
         config:
           scrape_configs:
             - job_name: opentelemetry-infrastructure-collector
@@ -334,18 +333,13 @@ opentelemetry-agent:
               static_configs:
                 - targets:
                     - ${MY_POD_IP}:8888
-
-		...
-	  service:
-	    pipelines:
-				logs:
-					...
-				metrics:
-					receivers:
-					- prometheus
-	      traces:
-						...
-
+    service:
+      pipelines:
+        logs:
+        metrics:
+          receivers:
+            - prometheus
+        traces:
 ```
 
 ## Coralogix exporter
@@ -360,33 +354,27 @@ global:
   clusterName: "<cluster-name>"
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
-...
 opentelemetry-agent:
-...
   config:
-	...
     exporters:
       coralogix:
         timeout: "30s"
         private_key: "${CORALOGIX_PRIVATE_KEY}"
-				## Values set in "global" section
+        ## Values set in "global" section
         domain: "{{ '{{' }} .Values.global.domain }}"
-				application_name: "{{ '{{' }} .Values.global.defaultApplicationName }}"
+        application_name: "{{ '{{' }} .Values.global.defaultApplicationName }}"
         subsystem_name: "{{ '{{' }} .Values.global.defaultSubsystemName }}"
     service:
       pipelines:
         metrics:
           exporters:
             - coralogix
-							...
         traces:
           exporters:
             - coralogix
-							...
         logs:
           exporters:
             - coralogix
-
 ```
 
 ## OpenTelemetry Agent
