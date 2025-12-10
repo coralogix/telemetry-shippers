@@ -321,7 +321,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 The [OpenTelemetry Collector Configuration](https://opentelemetry.io/docs/collector/configuration/) guides you to initialise components and then add them to the pipelines in the `service` section. It is important to ensure that the telemetry type is supported. For example, the [prometheus](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#prometheus-receiver) receiver documentation in the [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#prometheus-receiver) states that it only supports `metrics`. Therefore, the following `prometheus` receiver can only be defined under `receivers` and added to the `metrics` pipelines in the `service` block to enable it.
 
-``` yaml
+```yaml
 opentelemetry-agent:
 ...
 	config:
@@ -354,7 +354,7 @@ In both charts, you have the option to configure the sending of logs, metrics, a
 
 The following `opentelemetry-agent` exporter configuration also applies to the `opentelemetry-cluster-collector`:
 
-``` yaml
+```yaml
 global:
   domain: "<coralogix-domain>"
   clusterName: "<cluster-name>"
