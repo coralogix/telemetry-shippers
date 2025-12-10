@@ -25,7 +25,6 @@
 # Environment Variables:
 #   CORALOGIX_PRIVATE_KEY   Coralogix private key (required)
 #   CORALOGIX_DOMAIN        Coralogix domain (required for supervisor mode)
-#   CUSTOM_DOMAIN           Coralogix custom domain
 #   CORALOGIX_MACOS_USER_AGENT  Set to "true" to install as user-level LaunchAgent (macOS only)
 #                               Default: system-wide LaunchDaemon (requires root)
 #
@@ -113,7 +112,6 @@ Options:
 Environment Variables:
     CORALOGIX_PRIVATE_KEY   Coralogix private key (required)
     CORALOGIX_DOMAIN        Coralogix domain (required for supervisor mode)
-    CUSTOM_DOMAIN           Coralogix custom domain
     CORALOGIX_MACOS_USER_AGENT  Set to "true" to install as user-level LaunchAgent (macOS only)
                                 Default: system-wide LaunchDaemon (requires root)
 
@@ -526,12 +524,6 @@ create_launchd_service() {
         <key>CORALOGIX_DOMAIN</key>
         <string>${CORALOGIX_DOMAIN}</string>"
     fi
-    
-    if [ -n "${CUSTOM_DOMAIN:-}" ]; then
-        env_vars="${env_vars}
-        <key>CUSTOM_DOMAIN</key>
-        <string>${CUSTOM_DOMAIN}</string>"
-    fi
 
     local temp_plist
     temp_plist="$(mktemp)"
@@ -647,7 +639,7 @@ install_supervisor() {
 configure_supervisor() {
     log "Configuring OpAMP Supervisor..."
     
-    local domain="${CUSTOM_DOMAIN:-${CORALOGIX_DOMAIN}}"
+    local domain="${CORALOGIX_DOMAIN}"
     
     local endpoint_url="https://ingress.${domain}/opamp/v1"
 
@@ -1179,8 +1171,8 @@ main() {
         if [ "$os" != "linux" ]; then
             fail "Supervisor mode is currently only supported on Linux"
         fi
-        if [ -z "${CORALOGIX_DOMAIN:-}" ] && [ -z "${CUSTOM_DOMAIN:-}" ]; then
-            fail "CORALOGIX_DOMAIN is required for supervisor mode (or use CUSTOM_DOMAIN for custom domain)."
+        if [ -z "${CORALOGIX_DOMAIN:-}" ]; then
+            fail "CORALOGIX_DOMAIN is required for supervisor mode"
         fi
     else
         # --supervisor-version and --collector-version only valid with --supervisor
@@ -1320,11 +1312,6 @@ Environment=\"CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}\""
             if [ -n "${CORALOGIX_DOMAIN:-}" ]; then
                 env_lines="${env_lines}
 Environment=\"CORALOGIX_DOMAIN=${CORALOGIX_DOMAIN}\""
-            fi
-            
-            if [ -n "${CUSTOM_DOMAIN:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"CUSTOM_DOMAIN=${CUSTOM_DOMAIN}\""
             fi
             
             $SUDO_CMD tee "/etc/systemd/system/${SERVICE_NAME}.service.d/override.conf" >/dev/null <<EOF

@@ -119,7 +119,6 @@ bash coralogix-otel-collector.sh --uninstall --purge
 |----------|-------------|----------|
 | `CORALOGIX_PRIVATE_KEY` | Coralogix private key | Yes |
 | `CORALOGIX_DOMAIN` | Coralogix domain (e.g., `us1.coralogix.com`, `eu2.coralogix.com`) | Supervisor mode only |
-| `CUSTOM_DOMAIN` | Custom Coralogix domain | No |
 | `CORALOGIX_MACOS_USER_AGENT` | Set to `true` to install as user-level LaunchAgent on macOS | No |
 
 ## Installation Locations
