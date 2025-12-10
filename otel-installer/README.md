@@ -71,6 +71,15 @@ CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
   -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
 ```
 
+### macOS LaunchAgent (User-Level)
+
+Install as a user-level agent that runs at login (instead of system-wide at boot):
+
+```bash
+CORALOGIX_MACOS_USER_AGENT="true" CORALOGIX_PRIVATE_KEY="your-key" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/coralogix-otel-collector.sh)"
+```
+
 ### Upgrade Existing Installation
 
 Upgrades the binary while preserving your existing configuration:
