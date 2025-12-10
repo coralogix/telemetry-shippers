@@ -59,28 +59,26 @@ jobs:
       
       - name: Create test config with unique marker
         run: |
-          cat > /tmp/test-config.yaml << 'EOF'
-          # CUSTOM_CONFIG_MARKER_E2E_TEST
-          receivers:
-            otlp:
-              protocols:
-                grpc:
-                  endpoint: 0.0.0.0:4317
-          exporters:
-            debug:
-              verbosity: basic
-          extensions:
-            health_check:
-              endpoint: 127.0.0.1:13133
-          service:
-            extensions: [health_check]
-            pipelines:
-              logs:
-                receivers: [otlp]
-                exporters: [debug]
-          EOF
-          # Remove leading spaces from heredoc
-          sed -i 's/^          //' /tmp/test-config.yaml
+          printf '%s\n' \
+            '# CUSTOM_CONFIG_MARKER_E2E_TEST' \
+            'receivers:' \
+            '  otlp:' \
+            '    protocols:' \
+            '      grpc:' \
+            '        endpoint: 0.0.0.0:4317' \
+            'exporters:' \
+            '  debug:' \
+            '    verbosity: basic' \
+            'extensions:' \
+            '  health_check:' \
+            '    endpoint: 127.0.0.1:13133' \
+            'service:' \
+            '  extensions: [health_check]' \
+            '  pipelines:' \
+            '    logs:' \
+            '      receivers: [otlp]' \
+            '      exporters: [debug]' \
+            > /tmp/test-config.yaml
           
       - name: Install with custom config
         run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
@@ -237,28 +235,29 @@ jobs:
       
       - name: Create test config with unique marker
         run: |
-          cat > /tmp/test-config.yaml << 'EOF'
-          # CUSTOM_CONFIG_MARKER_E2E_TEST
-          receivers:
-            otlp:
-              protocols:
-                grpc:
-                  endpoint: 0.0.0.0:4317
-          exporters:
-            debug:
-              verbosity: basic
-          extensions:
-            health_check:
-              endpoint: 0.0.0.0:13133
-          service:
-            extensions: [health_check]
-            pipelines:
-              logs:
-                receivers: [otlp]
-                exporters: [debug]
-          EOF
-          # Remove leading spaces from heredoc
-          sed -i 's/^          //' /tmp/test-config.yaml
+          printf '%s\n' \
+            '# CUSTOM_CONFIG_MARKER_E2E_TEST' \
+            'receivers:' \
+            '  otlp:' \
+            '    protocols:' \
+            '      grpc:' \
+            '        endpoint: 0.0.0.0:4317' \
+            'exporters:' \
+            '  debug:' \
+            '    verbosity: basic' \
+            'extensions:' \
+            '  health_check:' \
+            '    endpoint: 0.0.0.0:13133' \
+            'service:' \
+            '  extensions: [health_check]' \
+            '  pipelines:' \
+            '    logs:' \
+            '      receivers: [otlp]' \
+            '      exporters: [debug]' \
+            > /tmp/test-config.yaml
+          
+      - name: Show test config
+        run: cat /tmp/test-config.yaml
           
       - name: Install with custom config
         run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -c /tmp/test-config.yaml
@@ -266,14 +265,17 @@ jobs:
       - name: Verify container running
         run: |
           sleep 5
-          docker ps | grep coralogix-otel-collector
+          docker ps -a | grep coralogix-otel-collector
           
       - name: Show container logs
         if: always()
-        run: docker logs coralogix-otel-collector 2>&1 | tail -20
+        run: docker logs coralogix-otel-collector 2>&1 | tail -30
           
-      - name: Verify custom config loaded (check container config)
-        run: docker exec coralogix-otel-collector cat /etc/otelcol-contrib/config.yaml | grep "CUSTOM_CONFIG_MARKER_E2E_TEST"
+      - name: Verify custom config loaded
+        run: |
+          docker cp coralogix-otel-collector:/etc/otelcol-contrib/config.yaml /tmp/container-config.yaml
+          cat /tmp/container-config.yaml
+          grep "CUSTOM_CONFIG_MARKER" /tmp/container-config.yaml
           
       - name: Verify health check
         run: curl -sf http://localhost:13133/ || true

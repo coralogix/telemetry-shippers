@@ -247,7 +247,7 @@ fetch_default_version() {
 
 validate_version() {
     local version="$1"
-    local release_url="https://api.github.com/repos/open-telemetry/opentelemetry-collector-releases/releases/tags/v${version}"
+    local release_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v${version}"
     local http_code
     
     http_code=$(curl -fsSL -o /dev/null -w "%{http_code}" "$release_url" 2>/dev/null || echo "000")
@@ -256,7 +256,7 @@ validate_version() {
         warn "Version v${version} not found in OpenTelemetry Collector releases"
         echo ""
         echo "Please verify the version exists at:"
-        echo "  https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v${version}"
+        echo "  ${release_url}"
         echo ""
         echo "You can find available versions at:"
         echo "  https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
@@ -794,13 +794,16 @@ verify_service() {
 
 # Uninstall functions
 is_supervisor_mode() {
-    if command -v systemctl >/dev/null 2>&1; then
-        if systemctl list-unit-files 2>/dev/null | grep -q "^opampsupervisor.service" 2>/dev/null; then
-            return 0
-        fi
-        if rpm -q opampsupervisor >/dev/null 2>&1 || dpkg -s opampsupervisor >/dev/null 2>&1; then
-            return 0
-        fi
+    # Check if opampsupervisor package is installed (most reliable)
+    if command -v dpkg >/dev/null 2>&1 && dpkg -s opampsupervisor >/dev/null 2>&1; then
+        return 0
+    fi
+    if command -v rpm >/dev/null 2>&1 && rpm -q opampsupervisor >/dev/null 2>&1; then
+        return 0
+    fi
+    # Fallback: check if supervisor service is active
+    if command -v systemctl >/dev/null 2>&1 && systemctl is-active opampsupervisor.service >/dev/null 2>&1; then
+        return 0
     fi
     return 1
 }
@@ -996,8 +999,8 @@ purge_data() {
         fi
     else
         log "Configuration and logs preserved (use --purge to remove):"
-        [ -d "$CONFIG_DIR" ] && log "  $CONFIG_DIR"
-        [ -d "$LOG_DIR" ] && log "  $LOG_DIR"
+        [ -d "$CONFIG_DIR" ] && log "  $CONFIG_DIR" || true
+        [ -d "$LOG_DIR" ] && log "  $LOG_DIR" || true
     fi
 }
 
