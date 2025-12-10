@@ -133,7 +133,7 @@ Examples:
     # Install with supervisor using specific versions
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
 
-    # Install as user-level LaunchAgent on macOS (no root required, runs at login)
+    # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
     CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/coralogix-otel-collector.sh)"
 
     # Upgrade existing installation
@@ -1158,6 +1158,7 @@ main() {
             if [ "${CORALOGIX_MACOS_USER_AGENT:-}" = "true" ]; then
                 MACOS_INSTALL_TYPE="agent"
                 LAUNCHD_PLIST="$LAUNCHD_PLIST_AGENT"
+                LOG_DIR="${HOME}/Library/Logs/otel-collector"
                 log "macOS: Installing as user-level LaunchAgent (runs at login)"
             else
                 MACOS_INSTALL_TYPE="daemon"

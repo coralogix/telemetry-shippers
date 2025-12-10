@@ -146,13 +146,12 @@ bash coralogix-otel-collector.sh --uninstall --purge
 
 ### macOS
 
-| Component | Location |
-|-----------|----------|
-| Binary | `/usr/local/bin/otelcol-contrib` |
-| Config | `/etc/otelcol-contrib/config.yaml` |
-| Service (LaunchDaemon) | `/Library/LaunchDaemons/com.coralogix.otelcol.plist` |
-| Service (LaunchAgent) | `~/Library/LaunchAgents/com.coralogix.otelcol.plist` |
-| Logs | `/var/log/otel-collector/otel-collector.log` |
+| Component | LaunchDaemon (system-wide) | LaunchAgent (user-level) |
+|-----------|----------------------------|--------------------------|
+| Binary | `/usr/local/bin/otelcol-contrib` | `/usr/local/bin/otelcol-contrib` |
+| Config | `/etc/otelcol-contrib/config.yaml` | `/etc/otelcol-contrib/config.yaml` |
+| Service | `/Library/LaunchDaemons/com.coralogix.otelcol.plist` | `~/Library/LaunchAgents/com.coralogix.otelcol.plist` |
+| Logs | `/var/log/otel-collector/otel-collector.log` | `~/Library/Logs/otel-collector/otel-collector.log` |
 
 ## Configuration Behavior
 
@@ -242,7 +241,7 @@ tail -f /var/log/otel-collector/otel-collector.log
 
 ### macOS (LaunchAgent - user-level)
 
-To install as a user-level agent (runs at login, no root required):
+To install as a user-level agent (runs at login, logs to user directory):
 
 ```bash
 CORALOGIX_MACOS_USER_AGENT=true CORALOGIX_PRIVATE_KEY="your-key" \
@@ -263,8 +262,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.pl
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
 
-# View logs
-tail -f /var/log/otel-collector/otel-collector.log
+# View logs (user-level location)
+tail -f ~/Library/Logs/otel-collector/otel-collector.log
 ```
 
 ## Troubleshooting
