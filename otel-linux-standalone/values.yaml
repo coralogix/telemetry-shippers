@@ -4,13 +4,22 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.1"
+  version: "0.0.2"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
   enabled: true
   distribution: "standalone"
   presets:
+    metadata:
+      enabled: true
+      integrationName: "coralogix-macos-standalone"
+    hostEntityEvents:
+      enabled: true
+    fleetManagement:
+      enabled: true
+      # customAttributes: {}
+      agentType: "agent"
     hostMetrics:
       enabled: true
       process:
