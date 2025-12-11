@@ -3,30 +3,30 @@ exporters:
     application_name: otel
     application_name_attributes:
     - service.namespace
-    domain: coralogix.com
+    domain: eu2.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
     subsystem_name: linux
     subsystem_name_attributes:
     - service.name
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
   coralogix/resource_catalog:
     application_name: resource
-    domain: coralogix.com
+    domain: eu2.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
@@ -43,7 +43,7 @@ extensions:
         helm.chart.opentelemetry-agent.version: 0.121.12
     server:
       http:
-        endpoint: https://ingress.coralogix.com/opamp/v1
+        endpoint: https://ingress.eu2.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
@@ -60,7 +60,7 @@ processors:
     attributes:
     - action: upsert
       key: cx.otel_integration.name
-      value: coralogix-macos-standalone
+      value: coralogix-linux-standalone
   resourcedetection/entity:
     detectors:
     - system
@@ -223,6 +223,17 @@ receivers:
           system.memory.utilization:
             enabled: true
       network: null
+      process:
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.threads:
+            enabled: true
+        mute_process_exe_error: true
+        mute_process_name_error: true
+        mute_process_user_error: true
   journald: {}
   otlp:
     protocols:

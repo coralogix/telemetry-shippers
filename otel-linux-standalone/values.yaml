@@ -13,7 +13,7 @@ opentelemetry-agent:
   presets:
     metadata:
       enabled: true
-      integrationName: "coralogix-macos-standalone"
+      integrationName: "coralogix-linux-standalone"
     hostEntityEvents:
       enabled: true
     fleetManagement:
