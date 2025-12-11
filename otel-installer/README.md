@@ -1,17 +1,17 @@
 # OpenTelemetry Collector Installation Scripts
 
-This directory contains installation scripts for deploying the OpenTelemetry Collector with Coralogix integration.
+Deploy the OpenTelemetry Collector with Coralogix integration.
 
-## Installation Options
+## Installation Methods
 
-| Method | Platforms | Use Case |
-|--------|-----------|----------|
-| [Standalone](./standalone/) | Linux, macOS | Install directly on host as a service |
-| [Docker](./docker/) | Any (Docker required) | Run as a container |
+| Method | Platform | Documentation |
+|--------|----------|---------------|
+| **Standalone** | Linux, macOS | [standalone/README.md](./standalone/README.md) |
+| **Docker** | Any | [docker/README.md](./docker/README.md) |
 
 ## Quick Start
 
-### Standalone (Linux/macOS)
+### Linux / macOS
 
 ```bash
 CORALOGIX_PRIVATE_KEY="your-key" \
@@ -26,21 +26,17 @@ CORALOGIX_PRIVATE_KEY="your-key" \
   -- -c /path/to/config.yaml
 ```
 
-## Supervisor Mode (Fleet Management)
+### Supervisor Mode (Fleet Management)
 
-Both installation methods support supervisor mode for remote configuration via Coralogix Fleet Management:
-
-### Standalone (Linux only)
+Enable remote configuration via Coralogix:
 
 ```bash
+# Linux (standalone)
 CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
   bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
   -- -s
-```
 
-### Docker
-
-```bash
+# Docker
 CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
   bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/docker/docker-install.sh)" \
   -- -s
@@ -55,10 +51,9 @@ CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
 
 ## Documentation
 
-- [Standalone Installation](./standalone/README.md) - Full documentation for Linux/macOS
-- [Docker Installation](./docker/README.md) - Full documentation for Docker deployment
+- [Standalone Installation (Linux/macOS)](./standalone/README.md) - Full installation guide
+- [Docker Installation](./docker/README.md) - Container deployment guide
 
 ## License
 
 Apache 2.0
-

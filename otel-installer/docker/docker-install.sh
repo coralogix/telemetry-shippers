@@ -19,8 +19,13 @@ SUPERVISOR_IMAGE="coralogixrepo/otel-supervised-collector"
 
 # Container settings
 CONTAINER_NAME="coralogix-otel-collector"
-CONFIG_DIR="/etc/otelcol-contrib"
-CONFIG_FILE="${CONFIG_DIR}/config.yaml"
+CONFIG_HOST_DIR="${HOME}/.coralogix-otel-collector"
+CONFIG_CONTAINER_DIR="/etc/otelcol-contrib"
+
+# Default ports (can be overridden via environment)
+OTLP_GRPC_PORT="${OTLP_GRPC_PORT:-4317}"
+OTLP_HTTP_PORT="${OTLP_HTTP_PORT:-4318}"
+HEALTH_CHECK_PORT="${HEALTH_CHECK_PORT:-13133}"
 
 # Default values
 VERSION=""
@@ -101,6 +106,9 @@ Options:
 Environment Variables:
     CORALOGIX_PRIVATE_KEY   Coralogix private key (required)
     CORALOGIX_DOMAIN        Coralogix domain (required for supervisor mode)
+    OTLP_GRPC_PORT          Host port for OTLP gRPC (default: 4317)
+    OTLP_HTTP_PORT          Host port for OTLP HTTP (default: 4318)
+    HEALTH_CHECK_PORT       Host port for health check (default: 13133)
 
 Examples:
     # With custom config (recommended)
@@ -175,6 +183,35 @@ check_docker() {
     fi
 }
 
+check_port() {
+    local port="$1"
+    local name="$2"
+    
+    if docker ps -q --filter "name=^${CONTAINER_NAME}$" | grep -q .; then
+        return 0
+    fi
+    
+    if command -v lsof >/dev/null 2>&1; then
+        if lsof -i ":${port}" >/dev/null 2>&1; then
+            fail "Port ${port} (${name}) is already in use. Set ${name}_PORT environment variable to use a different port."
+        fi
+    elif command -v netstat >/dev/null 2>&1; then
+        if netstat -tuln 2>/dev/null | grep -q ":${port} "; then
+            fail "Port ${port} (${name}) is already in use. Set ${name}_PORT environment variable to use a different port."
+        fi
+    elif command -v ss >/dev/null 2>&1; then
+        if ss -tuln 2>/dev/null | grep -q ":${port} "; then
+            fail "Port ${port} (${name}) is already in use. Set ${name}_PORT environment variable to use a different port."
+        fi
+    fi
+}
+
+check_ports() {
+    check_port "$OTLP_GRPC_PORT" "OTLP_GRPC"
+    check_port "$OTLP_HTTP_PORT" "OTLP_HTTP"
+    check_port "$HEALTH_CHECK_PORT" "HEALTH_CHECK"
+}
+
 stop_container() {
     log "Stopping container: ${CONTAINER_NAME}"
     docker stop "${CONTAINER_NAME}" 2>/dev/null || true
@@ -209,20 +246,22 @@ service:
 EOF
 }
 
-create_config() {
-    local config_dir
-    config_dir=$(mktemp -d)
+create_config_dir() {
+    # Use persistent directory that survives reboots
+    mkdir -p "$CONFIG_HOST_DIR"
     
     if [ -n "$CUSTOM_CONFIG_PATH" ]; then
         if [ ! -f "$CUSTOM_CONFIG_PATH" ]; then
             fail "Config file not found: $CUSTOM_CONFIG_PATH"
         fi
-        cp "$CUSTOM_CONFIG_PATH" "${config_dir}/config.yaml"
+        cp "$CUSTOM_CONFIG_PATH" "${CONFIG_HOST_DIR}/config.yaml"
+        log "Config copied to: ${CONFIG_HOST_DIR}/config.yaml"
+    elif [ ! -f "${CONFIG_HOST_DIR}/config.yaml" ]; then
+        get_default_config > "${CONFIG_HOST_DIR}/config.yaml"
+        log "Created default config at: ${CONFIG_HOST_DIR}/config.yaml"
     else
-        get_default_config > "${config_dir}/config.yaml"
+        log "Using existing config at: ${CONFIG_HOST_DIR}/config.yaml"
     fi
-    
-    echo "$config_dir"
 }
 
 run_regular_mode() {
@@ -234,9 +273,8 @@ run_regular_mode() {
     log "Pulling image: ${image}"
     docker pull "$image"
     
-    # Create config directory
-    local config_dir
-    config_dir=$(create_config)
+    # Create persistent config directory
+    create_config_dir
     
     log "Starting collector container..."
     
@@ -244,10 +282,10 @@ run_regular_mode() {
         --name "${CONTAINER_NAME}"
         --restart unless-stopped
         -e "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
-        -v "${config_dir}/config.yaml:/etc/otelcol-contrib/config.yaml:ro"
-        -p 4317:4317
-        -p 4318:4318
-        -p 13133:13133
+        -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
+        -p "${OTLP_GRPC_PORT}:4317"
+        -p "${OTLP_HTTP_PORT}:4318"
+        -p "${HEALTH_CHECK_PORT}:13133"
     )
     
     if [ -n "${CORALOGIX_DOMAIN:-}" ]; then
@@ -323,15 +361,16 @@ run_supervisor_mode() {
     log "Pulling image: ${image}"
     docker pull "$image"
     
-    # Create config directory
-    local config_dir
-    config_dir=$(mktemp -d)
+    # Create persistent config directory
+    mkdir -p "$CONFIG_HOST_DIR"
     
     # Create supervisor config
-    get_supervisor_config "${CORALOGIX_DOMAIN}" > "${config_dir}/supervisor.yaml"
+    get_supervisor_config "${CORALOGIX_DOMAIN}" > "${CONFIG_HOST_DIR}/supervisor.yaml"
+    log "Supervisor config at: ${CONFIG_HOST_DIR}/supervisor.yaml"
     
     # Create collector config
-    get_default_config > "${config_dir}/config.yaml"
+    get_default_config > "${CONFIG_HOST_DIR}/config.yaml"
+    log "Collector config at: ${CONFIG_HOST_DIR}/config.yaml"
     
     log "Starting supervisor container..."
     
@@ -339,11 +378,11 @@ run_supervisor_mode() {
         --name "${CONTAINER_NAME}"
         --restart unless-stopped
         -e "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
-        -v "${config_dir}/supervisor.yaml:/etc/otelcol-contrib/supervisor.yaml:ro"
-        -v "${config_dir}/config.yaml:/etc/otelcol-contrib/config.yaml:ro"
-        -p 4317:4317
-        -p 4318:4318
-        -p 13133:13133
+        -v "${CONFIG_HOST_DIR}/supervisor.yaml:${CONFIG_CONTAINER_DIR}/supervisor.yaml:ro"
+        -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
+        -p "${OTLP_GRPC_PORT}:4317"
+        -p "${OTLP_HTTP_PORT}:4318"
+        -p "${HEALTH_CHECK_PORT}:13133"
     )
     
     if [ "$DETACHED" = true ]; then
@@ -353,7 +392,7 @@ run_supervisor_mode() {
     # Remove existing container if present
     docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
     
-    docker run "${docker_args[@]}" "$image" --config /etc/otelcol-contrib/supervisor.yaml
+    docker run "${docker_args[@]}" "$image" --config ${CONFIG_CONTAINER_DIR}/supervisor.yaml
     
     if [ "$DETACHED" = true ]; then
         log "Supervisor container started successfully"
@@ -369,6 +408,7 @@ Installation Complete!
 ============================================
 
 Container: ${CONTAINER_NAME}
+Config Dir: ${CONFIG_HOST_DIR}
 
 Useful Commands:
     # View logs
@@ -378,7 +418,7 @@ Useful Commands:
     docker ps | grep ${CONTAINER_NAME}
 
     # Health check
-    curl -s http://localhost:13133/health | jq .
+    curl -s http://localhost:${HEALTH_CHECK_PORT}/health | jq .
 
     # Stop container
     docker stop ${CONTAINER_NAME}
@@ -390,9 +430,9 @@ Useful Commands:
     docker restart ${CONTAINER_NAME}
 
 Exposed Ports:
-    4317  - OTLP gRPC receiver
-    4318  - OTLP HTTP receiver
-    13133 - Health check endpoint
+    ${OTLP_GRPC_PORT}  - OTLP gRPC receiver
+    ${OTLP_HTTP_PORT}  - OTLP HTTP receiver
+    ${HEALTH_CHECK_PORT} - Health check endpoint
 
 EOF
 
@@ -401,7 +441,7 @@ EOF
         echo "Domain: ${CORALOGIX_DOMAIN}"
     else
         echo "Mode: Regular"
-        echo "Config: Mounted from host"
+        echo "Config: ${CONFIG_HOST_DIR}/config.yaml"
     fi
     echo ""
 }
@@ -438,6 +478,7 @@ main() {
     fi
     
     check_docker
+    check_ports
     
     if [ "$SUPERVISOR_MODE" = true ]; then
         run_supervisor_mode

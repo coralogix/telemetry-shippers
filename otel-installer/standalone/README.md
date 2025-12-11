@@ -1,330 +1,385 @@
-# Coralogix OpenTelemetry Collector Installer
+# Standalone Installation (Linux/macOS)
 
-A unified installation script for deploying the Coralogix OpenTelemetry Collector on Linux and macOS.
+Install the OpenTelemetry Collector directly on Linux or macOS as a system service.
+
+## Overview
+
+This script deploys the Coralogix OpenTelemetry Collector as:
+- **Linux**: systemd service
+- **macOS**: LaunchDaemon (system-wide) or LaunchAgent (user-level)
+
+Both support **regular mode** (local config) and **supervisor mode** (remote config via Fleet Management).
+
+<!-- split title="Linux Installation" path="installation/linux/index.md" -->
+
+# Linux Installation
+
+Install the OpenTelemetry Collector as a systemd service on Linux.
+
+## Prerequisites
+
+- Linux (Debian, Ubuntu, RHEL, CentOS, Amazon Linux, SUSE)
+- `curl` and `tar` commands
+- Root/sudo access
+- Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)
+
+## Quick Start
+
+Run the following command to install the collector with default configuration:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| CORALOGIX_PRIVATE_KEY | Yes | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
+| CORALOGIX_DOMAIN | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/) |
 
 ## Supported Platforms
 
 ### Linux Distributions
 
-**Debian-based:**
-- Debian
-- Ubuntu
-
-**RPM-based:**
-- Red Hat Enterprise Linux (RHEL)
-- CentOS
-- Fedora
-- Amazon Linux
-- Rocky Linux
-- AlmaLinux
-- Oracle Linux
-- SUSE Linux Enterprise Server (SLES)
-- openSUSE
-
-### macOS
-- macOS (Intel and Apple Silicon)
+- Debian, Ubuntu
+- RHEL, CentOS, Fedora
+- Amazon Linux, Amazon Linux 2023
+- Rocky Linux, AlmaLinux, Oracle Linux
+- SUSE Linux Enterprise Server, openSUSE
 
 ### Architectures
+
 - x86_64 (amd64)
 - ARM64 (aarch64)
 
-## Quick Start
+## Install with Custom Configuration
 
-### One-Line Installation (Recommended)
-
-```bash
-CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
-```
-
-### Install Specific Version
+To install with your own configuration file:
 
 ```bash
-CORALOGIX_PRIVATE_KEY="your-key" \
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
-  -- -v 0.140.1
+  -- --config /path/to/config.yaml
 ```
 
-### With Custom Configuration
+## Install Specific Version
 
 ```bash
-CORALOGIX_PRIVATE_KEY="your-key" \
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
-  -- -c /path/to/your/config.yaml
+  -- --version 0.140.1
 ```
 
-### Supervisor Mode (Linux only)
+## Supervisor Mode (Linux Only)
 
-Supervisor mode enables remote configuration management through Coralogix OpAMP:
+Supervisor mode enables remote configuration management through Coralogix Fleet Management:
 
 ```bash
-CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
+CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
-  -- -s
+  -- --supervisor
 ```
 
-With specific versions for supervisor and collector:
+## Script Options
 
-```bash
-CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
-  -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
-```
-
-### macOS LaunchAgent (User-Level)
-
-Install as a user-level agent that runs at login (instead of system-wide at boot):
-
-```bash
-CORALOGIX_MACOS_USER_AGENT="true" CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
-```
-
-### Upgrade Existing Installation
-
-Upgrades the binary while preserving your existing configuration:
-
-```bash
-CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
-  -- -u
-```
-
-To upgrade and replace config:
-
-```bash
-CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
-  -- -u -c /path/to/new/config.yaml
-```
-
-### Uninstall
-
-```bash
-# Remove service and binary, keep config and logs (can reinstall later)
-bash coralogix-otel-collector.sh --uninstall
-
-# Remove everything including config and logs
-bash coralogix-otel-collector.sh --uninstall --purge
-```
-
-## Options
-
-| Short | Long | Description |
-|-------|------|-------------|
-| `-v` | `--version <version>` | Install specific OTEL Collector version (default: latest from Coralogix Helm chart) |
-| `-c` | `--config <path>` | Path to custom configuration file (not available with -s/--supervisor) |
-| `-s` | `--supervisor` | Install with OpAMP Supervisor mode (Linux only) |
-| `-u` | `--upgrade` | Upgrade existing installation |
-| | `--supervisor-version <ver>` | Supervisor version (supervisor mode only, default: same as --version) |
-| | `--collector-version <ver>` | Collector version (supervisor mode only, default: same as --version) |
-| | `--uninstall` | Uninstall the collector |
-| | `--purge` | Remove all data when uninstalling (must be used with --uninstall) |
-| `-h` | `--help` | Show help message |
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `CORALOGIX_PRIVATE_KEY` | Coralogix private key | Yes |
-| `CORALOGIX_DOMAIN` | Coralogix domain (e.g., `us1.coralogix.com`, `eu2.coralogix.com`) | Supervisor mode only |
-| `CORALOGIX_MACOS_USER_AGENT` | Set to `true` to install as user-level LaunchAgent on macOS | No |
+| Option | Description |
+| --- | --- |
+| `-v, --version <version>` | Install specific collector version |
+| `-c, --config <path>` | Path to custom configuration file |
+| `-s, --supervisor` | Install with OpAMP Supervisor mode (Linux only) |
+| `-u, --upgrade` | Upgrade existing installation (preserves config) |
+| `--supervisor-version <version>` | Supervisor version (supervisor mode only) |
+| `--collector-version <version>` | Collector version (supervisor mode only) |
+| `--uninstall` | Remove the collector (keeps config) |
+| `--uninstall --purge` | Remove the collector and all configuration |
+| `-h, --help` | Show help message |
 
 ## Installation Locations
 
-### Linux (Regular Mode)
+### Regular Mode
 
 | Component | Location |
-|-----------|----------|
+| --- | --- |
 | Binary | `/usr/bin/otelcol-contrib` |
-| Config | `/etc/otelcol-contrib/config.yaml` |
+| Configuration | `/etc/otelcol-contrib/config.yaml` |
 | Service | `otelcol-contrib.service` (systemd) |
 | Logs | `journalctl -u otelcol-contrib` |
 
-### Linux (Supervisor Mode)
+### Supervisor Mode
 
 | Component | Location |
-|-----------|----------|
+| --- | --- |
 | Collector Binary | `/usr/local/bin/otelcol-contrib` |
 | Supervisor Config | `/etc/opampsupervisor/config.yaml` |
-| Collector Config | `/etc/opampsupervisor/collector.yaml` |
 | Effective Config | `/var/lib/opampsupervisor/effective.yaml` |
 | Service | `opampsupervisor.service` (systemd) |
 | Logs | `/var/log/opampsupervisor/opampsupervisor.log` |
 
-### macOS
-
-| Component | LaunchDaemon (system-wide) | LaunchAgent (user-level) |
-|-----------|----------------------------|--------------------------|
-| Binary | `/usr/local/bin/otelcol-contrib` | `/usr/local/bin/otelcol-contrib` |
-| Config | `/etc/otelcol-contrib/config.yaml` | `/etc/otelcol-contrib/config.yaml` |
-| Service | `/Library/LaunchDaemons/com.coralogix.otelcol.plist` | `~/Library/LaunchAgents/com.coralogix.otelcol.plist` |
-| Logs | `/var/log/otel-collector/otel-collector.log` | `~/Library/Logs/otel-collector/otel-collector.log` |
-
-## Configuration Behavior
-
-### Regular Mode
-
-| Scenario | Config Action |
-|----------|---------------|
-| Fresh install (no existing config) | Creates default empty config |
-| Fresh install (config exists) | **Preserves existing config** |
-| Install with `-c config.yaml` | Uses provided config |
-| Upgrade (`-u`) | **Preserves existing config** |
-| Upgrade with `-u -c config.yaml` | Replaces with provided config |
-| Uninstall | Preserves config (use `--purge` to remove) |
-
-### Supervisor Mode
-
-Supervisor mode always uses an empty local config. The actual configuration is managed remotely via OpAMP server.
-
-### Default Configuration
-
-The default empty config includes:
-- `nop` receivers and exporters
-- Health check on `127.0.0.1:13133`
-- Empty pipelines for traces, metrics, and logs
-
 ## Service Management
 
-### Linux (Regular Mode)
+### Regular Mode
 
 ```bash
 # Check status
 sudo systemctl status otelcol-contrib
 
-# Start/Stop/Restart
-sudo systemctl start otelcol-contrib
-sudo systemctl stop otelcol-contrib
-sudo systemctl restart otelcol-contrib
-
 # View logs
 sudo journalctl -u otelcol-contrib -f
 
-# View config
-cat /etc/otelcol-contrib/config.yaml
+# Restart
+sudo systemctl restart otelcol-contrib
+
+# Validate config
+/usr/bin/otelcol-contrib validate --config /etc/otelcol-contrib/config.yaml
 ```
 
-### Linux (Supervisor Mode)
+### Supervisor Mode
 
 ```bash
-# Supervisor status
+# Check status
 sudo systemctl status opampsupervisor
 
-# Collector process
-ps aux | grep otelcol-contrib
-
-# Supervisor logs
+# View logs
 sudo journalctl -u opampsupervisor -f
 tail -f /var/log/opampsupervisor/opampsupervisor.log
 
-# View configs
-cat /etc/opampsupervisor/config.yaml       # Supervisor config
-cat /etc/opampsupervisor/collector.yaml    # Collector config
-cat /var/lib/opampsupervisor/effective.yaml # Effective config from OpAMP
-
-# Restart supervisor
+# Restart
 sudo systemctl restart opampsupervisor
 ```
 
-### macOS (LaunchDaemon - system-wide)
+## Upgrade
+
+Upgrade the collector while preserving your existing configuration:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  -- --upgrade
+```
+
+To upgrade and replace the configuration:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  -- --upgrade --config /path/to/new-config.yaml
+```
+
+## Uninstall
+
+Remove the collector while keeping configuration and logs:
+
+```bash
+bash coralogix-otel-collector.sh --uninstall
+```
+
+Remove the collector and all data:
+
+```bash
+bash coralogix-otel-collector.sh --uninstall --purge
+```
+
+## Configuration Behavior
+
+| Scenario | Action |
+| --- | --- |
+| Fresh install | Creates default empty config |
+| Config exists | Preserves existing config |
+| With `--config` | Uses provided config |
+| Upgrade (`--upgrade`) | Preserves existing config |
+| Supervisor mode | Config managed remotely via OpAMP |
+
+## Troubleshooting
+
+### Service fails to start
+
+1. Check status: `sudo systemctl status otelcol-contrib`
+2. Check logs: `sudo journalctl -u otelcol-contrib -n 50`
+3. Validate config: `/usr/bin/otelcol-contrib validate --config /etc/otelcol-contrib/config.yaml`
+
+### Switching between modes
+
+Uninstall before switching between regular and supervisor modes:
+
+```bash
+bash coralogix-otel-collector.sh --uninstall --purge
+CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" bash coralogix-otel-collector.sh --supervisor
+```
+
+<!-- /split -->
+
+<!-- split title="macOS Installation" path="installation/macos/index.md" -->
+
+# macOS Installation
+
+Install the OpenTelemetry Collector on macOS as a LaunchDaemon (system-wide) or LaunchAgent (user-level).
+
+## Prerequisites
+
+- macOS (Intel or Apple Silicon)
+- `curl` and `tar` commands
+- Root/sudo access
+- Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)
+
+## Quick Start
+
+Run the following command to install the collector with default configuration:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| CORALOGIX_PRIVATE_KEY | Yes | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
+| CORALOGIX_MACOS_USER_AGENT | No | Set to `true` to install as user-level LaunchAgent (default: system-wide LaunchDaemon) |
+
+> **Note:** Supervisor mode is not supported on macOS.
+
+## macOS LaunchAgent (User-Level)
+
+Install as a user-level agent that runs at login (instead of system-wide at boot):
+
+```bash
+CORALOGIX_MACOS_USER_AGENT="true" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+```
+
+## Install with Custom Configuration
+
+To install with your own configuration file:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  -- --config /path/to/config.yaml
+```
+
+## Install Specific Version
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  -- --version 0.140.1
+```
+
+## Script Options
+
+| Option | Description |
+| --- | --- |
+| `-v, --version <version>` | Install specific collector version |
+| `-c, --config <path>` | Path to custom configuration file |
+| `-u, --upgrade` | Upgrade existing installation (preserves config) |
+| `--uninstall` | Remove the collector (keeps config) |
+| `--uninstall --purge` | Remove the collector and all configuration |
+| `-h, --help` | Show help message |
+
+## Installation Locations
+
+| Component | LaunchDaemon (system-wide) | LaunchAgent (user-level) |
+| --- | --- | --- |
+| Binary | `/usr/local/bin/otelcol-contrib` | `/usr/local/bin/otelcol-contrib` |
+| Configuration | `/etc/otelcol-contrib/config.yaml` | `/etc/otelcol-contrib/config.yaml` |
+| Plist | `/Library/LaunchDaemons/com.coralogix.otelcol.plist` | `~/Library/LaunchAgents/com.coralogix.otelcol.plist` |
+| Logs | `/var/log/otel-collector/otel-collector.log` | `~/Library/Logs/otel-collector/otel-collector.log` |
+
+## Service Management
+
+### LaunchDaemon (System-Wide)
 
 ```bash
 # Check status
 sudo launchctl list | grep otelcol
 
-# Stop
-sudo launchctl bootout system /Library/LaunchDaemons/com.coralogix.otelcol.plist
-
-# Start
-sudo launchctl bootstrap system /Library/LaunchDaemons/com.coralogix.otelcol.plist
+# View logs
+tail -f /var/log/otel-collector/otel-collector.log
 
 # Restart
 sudo launchctl bootout system /Library/LaunchDaemons/com.coralogix.otelcol.plist
 sudo launchctl bootstrap system /Library/LaunchDaemons/com.coralogix.otelcol.plist
-
-# View logs
-tail -f /var/log/otel-collector/otel-collector.log
 ```
 
-### macOS (LaunchAgent - user-level)
-
-To install as a user-level agent (runs at login, logs to user directory):
-
-```bash
-CORALOGIX_MACOS_USER_AGENT=true CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
-```
+### LaunchAgent (User-Level)
 
 ```bash
 # Check status
 launchctl list | grep otelcol
 
-# Stop
-launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
-
-# Start
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
+# View logs
+tail -f ~/Library/Logs/otel-collector/otel-collector.log
 
 # Restart
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
-
-# View logs (user-level location)
-tail -f ~/Library/Logs/otel-collector/otel-collector.log
 ```
+
+## Upgrade
+
+Upgrade the collector while preserving your existing configuration:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  -- --upgrade
+```
+
+To upgrade and replace the configuration:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  -- --upgrade --config /path/to/new-config.yaml
+```
+
+## Uninstall
+
+Remove the collector while keeping configuration and logs:
+
+```bash
+bash coralogix-otel-collector.sh --uninstall
+```
+
+Remove the collector and all data:
+
+```bash
+bash coralogix-otel-collector.sh --uninstall --purge
+```
+
+## Configuration Behavior
+
+| Scenario | Action |
+| --- | --- |
+| Fresh install | Creates default empty config |
+| Config exists | Preserves existing config |
+| With `--config` | Uses provided config |
+| Upgrade (`--upgrade`) | Preserves existing config |
 
 ## Troubleshooting
 
-### Installation fails with "Missing required commands"
-
-Install the required dependencies:
-- `curl` - for downloading files
-- `tar` - for extracting archives
-
 ### Service fails to start
 
-1. Check the service status:
-   ```bash
-   sudo systemctl status otelcol-contrib  # Linux
-   ```
+1. Check plist exists: `ls -la /Library/LaunchDaemons/com.coralogix.otelcol.plist`
+2. Check logs: `tail -f /var/log/otel-collector/otel-collector.log`
+3. Validate config: `/usr/local/bin/otelcol-contrib validate --config /etc/otelcol-contrib/config.yaml`
 
-2. Check the logs:
-   ```bash
-   sudo journalctl -u otelcol-contrib -n 50  # Linux
-   tail -f /var/log/otel-collector/otel-collector.log  # macOS
-   ```
+<!-- /split -->
 
-3. Validate the configuration:
-   ```bash
-   /usr/bin/otelcol-contrib validate --config /etc/otelcol-contrib/config.yaml
-   ```
+## Additional Resources
 
-### Permission denied errors
+| | |
+| --- | --- |
+| GitHub Repository | [telemetry-shippers](https://github.com/coralogix/telemetry-shippers/tree/master/otel-installer) |
+| OpenTelemetry Documentation | [OpenTelemetry](https://opentelemetry.io/docs/collector/) |
 
-The script automatically handles sudo. If you encounter permission issues, you can:
-- Run as root: `sudo bash script.sh`
-- Pre-cache sudo credentials: `sudo -v && bash script.sh`
+## Support
 
-### Switching between regular and supervisor modes
+**Need help?**
 
-You must uninstall before switching modes:
+Our world-class customer success team is available 24/7 to walk you through your setup and answer any questions that may come up.
 
-```bash
-# Uninstall current installation
-bash coralogix-otel-collector.sh --uninstall --purge
-
-# Install with different mode
-CORALOGIX_DOMAIN="..." CORALOGIX_PRIVATE_KEY="..." bash coralogix-otel-collector.sh -s
-```
-
-## Requirements
-
-- Linux (Debian/Ubuntu or RPM-based) or macOS
-- Architecture: amd64 or arm64
-- Root/sudo access (except for macOS LaunchAgent mode)
-- `curl` and `tar` commands
-
-## License
-
-See LICENSE file in the repository root.
+Feel free to reach out to us **via our in-app chat** or by sending us an email at [support@coralogix.com](mailto:support@coralogix.com).
