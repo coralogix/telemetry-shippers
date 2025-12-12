@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.250 / 2025-12-12
+- [CHORE] Bump Collector to 0.141.0
+
 ### v0.0.249 / 2025-12-08
 - [Feat] Bump OBI to [v0.3.0](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/releases/tag/v0.3.0)
 
