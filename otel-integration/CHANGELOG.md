@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.251 / 2025-12-12
+- [Feat] PullPolicy Configuration for `coralogix-ebpf-profiler` helm chart
+
 ### v0.0.250 / 2025-12-12
 - [CHORE] Bump Collector to 0.141.0
 - [Feat] Add deltaToCumulative preset (disabled by default) to convert metrics from delta temporality to cumulative.
