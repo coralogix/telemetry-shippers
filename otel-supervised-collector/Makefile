@@ -55,9 +55,9 @@ help:
 	@echo ''
 	@echo 'Examples:'
 	@echo '  make build'
-	@echo '  make build COLLECTOR_VERSION=0.140.1'
-	@echo '  make build SUPERVISOR_VERSION=0.140.1'
-	@echo '  make build COLLECTOR_VERSION=0.140.1 SUPERVISOR_VERSION=0.140.1'
+@echo '  make build COLLECTOR_VERSION=0.141.0'
+@echo '  make build SUPERVISOR_VERSION=0.141.0'
+@echo '  make build COLLECTOR_VERSION=0.141.0 SUPERVISOR_VERSION=0.141.0'
 	@echo '  make build IMAGE_TAG=v1.0.0' IMAGE_NAME=supervised-collector
 	@echo '  make build-multiarch'
 	@echo '  make build-multiarch-push'

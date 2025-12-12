@@ -19,7 +19,7 @@ Images are available at [Docker Hub](https://hub.docker.com/r/coralogixrepo/otel
 and are tagged with the OpenTelemetry Collector version in the following format:
 
 ```
-coralogixrepo/otel-supervised-collector:0.140.1
+coralogixrepo/otel-supervised-collector:0.141.0
 ```
 
 ### Supported platforms
