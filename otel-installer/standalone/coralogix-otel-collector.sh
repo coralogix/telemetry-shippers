@@ -4,10 +4,10 @@
 # Supports Linux and macOS
 #
 # One-line installation (sudo is handled automatically):
-#   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+#   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 #
 # Or with options:
-#   curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh | bash -s -- [OPTIONS]
+#   curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh | bash -s -- [OPTIONS]
 #
 # Note: The script will automatically use sudo when needed. You can run it as root or as a regular user.
 #
@@ -42,6 +42,10 @@ BINARY_PATH_DARWIN="/usr/local/bin/${BINARY_NAME}"
 CONFIG_DIR="/etc/otelcol-contrib"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 LOG_DIR="/var/log/otel-collector"
+
+OTEL_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+OTEL_COLLECTOR_CHECKSUMS_FILE="opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
+OTEL_SUPERVISOR_CHECKSUMS_FILE="checksums.txt"
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
 
 LAUNCHD_PLIST_DAEMON="/Library/LaunchDaemons/com.coralogix.otelcol.plist"
@@ -66,22 +70,94 @@ else
     SUDO_CMD="sudo"
 fi
 
+# Colors (disabled if not a terminal)
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    NC=''
+fi
 
 log() {
-    echo "[INFO] $*"
+    echo -e "${GREEN}[INFO]${NC} $*"
 }
 
 warn() {
-    echo "[WARN] $*" >&2
+    echo -e "${YELLOW}[WARN]${NC} $*" >&2
 }
 
 error() {
-    echo "[ERROR] $*" >&2
+    echo -e "${RED}[ERROR]${NC} $*" >&2
     exit 1
 }
 
 fail() {
     error "$@"
+}
+
+check_port() {
+    local port="$1"
+    local name="$2"
+    
+    if command -v lsof >/dev/null 2>&1; then
+        if lsof -i ":${port}" -sTCP:LISTEN >/dev/null 2>&1; then
+            return 1
+        fi
+    elif command -v netstat >/dev/null 2>&1; then
+        if netstat -tuln 2>/dev/null | grep -q ":${port} "; then
+            return 1
+        fi
+    elif command -v ss >/dev/null 2>&1; then
+        if ss -tuln 2>/dev/null | grep -q ":${port} "; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
+check_ports() {
+    local ports_in_use=""
+    
+    if ! check_port 4317 "OTLP gRPC"; then
+        ports_in_use="${ports_in_use}  - Port 4317 (OTLP gRPC)\n"
+    fi
+    if ! check_port 4318 "OTLP HTTP"; then
+        ports_in_use="${ports_in_use}  - Port 4318 (OTLP HTTP)\n"
+    fi
+    if ! check_port 13133 "Health Check"; then
+        ports_in_use="${ports_in_use}  - Port 13133 (Health Check)\n"
+    fi
+    
+    if [ -n "$ports_in_use" ]; then
+        echo ""
+        warn "The following ports are already in use:"
+        echo -e "$ports_in_use"
+        echo "This may cause the collector to fail to start."
+        echo ""
+        echo "Common causes:"
+        echo "  - Another collector instance is running (Docker or standalone)"
+        echo "  - Another service is using these ports"
+        echo ""
+        echo "To check what's using a port: lsof -i :PORT"
+        echo ""
+        
+        if [ ! -t 0 ]; then
+            fail "Port conflict detected. Stop conflicting services and retry."
+        fi
+        
+        read -p "Continue anyway? [y/N] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            fail "Installation cancelled due to port conflicts"
+        fi
+    fi
 }
 
 usage() {
@@ -117,25 +193,25 @@ Environment Variables:
 
 Examples:
     # One-line installation (recommended)
-    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 
     # Install specific version
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" -- -v 0.140.1
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -v 0.140.1
 
     # Install with custom config
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml
 
     # Install with supervisor
-    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" -- -s
+    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s
 
     # Install with supervisor using specific versions
-    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
+    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
-    CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+    CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 
     # Upgrade existing installation
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" -- -u
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -u
 
     # Uninstall (keep config/logs)
     bash coralogix-otel-collector.sh --uninstall
@@ -247,7 +323,7 @@ fetch_default_version() {
 
 validate_version() {
     local version="$1"
-    local release_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v${version}"
+    local release_url="${OTEL_RELEASES_BASE_URL}/tag/v${version}"
     local http_code
     
     http_code=$(curl -fsSL -o /dev/null -w "%{http_code}" "$release_url" 2>/dev/null || echo "000")
@@ -259,7 +335,7 @@ validate_version() {
         echo "  ${release_url}"
         echo ""
         echo "You can find available versions at:"
-        echo "  https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+        echo "  ${OTEL_RELEASES_BASE_URL}"
         echo ""
         return 1
     fi
@@ -318,13 +394,67 @@ get_timestamp() {
     date '+%Y%m%d-%H%M%S'
 }
 
+verify_checksum() {
+    local file="$1"
+    local expected_checksum="$2"
+    local actual_checksum
+    
+    if [ ! -f "$file" ]; then
+        fail "File not found for checksum verification: $file"
+    fi
+    
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual_checksum=$(sha256sum "$file" | awk '{print $1}')
+    elif command -v shasum >/dev/null 2>&1; then
+        actual_checksum=$(shasum -a 256 "$file" | awk '{print $1}')
+    else
+        warn "Neither sha256sum nor shasum found - skipping checksum verification"
+        return 0
+    fi
+    
+    if [ "$expected_checksum" != "$actual_checksum" ]; then
+        fail "Checksum verification failed for $(basename "$file")
+Expected: $expected_checksum
+Actual:   $actual_checksum
+The downloaded file may be corrupted or tampered with."
+    fi
+    
+    log "✓ Checksum verified: $(basename "$file")"
+    return 0
+}
+
+get_otel_checksum() {
+    local version="$1"
+    local filename="$2"
+    local checksums_url="${OTEL_RELEASES_BASE_URL}/download/v${version}/${OTEL_COLLECTOR_CHECKSUMS_FILE}"
+    local checksum
+    
+    checksum=$(curl -fsSL "$checksums_url" 2>/dev/null | grep "  ${filename}$" | awk '{print $1}')
+    echo "$checksum"
+}
+
+get_supervisor_checksum() {
+    local version="$1"
+    local filename="$2"
+    local checksums_url="${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    local checksum
+    
+    checksum=$(curl -fsSL "$checksums_url" 2>/dev/null | grep "  ${filename}$" | awk '{print $1}')
+    echo "$checksum"
+}
+
 download() {
     local url="$1"
     local dest="$2"
+    local expected_checksum="${3:-}"
     
     log "Downloading: $url"
     if ! curl -fL --progress-bar --retry 3 --retry-delay 2 -o "$dest" "$url"; then
         fail "Failed to download: $url"
+    fi
+    
+    if [ -n "$expected_checksum" ]; then
+        verify_checksum "$dest" "$expected_checksum"
     fi
 }
 
@@ -427,19 +557,26 @@ install_collector_linux() {
     case "$pkg_type" in
         deb)
             pkg_name="${BINARY_NAME}_${version}_linux_${arch}.deb"
-            pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${version}/${pkg_name}"
             ;;
         rpm)
             pkg_name="${BINARY_NAME}_${version}_linux_${arch}.rpm"
-            pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${version}/${pkg_name}"
             ;;
         *)
             fail "Unsupported package type: $pkg_type"
             ;;
     esac
     
+    pkg_url="${OTEL_RELEASES_BASE_URL}/download/v${version}/${pkg_name}"
+    
     log "Downloading OpenTelemetry Collector ${version} (${pkg_type})..."
-    download "$pkg_url" "$pkg_name"
+    local checksum
+    checksum=$(get_otel_checksum "$version" "$pkg_name")
+    if [ -n "$checksum" ]; then
+        download "$pkg_url" "$pkg_name" "$checksum"
+    else
+        log "Checksum not available - downloading without verification"
+        download "$pkg_url" "$pkg_name"
+    fi
     
     log "Installing OpenTelemetry Collector package..."
     if [ "$pkg_type" = "deb" ]; then
@@ -468,6 +605,13 @@ install_collector_linux() {
         fail "Installation verification failed"
     fi
     
+    if getent group systemd-journal >/dev/null 2>&1; then
+        if id otelcol-contrib >/dev/null 2>&1; then
+            log "Adding otelcol-contrib user to systemd-journal group for log access"
+            $SUDO_CMD usermod -a -G systemd-journal otelcol-contrib || warn "Failed to add user to systemd-journal group"
+        fi
+    fi
+    
     log "Collector installed successfully: $($BINARY_PATH_LINUX --version)"
 }
 
@@ -482,9 +626,16 @@ install_collector_darwin() {
     esac
     
     local tar_name="${BINARY_NAME}_${version}_${darwin_arch}.tar.gz"
-    local tar_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${version}/${tar_name}"
+    local tar_url="${OTEL_RELEASES_BASE_URL}/download/v${version}/${tar_name}"
     
-    download "$tar_url" "$tar_name"
+    local checksum
+    checksum=$(get_otel_checksum "$version" "$tar_name")
+    if [ -n "$checksum" ]; then
+        download "$tar_url" "$tar_name" "$checksum"
+    else
+        log "Checksum not available - downloading without verification"
+        download "$tar_url" "$tar_name"
+    fi
     
     log "Extracting collector..."
     tar -xzf "$tar_name" || fail "Failed to extract $tar_name"
@@ -576,10 +727,17 @@ install_supervisor() {
     
     log "Installing OpenTelemetry Collector binary (required for supervisor)..."
     local tar_name="otelcol-contrib_${collector_ver}_linux_${arch}.tar.gz"
-    local tar_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${collector_ver}/${tar_name}"
+    local tar_url="${OTEL_RELEASES_BASE_URL}/download/v${collector_ver}/${tar_name}"
     
     log "Downloading OpenTelemetry Collector ${collector_ver}..."
-    download "$tar_url" "$tar_name"
+    local checksum
+    checksum=$(get_otel_checksum "$collector_ver" "$tar_name")
+    if [ -n "$checksum" ]; then
+        download "$tar_url" "$tar_name" "$checksum"
+    else
+        log "Checksum not available - downloading without verification"
+        download "$tar_url" "$tar_name"
+    fi
     
     log "Extracting Collector..."
     tar -xzf "$tar_name" >/dev/null 2>&1 || fail "Extraction failed for $tar_name"
@@ -601,18 +759,25 @@ install_supervisor() {
     case "$pkg_type" in
         deb)
             pkg_name="opampsupervisor_${supervisor_ver}_linux_${arch}.deb"
-            pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${supervisor_ver}/${pkg_name}"
             ;;
         rpm)
             pkg_name="opampsupervisor_${supervisor_ver}_linux_${arch}.rpm"
-            pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${supervisor_ver}/${pkg_name}"
             ;;
         *)
             fail "Unsupported package type: $pkg_type"
             ;;
     esac
     
-    download "$pkg_url" "$pkg_name"
+    pkg_url="${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${supervisor_ver}/${pkg_name}"
+    
+    local supervisor_checksum
+    supervisor_checksum=$(get_supervisor_checksum "$supervisor_ver" "$pkg_name")
+    if [ -n "$supervisor_checksum" ]; then
+        download "$pkg_url" "$pkg_name" "$supervisor_checksum"
+    else
+        log "Checksum not available - downloading without verification"
+        download "$pkg_url" "$pkg_name"
+    fi
     
     log "Installing OpAMP Supervisor ${supervisor_ver}..."
     if [ "$pkg_type" = "deb" ]; then
@@ -628,6 +793,13 @@ install_supervisor() {
             $SUDO_CMD dnf install -y "$pkg_name"
         else
             $SUDO_CMD rpm -i "$pkg_name" || fail "Failed to install supervisor package. Please install dependencies manually."
+        fi
+    fi
+    
+    if getent group systemd-journal >/dev/null 2>&1; then
+        if id otelcol-contrib >/dev/null 2>&1; then
+            log "Adding otelcol-contrib user to systemd-journal group for log access"
+            $SUDO_CMD usermod -a -G systemd-journal otelcol-contrib || warn "Failed to add user to systemd-journal group"
         fi
     fi
     
@@ -1193,6 +1365,7 @@ main() {
     
     check_root
     check_dependencies
+    check_ports
     
     version=$(get_version)
     log "Installing version: $version"

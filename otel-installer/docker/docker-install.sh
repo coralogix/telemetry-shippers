@@ -2,10 +2,10 @@
 # Coralogix OpenTelemetry Collector - Docker Installation Script
 #
 # One-line installation:
-#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/docker/docker-install.sh)"
+#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)"
 #
 # Supervisor mode:
-#   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/docker/docker-install.sh)" -- --supervisor
+#   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor
 #
 # Environment Variables:
 #   CORALOGIX_PRIVATE_KEY   Coralogix private key (required)

@@ -29,7 +29,7 @@ Run the following command to install the collector with default configuration:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 ```
 
 ## Environment Variables
@@ -60,7 +60,7 @@ To install with your own configuration file:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --config /path/to/config.yaml
 ```
 
@@ -68,7 +68,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --version 0.140.1
 ```
 
@@ -78,7 +78,7 @@ Supervisor mode enables remote configuration management through Coralogix Fleet 
 
 ```bash
 CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --supervisor
 ```
 
@@ -155,7 +155,7 @@ Upgrade the collector while preserving your existing configuration:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --upgrade
 ```
 
@@ -163,7 +163,7 @@ To upgrade and replace the configuration:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --upgrade --config /path/to/new-config.yaml
 ```
 
@@ -229,7 +229,7 @@ Run the following command to install the collector with default configuration:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 ```
 
 ## Environment Variables
@@ -247,7 +247,7 @@ Install as a user-level agent that runs at login (instead of system-wide at boot
 
 ```bash
 CORALOGIX_MACOS_USER_AGENT="true" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)"
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 ```
 
 ## Install with Custom Configuration
@@ -256,7 +256,7 @@ To install with your own configuration file:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --config /path/to/config.yaml
 ```
 
@@ -264,7 +264,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --version 0.140.1
 ```
 
@@ -324,7 +324,7 @@ Upgrade the collector while preserving your existing configuration:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --upgrade
 ```
 
@@ -332,7 +332,7 @@ To upgrade and replace the configuration:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/standalone/coralogix-otel-collector.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
   -- --upgrade --config /path/to/new-config.yaml
 ```
 
