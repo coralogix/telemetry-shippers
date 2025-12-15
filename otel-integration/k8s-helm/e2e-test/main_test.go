@@ -281,6 +281,9 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
 				expectedMetrics[metric.Name()] = true
+			} else if _, optional := optionalExpectedMetrics[metric.Name()]; optional {
+				optionalExpectedMetrics[metric.Name()] = true
+				ok = true
 			}
 			if !ok {
 				spew.Dump(metric)
