@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	deltaMetricEmitTimeout = 45 * time.Second
-	deltaMetricWaitTimeout = 3 * time.Minute
-	deltaMetricName        = "delta_to_cumulative_e2e_counter"
-	deltaMetricAttrKey     = "delta.to.cumulative.test.id"
+	deltaMetricEmitTimeout         = 45 * time.Second
+	deltaMetricWaitTimeout         = 3 * time.Minute
+	deltaMetricName                = "delta_to_cumulative_e2e_counter"
+	deltaMetricAttrKey             = "delta.to.cumulative.test.id"
+	collectorDeltaDatapointsMetric = "otelcol_deltatocumulative_datapoints"
 )
 
 func TestE2E_DeltaToCumulativePreset(t *testing.T) {
@@ -69,6 +70,7 @@ func TestE2E_DeltaToCumulativePreset(t *testing.T) {
 	t.Log("Delta metrics emitted, waiting for cumulative export")
 
 	waitForCumulativeMetric(t, metricsConsumer, serviceName, testID, expectedStart, expectedTotal)
+	waitForCollectorMetric(t, metricsConsumer, collectorDeltaDatapointsMetric)
 	t.Log("Delta-to-cumulative conversion verified successfully")
 	// Allow stale delta streams to expire before other tests assert on exported metrics.
 	time.Sleep(3 * time.Second)
@@ -151,6 +153,14 @@ func waitForCumulativeMetric(t *testing.T, sink *consumertest.MetricsSink, servi
 	}, deltaMetricWaitTimeout, 2*time.Second, "did not observe cumulative metric for service=%s testID=%s", serviceName, testID)
 }
 
+func waitForCollectorMetric(t *testing.T, sink *consumertest.MetricsSink, metricName string) {
+	t.Helper()
+
+	require.Eventuallyf(t, func() bool {
+		return collectorMetricExists(sink.AllMetrics(), metricName)
+	}, deltaMetricWaitTimeout, 2*time.Second, "did not observe collector metric %s", metricName)
+}
+
 func hasCumulativeSample(metrics []pmetric.Metrics, serviceName, testID string, expectedStart pcommon.Timestamp, expectedTotal float64) bool {
 	for _, current := range metrics {
 		rms := current.ResourceMetrics()
@@ -189,6 +199,24 @@ func hasCumulativeSample(metrics []pmetric.Metrics, serviceName, testID string, 
 						if value >= expectedTotal {
 							return true
 						}
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+func collectorMetricExists(metrics []pmetric.Metrics, metricName string) bool {
+	for _, current := range metrics {
+		rms := current.ResourceMetrics()
+		for i := 0; i < rms.Len(); i++ {
+			scopeMetrics := rms.At(i).ScopeMetrics()
+			for j := 0; j < scopeMetrics.Len(); j++ {
+				metricSlice := scopeMetrics.At(j).Metrics()
+				for k := 0; k < metricSlice.Len(); k++ {
+					if metricSlice.At(k).Name() == metricName {
+						return true
 					}
 				}
 			}

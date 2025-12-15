@@ -427,7 +427,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_deltatocumulative_streams_limit":                   false,
 	"otelcol_deltatocumulative_streams_max_stale_seconds":       false,
 	"otelcol_deltatocumulative_streams_tracked":                 false,
-	"otelcol_deltatocumulative_datapoints":                      false,
 	"otelcol_process_cpu_seconds":                               false,
 	"otelcol_process_memory_rss_bytes":                          false,
 	"otelcol_process_runtime_heap_alloc_bytes":                  false,
