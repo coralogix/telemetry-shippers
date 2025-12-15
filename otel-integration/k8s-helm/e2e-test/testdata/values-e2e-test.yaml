@@ -8,6 +8,9 @@ opentelemetry-agent:
   service:
     enabled: true
   presets:
+    deltaToCumulative:
+      enabled: true
+      maxStale: 1s
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.

@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.252 / 2025-12-15
+- [Feat] Add the `deltaToCumulative` preset to the agent so operators can opt into converting delta metrics before export.
+
 ### v0.0.251 / 2025-12-12
 - [Feat] PullPolicy Configuration for `coralogix-ebpf-profiler` helm chart
 

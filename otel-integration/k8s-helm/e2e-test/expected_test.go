@@ -7,6 +7,17 @@ var expectedResourceMetricsSchemaURL = map[string]bool{
 
 const expectedScopeVersion = ""
 
+func cloneAndOverrideStringMap(src map[string]string, overrides map[string]string) map[string]string {
+	dst := make(map[string]string, len(src)+len(overrides))
+	for k, v := range src {
+		dst[k] = v
+	}
+	for k, v := range overrides {
+		dst[k] = v
+	}
+	return dst
+}
+
 var expectedResourceScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":        false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper":       false,
@@ -21,6 +32,7 @@ var expectedResourceScopeNames = map[string]bool{
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor":                                false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor":                                       false,
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor":                                 false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor":                            false,
 	"spanmetricsconnector": false,
 
 	"go.opentelemetry.io/collector/exporter/exporterhelper":          false,
@@ -32,7 +44,12 @@ var expectedResourceScopeNames = map[string]bool{
 	"go.opentelemetry.io/collector/service":                          false,
 }
 
-var unwantedScopeNames = map[string]struct{}{}
+var (
+	unwantedScopeNames = map[string]struct{}{}
+	optionalScopeNames = map[string]struct{}{
+		"delta-to-cumulative-e2e": {},
+	}
+)
 
 var expectedResourceAttributesKubeletstatreceiver = map[string]string{
 	"azure.resourcegroup.name":    "",
@@ -189,6 +206,13 @@ var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
 	"azure.resourcegroup.name":    "",
 	"service.instance.id":         "",
 }
+
+var expectedResourceAttributesDeltaToCumulative = cloneAndOverrideStringMap(
+	expectedResourceAttributesMemorylimiterprocessor,
+	map[string]string{
+		"service.name": "",
+	},
+)
 
 var expectedResourceAttributesSpanmetricsconnector = map[string]string{
 	"service.name":                "",
@@ -400,6 +424,10 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_exporter_sent_log_records":                         false,
 	"otelcol_exporter_sent_metric_points":                       false,
 	"otelcol_exporter_sent_spans":                               false,
+	"otelcol_deltatocumulative_streams_limit":                   false,
+	"otelcol_deltatocumulative_streams_max_stale_seconds":       false,
+	"otelcol_deltatocumulative_streams_tracked":                 false,
+	"otelcol_deltatocumulative_datapoints":                      false,
 	"otelcol_process_cpu_seconds":                               false,
 	"otelcol_process_memory_rss_bytes":                          false,
 	"otelcol_process_runtime_heap_alloc_bytes":                  false,
