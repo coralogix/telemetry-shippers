@@ -411,8 +411,12 @@ function Install-Collector {
         [string]$Arch
     )
     
-    $tarName = "${BINARY_NAME.Replace('.exe', '')}_${Version}_windows_${Arch}.tar.gz"
-    $tarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${Version}/${tarName}"
+    $binaryNameWithoutExt = $BINARY_NAME.Replace('.exe', '')
+    if ([string]::IsNullOrEmpty($binaryNameWithoutExt)) {
+        Write-Error "Failed to determine binary name. BINARY_NAME is: $BINARY_NAME"
+    }
+    $tarName = "$binaryNameWithoutExt" + "_" + "$Version" + "_windows_" + "$Arch" + ".tar.gz"
+    $tarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v$Version/$tarName"
     $workDir = Join-Path $env:TEMP "${SERVICE_NAME}-install-$(Get-Timestamp)-$PID"
     
     try {
@@ -420,6 +424,7 @@ function Install-Collector {
         Set-Location $workDir
         
         Write-Log "Downloading OpenTelemetry Collector ${Version}..."
+        Write-Log "Download URL: $tarUrl"
         Invoke-Download -Url $tarUrl -Destination $tarName
         
         Write-Log "Extracting collector..."
