@@ -366,6 +366,7 @@ function Restore-Config {
 }
 
 function Get-EmptyCollectorConfig {
+    $logFile = $LOG_DIR -replace '\\', '/'
     return @"
 receivers:
   nop:
@@ -383,6 +384,8 @@ service:
   telemetry:
     logs:
       encoding: json
+      output_paths:
+        - $logFile/otelcol-contrib.log
   pipelines:
     traces:
       receivers: [nop]
@@ -399,6 +402,7 @@ service:
 function New-EmptyConfig {
     Write-Log "Creating empty baseline configuration"
     New-Item -ItemType Directory -Path $CONFIG_DIR -Force | Out-Null
+    New-Item -ItemType Directory -Path $LOG_DIR -Force | Out-Null
     Get-EmptyCollectorConfig | Out-File -FilePath $CONFIG_FILE -Encoding utf8 -Force
 }
 
@@ -1117,7 +1121,7 @@ Config: $CONFIG_FILE
 Useful commands:
   Check status:  Get-Service $SERVICE_NAME
   View config:   Get-Content $CONFIG_FILE
-  View logs:     Get-EventLog -LogName Application -Source $SERVICE_NAME -Newest 50
+  View logs:     Get-Content "$LOG_DIR\otelcol-contrib.log" -Tail 50
   Restart:       Restart-Service $SERVICE_NAME
   Stop:          Stop-Service $SERVICE_NAME
   Start:         Start-Service $SERVICE_NAME

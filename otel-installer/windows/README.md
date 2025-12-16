@@ -109,7 +109,7 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 | Binary | `C:\Program Files\OpenTelemetry\Collector\otelcol-contrib.exe` |
 | Configuration | `C:\ProgramData\OpenTelemetry\Collector\config.yaml` |
 | Service | `otelcol-contrib` (Windows Service) |
-| Logs | Windows Event Log (Application) |
+| Logs | `C:\ProgramData\OpenTelemetry\Collector\logs\otelcol-contrib.log` |
 
 ### Supervisor Mode
 
@@ -131,8 +131,11 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 # Check status
 Get-Service otelcol-contrib
 
-# View logs (Event Log)
-Get-EventLog -LogName Application -Source otelcol-contrib -Newest 50
+# View logs (tail last 50 lines)
+Get-Content "C:\ProgramData\OpenTelemetry\Collector\logs\otelcol-contrib.log" -Tail 50
+
+# Follow logs in real-time
+Get-Content "C:\ProgramData\OpenTelemetry\Collector\logs\otelcol-contrib.log" -Tail 50 -Wait
 
 # Restart
 Restart-Service otelcol-contrib
@@ -214,7 +217,7 @@ Remove the collector and all data:
 ### Service fails to start
 
 1. Check status: `Get-Service otelcol-contrib`
-2. Check Event Log: `Get-EventLog -LogName Application -Source otelcol-contrib -Newest 50`
+2. Check logs: `Get-Content "C:\ProgramData\OpenTelemetry\Collector\logs\otelcol-contrib.log" -Tail 50`
 3. Validate config:
    ```powershell
    & "C:\Program Files\OpenTelemetry\Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
