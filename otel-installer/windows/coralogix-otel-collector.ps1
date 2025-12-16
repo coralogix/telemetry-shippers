@@ -212,11 +212,24 @@ function Test-Administrator {
 function Get-DefaultVersion {
     try {
         $chartYaml = Invoke-WebRequest -Uri $CHART_YAML_URL -UseBasicParsing -ErrorAction Stop
-        $versionLine = $chartYaml.Content | Select-String -Pattern "^appVersion:" | Select-Object -First 1
-        if ($versionLine) {
-            $version = ($versionLine.Line -replace "appVersion:\s*", "").Trim()
-            if ($version) {
-                return $version
+        $content = $chartYaml.Content
+        
+        # Split content into lines for better parsing (handle both Windows and Unix line endings)
+        $lines = $content -split "[\r\n]+"
+        
+        foreach ($line in $lines) {
+            # Look for appVersion line (case-insensitive, with or without quotes)
+            # Pattern matches: "appVersion: 0.141.0" or "appVersion: '0.141.0'" or "  appVersion: 0.141.0"
+            if ($line -match '^\s*appVersion\s*:\s*(.+)') {
+                $version = $matches[1].Trim()
+                # Remove surrounding quotes (single or double) and any whitespace
+                $version = $version -replace '^["'']|["'']$', '' -replace '\s', ''
+                
+                # Validate version format (e.g., 0.141.0)
+                if ($version -match '^\d+\.\d+\.\d+') {
+                    Write-Log "Found version in Chart.yaml: $version"
+                    return $version
+                }
             }
         }
     }
@@ -229,7 +242,7 @@ function Get-DefaultVersion {
         Write-Host "  .\coralogix-otel-collector.ps1 -Version 0.XXX.X"
         Write-Host ""
         Write-Host "You can find the latest version at appVersion field in the Chart.yaml file:"
-        Write-Host "  https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/Chart.yaml"
+        Write-Host "  https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
         Write-Host ""
         return $null
     }
@@ -238,6 +251,9 @@ function Get-DefaultVersion {
     Write-Host ""
     Write-Host "Please specify the version manually using the -Version parameter:"
     Write-Host "  .\coralogix-otel-collector.ps1 -Version 0.XXX.X"
+    Write-Host ""
+    Write-Host "You can find the latest version at appVersion field in the Chart.yaml file:"
+    Write-Host "  https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
     Write-Host ""
     return $null
 }
