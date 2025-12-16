@@ -437,19 +437,103 @@ function Install-Collector {
         [string]$Arch
     )
     
-    $binaryNameWithoutExt = $BINARY_NAME.Replace('.exe', '')
-    if ([string]::IsNullOrEmpty($binaryNameWithoutExt)) {
-        Write-Error "Failed to determine binary name. BINARY_NAME is: $BINARY_NAME"
-    }
-    $tarName = "$binaryNameWithoutExt" + "_" + "$Version" + "_windows_" + "$Arch" + ".tar.gz"
-    $tarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v$Version/$tarName"
+    # Map architecture names (MSI uses x64, tar.gz uses amd64)
+    $msiArch = if ($Arch -eq "amd64") { "x64" } else { $Arch }
+    
+    # Try MSI installer first (preferred for Windows, especially amd64/x64)
+    $msiName = "otelcol-contrib_${Version}_windows_${msiArch}.msi"
+    $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${Version}/${msiName}"
     $workDir = Join-Path $env:TEMP "${SERVICE_NAME}-install-$(Get-Timestamp)-$PID"
     
     try {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
         Set-Location $workDir
         
-        Write-Log "Downloading OpenTelemetry Collector ${Version}..."
+        # Try MSI installer first
+        Write-Log "Attempting to download MSI installer..."
+        Write-Log "Download URL: $msiUrl"
+        
+        try {
+            Invoke-Download -Url $msiUrl -Destination $msiName
+            Write-Log "MSI installer downloaded successfully"
+            
+            # Install MSI silently (MSI installer creates its own service, we'll remove it and create ours)
+            Write-Log "Installing OpenTelemetry Collector from MSI..."
+            $msiPath = Join-Path $workDir $msiName
+            
+            # MSI installer typically installs to Program Files\OpenTelemetry\Collector
+            # We'll use /qn for quiet install and let it install to default location, then use that binary
+            $msiArgs = "/i `"$msiPath`" /qn /norestart"
+            $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
+            
+            if ($msiResult.ExitCode -eq 0 -or $msiResult.ExitCode -eq 3010) {
+                # Exit code 3010 means success but requires reboot (acceptable)
+                Write-Log "MSI installation completed successfully"
+                
+                # MSI installer typically installs to Program Files\OpenTelemetry\Collector
+                # Check common installation locations
+                $msiInstallPaths = @(
+                    "${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe",
+                    "${env:ProgramFiles(x86)}\OpenTelemetry\Collector\otelcol-contrib.exe",
+                    $BINARY_PATH
+                )
+                
+                $msiBinaryPath = $null
+                foreach ($path in $msiInstallPaths) {
+                    if (Test-Path $path) {
+                        $msiBinaryPath = $path
+                        Write-Log "Collector binary found at: $msiBinaryPath"
+                        break
+                    }
+                }
+                
+                if (-not $msiBinaryPath) {
+                    Write-Warn "Binary not found in expected locations after MSI install. Falling back to tar.gz extraction."
+                    throw "MSI binary not found"
+                }
+                
+                # If MSI installed to a different location, copy to our expected location
+                if ($msiBinaryPath -ne $BINARY_PATH) {
+                    Write-Log "Copying binary from MSI installation to expected location: $BINARY_PATH"
+                    New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
+                    Copy-Item -Path $msiBinaryPath -Destination $BINARY_PATH -Force
+                }
+                
+                # MSI installer may have created a service - we'll remove it and create our own with custom config
+                $msiService = Get-Service -Name "otelcol-contrib" -ErrorAction SilentlyContinue
+                if ($msiService) {
+                    Write-Log "Removing MSI-installed service (will create custom service with our configuration)..."
+                    Stop-Service -Name "otelcol-contrib" -Force -ErrorAction SilentlyContinue
+                    & sc.exe delete "otelcol-contrib" | Out-Null
+                    Start-Sleep -Seconds 2
+                }
+                
+                # Verify installation
+                $versionOutput = & $BINARY_PATH --version 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "Installation verification failed"
+                }
+                
+                Write-Log "Collector installed successfully via MSI: $versionOutput"
+                return
+            } else {
+                Write-Warn "MSI installation failed with exit code $($msiResult.ExitCode). Falling back to tar.gz extraction."
+                throw "MSI installation failed"
+            }
+        }
+        catch {
+            Write-Log "MSI installer not available or failed, falling back to tar.gz extraction: $($_.Exception.Message)"
+        }
+        
+        # Fallback to tar.gz extraction
+        $binaryNameWithoutExt = $BINARY_NAME.Replace('.exe', '')
+        if ([string]::IsNullOrEmpty($binaryNameWithoutExt)) {
+            Write-Error "Failed to determine binary name. BINARY_NAME is: $BINARY_NAME"
+        }
+        $tarName = "$binaryNameWithoutExt" + "_" + "$Version" + "_windows_" + "$Arch" + ".tar.gz"
+        $tarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v$Version/$tarName"
+        
+        Write-Log "Downloading OpenTelemetry Collector ${Version} from tar.gz..."
         Write-Log "Download URL: $tarUrl"
         Invoke-Download -Url $tarUrl -Destination $tarName
         
@@ -637,60 +721,18 @@ telemetry:
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
-    # Store environment variables securely in registry with restricted ACLs
-    $serviceEnvRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME\Environment"
-    if (-not (Test-Path $serviceEnvRegistryPath)) {
-        New-Item -Path $serviceEnvRegistryPath -Force | Out-Null
-    }
-    
-    # Write values first (before setting restrictive ACLs)
-    Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -Value $env:CORALOGIX_PRIVATE_KEY -Type String -Force | Out-Null
-    
-    # Now set restrictive ACLs: Only SYSTEM and Administrators can read/write
-    # Use Get-Acl/Set-Acl directly on the registry path
-    try {
-        $acl = Get-Acl -Path $serviceEnvRegistryPath
-        $acl.SetAccessRuleProtection($true, $false)
-        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-        $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-        # SYSTEM: FullControl (needs to read at runtime)
-        $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
-        # Administrators: FullControl (needs to read/write for management)
-        $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
-        $acl.SetAccessRule($systemRule)
-        $acl.SetAccessRule($adminRule)
-        Set-Acl -Path $serviceEnvRegistryPath -AclObject $acl
-        Write-Log "Registry ACLs set successfully"
-    }
-    catch {
-        Write-Warn "Failed to set restrictive ACLs on registry key: $($_.Exception.Message)"
-        Write-Warn "Registry values are stored but may be accessible to other users. Ensure you're running as Administrator."
-    }
-    
-    # Create minimal wrapper script that reads from registry (stored in secure location with restricted ACLs)
+    # Create wrapper script with environment variables
     $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
     New-Item -ItemType Directory -Path $wrapperScriptDir -Force | Out-Null
     $supervisorWrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
     
-    # Wrapper script reads from registry (no secrets embedded)
+    # Wrapper script sets environment variables and runs supervisor
     $supervisorWrapperContent = @"
-# Service wrapper - reads environment variables from secure registry location
-`$regPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME\Environment'
-`$env:CORALOGIX_PRIVATE_KEY = (Get-ItemProperty -Path `$regPath -Name 'CORALOGIX_PRIVATE_KEY' -ErrorAction SilentlyContinue).CORALOGIX_PRIVATE_KEY
+# Service wrapper - sets environment variables and runs supervisor
+`$env:CORALOGIX_PRIVATE_KEY = '$($env:CORALOGIX_PRIVATE_KEY -replace "'", "''")'
 & '$SUPERVISOR_BINARY_PATH' --config '$SUPERVISOR_CONFIG_FILE'
 "@
     $supervisorWrapperContent | Out-File -FilePath $supervisorWrapperScript -Encoding utf8 -Force
-    
-    # Restrict wrapper script ACLs: Only SYSTEM and Administrators can read
-    $fileAcl = Get-Acl $supervisorWrapperScript
-    $fileAcl.SetAccessRuleProtection($true, $false)
-    $fileSystemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-    $fileAdminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    $fileSystemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($fileSystemSid, "ReadAndExecute", "Allow")
-    $fileAdminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($fileAdminSid, "ReadAndExecute", "Allow")
-    $fileAcl.SetAccessRule($fileSystemRule)
-    $fileAcl.SetAccessRule($fileAdminRule)
-    Set-Acl -Path $supervisorWrapperScript -AclObject $fileAcl
     
     # Create service using wrapper script
     $supervisorServiceBinPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$supervisorWrapperScript`""
@@ -763,65 +805,29 @@ function New-WindowsService {
         Start-Sleep -Seconds 2
     }
     
-    # Store environment variables securely in registry with restricted ACLs
-    $serviceEnvRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME\Environment"
-    if (-not (Test-Path $serviceEnvRegistryPath)) {
-        New-Item -Path $serviceEnvRegistryPath -Force | Out-Null
+    # Check if MSI installer created a service (it might use a different name)
+    # The MSI installer typically creates a service named "otelcol-contrib" or similar
+    $msiService = Get-Service -Name "otelcol-contrib" -ErrorAction SilentlyContinue
+    if ($msiService) {
+        Write-Log "MSI installer service detected. Stopping and removing it to use our custom configuration..."
+        Stop-Service -Name "otelcol-contrib" -Force -ErrorAction SilentlyContinue
+        & sc.exe delete "otelcol-contrib" | Out-Null
+        Start-Sleep -Seconds 2
     }
     
-    # Write values first (before setting restrictive ACLs)
-    Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -Value $env:CORALOGIX_PRIVATE_KEY -Type String -Force | Out-Null
-    
-    if ($env:CORALOGIX_DOMAIN) {
-        Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_DOMAIN" -Value $env:CORALOGIX_DOMAIN -Type String -Force | Out-Null
-    }
-    
-    # Now set restrictive ACLs: Only SYSTEM and Administrators can read/write
-    # Use Get-Acl/Set-Acl directly on the registry path
-    try {
-        $acl = Get-Acl -Path $serviceEnvRegistryPath
-        $acl.SetAccessRuleProtection($true, $false)
-        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-        $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-        # SYSTEM: FullControl (needs to read at runtime)
-        $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
-        # Administrators: FullControl (needs to read/write for management)
-        $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
-        $acl.SetAccessRule($systemRule)
-        $acl.SetAccessRule($adminRule)
-        Set-Acl -Path $serviceEnvRegistryPath -AclObject $acl
-        Write-Log "Registry ACLs set successfully"
-    }
-    catch {
-        Write-Warn "Failed to set restrictive ACLs on registry key: $($_.Exception.Message)"
-        Write-Warn "Registry values are stored but may be accessible to other users. Ensure you're running as Administrator."
-    }
-    
-    # Create minimal wrapper script that reads from registry (stored in secure location with restricted ACLs)
+    # Create wrapper script with environment variables
     $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Collector"
     New-Item -ItemType Directory -Path $wrapperScriptDir -Force | Out-Null
     $wrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
     
-    # Wrapper script reads from registry (no secrets embedded)
+    # Wrapper script sets environment variables and runs collector
     $wrapperContent = @"
-# Service wrapper - reads environment variables from secure registry location
-`$regPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME\Environment'
-`$env:CORALOGIX_PRIVATE_KEY = (Get-ItemProperty -Path `$regPath -Name 'CORALOGIX_PRIVATE_KEY' -ErrorAction SilentlyContinue).CORALOGIX_PRIVATE_KEY
-$(if ($env:CORALOGIX_DOMAIN) { "`$env:CORALOGIX_DOMAIN = (Get-ItemProperty -Path `$regPath -Name 'CORALOGIX_DOMAIN' -ErrorAction SilentlyContinue).CORALOGIX_DOMAIN" })
+# Service wrapper - sets environment variables and runs collector
+`$env:CORALOGIX_PRIVATE_KEY = '$($env:CORALOGIX_PRIVATE_KEY -replace "'", "''")'
+$(if ($env:CORALOGIX_DOMAIN) { "`$env:CORALOGIX_DOMAIN = '$($env:CORALOGIX_DOMAIN -replace "'", "''")'" })
 & '$BINARY_PATH' --config '$CONFIG_FILE'
 "@
     $wrapperContent | Out-File -FilePath $wrapperScript -Encoding utf8 -Force
-    
-    # Restrict wrapper script ACLs: Only SYSTEM and Administrators can read
-    $fileAcl = Get-Acl $wrapperScript
-    $fileAcl.SetAccessRuleProtection($true, $false)
-    $fileSystemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-    $fileAdminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    $fileSystemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($fileSystemSid, "ReadAndExecute", "Allow")
-    $fileAdminRule = New-Object System.Security.AccessControl.FileSystemAccessRule($fileAdminSid, "ReadAndExecute", "Allow")
-    $fileAcl.SetAccessRule($fileSystemRule)
-    $fileAcl.SetAccessRule($fileAdminRule)
-    Set-Acl -Path $wrapperScript -AclObject $fileAcl
     
     # Create service using wrapper script
     $serviceBinPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$wrapperScript`""
@@ -915,17 +921,6 @@ function Remove-PackageWindows {
             Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
         }
         
-        # Remove environment variables from registry
-        $serviceEnvRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME\Environment"
-        if (Test-Path $serviceEnvRegistryPath) {
-            Remove-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -ErrorAction SilentlyContinue
-            # Remove the Environment subkey if empty
-            $remainingProps = Get-ItemProperty -Path $serviceEnvRegistryPath -ErrorAction SilentlyContinue
-            if ($remainingProps -and $remainingProps.PSObject.Properties.Count -eq 1) {
-                Remove-Item -Path $serviceEnvRegistryPath -Force -ErrorAction SilentlyContinue
-            }
-        }
-        
         # Remove wrapper script
         $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
         $supervisorWrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
@@ -954,18 +949,6 @@ function Remove-PackageWindows {
         if (Test-Path $BINARY_PATH) {
             Write-Log "Removing binary: $BINARY_PATH"
             Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
-        }
-        
-        # Remove environment variables from registry
-        $serviceEnvRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME\Environment"
-        if (Test-Path $serviceEnvRegistryPath) {
-            Remove-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -ErrorAction SilentlyContinue
-            Remove-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_DOMAIN" -ErrorAction SilentlyContinue
-            # Remove the Environment subkey if empty
-            $remainingProps = Get-ItemProperty -Path $serviceEnvRegistryPath -ErrorAction SilentlyContinue
-            if ($remainingProps -and $remainingProps.PSObject.Properties.Count -eq 1) {
-                Remove-Item -Path $serviceEnvRegistryPath -Force -ErrorAction SilentlyContinue
-            }
         }
         
         # Remove wrapper script

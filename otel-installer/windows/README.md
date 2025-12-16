@@ -81,8 +81,8 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 Install with supervisor using specific versions:
 
 ```powershell
-$env:CORALOGIX_DOMAIN="coralogix.sg"
-$env:CORALOGIX_PRIVATE_KEY="cxtp_9Zu5y4FMYwNKJN1ACOiEK5ZjQN9h4W"
+$env:CORALOGIX_DOMAIN="<your-domain>"
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 .\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
 ```
 
