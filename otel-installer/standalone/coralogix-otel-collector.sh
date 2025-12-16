@@ -16,6 +16,12 @@
 #   -c, --config <path>           Path to custom configuration file (disabled with --supervisor)
 #   -s, --supervisor              Install with OpAMP Supervisor mode
 #   -u, --upgrade                 Upgrade existing installation
+#   --memory-limit <MiB>          Total memory in MiB to allocate to the collector (default: 512)
+#                                  Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
+#                                  (ignored in supervisor mode)
+#   --listen-interface <ip>       Network interface for receivers to listen on (default: 127.0.0.1)
+#                                  Config must reference: ${env:OTEL_LISTEN_INTERFACE}
+#                                  (ignored in supervisor mode)
 #   --supervisor-version <ver>    Supervisor version (supervisor mode only, default: same as --version)
 #   --collector-version <ver>     Collector version (supervisor mode only, default: same as --version)
 #   --uninstall                   Uninstall the collector (use --purge to remove all data)
@@ -64,6 +70,10 @@ BACKUP_DIR=""
 MACOS_INSTALL_TYPE="daemon"
 SUPERVISOR_VERSION_FLAG=""
 COLLECTOR_VERSION_FLAG=""
+MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
+LISTEN_INTERFACE="${LISTEN_INTERFACE:-127.0.0.1}"
+USER_SET_MEMORY_LIMIT=false
+USER_SET_LISTEN_INTERFACE=false
 
 if [ "$UID" = "0" ] || [ "$(id -u)" -eq 0 ]; then
     SUDO_CMD=""
@@ -161,6 +171,38 @@ check_ports() {
     fi
 }
 
+validate_config_env_vars() {
+    local config_file="$1"
+    
+    if [ "$SUPERVISOR_MODE" = true ]; then
+        if [ "$USER_SET_MEMORY_LIMIT" = true ] || [ "$USER_SET_LISTEN_INTERFACE" = true ]; then
+            warn "Note: --memory-limit and --listen-interface are ignored in supervisor mode"
+            warn "Configuration is managed by the OpAMP server"
+        fi
+        return 0
+    fi
+    
+    if [ ! -f "$config_file" ] || [ ! -r "$config_file" ]; then
+        return 0
+    fi
+    
+    if [ "$USER_SET_MEMORY_LIMIT" = true ]; then
+        if ! grep -q "OTEL_MEMORY_LIMIT_MIB" "$config_file"; then
+            warn "You specified --memory-limit but the config doesn't reference \${env:OTEL_MEMORY_LIMIT_MIB}"
+            warn "The --memory-limit flag will have no effect."
+            warn "Update your config to use: limit_mib: \${env:OTEL_MEMORY_LIMIT_MIB}"
+        fi
+    fi
+    
+    if [ "$USER_SET_LISTEN_INTERFACE" = true ]; then
+        if ! grep -q "OTEL_LISTEN_INTERFACE" "$config_file"; then
+            warn "You specified --listen-interface but the config doesn't reference \${env:OTEL_LISTEN_INTERFACE}"
+            warn "The --listen-interface flag will have no effect."
+            warn "Update your config to use: endpoint: \${env:OTEL_LISTEN_INTERFACE}:<port>"
+        fi
+    fi
+}
+
 usage() {
     cat <<EOF
 Coralogix OpenTelemetry Collector Installer
@@ -176,6 +218,16 @@ Options:
     -s, --supervisor              Install with OpAMP Supervisor mode
                                   (config is managed by the OpAMP server)
     -u, --upgrade                 Upgrade existing installation
+    --memory-limit <MiB>          Total memory in MiB to allocate to the collector
+                                  Sets OTEL_MEMORY_LIMIT_MIB environment variable
+                                  Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
+                                  (default: 512, ignored in supervisor mode)
+    --listen-interface <ip>       Network interface for receivers to listen on
+                                  Sets OTEL_LISTEN_INTERFACE environment variable
+                                  Config must reference: \${env:OTEL_LISTEN_INTERFACE}
+                                  (default: 127.0.0.1 for localhost only,
+                                   use 0.0.0.0 for all interfaces)
+                                  (ignored in supervisor mode)
     --supervisor-version <ver>    Supervisor version (supervisor mode only)
                                   (default: same as --version)
     --collector-version <ver>     Collector version (supervisor mode only)
@@ -207,6 +259,12 @@ Examples:
 
     # Install with supervisor using specific versions
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
+
+    # Install with external network access (gateway mode - listen on all interfaces)
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --listen-interface 0.0.0.0
+
+    # Install with custom memory limit and external access
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --memory-limit 2048 --listen-interface 0.0.0.0
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
     CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
@@ -669,7 +727,11 @@ create_launchd_service() {
     fi
     
     local env_vars="        <key>CORALOGIX_PRIVATE_KEY</key>
-        <string>${CORALOGIX_PRIVATE_KEY}</string>"
+        <string>${CORALOGIX_PRIVATE_KEY}</string>
+        <key>OTEL_MEMORY_LIMIT_MIB</key>
+        <string>${MEMORY_LIMIT_MIB}</string>
+        <key>OTEL_LISTEN_INTERFACE</key>
+        <string>${LISTEN_INTERFACE}</string>"
     
     if [ -n "${CORALOGIX_DOMAIN:-}" ]; then
         env_vars="${env_vars}
@@ -1248,6 +1310,16 @@ parse_args() {
                 UPGRADE_MODE=true
                 shift
                 ;;
+            --memory-limit)
+                MEMORY_LIMIT_MIB="$2"
+                USER_SET_MEMORY_LIMIT=true
+                shift 2
+                ;;
+            --listen-interface)
+                LISTEN_INTERFACE="$2"
+                USER_SET_LISTEN_INTERFACE=true
+                shift 2
+                ;;
             --supervisor-version)
                 SUPERVISOR_VERSION_FLAG="$2"
                 shift 2
@@ -1476,6 +1548,9 @@ EOF
         create_empty_config
     fi
     
+    # Validate that config references the env vars if user set them
+    validate_config_env_vars "$CONFIG_FILE"
+    
     case "$os" in
         linux)
             $SUDO_CMD mkdir -p /var/lib/otelcol
@@ -1488,6 +1563,10 @@ EOF
             local env_lines="Environment=\"OTELCOL_OPTIONS=--config ${CONFIG_FILE}\""
             env_lines="${env_lines}
 Environment=\"CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}\""
+            env_lines="${env_lines}
+Environment=\"OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}\""
+            env_lines="${env_lines}
+Environment=\"OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}\""
             
             if [ -n "${CORALOGIX_DOMAIN:-}" ]; then
                 env_lines="${env_lines}
