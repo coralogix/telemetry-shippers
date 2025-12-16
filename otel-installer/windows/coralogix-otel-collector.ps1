@@ -640,19 +640,25 @@ telemetry:
     # Store environment variables securely in registry with restricted ACLs
     $serviceEnvRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME\Environment"
     if (-not (Test-Path $serviceEnvRegistryPath)) {
-        $regKey = New-Item -Path $serviceEnvRegistryPath -Force
-        # Restrict access: Only SYSTEM and Administrators can read
-        $acl = $regKey.GetAccessControl()
-        $acl.SetAccessRuleProtection($true, $false)
-        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-        $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-        $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "ReadKey", "Allow")
-        $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "ReadKey", "Allow")
-        $acl.SetAccessRule($systemRule)
-        $acl.SetAccessRule($adminRule)
-        $regKey.SetAccessControl($acl)
+        New-Item -Path $serviceEnvRegistryPath -Force | Out-Null
     }
+    
+    # Write values first (before setting restrictive ACLs)
     Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -Value $env:CORALOGIX_PRIVATE_KEY -Type String -Force | Out-Null
+    
+    # Now set restrictive ACLs: Only SYSTEM and Administrators can read/write
+    $regKey = Get-Item -Path $serviceEnvRegistryPath
+    $acl = $regKey.GetAccessControl()
+    $acl.SetAccessRuleProtection($true, $false)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+    $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    # SYSTEM: FullControl (needs to read at runtime)
+    $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
+    # Administrators: FullControl (needs to read/write for management)
+    $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
+    $acl.SetAccessRule($systemRule)
+    $acl.SetAccessRule($adminRule)
+    $regKey.SetAccessControl($acl)
     
     # Create minimal wrapper script that reads from registry (stored in secure location with restricted ACLs)
     $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
@@ -753,23 +759,29 @@ function New-WindowsService {
     # Store environment variables securely in registry with restricted ACLs
     $serviceEnvRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME\Environment"
     if (-not (Test-Path $serviceEnvRegistryPath)) {
-        $regKey = New-Item -Path $serviceEnvRegistryPath -Force
-        # Restrict access: Only SYSTEM and Administrators can read
-        $acl = $regKey.GetAccessControl()
-        $acl.SetAccessRuleProtection($true, $false)
-        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-        $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-        $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "ReadKey", "Allow")
-        $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "ReadKey", "Allow")
-        $acl.SetAccessRule($systemRule)
-        $acl.SetAccessRule($adminRule)
-        $regKey.SetAccessControl($acl)
+        New-Item -Path $serviceEnvRegistryPath -Force | Out-Null
     }
+    
+    # Write values first (before setting restrictive ACLs)
     Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -Value $env:CORALOGIX_PRIVATE_KEY -Type String -Force | Out-Null
     
     if ($env:CORALOGIX_DOMAIN) {
         Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_DOMAIN" -Value $env:CORALOGIX_DOMAIN -Type String -Force | Out-Null
     }
+    
+    # Now set restrictive ACLs: Only SYSTEM and Administrators can read/write
+    $regKey = Get-Item -Path $serviceEnvRegistryPath
+    $acl = $regKey.GetAccessControl()
+    $acl.SetAccessRuleProtection($true, $false)
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+    $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+    # SYSTEM: FullControl (needs to read at runtime)
+    $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
+    # Administrators: FullControl (needs to read/write for management)
+    $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
+    $acl.SetAccessRule($systemRule)
+    $acl.SetAccessRule($adminRule)
+    $regKey.SetAccessControl($acl)
     
     # Create minimal wrapper script that reads from registry (stored in secure location with restricted ACLs)
     $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Collector"
