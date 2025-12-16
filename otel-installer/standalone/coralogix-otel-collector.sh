@@ -38,6 +38,7 @@ SCRIPT_NAME="coralogix-otel-collector"
 SERVICE_NAME="otelcol-contrib"
 BINARY_NAME="otelcol-contrib"
 BINARY_PATH_LINUX="/usr/bin/${BINARY_NAME}"
+
 BINARY_PATH_DARWIN="/usr/local/bin/${BINARY_NAME}"
 CONFIG_DIR="/etc/otelcol-contrib"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
@@ -1365,7 +1366,6 @@ main() {
     
     check_root
     check_dependencies
-    check_ports
     
     version=$(get_version)
     log "Installing version: $version"
@@ -1373,6 +1373,10 @@ main() {
     if is_installed && [ "$UPGRADE_MODE" != true ]; then
         warn "Collector is already installed. Use --upgrade to upgrade, or uninstall first."
         exit 1
+    fi
+    
+    if [ "$UPGRADE_MODE" != true ]; then
+        check_ports
     fi
     
     if [ "$UPGRADE_MODE" = true ] && is_installed; then
