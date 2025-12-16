@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.253 / 2025-12-15
+- [Feat] Add the `deltaToCumulative` preset to the agent so operators can opt into converting delta metrics before export.
+
 ### v0.0.252 / 2025-12-12
 - [Feat] Add Context Propagation Mode option to OBI config, defaults to "http,tcp"
 

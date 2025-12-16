@@ -253,9 +253,12 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			t.Fatalf("unwanted scope detected %v", scope.Scope().Name())
 		}
 
-		_, ok := expectedResourceScopeNames[scope.Scope().Name()]
+		scopeName := scope.Scope().Name()
+		_, ok := expectedResourceScopeNames[scopeName]
 		if ok {
-			expectedResourceScopeNames[scope.Scope().Name()] = true
+			expectedResourceScopeNames[scopeName] = true
+		} else if _, optional := optionalScopeNames[scopeName]; optional {
+			ok = true
 		}
 
 		if !ok {
@@ -278,6 +281,9 @@ func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
 			_, ok := expectedMetrics[metric.Name()]
 			if ok {
 				expectedMetrics[metric.Name()] = true
+			} else if _, optional := optionalExpectedMetrics[metric.Name()]; optional {
+				optionalExpectedMetrics[metric.Name()] = true
+				ok = true
 			}
 			if !ok {
 				spew.Dump(metric)
@@ -317,6 +323,8 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 		compareMap = expectedResourceAttributesProcessorhelper
 	case "spanmetricsconnector":
 		compareMap = expectedResourceAttributesSpanmetricsconnector
+	case "delta-to-cumulative-e2e":
+		compareMap = expectedResourceAttributesDeltaToCumulative
 	default:
 		compareMap = expectedResourceAttributesMemorylimiterprocessor
 	}

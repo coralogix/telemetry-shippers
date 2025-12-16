@@ -48,20 +48,8 @@ func TestE2E_TransactionsPreset(t *testing.T) {
 	})
 	defer shutdownSinks()
 
-	agentNamespace := agentCollectorNamespace()
-	t.Logf("Waiting for agent collector in namespace=%s", agentNamespace)
-	waitForAgentCollectorPod(t, k8sClient, agentNamespace)
-	t.Log("Agent collector is running")
-
-	localPort, stopPF := startPortForward(
-		t,
-		kubeconfigPath,
-		agentNamespace,
-		fmt.Sprintf("svc/%s", agentServiceName()),
-		4317,
-	)
+	localPort, stopPF := startAgentOTLPPortForward(t, k8sClient, kubeconfigPath, 4317)
 	defer stopPF()
-	t.Logf("Port forward established on 127.0.0.1:%d -> %s/%s:4317", localPort, agentNamespace, agentServiceName())
 
 	ctx, cancel := context.WithTimeout(context.Background(), transactionEmitTimeout)
 	defer cancel()

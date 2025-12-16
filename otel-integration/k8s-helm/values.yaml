@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.252"
+  version: "0.0.253"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -163,6 +163,10 @@ opentelemetry-agent:
       enabled: true
       perNode: true
       scrapeAll: false
+
+    # deltaToCumulative:
+    #   enabled: false
+
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
