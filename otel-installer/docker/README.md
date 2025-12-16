@@ -21,7 +21,7 @@ This script runs the Coralogix OpenTelemetry Collector as a Docker container, su
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/docker/docker-install.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" \
   -- --config /path/to/config.yaml
 ```
 
@@ -33,7 +33,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ```bash
 CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/docker/docker-install.sh)" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" \
   -- --supervisor
 ```
 
