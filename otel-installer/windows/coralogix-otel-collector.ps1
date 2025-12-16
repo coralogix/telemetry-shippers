@@ -123,7 +123,7 @@ $SUPERVISOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "config.yaml"
 $SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "collector.yaml"
 $SUPERVISOR_STATE_DIR = "${env:ProgramData}\OpenTelemetry\Supervisor\state"
 $SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_CONFIG_DIR "logs"
-$CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
+$CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
 
 # Global variables
 $script:BackupDir = ""
