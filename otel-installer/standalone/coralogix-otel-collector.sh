@@ -42,7 +42,7 @@ BINARY_PATH_DARWIN="/usr/local/bin/${BINARY_NAME}"
 CONFIG_DIR="/etc/otelcol-contrib"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 LOG_DIR="/var/log/otel-collector"
-CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
+CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
 
 LAUNCHD_PLIST_DAEMON="/Library/LaunchDaemons/com.coralogix.otelcol.plist"
 LAUNCHD_PLIST_AGENT="${HOME}/Library/LaunchAgents/com.coralogix.otelcol.plist"
