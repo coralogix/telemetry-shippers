@@ -776,7 +776,30 @@ $(if ($env:CORALOGIX_DOMAIN) { "`$env:CORALOGIX_DOMAIN = (Get-ItemProperty -Path
     & sc.exe description $SERVICE_NAME "$serviceDescription" | Out-Null
     
     Write-Log "Starting service..."
-    Start-Service -Name $SERVICE_NAME
+    try {
+        Start-Service -Name $SERVICE_NAME -ErrorAction Stop
+        Start-Sleep -Seconds 2
+        
+        # Verify service started
+        $service = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+        if ($service.Status -ne 'Running') {
+            Write-Warn "Service started but status is: $($service.Status)"
+            Write-Warn "Check Windows Event Log for details:"
+            Write-Warn "  Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 20 | Where-Object {`$_.Message -like '*otelcol*'}"
+        }
+    }
+    catch {
+        Write-Error "Failed to start service: $($_.Exception.Message)"
+        Write-Host ""
+        Write-Host "Troubleshooting steps:"
+        Write-Host "1. Check if binary exists: Test-Path '$BINARY_PATH'"
+        Write-Host "2. Check if config exists: Test-Path '$CONFIG_FILE'"
+        Write-Host "3. Validate config: & '$BINARY_PATH' validate --config '$CONFIG_FILE'"
+        Write-Host "4. Check Event Log: Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 20"
+        Write-Host "5. Check service path: Get-CimInstance Win32_Service -Filter \"Name='$SERVICE_NAME'\" | Select-Object PathName"
+        Write-Host ""
+        throw
+    }
 }
 
 function Test-Service {

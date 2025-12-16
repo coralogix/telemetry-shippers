@@ -81,8 +81,8 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 Install with supervisor using specific versions:
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
+$env:CORALOGIX_DOMAIN="coralogix.sg"
+$env:CORALOGIX_PRIVATE_KEY="cxtp_9Zu5y4FMYwNKJN1ACOiEK5ZjQN9h4W"
 .\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
 ```
 
@@ -165,8 +165,15 @@ Stop-Service opampsupervisor
 # Start
 Start-Service opampsupervisor
 
-# Check collector process
-Get-Process otelcol-contrib
+# Check collector process (if running)
+Get-Process otelcol-contrib -ErrorAction SilentlyContinue
+
+# Alternative: Check all processes with "otel" in name
+Get-Process | Where-Object {$_.ProcessName -like "*otel*"}
+
+# If process not found, check service status and logs
+Get-Service opampsupervisor
+Get-Content "C:\ProgramData\OpenTelemetry\Supervisor\logs\opampsupervisor.log" -Tail 50
 ```
 
 ## Upgrade
@@ -213,11 +220,71 @@ Remove the collector and all data:
 
 ### Service fails to start
 
-1. Check status: `Get-Service otelcol-contrib`
-2. Check Event Log: `Get-EventLog -LogName Application -Source otelcol-contrib -Newest 50`
-3. Validate config:
+If you get "Cannot start service otelcol-contrib", follow these steps:
+
+1. **Check service status and configuration:**
+   ```powershell
+   Get-Service otelcol-contrib
+   Get-CimInstance Win32_Service -Filter "Name='otelcol-contrib'" | Select-Object Name, State, StartMode, PathName
+   ```
+
+2. **Check Windows Event Log for detailed errors:**
+   ```powershell
+   # Check System Event Log for service errors
+   Get-EventLog -LogName System -Source "Service Control Manager" -Newest 20 | Where-Object {$_.Message -like "*otelcol*"}
+   
+   # Check Application Event Log
+   Get-EventLog -LogName Application -Newest 50 | Where-Object {$_.Source -like "*otel*" -or $_.Message -like "*otel*"}
+   ```
+
+3. **Verify all required files exist:**
+   ```powershell
+   # Check binary
+   Test-Path "C:\Program Files\OpenTelemetry\Collector\otelcol-contrib.exe"
+   
+   # Check config
+   Test-Path "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
+   
+   # Check wrapper script
+   Test-Path "C:\ProgramData\OpenTelemetry\Collector\service-wrapper.ps1"
+   ```
+
+4. **Validate the configuration file:**
    ```powershell
    & "C:\Program Files\OpenTelemetry\Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
+   ```
+
+5. **Test the wrapper script manually (run as Administrator):**
+   ```powershell
+   # Read the wrapper script to see what it does
+   Get-Content "C:\ProgramData\OpenTelemetry\Collector\service-wrapper.ps1"
+   
+   # Try running the collector manually to see if it works
+   $env:CORALOGIX_PRIVATE_KEY = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\otelcol-contrib\Environment" -Name "CORALOGIX_PRIVATE_KEY" -ErrorAction SilentlyContinue).CORALOGIX_PRIVATE_KEY
+   & "C:\Program Files\OpenTelemetry\Collector\otelcol-contrib.exe" --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
+   ```
+
+6. **Check service binary path:**
+   ```powershell
+   # View the exact command the service is trying to run
+   $service = Get-CimInstance Win32_Service -Filter "Name='otelcol-contrib'"
+   $service.PathName
+   ```
+
+7. **Check if registry environment variables are set:**
+   ```powershell
+   Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\otelcol-contrib\Environment" -ErrorAction SilentlyContinue
+   ```
+
+8. **If all else fails, recreate the service:**
+   ```powershell
+   # Stop and remove the service
+   Stop-Service otelcol-contrib -ErrorAction SilentlyContinue
+   & sc.exe delete otelcol-contrib
+   
+   # Reinstall
+   $env:CORALOGIX_PRIVATE_KEY="<your-key>"
+   .\coralogix-otel-collector.ps1 -Upgrade
    ```
 
 ### Script execution policy
@@ -244,6 +311,47 @@ $env:CORALOGIX_DOMAIN="<your-domain>"
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 .\coralogix-otel-collector.ps1 -Supervisor
 ```
+
+### Process not found
+
+If `Get-Process otelcol-contrib` returns "Cannot find a process":
+
+1. **Check if the service is running:**
+   ```powershell
+   Get-Service otelcol-contrib
+   # or for supervisor mode:
+   Get-Service opampsupervisor
+   ```
+
+2. **If service is stopped, check why it failed:**
+   ```powershell
+   # For regular mode - check Event Log
+   Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
+   
+   # For supervisor mode - check log file
+   Get-Content "C:\ProgramData\OpenTelemetry\Supervisor\logs\opampsupervisor.log" -Tail 50
+   ```
+
+3. **Try starting the service manually:**
+   ```powershell
+   Start-Service otelcol-contrib
+   # Check status again
+   Get-Service otelcol-contrib
+   ```
+
+4. **Check if the binary exists:**
+   ```powershell
+   Test-Path "C:\Program Files\OpenTelemetry\Collector\otelcol-contrib.exe"
+   ```
+
+5. **Try finding the process with different methods:**
+   ```powershell
+   # Search for any process with "otel" in the name
+   Get-Process | Where-Object {$_.ProcessName -like "*otel*"}
+   
+   # Or search by executable path
+   Get-Process | Where-Object {$_.Path -like "*OpenTelemetry*"}
+   ```
 
 ### Administrator privileges
 
