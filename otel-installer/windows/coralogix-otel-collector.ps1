@@ -406,6 +406,16 @@ function Get-Timestamp {
     return Get-Date -Format "yyyyMMdd-HHmmss"
 }
 
+function Test-TarAvailable {
+    try {
+        $null = & tar --version 2>&1
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
 function Invoke-Download {
     param(
         [string]$Url,
@@ -444,7 +454,14 @@ function Install-Collector {
         Invoke-Download -Url $tarUrl -Destination $tarName
         
         Write-Log "Extracting collector..."
-        Expand-Archive -Path $tarName -DestinationPath . -Force
+        # Use tar command (available in Windows 10/11) to extract .tar.gz
+        if (-not (Test-TarAvailable)) {
+            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
+        }
+        $tarResult = & tar -xzf $tarName 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to extract archive: $tarResult"
+        }
         
         $extractedBinary = Get-ChildItem -Path . -Filter $BINARY_NAME -Recurse | Select-Object -First 1
         if (-not $extractedBinary) {
@@ -492,7 +509,14 @@ function Install-Supervisor {
         Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName
         
         Write-Log "Extracting Collector..."
-        Expand-Archive -Path $collectorTarName -DestinationPath . -Force
+        # Use tar command (available in Windows 10/11) to extract .tar.gz
+        if (-not (Test-TarAvailable)) {
+            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
+        }
+        $tarResult = & tar -xzf $collectorTarName 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to extract collector archive: $tarResult"
+        }
         
         $extractedBinary = Get-ChildItem -Path . -Filter $BINARY_NAME -Recurse | Select-Object -First 1
         if (-not $extractedBinary) {
@@ -517,7 +541,14 @@ function Install-Supervisor {
         Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName
         
         Write-Log "Extracting Supervisor..."
-        Expand-Archive -Path $supervisorTarName -DestinationPath . -Force
+        # Use tar command (available in Windows 10/11) to extract .tar.gz
+        if (-not (Test-TarAvailable)) {
+            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
+        }
+        $tarResult = & tar -xzf $supervisorTarName 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to extract supervisor archive: $tarResult"
+        }
         
         $supervisorBinary = Get-ChildItem -Path . -Filter $SUPERVISOR_BINARY_NAME -Recurse | Select-Object -First 1
         if (-not $supervisorBinary) {
