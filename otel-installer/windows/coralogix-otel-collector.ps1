@@ -647,18 +647,25 @@ telemetry:
     Set-ItemProperty -Path $serviceEnvRegistryPath -Name "CORALOGIX_PRIVATE_KEY" -Value $env:CORALOGIX_PRIVATE_KEY -Type String -Force | Out-Null
     
     # Now set restrictive ACLs: Only SYSTEM and Administrators can read/write
-    $regKey = Get-Item -Path $serviceEnvRegistryPath
-    $acl = $regKey.GetAccessControl()
-    $acl.SetAccessRuleProtection($true, $false)
-    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-    $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    # SYSTEM: FullControl (needs to read at runtime)
-    $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
-    # Administrators: FullControl (needs to read/write for management)
-    $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
-    $acl.SetAccessRule($systemRule)
-    $acl.SetAccessRule($adminRule)
-    $regKey.SetAccessControl($acl)
+    # Use Get-Acl/Set-Acl directly on the registry path
+    try {
+        $acl = Get-Acl -Path $serviceEnvRegistryPath
+        $acl.SetAccessRuleProtection($true, $false)
+        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+        $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+        # SYSTEM: FullControl (needs to read at runtime)
+        $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
+        # Administrators: FullControl (needs to read/write for management)
+        $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
+        $acl.SetAccessRule($systemRule)
+        $acl.SetAccessRule($adminRule)
+        Set-Acl -Path $serviceEnvRegistryPath -AclObject $acl
+        Write-Log "Registry ACLs set successfully"
+    }
+    catch {
+        Write-Warn "Failed to set restrictive ACLs on registry key: $($_.Exception.Message)"
+        Write-Warn "Registry values are stored but may be accessible to other users. Ensure you're running as Administrator."
+    }
     
     # Create minimal wrapper script that reads from registry (stored in secure location with restricted ACLs)
     $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
@@ -770,18 +777,25 @@ function New-WindowsService {
     }
     
     # Now set restrictive ACLs: Only SYSTEM and Administrators can read/write
-    $regKey = Get-Item -Path $serviceEnvRegistryPath
-    $acl = $regKey.GetAccessControl()
-    $acl.SetAccessRuleProtection($true, $false)
-    $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-    $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-    # SYSTEM: FullControl (needs to read at runtime)
-    $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
-    # Administrators: FullControl (needs to read/write for management)
-    $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
-    $acl.SetAccessRule($systemRule)
-    $acl.SetAccessRule($adminRule)
-    $regKey.SetAccessControl($acl)
+    # Use Get-Acl/Set-Acl directly on the registry path
+    try {
+        $acl = Get-Acl -Path $serviceEnvRegistryPath
+        $acl.SetAccessRuleProtection($true, $false)
+        $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+        $adminSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+        # SYSTEM: FullControl (needs to read at runtime)
+        $systemRule = New-Object System.Security.AccessControl.RegistryAccessRule($systemSid, "FullControl", "Allow")
+        # Administrators: FullControl (needs to read/write for management)
+        $adminRule = New-Object System.Security.AccessControl.RegistryAccessRule($adminSid, "FullControl", "Allow")
+        $acl.SetAccessRule($systemRule)
+        $acl.SetAccessRule($adminRule)
+        Set-Acl -Path $serviceEnvRegistryPath -AclObject $acl
+        Write-Log "Registry ACLs set successfully"
+    }
+    catch {
+        Write-Warn "Failed to set restrictive ACLs on registry key: $($_.Exception.Message)"
+        Write-Warn "Registry values are stored but may be accessible to other users. Ensure you're running as Administrator."
+    }
     
     # Create minimal wrapper script that reads from registry (stored in secure location with restricted ACLs)
     $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Collector"
