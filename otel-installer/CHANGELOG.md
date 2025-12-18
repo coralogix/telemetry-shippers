@@ -2,8 +2,7 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
-
-## [0.1.0] - 2024-12-14
+## [0.1.0] - 2024-12-18
 
 ### Added
 - Standalone installer script for Linux and macOS

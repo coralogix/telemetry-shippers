@@ -25,8 +25,8 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   -- --config /path/to/config.yaml
 ```
 
-| Variable | Description |
-| --- | --- |
+| Variable              | Description                                                                                 |
+|-----------------------|---------------------------------------------------------------------------------------------|
 | CORALOGIX_PRIVATE_KEY | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
 
 ### Supervisor Mode (Fleet Management)
@@ -41,20 +41,20 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Required Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| CORALOGIX_PRIVATE_KEY | Yes | Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
-| CORALOGIX_DOMAIN | Supervisor only | Coralogix [domain](https://coralogix.com/docs/coralogix-domain/) |
+| Variable              | Required        | Description                                                                            |
+|-----------------------|-----------------|----------------------------------------------------------------------------------------|
+| CORALOGIX_PRIVATE_KEY | Yes             | Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
+| CORALOGIX_DOMAIN      | Supervisor only | Coralogix [domain](https://coralogix.com/docs/coralogix-domain/)                       |
 
 ### Optional Variables
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| OTLP_GRPC_PORT | 4317 | Host port for OTLP gRPC |
-| OTLP_HTTP_PORT | 4318 | Host port for OTLP HTTP |
-| HEALTH_CHECK_PORT | 13133 | Host port for health check |
-| MEMORY_LIMIT_MIB | 512 | Memory limit in MiB for the collector |
-| LISTEN_INTERFACE | 127.0.0.1 | Network interface for receivers to bind to |
+| Variable          | Default   | Description                                |
+|-------------------|-----------|--------------------------------------------|
+| OTLP_GRPC_PORT    | 4317      | Host port for OTLP gRPC                    |
+| OTLP_HTTP_PORT    | 4318      | Host port for OTLP HTTP                    |
+| HEALTH_CHECK_PORT | 13133     | Host port for health check                 |
+| MEMORY_LIMIT_MIB  | 512       | Memory limit in MiB for the collector      |
+| LISTEN_INTERFACE  | 127.0.0.1 | Network interface for receivers to bind to |
 
 ### Configuration Environment Variables
 
@@ -93,30 +93,30 @@ extensions:
 
 ## Script Options
 
-| Option | Description |
-| --- | --- |
-| `-v, --version <version>` | Default version (default: from Helm chart) |
-| `--collector-version <version>` | Collector image version |
-| `--supervisor-version <version>` | Supervisor image version |
-| `-c, --config <path>` | Path to custom configuration file |
-| `-s, --supervisor` | Use supervisor mode |
-| `-f, --foreground` | Run in foreground (default: detached) |
-| `--uninstall` | Stop and remove the container |
-| `-h, --help` | Show help message |
+| Option                           | Description                                |
+|----------------------------------|--------------------------------------------|
+| `-v, --version <version>`        | Default version (default: from Helm chart) |
+| `--collector-version <version>`  | Collector image version                    |
+| `--supervisor-version <version>` | Supervisor image version                   |
+| `-c, --config <path>`            | Path to custom configuration file          |
+| `-s, --supervisor`               | Use supervisor mode                        |
+| `-f, --foreground`               | Run in foreground (default: detached)      |
+| `--uninstall`                    | Stop and remove the container              |
+| `-h, --help`                     | Show help message                          |
 
 ## Container Images
 
-| Mode | Image |
-| --- | --- |
-| Regular | `otel/opentelemetry-collector-contrib` |
+| Mode       | Image                                     |
+|------------|-------------------------------------------|
+| Regular    | `otel/opentelemetry-collector-contrib`    |
 | Supervisor | `coralogixrepo/otel-supervised-collector` |
 
 ## Exposed Ports
 
-| Port | Purpose | Override |
-| --- | --- | --- |
-| 4317 | OTLP gRPC receiver | `OTLP_GRPC_PORT` |
-| 4318 | OTLP HTTP receiver | `OTLP_HTTP_PORT` |
+| Port  | Purpose               | Override            |
+|-------|-----------------------|---------------------|
+| 4317  | OTLP gRPC receiver    | `OTLP_GRPC_PORT`    |
+| 4318  | OTLP HTTP receiver    | `OTLP_HTTP_PORT`    |
 | 13133 | Health check endpoint | `HEALTH_CHECK_PORT` |
 
 If ports conflict with existing services, override them:
@@ -239,4 +239,3 @@ docker stop coralogix-otel-collector && docker rm coralogix-otel-collector
 - **Network binding**: Use `LISTEN_INTERFACE=0.0.0.0` for gateway mode (accepts external connections) or `127.0.0.1` for agent mode (local only)
 - Container name: `coralogix-otel-collector`
 - Container restarts automatically unless stopped (`--restart unless-stopped`)
-
