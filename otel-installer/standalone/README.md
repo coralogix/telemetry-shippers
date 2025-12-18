@@ -34,10 +34,35 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ## Environment Variables
 
+### Required Variables
+
 | Variable | Required | Description |
 | --- | --- | --- |
 | CORALOGIX_PRIVATE_KEY | Yes | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
 | CORALOGIX_DOMAIN | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/) |
+
+### Automatically Set Variables
+
+The installer automatically sets these environment variables for the collector service:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| OTEL_MEMORY_LIMIT_MIB | 512 | Memory limit in MiB (set via `--memory-limit` flag) |
+| OTEL_LISTEN_INTERFACE | 127.0.0.1 | Network interface for receivers (set via `--listen-interface` flag) |
+
+To use these in your configuration file:
+
+```yaml
+processors:
+  memory_limiter:
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+```
 
 ## Supported Platforms
 
@@ -72,6 +97,38 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   -- --version 0.140.1
 ```
 
+## Install with Custom Memory Limit
+
+Allocate more memory to the collector (useful for high-volume environments):
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --memory-limit 2048
+```
+
+> **Note:** Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
+
+## Install as Gateway (Listen on All Interfaces)
+
+By default, the collector listens only on `127.0.0.1` (localhost). To accept connections from other hosts (gateway mode):
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --listen-interface 0.0.0.0
+```
+
+> **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
+
+## Install with Custom Memory and Network Settings
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --memory-limit 2048 --listen-interface 0.0.0.0
+```
+
 ## Supervisor Mode (Linux Only)
 
 Supervisor mode enables remote configuration management through Coralogix Fleet Management:
@@ -90,6 +147,8 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-c, --config <path>` | Path to custom configuration file |
 | `-s, --supervisor` | Install with OpAMP Supervisor mode (Linux only) |
 | `-u, --upgrade` | Upgrade existing installation (preserves config) |
+| `--memory-limit <MiB>` | Total memory in MiB to allocate to the collector (default: 512)<br>Sets `OTEL_MEMORY_LIMIT_MIB` environment variable<br>Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}`<br>(ignored in supervisor mode) |
+| `--listen-interface <ip>` | Network interface for receivers to listen on (default: 127.0.0.1)<br>Sets `OTEL_LISTEN_INTERFACE` environment variable<br>Config must reference: `${env:OTEL_LISTEN_INTERFACE}`<br>Use `0.0.0.0` for all interfaces (gateway mode)<br>(ignored in supervisor mode) |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only) |
 | `--collector-version <version>` | Collector version (supervisor mode only) |
 | `--uninstall` | Remove the collector (keeps config) |
@@ -191,6 +250,15 @@ bash coralogix-otel-collector.sh --uninstall --purge
 | Upgrade (`--upgrade`) | Preserves existing config |
 | Supervisor mode | Config managed remotely via OpAMP |
 
+### Environment Variables in Configuration
+
+The installer automatically sets `OTEL_MEMORY_LIMIT_MIB` and `OTEL_LISTEN_INTERFACE` environment variables for the collector service. To use them in your custom configuration:
+
+- **Memory Limiter:** `limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}`
+- **Receiver Endpoint:** `endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317`
+
+The installer will warn you if you specify `--memory-limit` or `--listen-interface` but your configuration doesn't reference these variables.
+
 ## Troubleshooting
 
 ### Service fails to start
@@ -234,10 +302,35 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ## Environment Variables
 
+### Required Variables
+
 | Variable | Required | Description |
 | --- | --- | --- |
 | CORALOGIX_PRIVATE_KEY | Yes | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
 | CORALOGIX_MACOS_USER_AGENT | No | Set to `true` to install as user-level LaunchAgent (default: system-wide LaunchDaemon) |
+
+### Automatically Set Variables
+
+The installer automatically sets these environment variables for the collector service:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| OTEL_MEMORY_LIMIT_MIB | 512 | Memory limit in MiB (set via `--memory-limit` flag) |
+| OTEL_LISTEN_INTERFACE | 127.0.0.1 | Network interface for receivers (set via `--listen-interface` flag) |
+
+To use these in your configuration file:
+
+```yaml
+processors:
+  memory_limiter:
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+```
 
 > **Note:** Supervisor mode is not supported on macOS.
 
@@ -268,6 +361,26 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   -- --version 0.140.1
 ```
 
+## Install with Custom Memory Limit
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --memory-limit 2048
+```
+
+> **Note:** Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
+
+## Install as Gateway (Listen on All Interfaces)
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --listen-interface 0.0.0.0
+```
+
+> **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
+
 ## Script Options
 
 | Option | Description |
@@ -275,6 +388,8 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-v, --version <version>` | Install specific collector version |
 | `-c, --config <path>` | Path to custom configuration file |
 | `-u, --upgrade` | Upgrade existing installation (preserves config) |
+| `--memory-limit <MiB>` | Total memory in MiB to allocate to the collector (default: 512)<br>Sets `OTEL_MEMORY_LIMIT_MIB` environment variable<br>Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |
+| `--listen-interface <ip>` | Network interface for receivers to listen on (default: 127.0.0.1)<br>Sets `OTEL_LISTEN_INTERFACE` environment variable<br>Config must reference: `${env:OTEL_LISTEN_INTERFACE}`<br>Use `0.0.0.0` for all interfaces (gateway mode) |
 | `--uninstall` | Remove the collector (keeps config) |
 | `--uninstall --purge` | Remove the collector and all configuration |
 | `-h, --help` | Show help message |
@@ -358,6 +473,15 @@ bash coralogix-otel-collector.sh --uninstall --purge
 | Config exists | Preserves existing config |
 | With `--config` | Uses provided config |
 | Upgrade (`--upgrade`) | Preserves existing config |
+
+### Environment Variables in Configuration
+
+The installer automatically sets `OTEL_MEMORY_LIMIT_MIB` and `OTEL_LISTEN_INTERFACE` environment variables for the collector service. To use them in your custom configuration:
+
+- **Memory Limiter:** `limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}`
+- **Receiver Endpoint:** `endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317`
+
+The installer will warn you if you specify `--memory-limit` or `--listen-interface` but your configuration doesn't reference these variables.
 
 ## Troubleshooting
 
