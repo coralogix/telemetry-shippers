@@ -1,0 +1,134 @@
+name: Sync ec2 with integration-definitions
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'otel-ecs-ec2/examples/manifest.yaml'
+  workflow_dispatch:
+
+jobs:
+  Get_version:
+    runs-on: ubuntu-latest
+    name: Extract collector image version
+    outputs:
+      Chart_version: "${{ steps.New_version.outputs.Chart_version }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract image version
+        id: New_version
+        run: |
+          $Chart_version=$(grep 'image:' otel-ecs-ec2/examples/manifest.yaml \
+            | grep coralogix-otel-collector \
+            | head -n1 \
+            | sed -E 's/.*:v([0-9.]+).*/\1/')
+          
+          if [ -z "$Chart_version" ]; then
+            echo "Failed to extract collector version"
+            exit 1
+          fi
+          
+          echo "$Chart_version=$Chart_version" >> $GITHUB_OUTPUT
+  commit_changes:
+    runs-on: ubuntu-latest
+    needs: Get_version
+    steps:
+      - name: Checkout destination repository
+        uses: actions/checkout@v4
+        with:
+          repository: coralogix/integration-definitions
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Prepare git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve base revision
+        id: base
+        run: |
+          manifest=integrations/otel-agent-aws-ecs-ec2/manifest.yaml
+          
+          last_revision=$(awk '
+            /^[[:space:]]*-[[:space:]]+revision:/ {
+              if (rev && !testing) last=rev
+              rev=$NF; testing=0
+            }
+            /testing:[[:space:]]*true/ { testing=1 }
+            END {
+              if (rev && !testing) last=rev
+              if (last) print last; else exit 1
+            }
+          ' "$manifest")
+          
+          integration_version=$(echo "$last_revision" | sed 's/+.*//')
+          collector_version=${{ needs.Get_version.outputs.Chart_version }}
+          new_revision="${integration_version}+${collector_version}"
+  
+          echo "last_revision=$last_revision" >> $GITHUB_ENV
+          echo "integration_version=$integration_version" >> $GITHUB_ENV
+          echo "new_revision=$new_revision" >> $GITHUB_ENV
+
+
+      - name: Check if revision exists
+        id: version_exist
+        run: |
+          if [ -d "integrations/otel-agent-aws-ecs-ec2/v${new_revision}" ]; then
+            echo "exists=true" >> $GITHUB_ENV
+          else
+            echo "exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create new revision
+        if: env.exists == 'false'
+        run: |
+          branch="sync-ecs-ec2-${new_revision}-$(date +%m-%d-%H-%M)"
+          echo "branch=$branch" >> $GITHUB_ENV
+          
+          git checkout -b "$branch"
+          git pull origin master
+          
+          base_dir="integrations/otel-agent-aws-ecs-ec2/v${last_revision}"
+          new_dir="integrations/otel-agent-aws-ecs-ec2/v${new_revision}"
+          
+          mkdir -p "$new_dir"
+          cp "$base_dir/commands.yaml" "$new_dir/"
+          cp "$base_dir/fields.yaml" "$new_dir/"
+          cp "$base_dir/template.yaml" "$new_dir/"
+          
+          current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          cat <<EOF >> integrations/otel-agent-aws-ecs-ec2/manifest.yaml
+            - revision: ${new_revision}
+              template:
+                type: CloudFormation
+                cloudformation: v${new_revision}/template.yaml
+                commands: v${new_revision}/commands.yaml
+              field_definitions: v${new_revision}/fields.yaml
+              published_at: ${current_time}
+          EOF
+          
+          git add .
+          git commit -m "Add ECS-EC2 collector ${new_revision}"
+          git push origin "$branch"
+
+      - name: Create PR
+        if: env.exists == 'false'
+        run: |
+          gh pr create \
+            --base master \
+            --head "$branch" \
+            --title "ECS-EC2: add collector ${new_revision}" \
+            --body "Automated sync for ECS-EC2 collector image v${{ needs.Get_version.outputs.Chart_version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Merge PR
+        if: env.exists == 'false'
+        run: |
+          gh pr merge "$branch" --squash --admin --delete-branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
