@@ -34,7 +34,7 @@ exporters:
   debug: {}
 extensions:
   health_check:
-    endpoint: 0.0.0.0:13133
+    endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
   opamp:
     agent_description:
       include_resource_attributes: true
@@ -54,8 +54,7 @@ processors:
     timeout: 1s
   memory_limiter:
     check_interval: 5s
-    limit_percentage: 80
-    spike_limit_percentage: 25
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
   resource/metadata:
     attributes:
     - action: upsert
@@ -254,10 +253,10 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
         max_recv_msg_size_mib: 20
       http:
-        endpoint: 0.0.0.0:4318
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
   prometheus:
     config:
       scrape_configs:
