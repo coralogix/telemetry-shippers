@@ -28,8 +28,7 @@ Or download and run the script locally:
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1" -OutFile "coralogix-otel-collector.ps1"
 
 # Run with your private key
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1
 ```
 
 ## Environment Variables
@@ -57,15 +56,13 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 To install with your own configuration file:
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml
 ```
 
 ## Install Specific Version
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Version 0.140.1
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Version 0.140.1
 ```
 
 ## Supervisor Mode
@@ -73,17 +70,13 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 Supervisor mode enables remote configuration management through Coralogix Fleet Management:
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor
+$env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor
 ```
 
 Install with supervisor using specific versions:
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
+$env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
 ```
 
 ## Script Parameters
@@ -181,15 +174,13 @@ Get-Content "C:\ProgramData\OpenTelemetry\Supervisor\logs\opampsupervisor.log" -
 Upgrade the collector while preserving your existing configuration:
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Upgrade
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Upgrade
 ```
 
 To upgrade and replace the configuration:
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Upgrade -Config C:\path\to\new-config.yaml
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Upgrade -Config C:\path\to\new-config.yaml
 ```
 
 ## Uninstall
@@ -283,8 +274,7 @@ If you get "Cannot start service otelcol-contrib", follow these steps:
    & sc.exe delete otelcol-contrib
    
    # Reinstall
-   $env:CORALOGIX_PRIVATE_KEY="<your-key>"
-   .\coralogix-otel-collector.ps1 -Upgrade
+   $env:CORALOGIX_PRIVATE_KEY="<your-key>"; .\coralogix-otel-collector.ps1 -Upgrade
    ```
 
 ### Script execution policy
@@ -307,9 +297,7 @@ Uninstall before switching between regular and supervisor modes:
 
 ```powershell
 .\coralogix-otel-collector.ps1 -Uninstall -Purge
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor
+$env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor
 ```
 
 ### Process not found
