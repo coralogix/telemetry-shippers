@@ -510,12 +510,14 @@ var expectedMetrics map[string]bool = map[string]bool{
 
 var optionalExpectedMetrics = map[string]bool{
 	"otelcol_deltatocumulative_datapoints": false,
+	"delta_to_cumulative_e2e_counter":     false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.4.0":  false,
 	"https://opentelemetry.io/schemas/1.25.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
+	"https://opentelemetry.io/schemas/1.38.0": false,
 }
 
 var expectedLogsSchemaURL = map[string]bool{
