@@ -141,61 +141,23 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ## Script Options
 
-| Option                                                | Description                                                       |
-|-------------------------------------------------------|-------------------------------------------------------------------|
-| `-v, --version <version>`                             | Install specific collector version                                |
-| `-c, --config <path>`                                 | Path to custom configuration file                                 |
-| `-s, --supervisor`                                    | Install with OpAMP Supervisor mode (Linux only)                   |
-| `-u, --upgrade`                                       | Upgrade existing installation (preserves config)                  |
-| `--memory-limit <MiB>`                                | Total memory in MiB to allocate to the collector (default: 512)   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Sets `OTEL_MEMORY_LIMIT_MIB` environment variable     |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| (ignored in supervisor mode)                          |                                                                   |
-| `--listen-interface <ip>`                             | Network interface for receivers to listen on (default: 127.0.0.1) |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Sets `OTEL_LISTEN_INTERFACE` environment variable     |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Config must reference: `${env:OTEL_LISTEN_INTERFACE}` |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Use `0.0.0.0` for all interfaces (gateway mode)       |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| (ignored in supervisor mode)                          |                                                                   |
-| `--supervisor-version <version>`                      | Supervisor version (supervisor mode only)                         |
-| `--collector-version <version>`                       | Collector version (supervisor mode only)                          |
-| `--uninstall`                                         | Remove the collector (keeps config)                               |
-| `--uninstall --purge`                                 | Remove the collector and all configuration                        |
-| `-h, --help`                                          | Show help message                                                 |
+| Option                           | Description                                                                                                        |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `-v, --version <version>`        | Install specific collector version                                                                                 |
+| `-c, --config <path>`            | Path to custom configuration file                                                                                  |
+| `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
+| `-u, --upgrade`                  | Upgrade existing installation (preserves config)                                                                   |
+| `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
+| `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
+| `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
+| `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
+| `--uninstall`                    | Remove the collector (keeps config)                                                                                |
+| `--uninstall --purge`            | Remove the collector and all configuration                                                                         |
+| `-h, --help`                     | Show help message                                                                                                  |
+
+> **Note:** `--memory-limit` sets the `OTEL_MEMORY_LIMIT_MIB` environment variable. Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
+>
+> **Note:** `--listen-interface` sets the `OTEL_LISTEN_INTERFACE` environment variable. Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
 
 ## Installation Locations
 
@@ -425,46 +387,20 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ## Script Options
 
-| Option                                                | Description                                                       |
-|-------------------------------------------------------|-------------------------------------------------------------------|
-| `-v, --version <version>`                             | Install specific collector version                                |
-| `-c, --config <path>`                                 | Path to custom configuration file                                 |
-| `-u, --upgrade`                                       | Upgrade existing installation (preserves config)                  |
-| `--memory-limit <MiB>`                                | Total memory in MiB to allocate to the collector (default: 512)   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Sets `OTEL_MEMORY_LIMIT_MIB` environment variable     |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |                                                                   |
-| `--listen-interface <ip>`                             | Network interface for receivers to listen on (default: 127.0.0.1) |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Sets `OTEL_LISTEN_INTERFACE` environment variable     |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Config must reference: `${env:OTEL_LISTEN_INTERFACE}` |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| <br>                                                  |                                                                   |
-|                                                       |                                                                   |
-|                                                       |                                                                   |
-| Use `0.0.0.0` for all interfaces (gateway mode)       |                                                                   |
-| `--uninstall`                                         | Remove the collector (keeps config)                               |
-| `--uninstall --purge`                                 | Remove the collector and all configuration                        |
-| `-h, --help`                                          | Show help message                                                 |
+| Option                    | Description                                                                                                        |
+|---------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `-v, --version <version>` | Install specific collector version                                                                                 |
+| `-c, --config <path>`     | Path to custom configuration file                                                                                  |
+| `-u, --upgrade`           | Upgrade existing installation (preserves config)                                                                   |
+| `--memory-limit <MiB>`    | Total memory in MiB to allocate to the collector (default: 512)                                                    |
+| `--listen-interface <ip>` | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
+| `--uninstall`             | Remove the collector (keeps config)                                                                                |
+| `--uninstall --purge`     | Remove the collector and all configuration                                                                         |
+| `-h, --help`              | Show help message                                                                                                  |
+
+> **Note:** `--memory-limit` sets the `OTEL_MEMORY_LIMIT_MIB` environment variable. Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
+>
+> **Note:** `--listen-interface` sets the `OTEL_LISTEN_INTERFACE` environment variable. Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
 
 ## Installation Locations
 

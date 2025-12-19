@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.254 / 2025-12-19
+- [Fix] Add missing `node` to `k8s_observer` for `kubernetesApiServerMetrics` preset.
+- [Fix] Add support for combining `profilesCollection` preset with `fleetManagement` preset.
+
 ### v0.0.253 / 2025-12-15
 - [Feat] Add the `deltaToCumulative` preset to the agent so operators can opt into converting delta metrics before export.
 
