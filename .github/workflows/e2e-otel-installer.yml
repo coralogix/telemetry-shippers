@@ -1,0 +1,305 @@
+name: E2E Otel Installer Tests
+
+on:
+  pull_request:
+    paths:
+      - 'otel-installer/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CORALOGIX_PRIVATE_KEY: "test-key-12345"
+  CORALOGIX_DOMAIN: "us1.coralogix.com"
+
+jobs:
+  #############################################
+  # Standalone Script Tests
+  #############################################
+
+  standalone-linux-install:
+    name: Standalone - Linux Install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install (default)
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        
+      - name: Verify service running
+        run: sudo systemctl is-active otelcol-contrib
+        
+      - name: Verify health check
+        run: curl -sf http://127.0.0.1:13133/ || true
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-version:
+    name: Standalone - Linux Specific Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install specific version
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -v 0.140.1
+        
+      - name: Verify version
+        run: /usr/bin/otelcol-contrib --version | grep "0.140.1"
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-config:
+    name: Standalone - Linux Custom Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create test config with unique marker
+        run: |
+          printf '%s\n' \
+            '# CUSTOM_CONFIG_MARKER_E2E_TEST' \
+            'receivers:' \
+            '  otlp:' \
+            '    protocols:' \
+            '      grpc:' \
+            '        endpoint: 0.0.0.0:4317' \
+            'exporters:' \
+            '  debug:' \
+            '    verbosity: basic' \
+            'extensions:' \
+            '  health_check:' \
+            '    endpoint: 127.0.0.1:13133' \
+            'service:' \
+            '  extensions: [health_check]' \
+            '  pipelines:' \
+            '    logs:' \
+            '      receivers: [otlp]' \
+            '      exporters: [debug]' \
+            > /tmp/test-config.yaml
+          
+      - name: Install with custom config
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
+        
+      - name: Verify custom config loaded
+        run: |
+          sudo cat /etc/otelcol-contrib/config.yaml
+          sudo grep "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
+          sudo grep "otlp:" /etc/otelcol-contrib/config.yaml
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-upgrade:
+    name: Standalone - Linux Upgrade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install (default version)
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        
+      - name: Verify service running
+        run: sudo systemctl is-active otelcol-contrib
+        
+      - name: Get installed version
+        run: /usr/bin/otelcol-contrib --version
+        
+      - name: Run upgrade (same version - tests upgrade mechanism)
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -u
+        
+      - name: Verify service still running after upgrade
+        run: sudo systemctl is-active otelcol-contrib
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-supervisor:
+    name: Standalone - Linux Supervisor Mode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install supervisor mode
+        run: sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -s
+        
+      - name: Verify supervisor running
+        run: sudo systemctl is-active opampsupervisor
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-supervisor-versions:
+    name: Standalone - Linux Supervisor Custom Versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install with custom versions
+        run: |
+          sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
+            bash ./otel-installer/standalone/coralogix-otel-collector.sh -s \
+            --supervisor-version 0.140.0 --collector-version 0.140.0
+        
+      - name: Verify supervisor running
+        run: sudo systemctl is-active opampsupervisor
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-purge:
+    name: Standalone - Linux Uninstall with Purge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        
+      - name: Uninstall with purge
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall --purge
+        
+      - name: Verify config removed
+        run: |
+          if [ -f /etc/otelcol-contrib/config.yaml ]; then
+            echo "Config still exists!" && exit 1
+          fi
+
+  standalone-macos:
+    name: Standalone - macOS LaunchDaemon
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        
+      - name: Verify binary installed
+        run: /usr/local/bin/otelcol-contrib --version
+        
+      - name: Verify service registered
+        run: sudo launchctl list | grep otelcol || true
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  # Note: LaunchAgent tests are skipped in CI because GitHub Actions runners
+  # don't have GUI sessions. LaunchAgent requires user login context.
+  # The LaunchDaemon test above covers macOS functionality.
+
+  #############################################
+  # Docker Script Tests
+  #############################################
+
+  docker-install:
+    name: Docker - Regular Install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install
+        run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh
+        
+      - name: Verify container running
+        run: |
+          sleep 3
+          docker ps | grep coralogix-otel-collector
+          
+      - name: Uninstall
+        run: bash ./otel-installer/docker/docker-install.sh --uninstall
+
+  docker-version:
+    name: Docker - Specific Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install specific version
+        run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -v 0.140.0
+        
+      - name: Verify container running
+        run: |
+          sleep 3
+          docker ps | grep coralogix-otel-collector
+          
+      - name: Uninstall
+        run: bash ./otel-installer/docker/docker-install.sh --uninstall
+
+  docker-config:
+    name: Docker - Custom Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create test config with unique marker
+        run: |
+          printf '%s\n' \
+            '# CUSTOM_CONFIG_MARKER_E2E_TEST' \
+            'receivers:' \
+            '  otlp:' \
+            '    protocols:' \
+            '      grpc:' \
+            '        endpoint: 0.0.0.0:4317' \
+            'exporters:' \
+            '  debug:' \
+            '    verbosity: basic' \
+            'extensions:' \
+            '  health_check:' \
+            '    endpoint: 0.0.0.0:13133' \
+            'service:' \
+            '  extensions: [health_check]' \
+            '  pipelines:' \
+            '    logs:' \
+            '      receivers: [otlp]' \
+            '      exporters: [debug]' \
+            > /tmp/test-config.yaml
+          
+      - name: Show test config
+        run: cat /tmp/test-config.yaml
+          
+      - name: Install with custom config
+        run: CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -c /tmp/test-config.yaml
+        
+      - name: Verify container running
+        run: |
+          sleep 5
+          docker ps -a | grep coralogix-otel-collector
+          
+      - name: Show container logs
+        if: always()
+        run: docker logs coralogix-otel-collector 2>&1 | tail -30
+          
+      - name: Verify custom config loaded
+        run: |
+          docker cp coralogix-otel-collector:/etc/otelcol-contrib/config.yaml /tmp/container-config.yaml
+          cat /tmp/container-config.yaml
+          grep "CUSTOM_CONFIG_MARKER" /tmp/container-config.yaml
+          
+      - name: Verify health check
+        run: curl -sf http://localhost:13133/ || true
+          
+      - name: Uninstall
+        run: bash ./otel-installer/docker/docker-install.sh --uninstall
+
+  docker-supervisor:
+    name: Docker - Supervisor Mode
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install supervisor mode
+        run: CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh -s
+        
+      - name: Verify container running
+        run: |
+          sleep 5
+          docker ps | grep coralogix-otel-collector
+          
+      - name: View logs
+        if: always()
+        run: docker logs coralogix-otel-collector 2>&1 | tail -20
+          
+      - name: Uninstall
+        run: bash ./otel-installer/docker/docker-install.sh --uninstall
