@@ -124,6 +124,9 @@ $SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "collector.
 $SUPERVISOR_STATE_DIR = "${env:ProgramData}\OpenTelemetry\Supervisor\state"
 $SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_CONFIG_DIR "logs"
 $CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
+$OTEL_RELEASES_BASE_URL = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+$OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
+$OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
 
 # Global variables
 $script:BackupDir = ""
@@ -419,7 +422,8 @@ function Test-TarAvailable {
 function Invoke-Download {
     param(
         [string]$Url,
-        [string]$Destination
+        [string]$Destination,
+        [string]$ExpectedChecksum = ""
     )
     
     Write-Log "Downloading: $Url"
@@ -428,6 +432,160 @@ function Invoke-Download {
     }
     catch {
         Write-Error "Failed to download: $Url - $($_.Exception.Message)"
+    }
+    
+    if ($ExpectedChecksum) {
+        Test-FileChecksum -FilePath $Destination -ExpectedChecksum $ExpectedChecksum
+    }
+}
+
+function Get-FileChecksum {
+    param([string]$FilePath)
+    
+    if (-not (Test-Path $FilePath)) {
+        Write-Error "File not found for checksum calculation: $FilePath"
+    }
+    
+    $hash = Get-FileHash -Path $FilePath -Algorithm SHA256
+    return $hash.Hash.ToLower()
+}
+
+function Test-FileChecksum {
+    param(
+        [string]$FilePath,
+        [string]$ExpectedChecksum
+    )
+    
+    $actualChecksum = Get-FileChecksum -FilePath $FilePath
+    $expectedLower = $ExpectedChecksum.ToLower()
+    
+    if ($actualChecksum -ne $expectedLower) {
+        Write-Error "Checksum verification failed for $(Split-Path $FilePath -Leaf)
+Expected: $expectedLower
+Actual:   $actualChecksum
+The downloaded file may be corrupted or tampered with."
+    }
+    
+    Write-Log "Checksum verified: $(Split-Path $FilePath -Leaf)"
+}
+
+function Get-OtelChecksum {
+    param(
+        [string]$Version,
+        [string]$Filename
+    )
+    
+    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/v${Version}/${OTEL_COLLECTOR_CHECKSUMS_FILE}"
+    
+    try {
+        $checksums = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing -ErrorAction Stop
+        $lines = $checksums.Content -split "[\r\n]+"
+        
+        foreach ($line in $lines) {
+            # Format: "checksum  filename"
+            if ($line -match "^([a-f0-9]{64})\s+$([regex]::Escape($Filename))$") {
+                return $matches[1]
+            }
+        }
+    }
+    catch {
+        Write-Warn "Could not fetch checksums file: $($_.Exception.Message)"
+    }
+    
+    return $null
+}
+
+function Get-SupervisorChecksum {
+    param(
+        [string]$Version,
+        [string]$Filename
+    )
+    
+    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${Version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    
+    try {
+        $checksums = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing -ErrorAction Stop
+        $lines = $checksums.Content -split "[\r\n]+"
+        
+        foreach ($line in $lines) {
+            # Format: "checksum  filename"
+            if ($line -match "^([a-f0-9]{64})\s+$([regex]::Escape($Filename))$") {
+                return $matches[1]
+            }
+        }
+    }
+    catch {
+        Write-Warn "Could not fetch supervisor checksums file: $($_.Exception.Message)"
+    }
+    
+    return $null
+}
+
+function Test-Port {
+    param(
+        [int]$Port,
+        [string]$Name
+    )
+    
+    try {
+        $connection = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+        if ($connection) {
+            return $false  # Port is in use
+        }
+    }
+    catch {
+        # Get-NetTCPConnection not available, try netstat
+        try {
+            $netstat = netstat -an | Select-String ":$Port\s+.*LISTENING"
+            if ($netstat) {
+                return $false  # Port is in use
+            }
+        }
+        catch {
+            # Can't check, assume port is available
+        }
+    }
+    return $true  # Port is available
+}
+
+function Test-Ports {
+    $portsInUse = @()
+    
+    if (-not (Test-Port -Port 4317 -Name "OTLP gRPC")) {
+        $portsInUse += "  - Port 4317 (OTLP gRPC)"
+    }
+    if (-not (Test-Port -Port 4318 -Name "OTLP HTTP")) {
+        $portsInUse += "  - Port 4318 (OTLP HTTP)"
+    }
+    if (-not (Test-Port -Port 13133 -Name "Health Check")) {
+        $portsInUse += "  - Port 13133 (Health Check)"
+    }
+    
+    if ($portsInUse.Count -gt 0) {
+        Write-Host ""
+        Write-Warn "The following ports are already in use:"
+        foreach ($port in $portsInUse) {
+            Write-Host $port
+        }
+        Write-Host ""
+        Write-Host "This may cause the collector to fail to start."
+        Write-Host ""
+        Write-Host "Common causes:"
+        Write-Host "  - Another collector instance is running (Docker or standalone)"
+        Write-Host "  - Another service is using these ports"
+        Write-Host ""
+        Write-Host "To check what's using a port: netstat -ano | findstr :PORT"
+        Write-Host ""
+        
+        # In non-interactive mode, fail
+        if (-not [Environment]::UserInteractive) {
+            Write-Error "Port conflict detected. Stop conflicting services and retry."
+        }
+        
+        $response = Read-Host "Continue anyway? [y/N]"
+        if ($response -notmatch '^[Yy]$') {
+            Write-Error "Installation cancelled due to port conflicts"
+        }
     }
 }
 
@@ -535,7 +693,16 @@ function Install-Collector {
         
         Write-Log "Downloading OpenTelemetry Collector ${Version} from tar.gz..."
         Write-Log "Download URL: $tarUrl"
-        Invoke-Download -Url $tarUrl -Destination $tarName
+        
+        # Get checksum for verification
+        $checksum = Get-OtelChecksum -Version $Version -Filename $tarName
+        if ($checksum) {
+            Invoke-Download -Url $tarUrl -Destination $tarName -ExpectedChecksum $checksum
+        }
+        else {
+            Write-Log "Checksum not available - downloading without verification"
+            Invoke-Download -Url $tarUrl -Destination $tarName
+        }
         
         Write-Log "Extracting collector..."
         # Use tar command (available in Windows 10/11) to extract .tar.gz
@@ -590,7 +757,14 @@ function Install-Supervisor {
         $collectorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${CollectorVer}/${collectorTarName}"
         
         Write-Log "Downloading OpenTelemetry Collector ${CollectorVer}..."
-        Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName
+        $collectorChecksum = Get-OtelChecksum -Version $CollectorVer -Filename $collectorTarName
+        if ($collectorChecksum) {
+            Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName -ExpectedChecksum $collectorChecksum
+        }
+        else {
+            Write-Log "Checksum not available - downloading without verification"
+            Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName
+        }
         
         Write-Log "Extracting Collector..."
         # Use tar command (available in Windows 10/11) to extract .tar.gz
@@ -622,7 +796,14 @@ function Install-Supervisor {
         $supervisorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SupervisorVer}/${supervisorTarName}"
         
         Write-Log "Downloading OpAMP Supervisor ${SupervisorVer}..."
-        Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName
+        $supervisorChecksum = Get-SupervisorChecksum -Version $SupervisorVer -Filename $supervisorTarName
+        if ($supervisorChecksum) {
+            Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName -ExpectedChecksum $supervisorChecksum
+        }
+        else {
+            Write-Log "Checksum not available - downloading without verification"
+            Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName
+        }
         
         Write-Log "Extracting Supervisor..."
         # Use tar command (available in Windows 10/11) to extract .tar.gz
@@ -1078,6 +1259,9 @@ function Main {
     
     $version = Get-Version
     Write-Log "Installing version: $version"
+    
+    # Check for port conflicts before proceeding
+    Test-Ports
     
     if ((Test-Installed) -and -not $Upgrade) {
         Write-Warn "Collector is already installed. Use -Upgrade to upgrade, or uninstall first."
