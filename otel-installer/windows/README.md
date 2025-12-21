@@ -99,7 +99,7 @@ $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private
 
 | Component | Location |
 | --- | --- |
-| Binary | `C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe` |
+| Binary | `C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe` |
 | Configuration | `C:\ProgramData\OpenTelemetry\Collector\config.yaml` |
 | Service | `otelcol-contrib` (Windows Service) |
 | Logs | Windows Event Log (Application) |
@@ -108,7 +108,7 @@ $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private
 
 | Component | Location |
 | --- | --- |
-| Collector Binary | `C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe` |
+| Collector Binary | `C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe` |
 | Supervisor Binary | `C:\Program Files\OpenTelemetry\Supervisor\opampsupervisor.exe` |
 | Supervisor Config | `C:\ProgramData\OpenTelemetry\Supervisor\config.yaml` |
 | Collector Config | `C:\ProgramData\OpenTelemetry\Supervisor\collector.yaml` |
@@ -137,7 +137,7 @@ Stop-Service otelcol-contrib
 Start-Service otelcol-contrib
 
 # Validate config
-& "C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
+& "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
 ```
 
 ### Supervisor Mode
@@ -231,7 +231,7 @@ If you get "Cannot start service otelcol-contrib", follow these steps:
 3. **Verify all required files exist:**
    ```powershell
    # Check binary (MSI install location)
-   Test-Path "C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe"
+   Test-Path "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe"
    
    # Check config
    Test-Path "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
@@ -239,14 +239,14 @@ If you get "Cannot start service otelcol-contrib", follow these steps:
 
 4. **Validate the configuration file:**
    ```powershell
-   & "C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
+   & "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
    ```
 
 5. **Test running the collector manually (run as Administrator):**
    ```powershell
    # Set environment variable and run collector manually
    $env:CORALOGIX_PRIVATE_KEY="<your-key>"
-   & "C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe" --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
+   & "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
    ```
 
 6. **Check service binary path:**
@@ -323,7 +323,7 @@ If `Get-Process otelcol-contrib` returns "Cannot find a process":
 
 4. **Check if the binary exists:**
    ```powershell
-   Test-Path "C:\Program Files\OpenTelemetry Collector Contrib\otelcol-contrib.exe"
+   Test-Path "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe"
    ```
 
 5. **Try finding the process with different methods:**

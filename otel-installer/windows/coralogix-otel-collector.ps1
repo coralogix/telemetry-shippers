@@ -110,8 +110,8 @@ $SCRIPT_NAME = "coralogix-otel-collector"
 $SERVICE_NAME = "otelcol-contrib"
 $SUPERVISOR_SERVICE_NAME = "opampsupervisor"
 $BINARY_NAME = "otelcol-contrib.exe"
-# MSI installs to "OpenTelemetry Collector Contrib" folder
-$INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry Collector Contrib"
+# MSI installs to "OpenTelemetry Collector" folder
+$INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry Collector"
 $BINARY_PATH = Join-Path $INSTALL_DIR $BINARY_NAME
 $CONFIG_DIR = "${env:ProgramData}\OpenTelemetry\Collector"
 $CONFIG_FILE = Join-Path $CONFIG_DIR "config.yaml"
@@ -353,14 +353,14 @@ function Backup-Config {
         $script:BackupDir = Join-Path $env:TEMP "${SERVICE_NAME}-backup-${timestamp}"
         Write-Log "Backing up existing configuration to: $script:BackupDir"
         New-Item -ItemType Directory -Path $script:BackupDir -Force | Out-Null
-        Copy-Item -Path $CONFIG_DIR -Destination $script:BackupDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Log "Backup created at: $script:BackupDir"
+        Copy-Item -Path $CONFIG_FILE -Destination (Join-Path $script:BackupDir "config.yaml") -Force -ErrorAction SilentlyContinue
+        Write-Log "Backup created at: $script:BackupDir\config.yaml"
     }
 }
 
 function Restore-Config {
     if ($script:BackupDir -and (Test-Path $script:BackupDir)) {
-        $backupConfig = Join-Path $script:BackupDir (Split-Path $CONFIG_DIR -Leaf) "config.yaml"
+        $backupConfig = Join-Path $script:BackupDir "config.yaml"
         if (Test-Path $backupConfig) {
             Write-Log "Restoring configuration from backup"
             New-Item -ItemType Directory -Path (Split-Path $CONFIG_FILE -Parent) -Force | Out-Null
@@ -709,9 +709,9 @@ function Install-Supervisor {
             Write-Error "Expected otelcol-contrib binary after extraction."
         }
         
-        Write-Log "Placing Collector binary into ${env:ProgramFiles}\OpenTelemetry\Collector..."
-        New-Item -ItemType Directory -Path "${env:ProgramFiles}\OpenTelemetry\Collector" -Force | Out-Null
-        Copy-Item -Path $extractedBinary.FullName -Destination "${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe" -Force
+        Write-Log "Placing Collector binary into $INSTALL_DIR..."
+        New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
+        Copy-Item -Path $extractedBinary.FullName -Destination $BINARY_PATH -Force
         
         # Install supervisor
         Write-Log "Creating required directories for supervisor..."
@@ -791,7 +791,7 @@ capabilities:
   reports_remote_config: true
 
 agent:
-  executable: ${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe
+  executable: $($BINARY_PATH -replace '\\', '/')
   passthrough_logs: true
   description:
     non_identifying_attributes:
@@ -1034,9 +1034,9 @@ function Remove-PackageWindows {
             Remove-Item -Path $supervisorWrapperScript -Force -ErrorAction SilentlyContinue
         }
         
-        if (Test-Path "${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe") {
+        if (Test-Path $BINARY_PATH) {
             Write-Log "Removing supervisor collector binary"
-            Remove-Item -Path "${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe" -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
         }
         
         if ($Purge) {
@@ -1054,13 +1054,6 @@ function Remove-PackageWindows {
         if (Test-Path $BINARY_PATH) {
             Write-Log "Removing binary: $BINARY_PATH"
             Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
-        }
-        
-        # Also check for MSI installation location
-        $msiBinaryPath = "${env:ProgramFiles}\OpenTelemetry Collector Contrib\otelcol-contrib.exe"
-        if (Test-Path $msiBinaryPath) {
-            Write-Log "Removing MSI-installed binary: $msiBinaryPath"
-            Remove-Item -Path $msiBinaryPath -Force -ErrorAction SilentlyContinue
         }
         
         if (Test-Path $INSTALL_DIR) {
@@ -1229,7 +1222,7 @@ Installation complete with supervisor mode!
 Supervisor Version: $supervisorVer
 Collector Version: $collectorVer
 Supervisor Service: $SUPERVISOR_SERVICE_NAME
-Collector Binary: ${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe
+Collector Binary: $BINARY_PATH
 Supervisor Config: $SUPERVISOR_CONFIG_FILE
 Collector Config: $SUPERVISOR_COLLECTOR_CONFIG_FILE
 Effective Config: $SUPERVISOR_STATE_DIR\effective.yaml
