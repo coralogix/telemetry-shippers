@@ -110,7 +110,8 @@ $SCRIPT_NAME = "coralogix-otel-collector"
 $SERVICE_NAME = "otelcol-contrib"
 $SUPERVISOR_SERVICE_NAME = "opampsupervisor"
 $BINARY_NAME = "otelcol-contrib.exe"
-$INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry\Collector"
+# MSI installs to "OpenTelemetry Collector Contrib" folder
+$INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry Collector Contrib"
 $BINARY_PATH = Join-Path $INSTALL_DIR $BINARY_NAME
 $CONFIG_DIR = "${env:ProgramData}\OpenTelemetry\Collector"
 $CONFIG_FILE = Join-Path $CONFIG_DIR "config.yaml"
@@ -628,42 +629,18 @@ function Install-Collector {
                 # Exit code 3010 means success but requires reboot (acceptable)
                 Write-Log "MSI installation completed successfully"
                 
-                # MSI installer typically installs to Program Files\OpenTelemetry\Collector
-                # Check common installation locations
-                $msiInstallPaths = @(
-                    "${env:ProgramFiles}\OpenTelemetry\Collector\otelcol-contrib.exe",
-                    "${env:ProgramFiles(x86)}\OpenTelemetry\Collector\otelcol-contrib.exe",
-                    $BINARY_PATH
-                )
-                
-                $msiBinaryPath = $null
-                foreach ($path in $msiInstallPaths) {
-                    if (Test-Path $path) {
-                        $msiBinaryPath = $path
-                        Write-Log "Collector binary found at: $msiBinaryPath"
-                        break
-                    }
+                # Verify binary exists at expected location
+                if (-not (Test-Path $BINARY_PATH)) {
+                    Write-Error "Binary not found at expected location after MSI install: $BINARY_PATH"
                 }
                 
-                if (-not $msiBinaryPath) {
-                    Write-Warn "Binary not found in expected locations after MSI install. Falling back to tar.gz extraction."
-                    throw "MSI binary not found"
-                }
+                Write-Log "Collector binary installed at: $BINARY_PATH"
                 
-                # If MSI installed to a different location, copy to our expected location
-                if ($msiBinaryPath -ne $BINARY_PATH) {
-                    Write-Log "Copying binary from MSI installation to expected location: $BINARY_PATH"
-                    New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
-                    Copy-Item -Path $msiBinaryPath -Destination $BINARY_PATH -Force
-                }
-                
-                # MSI installer may have created a service - we'll remove it and create our own with custom config
-                $msiService = Get-Service -Name "otelcol-contrib" -ErrorAction SilentlyContinue
+                # MSI installer creates a service - we'll reconfigure it with our settings
+                $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
                 if ($msiService) {
-                    Write-Log "Removing MSI-installed service (will create custom service with our configuration)..."
-                    Stop-Service -Name "otelcol-contrib" -Force -ErrorAction SilentlyContinue
-                    & sc.exe delete "otelcol-contrib" | Out-Null
-                    Start-Sleep -Seconds 2
+                    Write-Log "MSI-installed service detected, will be reconfigured with custom settings..."
+                    Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
                 }
                 
                 # Verify installation
@@ -675,61 +652,12 @@ function Install-Collector {
                 Write-Log "Collector installed successfully via MSI: $versionOutput"
                 return
             } else {
-                Write-Warn "MSI installation failed with exit code $($msiResult.ExitCode). Falling back to tar.gz extraction."
-                throw "MSI installation failed"
+                Write-Error "MSI installation failed with exit code $($msiResult.ExitCode)"
             }
         }
         catch {
-            Write-Log "MSI installer not available or failed, falling back to tar.gz extraction: $($_.Exception.Message)"
+            Write-Error "MSI installer failed: $($_.Exception.Message)"
         }
-        
-        # Fallback to tar.gz extraction
-        $binaryNameWithoutExt = $BINARY_NAME.Replace('.exe', '')
-        if ([string]::IsNullOrEmpty($binaryNameWithoutExt)) {
-            Write-Error "Failed to determine binary name. BINARY_NAME is: $BINARY_NAME"
-        }
-        $tarName = "$binaryNameWithoutExt" + "_" + "$Version" + "_windows_" + "$Arch" + ".tar.gz"
-        $tarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v$Version/$tarName"
-        
-        Write-Log "Downloading OpenTelemetry Collector ${Version} from tar.gz..."
-        Write-Log "Download URL: $tarUrl"
-        
-        # Get checksum for verification
-        $checksum = Get-OtelChecksum -Version $Version -Filename $tarName
-        if ($checksum) {
-            Invoke-Download -Url $tarUrl -Destination $tarName -ExpectedChecksum $checksum
-        }
-        else {
-            Write-Log "Checksum not available - downloading without verification"
-            Invoke-Download -Url $tarUrl -Destination $tarName
-        }
-        
-        Write-Log "Extracting collector..."
-        # Use tar command (available in Windows 10/11) to extract .tar.gz
-        if (-not (Test-TarAvailable)) {
-            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
-        }
-        $tarResult = & tar -xzf $tarName 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to extract archive: $tarResult"
-        }
-        
-        $extractedBinary = Get-ChildItem -Path . -Filter $BINARY_NAME -Recurse | Select-Object -First 1
-        if (-not $extractedBinary) {
-            Write-Error "Binary $BINARY_NAME not found in archive"
-        }
-        
-        Write-Log "Installing binary to $INSTALL_DIR"
-        New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
-        Copy-Item -Path $extractedBinary.FullName -Destination $BINARY_PATH -Force
-        
-        # Verify installation
-        $versionOutput = & $BINARY_PATH --version 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Installation verification failed"
-        }
-        
-        Write-Log "Collector installed successfully: $versionOutput"
     }
     finally {
         if (Test-Path $workDir) {
@@ -973,51 +901,47 @@ function Verify-Supervisor {
 }
 
 function New-WindowsService {
-    Write-Log "Creating Windows Service..."
+    Write-Log "Configuring Windows Service..."
     
     $serviceDisplayName = "OpenTelemetry Collector"
     $serviceDescription = "OpenTelemetry Collector - Collects, processes, and exports telemetry data"
     
+    # Check if service already exists (from MSI installation)
     $existingService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+    
     if ($existingService) {
-        Write-Log "Removing existing service..."
+        Write-Log "Service already exists, stopping for reconfiguration..."
         Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
-        & sc.exe delete $SERVICE_NAME | Out-Null
         Start-Sleep -Seconds 2
     }
-    
-    # Check if MSI installer created a service (it might use a different name)
-    # The MSI installer typically creates a service named "otelcol-contrib" or similar
-    $msiService = Get-Service -Name "otelcol-contrib" -ErrorAction SilentlyContinue
-    if ($msiService) {
-        Write-Log "MSI installer service detected. Stopping and removing it to use our custom configuration..."
-        Stop-Service -Name "otelcol-contrib" -Force -ErrorAction SilentlyContinue
-        & sc.exe delete "otelcol-contrib" | Out-Null
-        Start-Sleep -Seconds 2
+    else {
+        # Create service using the binary directly
+        # The otelcol-contrib.exe binary is designed to run as a Windows service
+        Write-Log "Creating Windows Service..."
+        $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
+        & sc.exe create $SERVICE_NAME binPath= "$serviceBinPath" start= auto DisplayName= "$serviceDisplayName" | Out-Null
+        & sc.exe description $SERVICE_NAME "$serviceDescription" | Out-Null
     }
     
-    # Create wrapper script with environment variables
-    $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Collector"
-    New-Item -ItemType Directory -Path $wrapperScriptDir -Force | Out-Null
-    $wrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
+    # Configure service to use our config file
+    Write-Log "Configuring service binary path..."
+    $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
+    & sc.exe config $SERVICE_NAME binPath= "$serviceBinPath" | Out-Null
     
-    # Wrapper script sets environment variables and runs collector
-    $wrapperContent = @"
-# Service wrapper - sets environment variables and runs collector
-`$env:CORALOGIX_PRIVATE_KEY = '$($env:CORALOGIX_PRIVATE_KEY -replace "'", "''")'
-$(if ($env:CORALOGIX_DOMAIN) { "`$env:CORALOGIX_DOMAIN = '$($env:CORALOGIX_DOMAIN -replace "'", "''")'" })
-& '$BINARY_PATH' --config '$CONFIG_FILE'
-"@
-    $wrapperContent | Out-File -FilePath $wrapperScript -Encoding utf8 -Force
+    # Set environment variables for the service via registry
+    Write-Log "Setting service environment variables..."
+    $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME"
     
-    # Create service using wrapper script
-    $serviceBinPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$wrapperScript`""
+    # Build environment variables array
+    $envVars = @(
+        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
+    )
+    if ($env:CORALOGIX_DOMAIN) {
+        $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
+    }
     
-    # Create service
-    & sc.exe create $SERVICE_NAME binPath= "$serviceBinPath" start= auto DisplayName= "$serviceDisplayName" | Out-Null
-    
-    # Set service description
-    & sc.exe description $SERVICE_NAME "$serviceDescription" | Out-Null
+    # Set the Environment multi-string value in the registry
+    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction SilentlyContinue
     
     Write-Log "Starting service..."
     try {
@@ -1132,12 +1056,11 @@ function Remove-PackageWindows {
             Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
         }
         
-        # Remove wrapper script
-        $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Collector"
-        $wrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
-        if (Test-Path $wrapperScript) {
-            Write-Log "Removing service wrapper script"
-            Remove-Item -Path $wrapperScript -Force -ErrorAction SilentlyContinue
+        # Also check for MSI installation location
+        $msiBinaryPath = "${env:ProgramFiles}\OpenTelemetry Collector Contrib\otelcol-contrib.exe"
+        if (Test-Path $msiBinaryPath) {
+            Write-Log "Removing MSI-installed binary: $msiBinaryPath"
+            Remove-Item -Path $msiBinaryPath -Force -ErrorAction SilentlyContinue
         }
         
         if (Test-Path $INSTALL_DIR) {
