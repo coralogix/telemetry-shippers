@@ -8,6 +8,9 @@ on:
     paths:
       - 'otel-integration/k8s-helm/README.md'
 
+permissions:
+  contents: read
+
 jobs:
   trigger_action:
     runs-on: ubuntu-latest
