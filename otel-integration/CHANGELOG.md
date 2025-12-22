@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.255 / 2025-12-22
+- [Feat] Add support for custom pod labels on TargetAllocator pods via `targetAllocator.podLabels`.
+
 ### v0.0.254 / 2025-12-19
 - [Fix] Add missing `node` to `k8s_observer` for `kubernetesApiServerMetrics` preset.
 - [Fix] Add support for combining `profilesCollection` preset with `fleetManagement` preset.
