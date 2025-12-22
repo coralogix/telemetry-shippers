@@ -502,7 +502,7 @@ function Get-SupervisorChecksum {
         [string]$Filename
     )
     
-    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${Version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/cmd/opampsupervisor/v${Version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
     
     try {
         $checksums = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing -ErrorAction Stop
@@ -721,9 +721,10 @@ function Install-Supervisor {
         New-Item -ItemType Directory -Path $SUPERVISOR_LOG_DIR -Force | Out-Null
         
         $supervisorTarName = "opampsupervisor_${SupervisorVer}_windows_${Arch}.tar.gz"
-        $supervisorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SupervisorVer}/${supervisorTarName}"
+        $supervisorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd/opampsupervisor/v${SupervisorVer}/${supervisorTarName}"
         
         Write-Log "Downloading OpAMP Supervisor ${SupervisorVer}..."
+        Write-Log "Download URL: $supervisorTarUrl"
         $supervisorChecksum = Get-SupervisorChecksum -Version $SupervisorVer -Filename $supervisorTarName
         if ($supervisorChecksum) {
             Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName -ExpectedChecksum $supervisorChecksum
