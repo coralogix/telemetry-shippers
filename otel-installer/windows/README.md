@@ -197,6 +197,8 @@ Remove the collector and all data:
 .\coralogix-otel-collector.ps1 -Uninstall -Purge
 ```
 
+**Note:** For regular mode, the uninstall uses the Windows MSI uninstaller to properly remove the collector. This ensures all MSI-installed components are cleanly removed. You can also uninstall manually via Windows Settings > Apps > "OpenTelemetry Collector".
+
 ## Configuration Behavior
 
 | Scenario | Action |

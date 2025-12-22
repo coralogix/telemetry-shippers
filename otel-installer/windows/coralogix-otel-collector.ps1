@@ -1010,17 +1010,76 @@ function Stop-ServiceWindows {
         }
     }
     else {
+        # For regular mode, just stop the service - MSI uninstall will remove it
         $service = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
         if ($service) {
-            Write-Log "Stopping and removing service..."
+            Write-Log "Stopping service..."
             Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
-            & sc.exe delete $SERVICE_NAME | Out-Null
         }
+    }
+}
+
+function Get-MsiProductInfo {
+    # Search for OpenTelemetry Collector in the registry (MSI installations)
+    $uninstallPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+    )
+    
+    foreach ($path in $uninstallPaths) {
+        if (Test-Path $path) {
+            $products = Get-ChildItem $path -ErrorAction SilentlyContinue | 
+                Get-ItemProperty -ErrorAction SilentlyContinue | 
+                Where-Object { $_.DisplayName -like "*OpenTelemetry*Collector*" -or $_.DisplayName -like "*otelcol*" }
+            
+            if ($products) {
+                foreach ($product in $products) {
+                    return @{
+                        DisplayName = $product.DisplayName
+                        UninstallString = $product.UninstallString
+                        ProductCode = $product.PSChildName
+                        InstallLocation = $product.InstallLocation
+                    }
+                }
+            }
+        }
+    }
+    
+    return $null
+}
+
+function Uninstall-MsiPackage {
+    $msiInfo = Get-MsiProductInfo
+    
+    if ($msiInfo) {
+        Write-Log "Found MSI installation: $($msiInfo.DisplayName)"
+        Write-Log "Product Code: $($msiInfo.ProductCode)"
+        
+        # Use msiexec to uninstall
+        $productCode = $msiInfo.ProductCode
+        Write-Log "Uninstalling via MSI..."
+        
+        $msiArgs = "/x `"$productCode`" /qn /norestart"
+        $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
+        
+        if ($msiResult.ExitCode -eq 0 -or $msiResult.ExitCode -eq 3010) {
+            Write-Log "MSI uninstallation completed successfully"
+            return $true
+        }
+        else {
+            Write-Warn "MSI uninstallation returned exit code: $($msiResult.ExitCode)"
+            return $false
+        }
+    }
+    else {
+        Write-Log "No MSI installation found in registry"
+        return $false
     }
 }
 
 function Remove-PackageWindows {
     if ($Supervisor) {
+        # Supervisor mode uses tar.gz extraction, so manual removal is needed
         if (Test-Path $SUPERVISOR_BINARY_PATH) {
             Write-Log "Removing supervisor binary: $SUPERVISOR_BINARY_PATH"
             Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
@@ -1034,9 +1093,19 @@ function Remove-PackageWindows {
             Remove-Item -Path $supervisorWrapperScript -Force -ErrorAction SilentlyContinue
         }
         
+        # Remove collector binary (installed via tar.gz for supervisor mode)
         if (Test-Path $BINARY_PATH) {
             Write-Log "Removing supervisor collector binary"
             Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
+        }
+        
+        # Clean up install directory if empty
+        if (Test-Path $INSTALL_DIR) {
+            $remainingFiles = Get-ChildItem -Path $INSTALL_DIR -ErrorAction SilentlyContinue
+            if (-not $remainingFiles) {
+                Write-Log "Removing install directory: $INSTALL_DIR"
+                Remove-Item -Path $INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
+            }
         }
         
         if ($Purge) {
@@ -1051,16 +1120,24 @@ function Remove-PackageWindows {
         }
     }
     else {
-        if (Test-Path $BINARY_PATH) {
-            Write-Log "Removing binary: $BINARY_PATH"
-            Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
-        }
+        # Regular mode - use MSI uninstallation
+        $msiUninstalled = Uninstall-MsiPackage
         
-        if (Test-Path $INSTALL_DIR) {
-            $remainingFiles = Get-ChildItem -Path $INSTALL_DIR -ErrorAction SilentlyContinue
-            if (-not $remainingFiles) {
-                Write-Log "Removing install directory: $INSTALL_DIR"
-                Remove-Item -Path $INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
+        if (-not $msiUninstalled) {
+            # Fallback to manual removal if MSI uninstall failed or not found
+            Write-Log "Falling back to manual file removal..."
+            
+            if (Test-Path $BINARY_PATH) {
+                Write-Log "Removing binary: $BINARY_PATH"
+                Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
+            }
+            
+            if (Test-Path $INSTALL_DIR) {
+                $remainingFiles = Get-ChildItem -Path $INSTALL_DIR -ErrorAction SilentlyContinue
+                if (-not $remainingFiles) {
+                    Write-Log "Removing install directory: $INSTALL_DIR"
+                    Remove-Item -Path $INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }
