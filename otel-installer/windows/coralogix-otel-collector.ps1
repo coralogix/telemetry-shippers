@@ -410,6 +410,16 @@ function Get-Timestamp {
     return Get-Date -Format "yyyyMMdd-HHmmss"
 }
 
+function Test-TarAvailable {
+    try {
+        $null = & tar --version 2>&1
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
 function Invoke-Download {
     param(
         [string]$Url,
@@ -663,24 +673,45 @@ function Install-Supervisor {
         [string]$Arch
     )
     
-    # Install collector binary first using MSI (same as regular mode)
-    Write-Log "Installing OpenTelemetry Collector binary (required for supervisor)..."
-    Install-Collector -Version $CollectorVer -Arch $Arch
-    
-    # Remove the MSI-created service - supervisor will manage the collector
-    $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
-    if ($msiService) {
-        Write-Log "Removing MSI-installed collector service (supervisor will manage the collector)..."
-        Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
-        & sc.exe delete $SERVICE_NAME | Out-Null
-        Start-Sleep -Seconds 2
-    }
-    
     $workDir = Join-Path $env:TEMP "${SUPERVISOR_SERVICE_NAME}-install-$(Get-Timestamp)-$PID"
     
     try {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
         Set-Location $workDir
+        
+        # Install collector binary first
+        Write-Log "Installing OpenTelemetry Collector binary (required for supervisor)..."
+        $collectorTarName = "otelcol-contrib_${CollectorVer}_windows_${Arch}.tar.gz"
+        $collectorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${CollectorVer}/${collectorTarName}"
+        
+        Write-Log "Downloading OpenTelemetry Collector ${CollectorVer}..."
+        $collectorChecksum = Get-OtelChecksum -Version $CollectorVer -Filename $collectorTarName
+        if ($collectorChecksum) {
+            Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName -ExpectedChecksum $collectorChecksum
+        }
+        else {
+            Write-Log "Checksum not available - downloading without verification"
+            Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName
+        }
+        
+        Write-Log "Extracting Collector..."
+        # Use tar command (available in Windows 10/11) to extract .tar.gz
+        if (-not (Test-TarAvailable)) {
+            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
+        }
+        $tarResult = & tar -xzf $collectorTarName 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to extract collector archive: $tarResult"
+        }
+        
+        $extractedBinary = Get-ChildItem -Path . -Filter $BINARY_NAME -Recurse | Select-Object -First 1
+        if (-not $extractedBinary) {
+            Write-Error "Expected otelcol-contrib binary after extraction."
+        }
+        
+        Write-Log "Placing Collector binary into $INSTALL_DIR..."
+        New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
+        Copy-Item -Path $extractedBinary.FullName -Destination $BINARY_PATH -Force
         
         # Install supervisor
         Write-Log "Creating required directories for supervisor..."
@@ -786,26 +817,26 @@ telemetry:
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
-    # Create service using the binary directly
-    $supervisorServiceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
+    # Create wrapper script with environment variables
+    $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
+    New-Item -ItemType Directory -Path $wrapperScriptDir -Force | Out-Null
+    $supervisorWrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
+    
+    # Wrapper script sets environment variables and runs supervisor
+    $supervisorWrapperContent = @"
+# Service wrapper - sets environment variables and runs supervisor
+`$env:CORALOGIX_PRIVATE_KEY = '$($env:CORALOGIX_PRIVATE_KEY -replace "'", "''")'
+& '$SUPERVISOR_BINARY_PATH' --config '$SUPERVISOR_CONFIG_FILE'
+"@
+    $supervisorWrapperContent | Out-File -FilePath $supervisorWrapperScript -Encoding utf8 -Force
+    
+    # Create service using wrapper script
+    $supervisorServiceBinPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$supervisorWrapperScript`""
     
     & sc.exe create $SUPERVISOR_SERVICE_NAME binPath= "$supervisorServiceBinPath" start= auto DisplayName= "$serviceDisplayName" | Out-Null
     
     # Set service description
     & sc.exe description $SUPERVISOR_SERVICE_NAME "$serviceDescription" | Out-Null
-    
-    # Set environment variables for the service via registry
-    Write-Log "Setting supervisor service environment variables..."
-    $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
-    
-    $envVars = @(
-        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
-    )
-    if ($env:CORALOGIX_DOMAIN) {
-        $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
-    }
-    
-    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction SilentlyContinue
     
     Write-Log "Starting supervisor service..."
     Start-Service -Name $SUPERVISOR_SERVICE_NAME
