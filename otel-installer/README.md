@@ -4,10 +4,10 @@ Deploy the OpenTelemetry Collector with Coralogix integration.
 
 ## Installation Methods
 
-| Method | Platform | Documentation |
-|--------|----------|---------------|
+| Method         | Platform     | Documentation                                  |
+|----------------|--------------|------------------------------------------------|
 | **Standalone** | Linux, macOS | [standalone/README.md](./standalone/README.md) |
-| **Docker** | Any | [docker/README.md](./docker/README.md) |
+| **Docker**     | Any          | [docker/README.md](./docker/README.md)         |
 
 ## Quick Start
 
@@ -44,10 +44,10 @@ CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" \
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `CORALOGIX_PRIVATE_KEY` | Yes | Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
-| `CORALOGIX_DOMAIN` | Supervisor only | Coralogix [domain](https://coralogix.com/docs/coralogix-domain/) (e.g., `us1.coralogix.com`) |
+| Variable                | Required        | Description                                                                                  |
+|-------------------------|-----------------|----------------------------------------------------------------------------------------------|
+| `CORALOGIX_PRIVATE_KEY` | Yes             | Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)       |
+| `CORALOGIX_DOMAIN`      | Supervisor only | Coralogix [domain](https://coralogix.com/docs/coralogix-domain/) (e.g., `us1.coralogix.com`) |
 
 ## Documentation
 

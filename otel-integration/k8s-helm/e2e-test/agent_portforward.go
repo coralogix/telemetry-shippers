@@ -56,6 +56,25 @@ func waitForAgentCollectorPod(t *testing.T, k8sClient *xk8stest.K8sClient, names
 	}, 2*time.Minute, 2*time.Second, "agent collector pod not ready")
 }
 
+func startAgentOTLPPortForward(t *testing.T, k8sClient *xk8stest.K8sClient, kubeconfigPath string, remotePort int) (int, func()) {
+	t.Helper()
+
+	agentNamespace := agentCollectorNamespace()
+	t.Logf("Waiting for agent collector in namespace=%s", agentNamespace)
+	waitForAgentCollectorPod(t, k8sClient, agentNamespace)
+	t.Log("Agent collector is running")
+
+	localPort, stopPF := startPortForward(
+		t,
+		kubeconfigPath,
+		agentNamespace,
+		fmt.Sprintf("svc/%s", agentServiceName()),
+		remotePort,
+	)
+	t.Logf("Port forward established on 127.0.0.1:%d -> %s/%s:%d", localPort, agentNamespace, agentServiceName(), remotePort)
+	return localPort, stopPF
+}
+
 func startPortForward(t *testing.T, kubeconfigPath, namespace, resource string, remotePort int) (int, func()) {
 	t.Helper()
 

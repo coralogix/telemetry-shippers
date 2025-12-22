@@ -23,7 +23,7 @@ The script will:
 
 - By default the script fetches the latest recommended version from this repository's `master` branch.
   If that network fetch fails or you want to pin a specific release, set the `VERSION` environment
-  variable before running the script, e.g. `VERSION=0.140.1 ./install.sh`. This bypasses the fetch
+  variable before running the script, e.g. `VERSION=0.141.0 ./install.sh`. This bypasses the fetch
   and uses the value you provide.
 
 ## Configuration

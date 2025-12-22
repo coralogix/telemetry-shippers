@@ -542,6 +542,7 @@ main() {
         # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
         "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
         "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+        "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     )
 
     TOTAL_TESTS=${#test_configs[@]}

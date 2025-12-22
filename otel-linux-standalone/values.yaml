@@ -4,13 +4,22 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.1"
+  version: "0.0.2"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
   enabled: true
   distribution: "standalone"
   presets:
+    metadata:
+      enabled: true
+      integrationName: "coralogix-linux-standalone"
+    hostEntityEvents:
+      enabled: true
+    fleetManagement:
+      enabled: true
+      # customAttributes: {}
+      agentType: "agent"
     hostMetrics:
       enabled: true
       process:
@@ -33,7 +42,18 @@ opentelemetry-agent:
   config:
     extensions:
       health_check:
-        endpoint: 0.0.0.0:13133
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+          http:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
     # exporters:
       #debug:
       # verbosity: detailed

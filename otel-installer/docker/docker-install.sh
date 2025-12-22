@@ -13,32 +13,31 @@
 
 set -euo pipefail
 
-# Images
+
 COLLECTOR_IMAGE="otel/opentelemetry-collector-contrib"
 SUPERVISOR_IMAGE="coralogixrepo/otel-supervised-collector"
 
-# Container settings
 CONTAINER_NAME="coralogix-otel-collector"
 CONFIG_HOST_DIR="${HOME}/.coralogix-otel-collector"
 CONFIG_CONTAINER_DIR="/etc/otelcol-contrib"
 
-# Default ports (can be overridden via environment)
 OTLP_GRPC_PORT="${OTLP_GRPC_PORT:-4317}"
 OTLP_HTTP_PORT="${OTLP_HTTP_PORT:-4318}"
 HEALTH_CHECK_PORT="${HEALTH_CHECK_PORT:-13133}"
 
-# Default values
 VERSION=""
 SUPERVISOR_VERSION=""
 COLLECTOR_VERSION=""
 SUPERVISOR_MODE=false
 CUSTOM_CONFIG_PATH=""
+SUPERVISOR_BASE_CONFIG_PATH=""
 DETACHED=true
 
-# Helm chart URL for version lookup
+MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
+LISTEN_INTERFACE="${LISTEN_INTERFACE:-127.0.0.1}"
+
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -103,24 +102,34 @@ Options:
     --uninstall                 Stop and remove the container
     -h, --help                  Show this help message
 
-Environment Variables:
-    CORALOGIX_PRIVATE_KEY   Coralogix private key (required)
+Environment Variables (Required):
+    CORALOGIX_PRIVATE_KEY   Coralogix private key
     CORALOGIX_DOMAIN        Coralogix domain (required for supervisor mode)
+
+Environment Variables (Optional):
     OTLP_GRPC_PORT          Host port for OTLP gRPC (default: 4317)
     OTLP_HTTP_PORT          Host port for OTLP HTTP (default: 4318)
     HEALTH_CHECK_PORT       Host port for health check (default: 13133)
+    MEMORY_LIMIT_MIB        Memory limit in MiB (default: 512)
+                            Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
+    LISTEN_INTERFACE        Network interface for receivers (default: 127.0.0.1)
+                            Config must reference: \${env:OTEL_LISTEN_INTERFACE}
+                            Use 0.0.0.0 for all interfaces (gateway mode)
 
 Examples:
-    # With custom config (recommended)
+    # Basic installation with custom config
     CORALOGIX_PRIVATE_KEY="your-key" $0 -c /path/to/config.yaml
 
     # Supervisor mode (config managed remotely)
     CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" $0 -s
 
-    # Specific version
-    CORALOGIX_PRIVATE_KEY="your-key" $0 -c /path/to/config.yaml -v 0.140.1
+    # Gateway mode with custom memory and listen interface
+    MEMORY_LIMIT_MIB=2048 LISTEN_INTERFACE=0.0.0.0 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
 
-    # Quick start with placeholder config (for testing only)
+    # Custom ports
+    OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
+
+    # Quick start with placeholder config (testing only)
     CORALOGIX_PRIVATE_KEY="your-key" $0
 
     # Stop the container
@@ -155,6 +164,10 @@ parse_args() {
             -f|--foreground)
                 DETACHED=false
                 shift
+                ;;
+            --supervisor-base-config)
+                SUPERVISOR_BASE_CONFIG_PATH="$(realpath "$2")"
+                shift 2
                 ;;
             --stop|--uninstall)
                 stop_container
@@ -229,25 +242,32 @@ exporters:
 
 extensions:
   health_check:
-    endpoint: 0.0.0.0:13133
+    endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
+
+processors:
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
 
 service:
   extensions: [health_check]
   pipelines:
     traces:
       receivers: [nop]
+      processors: [memory_limiter]
       exporters: [nop]
     metrics:
       receivers: [nop]
+      processors: [memory_limiter]
       exporters: [nop]
     logs:
       receivers: [nop]
+      processors: [memory_limiter]
       exporters: [nop]
 EOF
 }
 
 create_config_dir() {
-    # Use persistent directory that survives reboots
     mkdir -p "$CONFIG_HOST_DIR"
     
     if [ -n "$CUSTOM_CONFIG_PATH" ]; then
@@ -282,6 +302,8 @@ run_regular_mode() {
         --name "${CONTAINER_NAME}"
         --restart unless-stopped
         -e "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
+        -e "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
+        -e "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
         -p "${OTLP_GRPC_PORT}:4317"
         -p "${OTLP_HTTP_PORT}:4318"
@@ -342,6 +364,8 @@ agent:
 
   env:
     CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
+    OTEL_MEMORY_LIMIT_MIB: "\${env:OTEL_MEMORY_LIMIT_MIB}"
+    OTEL_LISTEN_INTERFACE: "\${env:OTEL_LISTEN_INTERFACE}"
 
 storage:
   directory: /etc/otelcol-contrib/supervisor-data/
@@ -369,7 +393,13 @@ run_supervisor_mode() {
     log "Supervisor config at: ${CONFIG_HOST_DIR}/supervisor.yaml"
     
     # Create collector config
-    get_default_config > "${CONFIG_HOST_DIR}/config.yaml"
+    if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
+        cp "$SUPERVISOR_BASE_CONFIG_PATH" "${CONFIG_HOST_DIR}/config.yaml"
+        log "Using custom base config: $SUPERVISOR_BASE_CONFIG_PATH"
+    else
+        get_default_config > "${CONFIG_HOST_DIR}/config.yaml"
+        log "Using default base config"
+    fi
     log "Collector config at: ${CONFIG_HOST_DIR}/config.yaml"
     
     log "Starting supervisor container..."
@@ -378,6 +408,8 @@ run_supervisor_mode() {
         --name "${CONTAINER_NAME}"
         --restart unless-stopped
         -e "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
+        -e "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
+        -e "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         -v "${CONFIG_HOST_DIR}/supervisor.yaml:${CONFIG_CONTAINER_DIR}/supervisor.yaml:ro"
         -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
         -p "${OTLP_GRPC_PORT}:4317"
@@ -452,7 +484,6 @@ main() {
     
     parse_args "$@"
     
-    # Validate requirements
     if [ -z "${CORALOGIX_PRIVATE_KEY:-}" ]; then
         fail "CORALOGIX_PRIVATE_KEY is required"
     fi
@@ -471,9 +502,24 @@ main() {
         if [ -n "$SUPERVISOR_VERSION" ]; then
             fail "--supervisor-version can only be used with -s/--supervisor"
         fi
+        if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
+            fail "--supervisor-base-config can only be used with -s/--supervisor"
+        fi
         if [ -z "$CUSTOM_CONFIG_PATH" ]; then
             warn "No config provided. Using placeholder config (nop receivers/exporters)."
             warn "Use -c to provide your own config file for actual data collection."
+        fi
+    fi
+    
+    # Validate supervisor-base-config
+    if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
+        if [ ! -f "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
+            fail "Supervisor base config file not found: $SUPERVISOR_BASE_CONFIG_PATH"
+        fi
+        # Check for opamp extension
+        if grep -vE '^\s*#' "$SUPERVISOR_BASE_CONFIG_PATH" | grep -qE '^\s*opamp:'; then
+            fail "Supervisor base config cannot contain 'opamp' extension. The supervisor manages the OpAMP connection.
+Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH"
         fi
     fi
     

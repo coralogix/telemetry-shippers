@@ -2,6 +2,30 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.254 / 2025-12-19
+- [Fix] Add missing `node` to `k8s_observer` for `kubernetesApiServerMetrics` preset.
+- [Fix] Add support for combining `profilesCollection` preset with `fleetManagement` preset.
+
+### v0.0.253 / 2025-12-15
+- [Feat] Add the `deltaToCumulative` preset to the agent so operators can opt into converting delta metrics before export.
+
+### v0.0.252 / 2025-12-12
+- [Feat] Add Context Propagation Mode option to OBI config, defaults to "http,tcp"
+
+### v0.0.251 / 2025-12-12
+- [Feat] PullPolicy Configuration for `coralogix-ebpf-profiler` helm chart
+
+### v0.0.250 / 2025-12-12
+- [CHORE] Bump Collector to 0.141.0
+- [Feat] Add deltaToCumulative preset (disabled by default) to convert metrics from delta temporality to cumulative.
+- [Feature] Add service.version to profile attributes when profilesCollection preset is enabled.
+- [Feat] Add dynamicSubsystemName option to macosSystemLogs preset to control copying unit name to subsystem name.
+- [Fix] Ensure logs/resource_catalog pipeline respects presets for metadata, kubernetesAttributes, and resourceDetection.
+- [Fix] Fix logic to correctly respect region.enabled: false in resourceDetection preset.
+- [Fix] Align macOS application naming attributes with the standalone distribution by using only service.name.
+- [Feat] Allow disabling the resourcedetection/region processor in the resourceDetection preset.
+- [Fix] Align macOS subsystem naming attributes with the standalone distribution by using only service.name.
+
 ### v0.0.249 / 2025-12-08
 - [Feat] Bump OBI to [v0.3.0](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/releases/tag/v0.3.0)
 
