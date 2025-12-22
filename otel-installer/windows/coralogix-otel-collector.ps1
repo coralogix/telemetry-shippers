@@ -720,37 +720,23 @@ function Install-Supervisor {
         New-Item -ItemType Directory -Path $SUPERVISOR_STATE_DIR -Force | Out-Null
         New-Item -ItemType Directory -Path $SUPERVISOR_LOG_DIR -Force | Out-Null
         
-        $supervisorTarName = "opampsupervisor_${SupervisorVer}_windows_${Arch}.tar.gz"
-        $supervisorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd/opampsupervisor/v${SupervisorVer}/${supervisorTarName}"
+        # Windows supervisor is distributed as a direct .exe file (not tar.gz)
+        $supervisorExeName = "opampsupervisor_${SupervisorVer}_windows_${Arch}.exe"
+        $supervisorExeUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SupervisorVer}/${supervisorExeName}"
         
         Write-Log "Downloading OpAMP Supervisor ${SupervisorVer}..."
-        Write-Log "Download URL: $supervisorTarUrl"
-        $supervisorChecksum = Get-SupervisorChecksum -Version $SupervisorVer -Filename $supervisorTarName
+        Write-Log "Download URL: $supervisorExeUrl"
+        $supervisorChecksum = Get-SupervisorChecksum -Version $SupervisorVer -Filename $supervisorExeName
         if ($supervisorChecksum) {
-            Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName -ExpectedChecksum $supervisorChecksum
+            Invoke-Download -Url $supervisorExeUrl -Destination $supervisorExeName -ExpectedChecksum $supervisorChecksum
         }
         else {
             Write-Log "Checksum not available - downloading without verification"
-            Invoke-Download -Url $supervisorTarUrl -Destination $supervisorTarName
-        }
-        
-        Write-Log "Extracting Supervisor..."
-        # Use tar command (available in Windows 10/11) to extract .tar.gz
-        if (-not (Test-TarAvailable)) {
-            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
-        }
-        $tarResult = & tar -xzf $supervisorTarName 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to extract supervisor archive: $tarResult"
-        }
-        
-        $supervisorBinary = Get-ChildItem -Path . -Filter $SUPERVISOR_BINARY_NAME -Recurse | Select-Object -First 1
-        if (-not $supervisorBinary) {
-            Write-Error "Expected opampsupervisor binary after extraction."
+            Invoke-Download -Url $supervisorExeUrl -Destination $supervisorExeName
         }
         
         Write-Log "Installing OpAMP Supervisor ${SupervisorVer}..."
-        Copy-Item -Path $supervisorBinary.FullName -Destination $SUPERVISOR_BINARY_PATH -Force
+        Copy-Item -Path $supervisorExeName -Destination $SUPERVISOR_BINARY_PATH -Force
         
         # Stop existing service if running
         $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
@@ -1120,6 +1106,7 @@ function Remove-PackageWindows {
             }
         }
     }
+
     else {
         # Regular mode - use MSI uninstallation
         $msiUninstalled = Uninstall-MsiPackage
