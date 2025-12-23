@@ -124,6 +124,10 @@ $SUPERVISOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "config.yaml"
 $SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "collector.yaml"
 $SUPERVISOR_STATE_DIR = "${env:ProgramData}\OpenTelemetry\Supervisor\state"
 $SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_CONFIG_DIR "logs"
+$NSSM_VERSION = "2.24"
+$NSSM_DOWNLOAD_URL = "https://nssm.cc/release/nssm-${NSSM_VERSION}.zip"
+$NSSM_INSTALL_DIR = "${env:ProgramFiles}\NSSM"
+$NSSM_PATH = Join-Path $NSSM_INSTALL_DIR "nssm.exe"
 $CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
 $OTEL_RELEASES_BASE_URL = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
 $OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
@@ -666,6 +670,59 @@ function Install-Collector {
     }
 }
 
+function Install-NSSM {
+    Write-Log "Checking for NSSM (Non-Sucking Service Manager)..."
+    
+    if (Test-Path $NSSM_PATH) {
+        Write-Log "NSSM already installed at: $NSSM_PATH"
+        return
+    }
+    
+    Write-Log "Downloading NSSM ${NSSM_VERSION}..."
+    $workDir = Join-Path $env:TEMP "nssm-install-$(Get-Timestamp)-$PID"
+    
+    try {
+        New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+        Set-Location $workDir
+        
+        $zipFile = "nssm-${NSSM_VERSION}.zip"
+        Invoke-Download -Url $NSSM_DOWNLOAD_URL -Destination $zipFile
+        
+        Write-Log "Extracting NSSM..."
+        Expand-Archive -Path $zipFile -DestinationPath . -Force
+        
+        # Find the 64-bit executable
+        $nssmExe = Get-ChildItem -Path . -Filter "nssm.exe" -Recurse | 
+            Where-Object { $_.FullName -like "*win64*" } | 
+            Select-Object -First 1
+        
+        if (-not $nssmExe) {
+            # Fallback to any nssm.exe
+            $nssmExe = Get-ChildItem -Path . -Filter "nssm.exe" -Recurse | Select-Object -First 1
+        }
+        
+        if (-not $nssmExe) {
+            Write-Error "Failed to find nssm.exe after extraction"
+        }
+        
+        Write-Log "Installing NSSM to: $NSSM_INSTALL_DIR"
+        New-Item -ItemType Directory -Path $NSSM_INSTALL_DIR -Force | Out-Null
+        Copy-Item -Path $nssmExe.FullName -Destination $NSSM_PATH -Force
+        
+        if (-not (Test-Path $NSSM_PATH)) {
+            Write-Error "Failed to install NSSM"
+        }
+        
+        Write-Log "NSSM installed successfully"
+    }
+    finally {
+        Set-Location $env:TEMP
+        if (Test-Path $workDir) {
+            Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Install-Supervisor {
     param(
         [string]$SupervisorVer,
@@ -676,6 +733,9 @@ function Install-Supervisor {
     $workDir = Join-Path $env:TEMP "${SUPERVISOR_SERVICE_NAME}-install-$(Get-Timestamp)-$PID"
     
     try {
+        # Install NSSM first (required for running supervisor as a service)
+        Install-NSSM
+        
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
         Set-Location $workDir
         
@@ -815,16 +875,16 @@ telemetry:
     
     Get-EmptyCollectorConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
     
-    # Create Windows Service
+    # Create Windows Service using NSSM
     $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
     if ($existingService) {
         Write-Log "Removing existing supervisor service..."
         Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
-        & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
+        & $NSSM_PATH remove $SUPERVISOR_SERVICE_NAME confirm 2>&1 | Out-Null
         Start-Sleep -Seconds 2
     }
     
-    Write-Log "Creating Windows Service for supervisor..."
+    Write-Log "Creating Windows Service for supervisor using NSSM..."
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
@@ -834,53 +894,42 @@ telemetry:
     }
     Write-Log "Supervisor binary found at: $SUPERVISOR_BINARY_PATH"
     
-    # Create service using the supervisor binary directly
-    $supervisorServiceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
-    
-    Write-Log "Creating service with binPath: $supervisorServiceBinPath"
-    
-    # Use New-Service cmdlet (more reliable than sc.exe in PowerShell)
-    try {
-        New-Service -Name $SUPERVISOR_SERVICE_NAME `
-            -BinaryPathName $supervisorServiceBinPath `
-            -DisplayName $serviceDisplayName `
-            -Description $serviceDescription `
-            -StartupType Automatic `
-            -ErrorAction Stop | Out-Null
-        Write-Log "Service created successfully"
-    }
-    catch {
-        Write-Error "Failed to create supervisor service: $_"
+    # Verify NSSM exists
+    if (-not (Test-Path $NSSM_PATH)) {
+        Write-Error "NSSM not found at: $NSSM_PATH"
     }
     
-    # Register Event Log source for the supervisor
-    Write-Log "Registering Windows Event Log source..."
-    $eventLogKey = "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\$SUPERVISOR_SERVICE_NAME"
-    if (-not (Test-Path $eventLogKey)) {
-        New-Item -Path $eventLogKey -Force | Out-Null
-    }
-    Set-ItemProperty -Path $eventLogKey -Name "EventMessageFile" -Value "%SystemRoot%\System32\EventCreate.exe" -Type ExpandString -Force
-    
-    # Set environment variables for the service via registry
-    Write-Log "Setting supervisor service environment variables..."
-    $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
-    
-    # Verify registry path exists (service was created)
-    if (-not (Test-Path $serviceRegPath)) {
-        Write-Error "Service registry key not found at: $serviceRegPath - service creation may have failed"
+    # Install service using NSSM
+    Write-Log "Installing service with NSSM..."
+    $nssmResult = & $NSSM_PATH install $SUPERVISOR_SERVICE_NAME $SUPERVISOR_BINARY_PATH 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to install supervisor service with NSSM: $nssmResult"
     }
     
-    $envVars = @(
-        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
-    )
+    # Configure service parameters
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppParameters "--config `"$SUPERVISOR_CONFIG_FILE`"" | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppDirectory $SUPERVISOR_INSTALL_DIR | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME DisplayName $serviceDisplayName | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME Description $serviceDescription | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME Start SERVICE_AUTO_START | Out-Null
+    
+    # Configure stdout/stderr logging
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStdout "$SUPERVISOR_LOG_DIR\supervisor-stdout.log" | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStderr "$SUPERVISOR_LOG_DIR\supervisor-stderr.log" | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStdoutCreationDisposition 4 | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStderrCreationDisposition 4 | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppRotateFiles 1 | Out-Null
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppRotateBytes 10485760 | Out-Null
+    
+    # Set environment variables using NSSM
+    $envString = "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
     if ($env:CORALOGIX_DOMAIN) {
-        $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
+        $envString += "`nCORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
     }
-    
-    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction Stop
+    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppEnvironmentExtra $envString | Out-Null
     
     Write-Log "Starting supervisor service..."
-    Start-Service -Name $SUPERVISOR_SERVICE_NAME
+    & $NSSM_PATH start $SUPERVISOR_SERVICE_NAME | Out-Null
     
     Write-Log "Supervisor configured and started"
     
@@ -1052,15 +1101,15 @@ function Stop-ServiceWindows {
         $service = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
         if ($service) {
             Write-Log "Stopping and removing OpAMP Supervisor service..."
-            Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
-            & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
-        }
-        
-        # Remove Event Log source registration
-        $eventLogKey = "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\$SUPERVISOR_SERVICE_NAME"
-        if (Test-Path $eventLogKey) {
-            Write-Log "Removing Event Log source registration..."
-            Remove-Item -Path $eventLogKey -Recurse -Force -ErrorAction SilentlyContinue
+            # Use NSSM if available, otherwise fall back to sc.exe
+            if (Test-Path $NSSM_PATH) {
+                & $NSSM_PATH stop $SUPERVISOR_SERVICE_NAME 2>&1 | Out-Null
+                & $NSSM_PATH remove $SUPERVISOR_SERVICE_NAME confirm 2>&1 | Out-Null
+            }
+            else {
+                Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
+                & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
+            }
         }
     }
     else {
