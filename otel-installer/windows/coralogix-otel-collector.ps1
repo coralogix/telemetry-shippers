@@ -835,18 +835,23 @@ telemetry:
     Write-Log "Supervisor binary found at: $SUPERVISOR_BINARY_PATH"
     
     # Create service using the supervisor binary directly
-    # sc.exe requires specific quoting for paths with spaces
     $supervisorServiceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
     
     Write-Log "Creating service with binPath: $supervisorServiceBinPath"
-    $scResult = & sc.exe create $SUPERVISOR_SERVICE_NAME "binPath= $supervisorServiceBinPath" "start= auto" "DisplayName= $serviceDisplayName" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to create supervisor service: $scResult"
-    }
-    Write-Log "Service created successfully"
     
-    # Set service description
-    & sc.exe description $SUPERVISOR_SERVICE_NAME "$serviceDescription" | Out-Null
+    # Use New-Service cmdlet (more reliable than sc.exe in PowerShell)
+    try {
+        New-Service -Name $SUPERVISOR_SERVICE_NAME `
+            -BinaryPathName $supervisorServiceBinPath `
+            -DisplayName $serviceDisplayName `
+            -Description $serviceDescription `
+            -StartupType Automatic `
+            -ErrorAction Stop | Out-Null
+        Write-Log "Service created successfully"
+    }
+    catch {
+        Write-Error "Failed to create supervisor service: $_"
+    }
     
     # Set environment variables for the service via registry
     Write-Log "Setting supervisor service environment variables..."
@@ -924,24 +929,35 @@ function New-WindowsService {
     # Check if service already exists (from MSI installation)
     $existingService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
     
+    $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
+    
     if ($existingService) {
         Write-Log "Service already exists, stopping for reconfiguration..."
         Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
+        
+        # Update service configuration using Set-Service
+        Write-Log "Configuring service binary path..."
+        Set-Service -Name $SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
+        # Use sc.exe config for binPath (Set-Service doesn't support it in older PS versions)
+        & cmd.exe /c "sc.exe config $SERVICE_NAME binPath= `"$serviceBinPath`"" | Out-Null
     }
     else {
-        # Create service using the binary directly
-        # The otelcol-contrib.exe binary is designed to run as a Windows service
+        # Create service using New-Service cmdlet
         Write-Log "Creating Windows Service..."
-        $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
-        & sc.exe create $SERVICE_NAME "binPath= $serviceBinPath" "start= auto" "DisplayName= $serviceDisplayName" | Out-Null
-        & sc.exe description $SERVICE_NAME "$serviceDescription" | Out-Null
+        try {
+            New-Service -Name $SERVICE_NAME `
+                -BinaryPathName $serviceBinPath `
+                -DisplayName $serviceDisplayName `
+                -Description $serviceDescription `
+                -StartupType Automatic `
+                -ErrorAction Stop | Out-Null
+            Write-Log "Service created successfully"
+        }
+        catch {
+            Write-Error "Failed to create collector service: $_"
+        }
     }
-    
-    # Configure service to use our config file
-    Write-Log "Configuring service binary path..."
-    $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
-    & sc.exe config $SERVICE_NAME "binPath= $serviceBinPath" | Out-Null
     
     # Set environment variables for the service via registry
     Write-Log "Setting service environment variables..."
