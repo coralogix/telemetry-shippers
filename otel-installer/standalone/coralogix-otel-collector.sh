@@ -75,6 +75,7 @@ MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
 LISTEN_INTERFACE="${LISTEN_INTERFACE:-127.0.0.1}"
 USER_SET_MEMORY_LIMIT=false
 USER_SET_LISTEN_INTERFACE=false
+ENABLE_PROCESS_METRICS=false
 
 if [ "$UID" = "0" ] || [ "$(id -u)" -eq 0 ]; then
     SUDO_CMD=""
@@ -229,6 +230,10 @@ Options:
                                   (default: 127.0.0.1 for localhost only,
                                    use 0.0.0.0 for all interfaces)
                                   (ignored in supervisor mode)
+    --enable-process-metrics      Enable Linux capabilities for process metrics collection
+                                  Grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH to the collector
+                                  Required only if hostMetrics.process.enabled=true in config
+                                  (Linux only, disabled by default for security)
     --supervisor-version <ver>    Supervisor version (supervisor mode only)
                                   (default: same as --version)
     --collector-version <ver>     Collector version (supervisor mode only)
@@ -266,6 +271,9 @@ Examples:
 
     # Install with custom memory limit and external access
     CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --memory-limit 2048 --listen-interface 0.0.0.0
+
+    # Install with process metrics enabled (requires hostMetrics.process.enabled=true in config)
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --enable-process-metrics
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
     CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
@@ -667,12 +675,43 @@ install_collector_linux() {
     
     if getent group systemd-journal >/dev/null 2>&1; then
         if id otelcol-contrib >/dev/null 2>&1; then
-            log "Adding otelcol-contrib user to systemd-journal group for log access"
+            log "Adding otelcol-contrib user to systemd-journal group for journald log access"
             $SUDO_CMD usermod -a -G systemd-journal otelcol-contrib || warn "Failed to add user to systemd-journal group"
         fi
     fi
     
+    if [ "$ENABLE_PROCESS_METRICS" = true ]; then
+        configure_process_metrics_permissions "$BINARY_PATH_LINUX"
+    fi
+    
     log "Collector installed successfully: $($BINARY_PATH_LINUX --version)"
+}
+
+configure_process_metrics_permissions() {
+    local binary_path="$1"
+    
+    if ! command -v setcap >/dev/null 2>&1; then
+        warn "setcap not found. Process metrics may not work correctly."
+        warn "Install libcap2-bin (Debian/Ubuntu) or libcap (RHEL/CentOS) to enable process metrics."
+        return 1
+    fi
+    
+    log "Configuring Linux capabilities for process metrics..."
+    log "This allows the collector to read /proc/[pid]/io for all processes"
+    
+    # CAP_SYS_PTRACE: Required to read /proc/[pid]/io for other users' processes
+    # CAP_DAC_READ_SEARCH: Required to bypass file read permission checks
+    # +ep: Effective and Permitted (not Inherited, for security)
+    if $SUDO_CMD setcap cap_sys_ptrace,cap_dac_read_search=+ep "$binary_path" 2>/dev/null; then
+        log "✓ Linux capabilities configured successfully"
+        log "  Process metrics will be able to monitor all system processes"
+        return 0
+    else
+        warn "Failed to set Linux capabilities on $binary_path"
+        warn "Process metrics will only monitor processes owned by otelcol-contrib user"
+        warn "To enable full process metrics, run: sudo setcap cap_sys_ptrace,cap_dac_read_search=+ep $binary_path"
+        return 1
+    fi
 }
 
 install_collector_darwin() {
@@ -862,7 +901,7 @@ install_supervisor() {
     
     if getent group systemd-journal >/dev/null 2>&1; then
         if id otelcol-contrib >/dev/null 2>&1; then
-            log "Adding otelcol-contrib user to systemd-journal group for log access"
+            log "Adding otelcol-contrib user to systemd-journal group for journald log access"
             $SUDO_CMD usermod -a -G systemd-journal otelcol-contrib || warn "Failed to add user to systemd-journal group"
         fi
     fi
@@ -942,12 +981,33 @@ EOF
         $SUDO_CMD sed -i '/OTEL_MEMORY_LIMIT_MIB/d' /etc/opampsupervisor/opampsupervisor.conf
         $SUDO_CMD sed -i '/OTEL_LISTEN_INTERFACE/d' /etc/opampsupervisor/opampsupervisor.conf
         $SUDO_CMD sed -i '/OPAMP_OPTIONS/d' /etc/opampsupervisor/opampsupervisor.conf
+        # Remove discovery env vars
+        $SUDO_CMD sed -i '/POSTGRES_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/MYSQL_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/REDIS_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/MONGODB_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/RABBITMQ_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/ELASTICSEARCH_/d' /etc/opampsupervisor/opampsupervisor.conf
     fi
     {
         echo "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
         echo "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
         echo "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         echo "OPAMP_OPTIONS=--config /etc/opampsupervisor/config.yaml"
+        # Add discovery credentials if provided
+        [ -n "${POSTGRES_USER:-}" ] && echo "POSTGRES_USER=${POSTGRES_USER}"
+        [ -n "${POSTGRES_PASSWORD:-}" ] && echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+        [ -n "${POSTGRES_DB:-}" ] && echo "POSTGRES_DB=${POSTGRES_DB}"
+        [ -n "${MYSQL_USER:-}" ] && echo "MYSQL_USER=${MYSQL_USER}"
+        [ -n "${MYSQL_PASSWORD:-}" ] && echo "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+        [ -n "${REDIS_PASSWORD:-}" ] && echo "REDIS_PASSWORD=${REDIS_PASSWORD}"
+        [ -n "${MONGODB_USER:-}" ] && echo "MONGODB_USER=${MONGODB_USER}"
+        [ -n "${MONGODB_PASSWORD:-}" ] && echo "MONGODB_PASSWORD=${MONGODB_PASSWORD}"
+        [ -n "${MONGODB_DB:-}" ] && echo "MONGODB_DB=${MONGODB_DB}"
+        [ -n "${RABBITMQ_USER:-}" ] && echo "RABBITMQ_USER=${RABBITMQ_USER}"
+        [ -n "${RABBITMQ_PASSWORD:-}" ] && echo "RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}"
+        [ -n "${ELASTICSEARCH_USER:-}" ] && echo "ELASTICSEARCH_USER=${ELASTICSEARCH_USER}"
+        [ -n "${ELASTICSEARCH_PASSWORD:-}" ] && echo "ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}"
     } | $SUDO_CMD tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null
 
     $SUDO_CMD systemctl daemon-reload
@@ -1335,6 +1395,10 @@ parse_args() {
                 USER_SET_LISTEN_INTERFACE=true
                 shift 2
                 ;;
+            --enable-process-metrics)
+                ENABLE_PROCESS_METRICS=true
+                shift
+                ;;
             --supervisor-version)
                 SUPERVISOR_VERSION_FLAG="$2"
                 shift 2
@@ -1625,6 +1689,71 @@ Environment=\"OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}\""
             if [ -n "${CORALOGIX_DOMAIN:-}" ]; then
                 env_lines="${env_lines}
 Environment=\"CORALOGIX_DOMAIN=${CORALOGIX_DOMAIN}\""
+            fi
+            
+            # Discovery service credentials (optional - only add if provided)
+            # PostgreSQL
+            if [ -n "${POSTGRES_USER:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"POSTGRES_USER=${POSTGRES_USER}\""
+            fi
+            if [ -n "${POSTGRES_PASSWORD:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"POSTGRES_PASSWORD=${POSTGRES_PASSWORD}\""
+            fi
+            if [ -n "${POSTGRES_DB:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"POSTGRES_DB=${POSTGRES_DB}\""
+            fi
+            
+            # MySQL
+            if [ -n "${MYSQL_USER:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"MYSQL_USER=${MYSQL_USER}\""
+            fi
+            if [ -n "${MYSQL_PASSWORD:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"MYSQL_PASSWORD=${MYSQL_PASSWORD}\""
+            fi
+            
+            # Redis
+            if [ -n "${REDIS_PASSWORD:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"REDIS_PASSWORD=${REDIS_PASSWORD}\""
+            fi
+            
+            # MongoDB
+            if [ -n "${MONGODB_USER:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"MONGODB_USER=${MONGODB_USER}\""
+            fi
+            if [ -n "${MONGODB_PASSWORD:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"MONGODB_PASSWORD=${MONGODB_PASSWORD}\""
+            fi
+            if [ -n "${MONGODB_DB:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"MONGODB_DB=${MONGODB_DB}\""
+            fi
+            
+            # RabbitMQ
+            if [ -n "${RABBITMQ_USER:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"RABBITMQ_USER=${RABBITMQ_USER}\""
+            fi
+            if [ -n "${RABBITMQ_PASSWORD:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}\""
+            fi
+            
+            # Elasticsearch
+            if [ -n "${ELASTICSEARCH_USER:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"ELASTICSEARCH_USER=${ELASTICSEARCH_USER}\""
+            fi
+            if [ -n "${ELASTICSEARCH_PASSWORD:-}" ]; then
+                env_lines="${env_lines}
+Environment=\"ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}\""
             fi
             
             $SUDO_CMD tee "/etc/systemd/system/${SERVICE_NAME}.service.d/override.conf" >/dev/null <<EOF
