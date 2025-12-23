@@ -853,6 +853,14 @@ telemetry:
         Write-Error "Failed to create supervisor service: $_"
     }
     
+    # Register Event Log source for the supervisor
+    Write-Log "Registering Windows Event Log source..."
+    $eventLogKey = "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\$SUPERVISOR_SERVICE_NAME"
+    if (-not (Test-Path $eventLogKey)) {
+        New-Item -Path $eventLogKey -Force | Out-Null
+    }
+    Set-ItemProperty -Path $eventLogKey -Name "EventMessageFile" -Value "%SystemRoot%\System32\EventCreate.exe" -Type ExpandString -Force
+    
     # Set environment variables for the service via registry
     Write-Log "Setting supervisor service environment variables..."
     $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
@@ -959,6 +967,14 @@ function New-WindowsService {
         }
     }
     
+    # Register Event Log source for the collector
+    Write-Log "Registering Windows Event Log source..."
+    $eventLogKey = "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\$SERVICE_NAME"
+    if (-not (Test-Path $eventLogKey)) {
+        New-Item -Path $eventLogKey -Force | Out-Null
+    }
+    Set-ItemProperty -Path $eventLogKey -Name "EventMessageFile" -Value "%SystemRoot%\System32\EventCreate.exe" -Type ExpandString -Force
+    
     # Set environment variables for the service via registry
     Write-Log "Setting service environment variables..."
     $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME"
@@ -1039,6 +1055,13 @@ function Stop-ServiceWindows {
             Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
             & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
         }
+        
+        # Remove Event Log source registration
+        $eventLogKey = "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\$SUPERVISOR_SERVICE_NAME"
+        if (Test-Path $eventLogKey) {
+            Write-Log "Removing Event Log source registration..."
+            Remove-Item -Path $eventLogKey -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
     else {
         # For regular mode, just stop the service - MSI uninstall will remove it
@@ -1046,6 +1069,13 @@ function Stop-ServiceWindows {
         if ($service) {
             Write-Log "Stopping service..."
             Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
+        }
+        
+        # Remove Event Log source registration (in case of manual uninstall)
+        $eventLogKey = "HKLM:\SYSTEM\CurrentControlSet\Services\EventLog\Application\$SERVICE_NAME"
+        if (Test-Path $eventLogKey) {
+            Write-Log "Removing Event Log source registration..."
+            Remove-Item -Path $eventLogKey -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 }
@@ -1114,14 +1144,6 @@ function Remove-PackageWindows {
         if (Test-Path $SUPERVISOR_BINARY_PATH) {
             Write-Log "Removing supervisor binary: $SUPERVISOR_BINARY_PATH"
             Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
-        }
-        
-        # Remove wrapper script
-        $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
-        $supervisorWrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
-        if (Test-Path $supervisorWrapperScript) {
-            Write-Log "Removing supervisor wrapper script"
-            Remove-Item -Path $supervisorWrapperScript -Force -ErrorAction SilentlyContinue
         }
         
         # Remove collector binary (installed via tar.gz for supervisor mode)
