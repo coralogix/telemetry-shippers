@@ -201,7 +201,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-u, --upgrade`                  | Upgrade existing installation (preserves config)                                                                   |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
-| `--enable-process-metrics`       | Grant Linux capabilities for comprehensive process metrics collection                               |
+| `--enable-process-metrics`       | Grant Linux capabilities for comprehensive process metrics collection                                              |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
 | `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
 | `--uninstall`                    | Remove the collector (keeps config)                                                                                |

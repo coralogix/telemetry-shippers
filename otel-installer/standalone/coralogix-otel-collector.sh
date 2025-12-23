@@ -918,6 +918,39 @@ configure_supervisor() {
     
     local endpoint_url="https://ingress.${domain}/opamp/v1"
 
+    # Build env vars section dynamically
+    local env_vars="    CORALOGIX_PRIVATE_KEY: \"\${env:CORALOGIX_PRIVATE_KEY}\"
+    OTEL_MEMORY_LIMIT_MIB: \"\${env:OTEL_MEMORY_LIMIT_MIB}\"
+    OTEL_LISTEN_INTERFACE: \"\${env:OTEL_LISTEN_INTERFACE}\""
+    
+    # Add discovery credentials only if they're set
+    [ -n "${POSTGRES_USER:-}" ] && env_vars="${env_vars}
+    POSTGRES_USER: \"\${env:POSTGRES_USER}\""
+    [ -n "${POSTGRES_PASSWORD:-}" ] && env_vars="${env_vars}
+    POSTGRES_PASSWORD: \"\${env:POSTGRES_PASSWORD}\""
+    [ -n "${POSTGRES_DB:-}" ] && env_vars="${env_vars}
+    POSTGRES_DB: \"\${env:POSTGRES_DB}\""
+    [ -n "${MYSQL_USER:-}" ] && env_vars="${env_vars}
+    MYSQL_USER: \"\${env:MYSQL_USER}\""
+    [ -n "${MYSQL_PASSWORD:-}" ] && env_vars="${env_vars}
+    MYSQL_PASSWORD: \"\${env:MYSQL_PASSWORD}\""
+    [ -n "${REDIS_PASSWORD:-}" ] && env_vars="${env_vars}
+    REDIS_PASSWORD: \"\${env:REDIS_PASSWORD}\""
+    [ -n "${MONGODB_USER:-}" ] && env_vars="${env_vars}
+    MONGODB_USER: \"\${env:MONGODB_USER}\""
+    [ -n "${MONGODB_PASSWORD:-}" ] && env_vars="${env_vars}
+    MONGODB_PASSWORD: \"\${env:MONGODB_PASSWORD}\""
+    [ -n "${MONGODB_DB:-}" ] && env_vars="${env_vars}
+    MONGODB_DB: \"\${env:MONGODB_DB}\""
+    [ -n "${RABBITMQ_USER:-}" ] && env_vars="${env_vars}
+    RABBITMQ_USER: \"\${env:RABBITMQ_USER}\""
+    [ -n "${RABBITMQ_PASSWORD:-}" ] && env_vars="${env_vars}
+    RABBITMQ_PASSWORD: \"\${env:RABBITMQ_PASSWORD}\""
+    [ -n "${ELASTICSEARCH_USER:-}" ] && env_vars="${env_vars}
+    ELASTICSEARCH_USER: \"\${env:ELASTICSEARCH_USER}\""
+    [ -n "${ELASTICSEARCH_PASSWORD:-}" ] && env_vars="${env_vars}
+    ELASTICSEARCH_PASSWORD: \"\${env:ELASTICSEARCH_PASSWORD}\""
+
     $SUDO_CMD tee /etc/opampsupervisor/config.yaml >/dev/null <<EOF
 server:
   endpoint: "${endpoint_url}"
@@ -946,22 +979,7 @@ agent:
     - /etc/opampsupervisor/collector.yaml
   args: []
   env:
-    CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
-    OTEL_MEMORY_LIMIT_MIB: "\${env:OTEL_MEMORY_LIMIT_MIB}"
-    OTEL_LISTEN_INTERFACE: "\${env:OTEL_LISTEN_INTERFACE}"
-    POSTGRES_USER: "\${env:POSTGRES_USER}"
-    POSTGRES_PASSWORD: "\${env:POSTGRES_PASSWORD}"
-    POSTGRES_DB: "\${env:POSTGRES_DB}"
-    MYSQL_USER: "\${env:MYSQL_USER}"
-    MYSQL_PASSWORD: "\${env:MYSQL_PASSWORD}"
-    REDIS_PASSWORD: "\${env:REDIS_PASSWORD}"
-    MONGODB_USER: "\${env:MONGODB_USER}"
-    MONGODB_PASSWORD: "\${env:MONGODB_PASSWORD}"
-    MONGODB_DB: "\${env:MONGODB_DB}"
-    RABBITMQ_USER: "\${env:RABBITMQ_USER}"
-    RABBITMQ_PASSWORD: "\${env:RABBITMQ_PASSWORD}"
-    ELASTICSEARCH_USER: "\${env:ELASTICSEARCH_USER}"
-    ELASTICSEARCH_PASSWORD: "\${env:ELASTICSEARCH_PASSWORD}"
+${env_vars}
 
 storage:
   directory: /var/lib/opampsupervisor/
