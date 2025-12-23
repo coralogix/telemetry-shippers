@@ -145,7 +145,43 @@ This grants `CAP_SYS_PTRACE` and `CAP_DAC_READ_SEARCH` capabilities to the colle
 
 > **Security Note:** This is a secure, opt-in mechanism that avoids running the collector as root. The capabilities are granted only to the collector binary using Linux capabilities.
 
-## Supervisor Mode (Linux Only)
+## Service Discovery
+
+When service discovery is enabled in your OpenTelemetry configuration (via UI or config file), the collector automatically monitors common backend services (PostgreSQL, MySQL, Redis, MongoDB, NGINX, Apache, RabbitMQ, Memcached, Elasticsearch, Kafka, Cassandra). Discovery collects **metrics only**.
+
+**Example configuration** (PostgreSQL):
+
+```yaml
+extensions:
+  host_observer:
+    refresh_interval: 10s
+
+receivers:
+  receiver_creator/discovery:
+    watch_observers: [host_observer]
+    receivers:
+      postgresql:
+        rule: |
+          type == "hostport" and 
+          ((command != "" and command matches "(?i)postgres") or port == 5432) and 
+          not (command matches "coralogix|otel")
+        config:
+          endpoint: "`endpoint`"
+          username: ${env:POSTGRES_USER:-postgres}
+          password: ${env:POSTGRES_PASSWORD}
+```
+
+### Providing Credentials
+
+Provide credentials as environment variables during installation or upgrade:
+
+```bash
+CORALOGIX_PRIVATE_KEY="your-key" \
+POSTGRES_PASSWORD="mydbpass" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+```
+
+## Supervisor Mode
 
 Supervisor mode enables remote configuration management through Coralogix Fleet Management:
 
@@ -401,6 +437,42 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
+
+## Service Discovery
+
+When service discovery is enabled in your OpenTelemetry configuration (via UI or config file), the collector automatically monitors common backend services (PostgreSQL, MySQL, Redis, MongoDB, NGINX, Apache, RabbitMQ, Memcached, Elasticsearch, Kafka, Cassandra). Discovery collects **metrics only**.
+
+**Example configuration** (PostgreSQL):
+
+```yaml
+extensions:
+  host_observer:
+    refresh_interval: 10s
+
+receivers:
+  receiver_creator/discovery:
+    watch_observers: [host_observer]
+    receivers:
+      postgresql:
+        rule: |
+          type == "hostport" and 
+          ((command != "" and command matches "(?i)postgres") or port == 5432) and 
+          not (command matches "coralogix|otel")
+        config:
+          endpoint: "`endpoint`"
+          username: ${env:POSTGRES_USER:-postgres}
+          password: ${env:POSTGRES_PASSWORD}
+```
+
+### Providing Credentials
+
+Provide credentials as environment variables during installation or upgrade:
+
+```bash
+CORALOGIX_PRIVATE_KEY="your-key" \
+POSTGRES_PASSWORD="mydbpass" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+```
 
 ## Script Options
 
