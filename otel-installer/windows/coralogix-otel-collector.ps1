@@ -839,7 +839,7 @@ telemetry:
     $supervisorServiceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
     
     Write-Log "Creating service with binPath: $supervisorServiceBinPath"
-    $scResult = & sc.exe create $SUPERVISOR_SERVICE_NAME binPath= $supervisorServiceBinPath start= auto DisplayName= "$serviceDisplayName" 2>&1
+    $scResult = & sc.exe create $SUPERVISOR_SERVICE_NAME "binPath= $supervisorServiceBinPath" "start= auto" "DisplayName= $serviceDisplayName" 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create supervisor service: $scResult"
     }
@@ -934,14 +934,14 @@ function New-WindowsService {
         # The otelcol-contrib.exe binary is designed to run as a Windows service
         Write-Log "Creating Windows Service..."
         $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
-        & sc.exe create $SERVICE_NAME binPath= "$serviceBinPath" start= auto DisplayName= "$serviceDisplayName" | Out-Null
+        & sc.exe create $SERVICE_NAME "binPath= $serviceBinPath" "start= auto" "DisplayName= $serviceDisplayName" | Out-Null
         & sc.exe description $SERVICE_NAME "$serviceDescription" | Out-Null
     }
     
     # Configure service to use our config file
     Write-Log "Configuring service binary path..."
     $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
-    & sc.exe config $SERVICE_NAME binPath= "$serviceBinPath" | Out-Null
+    & sc.exe config $SERVICE_NAME "binPath= $serviceBinPath" | Out-Null
     
     # Set environment variables for the service via registry
     Write-Log "Setting service environment variables..."
