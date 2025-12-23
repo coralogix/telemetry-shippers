@@ -735,8 +735,19 @@ function Install-Supervisor {
             Invoke-Download -Url $supervisorExeUrl -Destination $supervisorExeName
         }
         
+        # Verify download succeeded
+        if (-not (Test-Path $supervisorExeName)) {
+            Write-Error "Failed to download supervisor binary: $supervisorExeName"
+        }
+        
         Write-Log "Installing OpAMP Supervisor ${SupervisorVer}..."
         Copy-Item -Path $supervisorExeName -Destination $SUPERVISOR_BINARY_PATH -Force
+        
+        # Verify installation
+        if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
+            Write-Error "Failed to install supervisor binary to: $SUPERVISOR_BINARY_PATH"
+        }
+        Write-Log "Supervisor binary installed to: $SUPERVISOR_BINARY_PATH"
         
         # Stop existing service if running
         $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
@@ -817,10 +828,22 @@ telemetry:
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
+    # Verify binary exists before creating service
+    if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
+        Write-Error "Supervisor binary not found at: $SUPERVISOR_BINARY_PATH"
+    }
+    Write-Log "Supervisor binary found at: $SUPERVISOR_BINARY_PATH"
+    
     # Create service using the supervisor binary directly
+    # sc.exe requires specific quoting for paths with spaces
     $supervisorServiceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
     
-    & sc.exe create $SUPERVISOR_SERVICE_NAME binPath= "$supervisorServiceBinPath" start= auto DisplayName= "$serviceDisplayName" | Out-Null
+    Write-Log "Creating service with binPath: $supervisorServiceBinPath"
+    $scResult = & sc.exe create $SUPERVISOR_SERVICE_NAME binPath= $supervisorServiceBinPath start= auto DisplayName= "$serviceDisplayName" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to create supervisor service: $scResult"
+    }
+    Write-Log "Service created successfully"
     
     # Set service description
     & sc.exe description $SUPERVISOR_SERVICE_NAME "$serviceDescription" | Out-Null
@@ -829,6 +852,11 @@ telemetry:
     Write-Log "Setting supervisor service environment variables..."
     $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
     
+    # Verify registry path exists (service was created)
+    if (-not (Test-Path $serviceRegPath)) {
+        Write-Error "Service registry key not found at: $serviceRegPath - service creation may have failed"
+    }
+    
     $envVars = @(
         "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
     )
@@ -836,7 +864,7 @@ telemetry:
         $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
     }
     
-    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction Stop
     
     Write-Log "Starting supervisor service..."
     Start-Service -Name $SUPERVISOR_SERVICE_NAME
