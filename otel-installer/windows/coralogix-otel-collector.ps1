@@ -817,26 +817,26 @@ telemetry:
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
-    # Create wrapper script with environment variables
-    $wrapperScriptDir = Join-Path $env:ProgramData "OpenTelemetry\Supervisor"
-    New-Item -ItemType Directory -Path $wrapperScriptDir -Force | Out-Null
-    $supervisorWrapperScript = Join-Path $wrapperScriptDir "service-wrapper.ps1"
-    
-    # Wrapper script sets environment variables and runs supervisor
-    $supervisorWrapperContent = @"
-# Service wrapper - sets environment variables and runs supervisor
-`$env:CORALOGIX_PRIVATE_KEY = '$($env:CORALOGIX_PRIVATE_KEY -replace "'", "''")'
-& '$SUPERVISOR_BINARY_PATH' --config '$SUPERVISOR_CONFIG_FILE'
-"@
-    $supervisorWrapperContent | Out-File -FilePath $supervisorWrapperScript -Encoding utf8 -Force
-    
-    # Create service using wrapper script
-    $supervisorServiceBinPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$supervisorWrapperScript`""
+    # Create service using the supervisor binary directly
+    $supervisorServiceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
     
     & sc.exe create $SUPERVISOR_SERVICE_NAME binPath= "$supervisorServiceBinPath" start= auto DisplayName= "$serviceDisplayName" | Out-Null
     
     # Set service description
     & sc.exe description $SUPERVISOR_SERVICE_NAME "$serviceDescription" | Out-Null
+    
+    # Set environment variables for the service via registry
+    Write-Log "Setting supervisor service environment variables..."
+    $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
+    
+    $envVars = @(
+        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
+    )
+    if ($env:CORALOGIX_DOMAIN) {
+        $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
+    }
+    
+    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction SilentlyContinue
     
     Write-Log "Starting supervisor service..."
     Start-Service -Name $SUPERVISOR_SERVICE_NAME
