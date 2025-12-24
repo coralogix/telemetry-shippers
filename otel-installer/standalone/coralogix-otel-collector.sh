@@ -685,7 +685,7 @@ install_collector_linux() {
     fi
     
     if [ "$ENABLE_PROCESS_METRICS" = true ]; then
-        configure_process_metrics_permissions "$BINARY_PATH_LINUX"
+        configure_process_metrics_permissions "$BINARY_PATH_LINUX" || true
     fi
     
     log "Collector installed successfully: $($BINARY_PATH_LINUX --version)"
@@ -857,7 +857,7 @@ install_supervisor() {
     $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib
     
     if [ "$ENABLE_PROCESS_METRICS" = true ]; then
-        configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib"
+        configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" || true
     fi
 
     log "Creating required directories for supervisor..."
