@@ -6,11 +6,6 @@ All notable changes to the OTel Installer scripts will be documented in this fil
 
 ### Added
 - `--enable-process-metrics` flag for Linux to grant Linux capabilities (`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) for comprehensive process metrics collection without running as root
-- Support for Service Discovery preset: automatic monitoring of PostgreSQL, MySQL, Redis, MongoDB, NGINX, Apache, RabbitMQ, Memcached, Elasticsearch, Kafka, and Cassandra
-- Credential management via environment variables (e.g., `POSTGRES_PASSWORD`, `MYSQL_PASSWORD`)
-
-### Notes
-- Discovery can be enabled in OpenTelemetry configuration (via UI or config file)
 
 ## [0.1.0] - 2024-12-18
 

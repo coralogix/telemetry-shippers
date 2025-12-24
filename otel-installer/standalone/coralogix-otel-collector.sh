@@ -22,6 +22,10 @@
 #   --listen-interface <ip>       Network interface for receivers to listen on (default: 127.0.0.1)
 #                                  Config must reference: ${env:OTEL_LISTEN_INTERFACE}
 #                                  (ignored in supervisor mode)
+#   --enable-process-metrics      Enable Linux capabilities for process metrics collection
+#                                  Grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH to the collector
+#                                  Required only if hostMetrics.process.enabled=true in config
+#                                  (Linux only, disabled by default for security)
 #   --supervisor-version <ver>    Supervisor version (supervisor mode only, default: same as --version)
 #   --collector-version <ver>     Collector version (supervisor mode only, default: same as --version)
 #   --uninstall                   Uninstall the collector (use --purge to remove all data)
@@ -851,6 +855,10 @@ install_supervisor() {
     
     log "Placing Collector binary into /usr/local/bin..."
     $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib
+    
+    if [ "$ENABLE_PROCESS_METRICS" = true ]; then
+        configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib"
+    fi
 
     log "Creating required directories for supervisor..."
     $SUDO_CMD mkdir -p /etc/opampsupervisor
@@ -918,39 +926,6 @@ configure_supervisor() {
     
     local endpoint_url="https://ingress.${domain}/opamp/v1"
 
-    # Build env vars section dynamically
-    local env_vars="    CORALOGIX_PRIVATE_KEY: \"\${env:CORALOGIX_PRIVATE_KEY}\"
-    OTEL_MEMORY_LIMIT_MIB: \"\${env:OTEL_MEMORY_LIMIT_MIB}\"
-    OTEL_LISTEN_INTERFACE: \"\${env:OTEL_LISTEN_INTERFACE}\""
-    
-    # Add discovery credentials only if they're set
-    [ -n "${POSTGRES_USER:-}" ] && env_vars="${env_vars}
-    POSTGRES_USER: \"\${env:POSTGRES_USER}\""
-    [ -n "${POSTGRES_PASSWORD:-}" ] && env_vars="${env_vars}
-    POSTGRES_PASSWORD: \"\${env:POSTGRES_PASSWORD}\""
-    [ -n "${POSTGRES_DB:-}" ] && env_vars="${env_vars}
-    POSTGRES_DB: \"\${env:POSTGRES_DB}\""
-    [ -n "${MYSQL_USER:-}" ] && env_vars="${env_vars}
-    MYSQL_USER: \"\${env:MYSQL_USER}\""
-    [ -n "${MYSQL_PASSWORD:-}" ] && env_vars="${env_vars}
-    MYSQL_PASSWORD: \"\${env:MYSQL_PASSWORD}\""
-    [ -n "${REDIS_PASSWORD:-}" ] && env_vars="${env_vars}
-    REDIS_PASSWORD: \"\${env:REDIS_PASSWORD}\""
-    [ -n "${MONGODB_USER:-}" ] && env_vars="${env_vars}
-    MONGODB_USER: \"\${env:MONGODB_USER}\""
-    [ -n "${MONGODB_PASSWORD:-}" ] && env_vars="${env_vars}
-    MONGODB_PASSWORD: \"\${env:MONGODB_PASSWORD}\""
-    [ -n "${MONGODB_DB:-}" ] && env_vars="${env_vars}
-    MONGODB_DB: \"\${env:MONGODB_DB}\""
-    [ -n "${RABBITMQ_USER:-}" ] && env_vars="${env_vars}
-    RABBITMQ_USER: \"\${env:RABBITMQ_USER}\""
-    [ -n "${RABBITMQ_PASSWORD:-}" ] && env_vars="${env_vars}
-    RABBITMQ_PASSWORD: \"\${env:RABBITMQ_PASSWORD}\""
-    [ -n "${ELASTICSEARCH_USER:-}" ] && env_vars="${env_vars}
-    ELASTICSEARCH_USER: \"\${env:ELASTICSEARCH_USER}\""
-    [ -n "${ELASTICSEARCH_PASSWORD:-}" ] && env_vars="${env_vars}
-    ELASTICSEARCH_PASSWORD: \"\${env:ELASTICSEARCH_PASSWORD}\""
-
     $SUDO_CMD tee /etc/opampsupervisor/config.yaml >/dev/null <<EOF
 server:
   endpoint: "${endpoint_url}"
@@ -979,7 +954,9 @@ agent:
     - /etc/opampsupervisor/collector.yaml
   args: []
   env:
-${env_vars}
+    CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
+    OTEL_MEMORY_LIMIT_MIB: "\${env:OTEL_MEMORY_LIMIT_MIB}"
+    OTEL_LISTEN_INTERFACE: "\${env:OTEL_LISTEN_INTERFACE}"
 
 storage:
   directory: /var/lib/opampsupervisor/
@@ -1012,33 +989,12 @@ EOF
         $SUDO_CMD sed -i '/OTEL_MEMORY_LIMIT_MIB/d' /etc/opampsupervisor/opampsupervisor.conf
         $SUDO_CMD sed -i '/OTEL_LISTEN_INTERFACE/d' /etc/opampsupervisor/opampsupervisor.conf
         $SUDO_CMD sed -i '/OPAMP_OPTIONS/d' /etc/opampsupervisor/opampsupervisor.conf
-        # Remove discovery env vars
-        $SUDO_CMD sed -i '/POSTGRES_/d' /etc/opampsupervisor/opampsupervisor.conf
-        $SUDO_CMD sed -i '/MYSQL_/d' /etc/opampsupervisor/opampsupervisor.conf
-        $SUDO_CMD sed -i '/REDIS_/d' /etc/opampsupervisor/opampsupervisor.conf
-        $SUDO_CMD sed -i '/MONGODB_/d' /etc/opampsupervisor/opampsupervisor.conf
-        $SUDO_CMD sed -i '/RABBITMQ_/d' /etc/opampsupervisor/opampsupervisor.conf
-        $SUDO_CMD sed -i '/ELASTICSEARCH_/d' /etc/opampsupervisor/opampsupervisor.conf
     fi
     {
         echo "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
         echo "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
         echo "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         echo "OPAMP_OPTIONS=--config /etc/opampsupervisor/config.yaml"
-        # Add discovery credentials if provided
-        [ -n "${POSTGRES_USER:-}" ] && echo "POSTGRES_USER=${POSTGRES_USER}"
-        [ -n "${POSTGRES_PASSWORD:-}" ] && echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
-        [ -n "${POSTGRES_DB:-}" ] && echo "POSTGRES_DB=${POSTGRES_DB}"
-        [ -n "${MYSQL_USER:-}" ] && echo "MYSQL_USER=${MYSQL_USER}"
-        [ -n "${MYSQL_PASSWORD:-}" ] && echo "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
-        [ -n "${REDIS_PASSWORD:-}" ] && echo "REDIS_PASSWORD=${REDIS_PASSWORD}"
-        [ -n "${MONGODB_USER:-}" ] && echo "MONGODB_USER=${MONGODB_USER}"
-        [ -n "${MONGODB_PASSWORD:-}" ] && echo "MONGODB_PASSWORD=${MONGODB_PASSWORD}"
-        [ -n "${MONGODB_DB:-}" ] && echo "MONGODB_DB=${MONGODB_DB}"
-        [ -n "${RABBITMQ_USER:-}" ] && echo "RABBITMQ_USER=${RABBITMQ_USER}"
-        [ -n "${RABBITMQ_PASSWORD:-}" ] && echo "RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}"
-        [ -n "${ELASTICSEARCH_USER:-}" ] && echo "ELASTICSEARCH_USER=${ELASTICSEARCH_USER}"
-        [ -n "${ELASTICSEARCH_PASSWORD:-}" ] && echo "ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}"
     } | $SUDO_CMD tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null
 
     $SUDO_CMD systemctl daemon-reload
@@ -1720,71 +1676,6 @@ Environment=\"OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}\""
             if [ -n "${CORALOGIX_DOMAIN:-}" ]; then
                 env_lines="${env_lines}
 Environment=\"CORALOGIX_DOMAIN=${CORALOGIX_DOMAIN}\""
-            fi
-            
-            # Discovery service credentials (optional - only add if provided)
-            # PostgreSQL
-            if [ -n "${POSTGRES_USER:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"POSTGRES_USER=${POSTGRES_USER}\""
-            fi
-            if [ -n "${POSTGRES_PASSWORD:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"POSTGRES_PASSWORD=${POSTGRES_PASSWORD}\""
-            fi
-            if [ -n "${POSTGRES_DB:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"POSTGRES_DB=${POSTGRES_DB}\""
-            fi
-            
-            # MySQL
-            if [ -n "${MYSQL_USER:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"MYSQL_USER=${MYSQL_USER}\""
-            fi
-            if [ -n "${MYSQL_PASSWORD:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"MYSQL_PASSWORD=${MYSQL_PASSWORD}\""
-            fi
-            
-            # Redis
-            if [ -n "${REDIS_PASSWORD:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"REDIS_PASSWORD=${REDIS_PASSWORD}\""
-            fi
-            
-            # MongoDB
-            if [ -n "${MONGODB_USER:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"MONGODB_USER=${MONGODB_USER}\""
-            fi
-            if [ -n "${MONGODB_PASSWORD:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"MONGODB_PASSWORD=${MONGODB_PASSWORD}\""
-            fi
-            if [ -n "${MONGODB_DB:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"MONGODB_DB=${MONGODB_DB}\""
-            fi
-            
-            # RabbitMQ
-            if [ -n "${RABBITMQ_USER:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"RABBITMQ_USER=${RABBITMQ_USER}\""
-            fi
-            if [ -n "${RABBITMQ_PASSWORD:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}\""
-            fi
-            
-            # Elasticsearch
-            if [ -n "${ELASTICSEARCH_USER:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"ELASTICSEARCH_USER=${ELASTICSEARCH_USER}\""
-            fi
-            if [ -n "${ELASTICSEARCH_PASSWORD:-}" ]; then
-                env_lines="${env_lines}
-Environment=\"ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}\""
             fi
             
             $SUDO_CMD tee "/etc/systemd/system/${SERVICE_NAME}.service.d/override.conf" >/dev/null <<EOF
