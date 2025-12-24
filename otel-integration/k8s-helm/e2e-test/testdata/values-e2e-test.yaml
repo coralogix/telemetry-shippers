@@ -18,8 +18,12 @@ opentelemetry-agent:
       process:
         enabled: true
       collectionInterval: "30s"
+    spanMetrics:
+      enabled: true
   config:
     exporters:
+      debug:
+        verbosity: detailed
       otlp/metrics:
         endpoint: "{{.Values.global.hostedEndpoint}}:4317"
         tls:
@@ -59,9 +63,19 @@ opentelemetry-agent:
         metrics:
           exporters:
             - otlp/metrics
+            - debug
+        "metrics/compact":
+          exporters:
+            - otlp/metrics
+            - debug
+        "metrics/db_compact":
+          exporters:
+            - otlp/metrics
+            - debug
         traces:
           exporters:
             - otlp/traces
+            - debug
         logs/resource_catalog:
           exporters:
             - otlp/logs

@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.257 / 2025-12-24
+- [Feat] Ensure spanmetrics connector upstream breaking changes don't break backward compatibility in the Coralogix integration.
+
 ### v0.0.256 / 2025-12-24
 - [Feat] Add `provider` field to `reduceResourceAttributes` and `resourceDetection` presets for targeted cloud provider configuration.
 - [Bug] Apply `resourceDetection` preset to `profiles`.

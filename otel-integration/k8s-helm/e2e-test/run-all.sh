@@ -55,6 +55,22 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+# Test to run (empty means run all in workflow mode)
+RUN_SPECIFIC_TEST=""
+
+# Define test configurations globally
+# Format: test_name:values_files:wait_label:env_vars
+# NOTE: TestE2E_HeadSampling_Simple is skipped - test appears to be broken
+declare -a TEST_CONFIGS=(
+    "TestE2E_ClusterCollector_Metrics:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml:component=agent-collector:"
+    "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
+    # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
+    "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
+)
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -62,13 +78,38 @@ while [[ $# -gt 0 ]]; do
             COLLECTOR_CONTRIB_DIR="$2"
             shift 2
             ;;
+        --test)
+            RUN_SPECIFIC_TEST="$2"
+            shift 2
+            ;;
+        --list-tests)
+            echo "Available tests:"
+            for config in "${TEST_CONFIGS[@]}"; do
+                IFS=':' read -r test_name _ _ _ <<< "$config"
+                echo "  - $test_name"
+            done
+            exit 0
+            ;;
         -h|--help)
-            echo "Usage: $0 [--collector-contrib PATH]"
+            echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  --collector-contrib PATH  Path to opentelemetry-collector-contrib repository"
             echo "                           If provided, will build and use a custom image"
+            echo "  --test TEST_NAME         Run a specific test instead of all tests"
+            echo "  --list-tests             List all available tests"
             echo "  -h, --help               Show this help message"
+            echo ""
+            echo "Available tests:"
+            for config in "${TEST_CONFIGS[@]}"; do
+                IFS=':' read -r test_name _ _ _ <<< "$config"
+                echo "  - $test_name"
+            done
+            echo ""
+            echo "Examples:"
+            echo "  $0                                              # Run all tests"
+            echo "  $0 --test TestE2E_TailSampling_Simple          # Run specific test"
+            echo "  $0 --list-tests                                # List available tests"
             exit 0
             ;;
         *)
@@ -286,7 +327,15 @@ build_helm_dependencies() {
     if [ $BUILD_EXIT_CODE -ne 0 ]; then
         if echo "$BUILD_OUTPUT" | grep -q "out of sync"; then
             log_warning "Chart.lock is out of sync, updating dependencies..."
-            helm dependency update
+            set +e
+            UPDATE_OUTPUT=$(helm dependency update 2>&1)
+            UPDATE_EXIT_CODE=$?
+            set -e
+            if [ $UPDATE_EXIT_CODE -ne 0 ]; then
+                log_error "Failed to update helm dependencies"
+                echo "$UPDATE_OUTPUT"
+                exit 1
+            fi
             log_success "Dependencies updated successfully"
         else
             log_error "Failed to build helm dependencies"
@@ -296,6 +345,21 @@ build_helm_dependencies() {
     else
         log_success "Dependencies built successfully"
     fi
+
+    # Verify that required charts exist
+    if [ ! -d "charts" ]; then
+        log_error "Charts directory was not created"
+        exit 1
+    fi
+
+    # Check for opentelemetry-collector charts (required dependencies)
+    local collector_charts=$(ls charts/opentelemetry-collector-*.tgz 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$collector_charts" -eq 0 ]; then
+        log_error "No opentelemetry-collector charts found in charts/ directory"
+        log_error "This may indicate that local file paths in Chart.yaml are not resolving correctly"
+        exit 1
+    fi
+    log_debug "Found ${collector_charts} opentelemetry-collector chart(s)"
 }
 
 # Install helm chart with specific values
@@ -331,10 +395,31 @@ install_chart() {
         log_debug "Using custom image args: ${HELM_IMAGE_ARGS}"
     fi
 
+    # Verify charts directory exists before installation
+    if [ ! -d "charts" ]; then
+        log_error "Charts directory does not exist. Run helm dependency build first."
+        return 1
+    fi
+
     # Execute helm command
     log_debug "Executing: ${helm_cmd}"
-    if ! eval "$helm_cmd"; then
-        log_error "Failed to install helm chart"
+    set +e
+    INSTALL_OUTPUT=$(eval "$helm_cmd" 2>&1)
+    INSTALL_EXIT_CODE=$?
+    set -e
+
+    if [ $INSTALL_EXIT_CODE -ne 0 ]; then
+        log_error "Failed to install helm chart (exit code: ${INSTALL_EXIT_CODE})"
+        echo "$INSTALL_OUTPUT"
+        
+        # Provide helpful error messages for common issues
+        if echo "$INSTALL_OUTPUT" | grep -qi "chart.*not found\|dependency.*not found"; then
+            log_error "Chart dependencies may be missing. Try running: helm dependency build"
+        fi
+        if echo "$INSTALL_OUTPUT" | grep -qi "file://"; then
+            log_error "Local file path resolution issue detected. Check that file:// paths in Chart.yaml are correct."
+        fi
+        
         return 1
     fi
 
@@ -519,6 +604,49 @@ print_summary() {
     echo -e "${BLUE}========================================${NC}"
 }
 
+# Run specific test
+run_specific_test() {
+    local target_test="$1"
+    local found=0
+    
+    log_info "Looking for test: ${target_test}"
+    
+    for test_config in "${TEST_CONFIGS[@]}"; do
+        IFS=':' read -r test_name values_files wait_label env_vars <<< "$test_config"
+        
+        if [ "$test_name" = "$target_test" ]; then
+            found=1
+            log_test "========================================"
+            log_test "Running: ${test_name}"
+            log_test "========================================"
+            
+            # Setup environment
+            uninstall_chart
+            build_helm_dependencies
+            
+            # Install chart with test-specific values
+            if ! install_chart "$values_files" "$wait_label"; then
+                log_error "Failed to install chart for ${test_name}"
+                return 1
+            fi
+            
+            # Run the test
+            run_test "$test_name" "$env_vars"
+            return $?
+        fi
+    done
+    
+    if [ $found -eq 0 ]; then
+        log_error "Test '${target_test}' not found"
+        log_info "Available tests:"
+        for config in "${TEST_CONFIGS[@]}"; do
+            IFS=':' read -r test_name _ _ _ <<< "$config"
+            echo "  - $test_name"
+        done
+        return 1
+    fi
+}
+
 # Main execution
 main() {
     check_prerequisites
@@ -528,64 +656,15 @@ main() {
     setup_helm_repos
     create_secret
 
+    # Run specific test if requested
+    if [ -n "$RUN_SPECIFIC_TEST" ]; then
+        run_specific_test "$RUN_SPECIFIC_TEST"
+        return $?
+    fi
+
+    # Otherwise run workflow mode (all tests)
     run_workflow_mode
     return $?
-
-    # Define test configurations
-    # Format: test_name:values_files:wait_label:env_vars
-    # NOTE: TestE2E_HeadSampling_Simple is skipped - test appears to be broken
-    # (fails with "expected no traces with head sampling at 0%, but some were received")
-    # even when RUN_HEAD_SAMPLING_E2E=1 is set. In our CI we are skipping it.
-    declare -a test_configs=(
-        "TestE2E_ClusterCollector_Metrics:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml:component=agent-collector:"
-        "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
-        # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
-        "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-        "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-        "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-    )
-
-    TOTAL_TESTS=${#test_configs[@]}
-
-    # Run each test
-    local test_num=0
-    for test_config in "${test_configs[@]}"; do
-        ((test_num++))
-        IFS=':' read -r test_name values_files wait_label env_vars <<< "$test_config"
-
-        log_test "========================================"
-        log_test "Test ${test_num}/${TOTAL_TESTS}: ${test_name}"
-        log_test "========================================"
-
-        # Uninstall previous chart
-        uninstall_chart
-
-        # Build dependencies (only needed once, but safe to run multiple times)
-        build_helm_dependencies
-
-        # Install chart with test-specific values
-        if ! install_chart "$values_files" "$wait_label"; then
-            log_error "Failed to install chart for ${test_name}, skipping test"
-            TEST_RESULTS+=("SKIP")
-            TEST_NAMES+=("$test_name")
-            ((FAILED_TESTS++))
-            continue
-        fi
-
-        # Run the test
-        run_test "$test_name" "$env_vars"
-        local test_exit_code=$?
-
-        log_debug "Test ${test_name} completed with exit code: ${test_exit_code}"
-    done
-
-    # Print summary
-    print_summary
-
-    # Exit with error if any tests failed
-    if [ ${FAILED_TESTS} -gt 0 ]; then
-        exit 1
-    fi
 }
 
 # Run main function
