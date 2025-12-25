@@ -1,14 +1,15 @@
 global:
-  domain: "eu2.coralogix.com"
+  domain: "coralogix.com"
   defaultApplicationName: "otel"
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.2"
+  version: "0.0.3"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
   enabled: true
+# provider: "aws | azure | gcp | on-prem "
   distribution: "standalone"
   presets:
     metadata:
@@ -23,21 +24,50 @@ opentelemetry-agent:
     hostMetrics:
       enabled: true
       process:
-        enabled: true
+        enabled: false # Requires: sudo setcap cap_sys_ptrace,cap_dac_read_search=+ep /usr/bin/otelcol-contrib
     batch:
       enabled: true
     resourceDetection:
       enabled: true
-      # detectors:
-      #   cloud:
-      #     - ec2
+      provider: "on-prem"
+    # Removes a subset of attributes to be sent to Coralogix. It uses a denylist policy.
+    reduceResourceAttributes:
+      enabled: false
+      pipelines: ["all"]
+      provider: "on-prem"
     journaldReceiver:
       enabled: true
+      dynamicSubsystemName: true
     otlpReceiver:
       enabled: true
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    filelogMulti:
+      enabled: false
+      receivers: []
+      # - name: backend-logs
+      #   include:
+      #     - /var/log/messages
+      #   exclude: []
+      #   forceFlushPeriod: "0"
+      #   startAt: beginning
+      #   multiline:
+      #     lineStartPattern: "^\\d{4}-"
+      #     lineEndPattern: "END$"
+      #     omitPattern: false
+      #   applicationName: ""
+      #   subsystemName: ""
+      #   applicationNameAttribute: ""
+      #   subsystemNameAttribute: ""
+      #   extraOperators:
+      #     - type: regex_parser
+      #       regex: '^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$'
+      #       timestamp:
+      #         parse_from: attributes.time
+      #         layout: '%Y-%m-%d %H:%M:%S'
+      #       severity:
+      #         parse_from: attributes.sev
 
   config:
     extensions:

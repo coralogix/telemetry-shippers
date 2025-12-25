@@ -3,30 +3,30 @@ exporters:
     application_name: otel
     application_name_attributes:
     - service.namespace
-    domain: eu2.coralogix.com
+    domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
     subsystem_name: linux
     subsystem_name_attributes:
     - service.name
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
   coralogix/resource_catalog:
     application_name: resource
-    domain: eu2.coralogix.com
+    domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
@@ -40,10 +40,10 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.121.12
+        helm.chart.opentelemetry-agent.version: 0.127.7
     server:
       http:
-        endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+        endpoint: https://ingress.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
@@ -98,16 +98,6 @@ processors:
         host.id:
           enabled: true
     timeout: 2s
-  resourcedetection/region:
-    detectors:
-    - gcp
-    - ec2
-    - azure
-    - eks
-    eks:
-      node_from_env_var: K8S_NODE_NAME
-    override: true
-    timeout: 2s
   transform/entity-event:
     error_mode: silent
     log_statements:
@@ -118,6 +108,19 @@ processors:
     - context: resource
       statements:
       - keep_keys(attributes, [""])
+  transform/journald:
+    error_mode: ignore
+    log_statements:
+    - context: log
+      statements:
+      - set(resource.attributes["service.name"], body["_SYSTEMD_UNIT"]) where body["_SYSTEMD_UNIT"]
+        != nil and body["_SYSTEMD_UNIT"] != ""
+      - set(resource.attributes["service.name"], body["SYSLOG_IDENTIFIER"]) where
+        body["_SYSTEMD_UNIT"] == nil and body["SYSLOG_IDENTIFIER"] != nil and body["SYSLOG_IDENTIFIER"]
+        != ""
+      - replace_pattern(resource.attributes["service.name"], "\\.service$", "") where
+        resource.attributes["service.name"] != nil and resource.attributes["service.name"]
+        != ""
   transform/prometheus:
     error_mode: ignore
     metric_statements:
@@ -222,17 +225,6 @@ receivers:
           system.memory.utilization:
             enabled: true
       network: null
-      process:
-        metrics:
-          process.cpu.utilization:
-            enabled: true
-          process.memory.utilization:
-            enabled: true
-          process.threads:
-            enabled: true
-        mute_process_exe_error: true
-        mute_process_name_error: true
-        mute_process_user_error: true
   journald: {}
   otlp:
     protocols:
@@ -260,9 +252,9 @@ service:
       - coralogix
       processors:
       - memory_limiter
-      - resource/metadata
-      - resourcedetection/region
       - resourcedetection/env
+      - resource/metadata
+      - transform/journald
       - batch
       receivers:
       - journald
@@ -274,7 +266,6 @@ service:
       - memory_limiter
       - resource/metadata
       - resourcedetection/entity
-      - resourcedetection/region
       - transform/entity-event
       receivers:
       - hostmetrics
@@ -284,9 +275,8 @@ service:
       - coralogix
       processors:
       - memory_limiter
-      - resource/metadata
-      - resourcedetection/region
       - resourcedetection/env
+      - resource/metadata
       - transform/prometheus
       - batch
       receivers:
@@ -299,9 +289,8 @@ service:
       - coralogix
       processors:
       - memory_limiter
-      - resource/metadata
-      - resourcedetection/region
       - resourcedetection/env
+      - resource/metadata
       - batch
       receivers:
       - otlp
