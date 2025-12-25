@@ -18,6 +18,14 @@ CORALOGIX_PRIVATE_KEY="your-key" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 ```
 
+**Enable process metrics (Linux only):**
+
+```bash
+CORALOGIX_PRIVATE_KEY="your-key" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --enable-process-metrics
+```
+
 ### Docker
 
 ```bash

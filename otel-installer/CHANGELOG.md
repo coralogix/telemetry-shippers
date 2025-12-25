@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.1] - 2024-12-23
+
+### Added
+- `--enable-process-metrics` flag for Linux to grant Linux capabilities (`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) for comprehensive process metrics collection without running as root
+
 ## [0.1.0] - 2024-12-18
 
 ### Added
