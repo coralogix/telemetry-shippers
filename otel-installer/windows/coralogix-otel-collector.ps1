@@ -1412,17 +1412,19 @@ Collector Config: $SUPERVISOR_COLLECTOR_CONFIG_FILE
 Effective Config: $SUPERVISOR_STATE_DIR\effective.yaml
 
 Useful commands:
-  Supervisor status:    Get-Service $SUPERVISOR_SERVICE_NAME
-  Collector process:    Get-Process otelcol-contrib
-  Supervisor logs:      Get-Content $SUPERVISOR_LOG_DIR\opampsupervisor.log -Tail 50 -Wait
+  Supervisor status:     Get-Service $SUPERVISOR_SERVICE_NAME
+  Collector process:     Get-Process otelcol-contrib
+  Supervisor logs:       Get-Content $SUPERVISOR_LOG_DIR\opampsupervisor.log -Tail 50 -Wait
   View supervisor config: Get-Content $SUPERVISOR_CONFIG_FILE
-  View collector config: Get-Content $SUPERVISOR_COLLECTOR_CONFIG_FILE
-  Restart supervisor:    Restart-Service $SUPERVISOR_SERVICE_NAME
-  Stop supervisor:       Stop-Service $SUPERVISOR_SERVICE_NAME
-  Start supervisor:      Start-Service $SUPERVISOR_SERVICE_NAME
+  View collector config:  Get-Content $SUPERVISOR_COLLECTOR_CONFIG_FILE
+  View effective config:  Get-Content $SUPERVISOR_STATE_DIR\effective.yaml
+  Restart supervisor:     Restart-Service $SUPERVISOR_SERVICE_NAME
+  Stop supervisor:        Stop-Service $SUPERVISOR_SERVICE_NAME
+  Start supervisor:       Start-Service $SUPERVISOR_SERVICE_NAME
 
 Note: The collector is managed by the supervisor. Configuration updates
-will be received from the OpAMP server automatically.
+will be received from the OpAMP server automatically. The effective.yaml
+shows the actual merged configuration after applying Fleet Management settings.
 
 "@
         Write-Host $summary
