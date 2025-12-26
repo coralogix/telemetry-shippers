@@ -1219,6 +1219,10 @@ function Remove-PackageWindows {
                 Write-Log "Removing supervisor install directory: $SUPERVISOR_INSTALL_DIR"
                 Remove-Item -Path $SUPERVISOR_INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
             }
+            if (Test-Path $NSSM_INSTALL_DIR) {
+                Write-Log "Removing NSSM: $NSSM_INSTALL_DIR"
+                Remove-Item -Path $NSSM_INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
+            }
         }
     }
 
