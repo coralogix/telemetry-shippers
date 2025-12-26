@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.254"
+  version: "0.0.256"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -70,6 +70,10 @@ opentelemetry-agent:
     enabled: false
     replicas: 1
     allocationStrategy: "per-node"
+    # Custom labels to add to TargetAllocator pods
+    # podLabels:
+    #   team: platform-engineering
+    #   environment: production
     prometheusCR:
       enabled: true
       # The interval at which the target allocator will scrape the Prometheus server

@@ -129,7 +129,23 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   -- --memory-limit 2048 --listen-interface 0.0.0.0
 ```
 
-## Supervisor Mode (Linux Only)
+## Enable Comprehensive Process Metrics
+
+By default, the collector may not have permissions to read detailed process metrics (CPU, memory, disk I/O) for all processes. Use the `--enable-process-metrics` flag to grant the necessary Linux capabilities:
+
+```bash
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- --enable-process-metrics
+```
+
+This grants `CAP_SYS_PTRACE` and `CAP_DAC_READ_SEARCH` capabilities to the collector binary, allowing it to:
+- Read `/proc/[pid]/io` for all processes (disk I/O metrics)
+- Access process information for all users (not just the collector user)
+
+> **Security Note:** This is a secure, opt-in mechanism that avoids running the collector as root. The capabilities are granted only to the collector binary using Linux capabilities.
+
+## Supervisor Mode
 
 Supervisor mode enables remote configuration management through Coralogix Fleet Management:
 
@@ -149,6 +165,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-u, --upgrade`                  | Upgrade existing installation (preserves config)                                                                   |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
+| `--enable-process-metrics`       | Grant Linux capabilities for comprehensive process metrics collection                                              |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
 | `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
 | `--uninstall`                    | Remove the collector (keeps config)                                                                                |
