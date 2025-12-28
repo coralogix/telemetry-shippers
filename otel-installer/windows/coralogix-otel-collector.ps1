@@ -28,6 +28,12 @@
     Total memory in MiB to allocate to the collector (default: 512)
     Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
     (ignored in supervisor mode)
+
+.PARAMETER ListenInterface
+    Network interface for receivers to listen on (default: 127.0.0.1)
+    Config must reference: ${env:OTEL_LISTEN_INTERFACE}
+    Use 0.0.0.0 to listen on all interfaces (gateway mode)
+    (ignored in supervisor mode)
     
 .PARAMETER Upgrade
     Upgrade existing installation
@@ -60,6 +66,14 @@
 .EXAMPLE
     # Install with custom memory limit
     $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
+
+.EXAMPLE
+    # Install with external network access (gateway mode - listen on all interfaces)
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+
+.EXAMPLE
+    # Install with custom memory limit and external access
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
 
 .EXAMPLE
     # Upgrade existing installation
@@ -101,6 +115,9 @@ param(
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [int]$MemoryLimit = 512,
+    
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$ListenInterface = "127.0.0.1",
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [Alias("u")]
@@ -148,6 +165,7 @@ $OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
 # Global variables
 $script:BackupDir = ""
 $script:UserSetMemoryLimit = $false
+$script:UserSetListenInterface = $false
 
 # Functions
 function Write-Log {
@@ -189,6 +207,12 @@ Options:
                                     Sets OTEL_MEMORY_LIMIT_MIB environment variable
                                     Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}
                                     (default: 512, ignored in supervisor mode)
+    -ListenInterface <ip>           Network interface for receivers to listen on
+                                    Sets OTEL_LISTEN_INTERFACE environment variable
+                                    Config must reference: `${env:OTEL_LISTEN_INTERFACE}
+                                    (default: 127.0.0.1 for localhost only,
+                                     use 0.0.0.0 for all interfaces)
+                                    (ignored in supervisor mode)
     -Uninstall                      Uninstall the collector
                                     (use -Purge to remove all data)
     -Purge                          Remove all data when uninstalling
@@ -218,6 +242,12 @@ Examples:
     # Install with custom memory limit
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
 
+    # Install with external network access (gateway mode - listen on all interfaces)
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+
+    # Install with custom memory limit and external access
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
+
     # Upgrade existing installation
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Upgrade
 
@@ -241,8 +271,8 @@ function Test-ConfigEnvVars {
     param([string]$ConfigPath)
     
     if ($Supervisor) {
-        if ($script:UserSetMemoryLimit) {
-            Write-Warn "Note: -MemoryLimit is ignored in supervisor mode"
+        if ($script:UserSetMemoryLimit -or $script:UserSetListenInterface) {
+            Write-Warn "Note: -MemoryLimit and -ListenInterface are ignored in supervisor mode"
             Write-Warn "Configuration is managed by the OpAMP server"
         }
         return
@@ -262,6 +292,14 @@ function Test-ConfigEnvVars {
             Write-Warn "You specified -MemoryLimit but the config doesn't reference `${env:OTEL_MEMORY_LIMIT_MIB}"
             Write-Warn "The -MemoryLimit flag will have no effect."
             Write-Warn "Update your config to use: limit_mib: `${env:OTEL_MEMORY_LIMIT_MIB}"
+        }
+    }
+    
+    if ($script:UserSetListenInterface) {
+        if ($configContent -notmatch "OTEL_LISTEN_INTERFACE") {
+            Write-Warn "You specified -ListenInterface but the config doesn't reference `${env:OTEL_LISTEN_INTERFACE}"
+            Write-Warn "The -ListenInterface flag will have no effect."
+            Write-Warn "Update your config to use: endpoint: `${env:OTEL_LISTEN_INTERFACE}:<port>"
         }
     }
 }
@@ -910,6 +948,7 @@ agent:
   env:
     CORALOGIX_PRIVATE_KEY: "`${env:CORALOGIX_PRIVATE_KEY}"
     OTEL_MEMORY_LIMIT_MIB: "`${env:OTEL_MEMORY_LIMIT_MIB}"
+    OTEL_LISTEN_INTERFACE: "`${env:OTEL_LISTEN_INTERFACE}"
 
 storage:
   directory: $($SUPERVISOR_STATE_DIR -replace '\\', '/')
@@ -974,6 +1013,7 @@ telemetry:
     # Set environment variables using NSSM
     $envString = "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
     $envString += "`nOTEL_MEMORY_LIMIT_MIB=$MemoryLimit"
+    $envString += "`nOTEL_LISTEN_INTERFACE=$ListenInterface"
     if ($env:CORALOGIX_DOMAIN) {
         $envString += "`nCORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
     }
@@ -1082,7 +1122,8 @@ function New-WindowsService {
     # Build environment variables array
     $envVars = @(
         "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)",
-        "OTEL_MEMORY_LIMIT_MIB=$MemoryLimit"
+        "OTEL_MEMORY_LIMIT_MIB=$MemoryLimit",
+        "OTEL_LISTEN_INTERFACE=$ListenInterface"
     )
     if ($env:CORALOGIX_DOMAIN) {
         $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
@@ -1410,11 +1451,15 @@ function Main {
     $arch = Get-Architecture
     Write-Log "Detected architecture: $arch"
     
-    # Detect if user explicitly set MemoryLimit
+    # Detect if user explicitly set MemoryLimit or ListenInterface
     if ($PSBoundParameters.ContainsKey('MemoryLimit')) {
         $script:UserSetMemoryLimit = $true
     }
+    if ($PSBoundParameters.ContainsKey('ListenInterface')) {
+        $script:UserSetListenInterface = $true
+    }
     Write-Log "Memory limit: $MemoryLimit MiB"
+    Write-Log "Listen interface: $ListenInterface"
     
     $version = Get-Version
     Write-Log "Installing version: $version"
