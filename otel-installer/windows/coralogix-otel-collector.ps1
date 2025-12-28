@@ -378,6 +378,31 @@ function Test-Version {
     }
 }
 
+function Test-SupervisorVersion {
+    param([string]$Version)
+    
+    # Supervisor uses a different release path: cmd/opampsupervisor/v{version}
+    $releaseUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/cmd%2Fopampsupervisor%2Fv$Version"
+    try {
+        $response = Invoke-WebRequest -Uri $releaseUrl -UseBasicParsing -Method Head -ErrorAction Stop
+        return $true
+    }
+    catch {
+        if ($_.Exception.Response.StatusCode -eq 404) {
+            Write-Warn "Supervisor version v$Version not found in OpenTelemetry releases"
+            Write-Host ""
+            Write-Host "Please verify the version exists at:"
+            Write-Host "  $releaseUrl"
+            Write-Host ""
+            Write-Host "You can find available supervisor versions at:"
+            Write-Host "  https://github.com/open-telemetry/opentelemetry-collector-releases/releases?q=opampsupervisor"
+            Write-Host ""
+            return $false
+        }
+        return $false
+    }
+}
+
 function Get-Version {
     if ($Version) {
         $ver = $Version
@@ -1501,6 +1526,14 @@ function Main {
             Write-Log "Validating collector version: $collectorVer"
             if (-not (Test-Version -Version $collectorVer)) {
                 Write-Error "Invalid collector version: $collectorVer"
+            }
+        }
+        
+        # Validate supervisor version (has different release path than collector)
+        if ($SupervisorVersion) {
+            Write-Log "Validating supervisor version: $supervisorVer"
+            if (-not (Test-SupervisorVersion -Version $supervisorVer)) {
+                Write-Error "Invalid supervisor version: $supervisorVer"
             }
         }
         
