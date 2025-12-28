@@ -272,8 +272,9 @@ function Test-ConfigEnvVars {
     
     if ($Supervisor) {
         if ($script:UserSetMemoryLimit -or $script:UserSetListenInterface) {
-            Write-Warn "Note: -MemoryLimit and -ListenInterface are ignored in supervisor mode"
-            Write-Warn "Configuration is managed by the OpAMP server"
+            Write-Warn "Note: -MemoryLimit and -ListenInterface values are passed as environment variables"
+            Write-Warn "but their effect depends on whether the remote Fleet Management config references them"
+            Write-Warn "(e.g., `${env:OTEL_MEMORY_LIMIT_MIB} and `${env:OTEL_LISTEN_INTERFACE})"
         }
         return
     }
@@ -1477,11 +1478,16 @@ function Main {
             Backup-Config
         }
         
-        if ($Supervisor -and (Test-Path $BINARY_PATH)) {
+        # Check for mode mismatch - regular and supervisor modes use different binaries
+        # In supervisor mode, both collector and supervisor binaries exist
+        # In regular mode, only the collector binary exists (no supervisor)
+        $isSupervisorInstalled = Test-SupervisorMode
+        
+        if ($Supervisor -and -not $isSupervisorInstalled -and (Test-Path $BINARY_PATH)) {
             Write-Error "Cannot upgrade: Regular mode is installed. Please uninstall first, then install supervisor mode."
         }
         
-        if (-not $Supervisor -and (Test-Path $SUPERVISOR_BINARY_PATH)) {
+        if (-not $Supervisor -and $isSupervisorInstalled) {
             Write-Error "Cannot upgrade: Supervisor mode is installed. Please uninstall first, then install regular mode."
         }
     }
