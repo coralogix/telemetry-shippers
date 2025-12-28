@@ -23,6 +23,11 @@
     
 .PARAMETER CollectorVersion
     Collector version (supervisor mode only, default: same as Version)
+
+.PARAMETER MemoryLimit
+    Total memory in MiB to allocate to the collector (default: 512)
+    Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
+    (ignored in supervisor mode)
     
 .PARAMETER Upgrade
     Upgrade existing installation
@@ -52,6 +57,10 @@
     # Install with supervisor
     $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor
     
+.EXAMPLE
+    # Install with custom memory limit
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
+
 .EXAMPLE
     # Upgrade existing installation
     $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Upgrade
@@ -89,6 +98,9 @@ param(
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$CollectorVersion = "",
+    
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [int]$MemoryLimit = 512,
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [Alias("u")]
@@ -135,6 +147,7 @@ $OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
 
 # Global variables
 $script:BackupDir = ""
+$script:UserSetMemoryLimit = $false
 
 # Functions
 function Write-Log {
@@ -172,6 +185,10 @@ Options:
                                     (default: same as -Version)
     -CollectorVersion <ver>         Collector version (supervisor mode only)
                                     (default: same as -Version)
+    -MemoryLimit <MiB>              Total memory in MiB to allocate to the collector
+                                    Sets OTEL_MEMORY_LIMIT_MIB environment variable
+                                    Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}
+                                    (default: 512, ignored in supervisor mode)
     -Uninstall                      Uninstall the collector
                                     (use -Purge to remove all data)
     -Purge                          Remove all data when uninstalling
@@ -198,6 +215,9 @@ Examples:
     # Install with supervisor using specific versions
     `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
 
+    # Install with custom memory limit
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
+
     # Upgrade existing installation
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Upgrade
 
@@ -214,6 +234,35 @@ function Test-Administrator {
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
     if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         Write-Error "This script requires administrator privileges. Please run PowerShell as Administrator."
+    }
+}
+
+function Test-ConfigEnvVars {
+    param([string]$ConfigPath)
+    
+    if ($Supervisor) {
+        if ($script:UserSetMemoryLimit) {
+            Write-Warn "Note: -MemoryLimit is ignored in supervisor mode"
+            Write-Warn "Configuration is managed by the OpAMP server"
+        }
+        return
+    }
+    
+    if (-not (Test-Path $ConfigPath)) {
+        return
+    }
+    
+    $configContent = Get-Content $ConfigPath -Raw -ErrorAction SilentlyContinue
+    if (-not $configContent) {
+        return
+    }
+    
+    if ($script:UserSetMemoryLimit) {
+        if ($configContent -notmatch "OTEL_MEMORY_LIMIT_MIB") {
+            Write-Warn "You specified -MemoryLimit but the config doesn't reference `${env:OTEL_MEMORY_LIMIT_MIB}"
+            Write-Warn "The -MemoryLimit flag will have no effect."
+            Write-Warn "Update your config to use: limit_mib: `${env:OTEL_MEMORY_LIMIT_MIB}"
+        }
     }
 }
 
@@ -860,6 +909,7 @@ agent:
   args: []
   env:
     CORALOGIX_PRIVATE_KEY: "`${env:CORALOGIX_PRIVATE_KEY}"
+    OTEL_MEMORY_LIMIT_MIB: "`${env:OTEL_MEMORY_LIMIT_MIB}"
 
 storage:
   directory: $($SUPERVISOR_STATE_DIR -replace '\\', '/')
@@ -923,6 +973,7 @@ telemetry:
     
     # Set environment variables using NSSM
     $envString = "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
+    $envString += "`nOTEL_MEMORY_LIMIT_MIB=$MemoryLimit"
     if ($env:CORALOGIX_DOMAIN) {
         $envString += "`nCORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
     }
@@ -1030,7 +1081,8 @@ function New-WindowsService {
     
     # Build environment variables array
     $envVars = @(
-        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
+        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)",
+        "OTEL_MEMORY_LIMIT_MIB=$MemoryLimit"
     )
     if ($env:CORALOGIX_DOMAIN) {
         $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
@@ -1357,6 +1409,12 @@ function Main {
     $arch = Get-Architecture
     Write-Log "Detected architecture: $arch"
     
+    # Detect if user explicitly set MemoryLimit
+    if ($PSBoundParameters.ContainsKey('MemoryLimit')) {
+        $script:UserSetMemoryLimit = $true
+    }
+    Write-Log "Memory limit: $MemoryLimit MiB"
+    
     $version = Get-Version
     Write-Log "Installing version: $version"
     
@@ -1451,6 +1509,9 @@ shows the actual merged configuration after applying Fleet Management settings.
     else {
         New-EmptyConfig
     }
+    
+    # Validate that config references the env vars if user set them
+    Test-ConfigEnvVars -ConfigPath $CONFIG_FILE
     
     New-WindowsService
     Test-Service
