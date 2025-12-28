@@ -1357,6 +1357,7 @@ To reinstall, run the installer script again.
 
 "@
     Write-Host $message
+    exit 0
 }
 
 # Main execution
@@ -1486,7 +1487,7 @@ shows the actual merged configuration after applying Fleet Management settings.
 
 "@
         Write-Host $summary
-        return
+        exit 0
     }
     
     Install-Collector -Version $version -Arch $arch
@@ -1534,6 +1535,7 @@ Useful commands:
 
 "@
     Write-Host $summary
+    exit 0
 }
 
 # Run main function
