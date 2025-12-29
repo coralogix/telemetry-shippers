@@ -60,10 +60,12 @@ jobs:
           mkdir -p dist
           cp otel-installer/standalone/coralogix-otel-collector.sh dist/
           cp otel-installer/docker/docker-install.sh dist/
+          cp otel-installer/windows/coralogix-otel-collector.ps1 dist/
           chmod +x dist/*.sh
           cd dist
           sha256sum coralogix-otel-collector.sh > coralogix-otel-collector.sh.sha256
           sha256sum docker-install.sh > docker-install.sh.sha256
+          sha256sum coralogix-otel-collector.ps1 > coralogix-otel-collector.ps1.sha256
 
       - name: Create release
         if: steps.check.outputs.skip == 'false'
@@ -78,22 +80,29 @@ jobs:
             
             **Standalone (Linux/macOS):**
             ```bash
-            curl -fsSL https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/coralogix-otel-collector.sh | bash
+            CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -fsSL https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/coralogix-otel-collector.sh)"
+            ```
+            
+            **Windows (PowerShell as Administrator):**
+            ```powershell
+            $env:CORALOGIX_PRIVATE_KEY="your-key"; iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/coralogix-otel-collector.ps1'))
             ```
             
             **Docker:**
             ```bash
-            curl -fsSL https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/docker-install.sh | bash
+            CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -fsSL https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/docker-install.sh)"
             ```
             
             ### Changes
             ${{ steps.changelog.outputs.content }}
             
             ### Docs
-            - [Standalone](otel-installer/standalone/)
+            - [Standalone (Linux/macOS)](otel-installer/standalone/)
+            - [Windows](otel-installer/windows/)
             - [Docker](otel-installer/docker/)
           files: |
             dist/coralogix-otel-collector.sh
+            dist/coralogix-otel-collector.ps1
             dist/docker-install.sh
             dist/*.sha256
           fail_on_unmatched_files: true
@@ -102,4 +111,6 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/*.sh
+          subject-path: |
+            dist/*.sh
+            dist/*.ps1
