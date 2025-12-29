@@ -908,9 +908,9 @@ install_supervisor() {
     fi
     
     if getent group systemd-journal >/dev/null 2>&1; then
-        if id otelcol-contrib >/dev/null 2>&1; then
-            log "Adding otelcol-contrib user to systemd-journal group for journald log access"
-            $SUDO_CMD usermod -a -G systemd-journal otelcol-contrib || warn "Failed to add user to systemd-journal group"
+        if id opampsupervisor >/dev/null 2>&1; then
+            log "Adding opampsupervisor user to systemd-journal group for journald log access"
+            $SUDO_CMD usermod -a -G systemd-journal opampsupervisor || warn "Failed to add user to systemd-journal group"
         fi
     fi
     
