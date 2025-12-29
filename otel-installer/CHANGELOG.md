@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.2] - 2024-12-29
+
+### Fixed
+- Add `opampsupervisor` user to `systemd-journal` group for journald log access in supervisor mode
+
 ## [0.1.1] - 2024-12-23
 
 ### Added
