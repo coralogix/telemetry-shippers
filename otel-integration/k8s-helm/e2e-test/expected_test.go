@@ -437,7 +437,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"otelcol_processor_accepted_log_records":                    false,
 	"otelcol_processor_accepted_spans":                          false,
 	"otelcol_processor_batch_batch_send_size":                   false,
-	"otelcol_processor_batch_batch_size_trigger_send":           false,
 	"otelcol_processor_batch_metadata_cardinality":              false,
 	"otelcol_processor_batch_timeout_trigger_send":              false,
 	"otelcol_processor_filter_datapoints.filtered":              false,
