@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.257 / 2025-12-30
+- [CHORE] Bump Collector to 0.142.0
+
 ### v0.0.256 / 2025-12-24
 - [Feat] Add `provider` field to `reduceResourceAttributes` and `resourceDetection` presets for targeted cloud provider configuration.
 - [Bug] Apply `resourceDetection` preset to `profiles`.
