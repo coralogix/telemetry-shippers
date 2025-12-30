@@ -108,6 +108,10 @@ resource "aws_launch_template" "ecs" {
   user_data = base64encode(<<-EOT
     #!/bin/bash
     echo ECS_CLUSTER=${var.cluster_name} >> /etc/ecs/ecs.config
+    cat >/etc/sysctl.d/99-ebpf.conf <<'SYSCTL'
+    kernel.perf_event_paranoid=1
+    SYSCTL
+    sysctl -p /etc/sysctl.d/99-ebpf.conf
   EOT
   )
 
@@ -200,6 +204,31 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
   }
 
   volume {
+    name      = "host-proc"
+    host_path = "/proc"
+  }
+
+  volume {
+    name      = "host-dev"
+    host_path = "/dev"
+  }
+
+  volume {
+    name      = "cgroup"
+    host_path = "/sys/fs/cgroup"
+  }
+
+  volume {
+    name      = "debugfs"
+    host_path = "/sys/kernel/debug"
+  }
+
+  volume {
+    name      = "bpf"
+    host_path = "/sys/fs/bpf"
+  }
+
+  volume {
     name      = "tracefs"
     host_path = "/sys/kernel/tracing"
   }
@@ -225,6 +254,11 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
       mountPoints = [
         { sourceVolume = "hostfs", containerPath = "/hostfs/var/lib/docker/", readOnly = true },
         { sourceVolume = "docker-socket", containerPath = "/var/run/docker.sock" },
+        { sourceVolume = "host-proc", containerPath = "/proc", readOnly = true },
+        { sourceVolume = "host-dev", containerPath = "/dev" },
+        { sourceVolume = "cgroup", containerPath = "/sys/fs/cgroup", readOnly = true },
+        { sourceVolume = "debugfs", containerPath = "/sys/kernel/debug", readOnly = true },
+        { sourceVolume = "bpf", containerPath = "/sys/fs/bpf" },
         { sourceVolume = "tracefs", containerPath = "/sys/kernel/tracing", readOnly = true }
       ]
       environment = concat([
