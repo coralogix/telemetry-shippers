@@ -35,7 +35,7 @@ data "aws_subnets" "default" {
 }
 
 data "aws_ssm_parameter" "ecs_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
+  name = var.ecs_ami_ssm_parameter
 }
 
 locals {
@@ -185,6 +185,7 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
   cpu                      = max(var.memory, 256)
   memory                   = var.memory
   network_mode             = "host"
+  pid_mode                 = "host"
   requires_compatibilities = ["EC2"]
   execution_role_arn       = var.task_execution_role_arn != null ? var.task_execution_role_arn : null
 
@@ -196,6 +197,11 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
   volume {
     name      = "docker-socket"
     host_path = "/var/run/docker.sock"
+  }
+
+  volume {
+    name      = "tracefs"
+    host_path = "/sys/kernel/tracing"
   }
 
   container_definitions = jsonencode([
@@ -218,7 +224,8 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
       ]
       mountPoints = [
         { sourceVolume = "hostfs", containerPath = "/hostfs/var/lib/docker/", readOnly = true },
-        { sourceVolume = "docker-socket", containerPath = "/var/run/docker.sock" }
+        { sourceVolume = "docker-socket", containerPath = "/var/run/docker.sock" },
+        { sourceVolume = "tracefs", containerPath = "/sys/kernel/tracing", readOnly = true }
       ]
       environment = concat([
         {
@@ -242,7 +249,7 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
           valueFrom = var.api_key_secret_arn
         }
       ] : []
-      command = ["--config", "env:OTEL_CONFIG"]
+      command = ["--config", "env:OTEL_CONFIG", "--feature-gates=service.profilesSupport"]
       healthCheck = var.health_check_enabled ? {
         command     = ["/healthcheck"]
         startPeriod = var.health_check_start_period
