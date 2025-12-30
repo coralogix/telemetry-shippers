@@ -510,6 +510,7 @@ var expectedMetrics map[string]bool = map[string]bool{
 var optionalExpectedMetrics = map[string]bool{
 	"otelcol_deltatocumulative_datapoints": false,
 	"delta_to_cumulative_e2e_counter":      false,
+	"otelcol_processor_batch_batch_size_trigger_send": false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
