@@ -1,8 +1,8 @@
 package e2e
 
 var expectedResourceMetricsSchemaURL = map[string]bool{
-	"https://opentelemetry.io/schemas/1.6.1": false,
-	"https://opentelemetry.io/schemas/1.9.0": false,
+	"https://opentelemetry.io/schemas/1.9.0":  false,
+	"https://opentelemetry.io/schemas/1.37.0": false,
 }
 
 const expectedScopeVersion = ""
@@ -508,8 +508,8 @@ var expectedMetrics map[string]bool = map[string]bool{
 }
 
 var optionalExpectedMetrics = map[string]bool{
-	"otelcol_deltatocumulative_datapoints": false,
-	"delta_to_cumulative_e2e_counter":      false,
+	"otelcol_deltatocumulative_datapoints":            false,
+	"delta_to_cumulative_e2e_counter":                 false,
 	"otelcol_processor_batch_batch_size_trigger_send": false,
 }
 
