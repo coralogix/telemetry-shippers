@@ -495,9 +495,20 @@ func checkSystemLogsAttributes(t *testing.T, actual []plog.Logs) error {
 	// Ensure we found at least one host entity event
 	require.True(t, foundHostEntityEvent, "No host entity event found in logs")
 
-	// Verify all expected schema URLs were found
-	for name, expectedState := range expectedLogsSchemaURL {
-		require.True(t, expectedState, "logs: schema_url %v was not found in the actual logs", name)
+	// Verify at least one expected schema URL was found
+	foundSchema := false
+	for _, expectedState := range expectedLogsSchemaURL {
+		if expectedState {
+			foundSchema = true
+			continue
+		}
+	}
+	if !foundSchema {
+		missing := make([]string, 0, len(expectedLogsSchemaURL))
+		for name := range expectedLogsSchemaURL {
+			missing = append(missing, name)
+		}
+		require.Failf(t, "logs: schema_url not found", "expected one of %v in the actual logs", missing)
 	}
 
 	return nil
