@@ -52,10 +52,14 @@ opentelemetry-agent:
   #         - otlp/3
   #         - spanmetrics/2
 
-
   hostNetwork: true
 
+  # command:
+  #   extraArgs: ["--feature-gates=service.profilesSupport"]
+
   presets:
+    profilesCollection:
+      enabled: true
     metadata:
       enabled: true
       clusterName: ""
@@ -136,6 +140,7 @@ opentelemetry-agent:
     # This reduces target_info cardinality.
 
     reduceResourceAttributes:
+      # Will have to disable this? Not sure.
       enabled: true
       pipelines: ["all"]
       denylist:

@@ -35,7 +35,7 @@ data "aws_subnets" "default" {
 }
 
 data "aws_ssm_parameter" "ecs_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
+  name = var.ecs_ami_ssm_parameter
 }
 
 locals {
@@ -108,6 +108,10 @@ resource "aws_launch_template" "ecs" {
   user_data = base64encode(<<-EOT
     #!/bin/bash
     echo ECS_CLUSTER=${var.cluster_name} >> /etc/ecs/ecs.config
+    cat >/etc/sysctl.d/99-ebpf.conf <<'SYSCTL'
+    kernel.perf_event_paranoid=1
+    SYSCTL
+    sysctl -p /etc/sysctl.d/99-ebpf.conf
   EOT
   )
 
@@ -185,6 +189,7 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
   cpu                      = max(var.memory, 256)
   memory                   = var.memory
   network_mode             = "host"
+  pid_mode                 = "host"
   requires_compatibilities = ["EC2"]
   execution_role_arn       = var.task_execution_role_arn != null ? var.task_execution_role_arn : null
 
@@ -196,6 +201,36 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
   volume {
     name      = "docker-socket"
     host_path = "/var/run/docker.sock"
+  }
+
+  volume {
+    name      = "host-proc"
+    host_path = "/proc"
+  }
+
+  volume {
+    name      = "host-dev"
+    host_path = "/dev"
+  }
+
+  volume {
+    name      = "cgroup"
+    host_path = "/sys/fs/cgroup"
+  }
+
+  volume {
+    name      = "debugfs"
+    host_path = "/sys/kernel/debug"
+  }
+
+  volume {
+    name      = "bpf"
+    host_path = "/sys/fs/bpf"
+  }
+
+  volume {
+    name      = "tracefs"
+    host_path = "/sys/kernel/tracing"
   }
 
   container_definitions = jsonencode([
@@ -218,7 +253,13 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
       ]
       mountPoints = [
         { sourceVolume = "hostfs", containerPath = "/hostfs/var/lib/docker/", readOnly = true },
-        { sourceVolume = "docker-socket", containerPath = "/var/run/docker.sock" }
+        { sourceVolume = "docker-socket", containerPath = "/var/run/docker.sock" },
+        { sourceVolume = "host-proc", containerPath = "/proc", readOnly = true },
+        { sourceVolume = "host-dev", containerPath = "/dev" },
+        { sourceVolume = "cgroup", containerPath = "/sys/fs/cgroup", readOnly = true },
+        { sourceVolume = "debugfs", containerPath = "/sys/kernel/debug", readOnly = true },
+        { sourceVolume = "bpf", containerPath = "/sys/fs/bpf" },
+        { sourceVolume = "tracefs", containerPath = "/sys/kernel/tracing", readOnly = true }
       ]
       environment = concat([
         {
@@ -242,7 +283,7 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
           valueFrom = var.api_key_secret_arn
         }
       ] : []
-      command = ["--config", "env:OTEL_CONFIG"]
+      command = ["--config", "env:OTEL_CONFIG", "--feature-gates=service.profilesSupport"]
       healthCheck = var.health_check_enabled ? {
         command     = ["/healthcheck"]
         startPeriod = var.health_check_start_period
