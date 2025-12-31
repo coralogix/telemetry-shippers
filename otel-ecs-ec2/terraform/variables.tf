@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "eu-west-1"
 }
 
+variable "ecs_ami_ssm_parameter" {
+  description = "SSM parameter path for the ECS-optimized AMI"
+  type        = string
+  default     = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
+}
+
 variable "cluster_name" {
   description = "Name for the ECS cluster and related resources"
   type        = string
