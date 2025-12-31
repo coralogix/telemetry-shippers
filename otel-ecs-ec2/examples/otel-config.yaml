@@ -3,63 +3,63 @@ connectors:
   spanmetrics:
     aggregation_cardinality_limit: 100000
     dimensions:
-    - name: http.method
-    - name: cgx.transaction
-    - name: cgx.transaction.root
-    - name: status_code
-    - name: db.namespace
-    - name: db.operation.name
-    - name: db.collection.name
-    - name: db.system
-    - name: http.response.status_code
-    - name: rpc.grpc.status_code
-    - name: service.version
+      - name: http.method
+      - name: cgx.transaction
+      - name: cgx.transaction.root
+      - name: status_code
+      - name: db.namespace
+      - name: db.operation.name
+      - name: db.collection.name
+      - name: db.system
+      - name: http.response.status_code
+      - name: rpc.grpc.status_code
+      - name: service.version
     histogram:
       explicit:
         buckets:
-        - 1ms
-        - 4ms
-        - 10ms
-        - 20ms
-        - 50ms
-        - 100ms
-        - 200ms
-        - 500ms
-        - 1s
-        - 2s
-        - 5s
+          - 1ms
+          - 4ms
+          - 10ms
+          - 20ms
+          - 50ms
+          - 100ms
+          - 200ms
+          - 500ms
+          - 1s
+          - 2s
+          - 5s
     metrics_expiration: 5m
-    metrics_flush_interval: '30s'
+    metrics_flush_interval: "30s"
     namespace: ""
   spanmetrics/db:
     aggregation_cardinality_limit: 100000
     dimensions:
-    - name: db.namespace
-    - name: db.operation.name
-    - name: db.collection.name
-    - name: db.system
-    - name: service.version
+      - name: db.namespace
+      - name: db.operation.name
+      - name: db.collection.name
+      - name: db.system
+      - name: service.version
     histogram:
       explicit:
         buckets:
-        - 100us
-        - 1ms
-        - 2ms
-        - 2.5ms
-        - 4ms
-        - 6ms
-        - 10ms
-        - 100ms
-        - 250ms
+          - 100us
+          - 1ms
+          - 2ms
+          - 2.5ms
+          - 4ms
+          - 6ms
+          - 10ms
+          - 100ms
+          - 250ms
     metrics_expiration: 5m
-    metrics_flush_interval: '30s'
+    metrics_flush_interval: "30s"
     namespace: db
 exporters:
   coralogix:
     application_name: otel
     application_name_attributes:
-    - aws.ecs.cluster
-    - aws.ecs.task.definition.family
+      - aws.ecs.cluster
+      - aws.ecs.task.definition.family
     domain: eu2.coralogix.com
     logs:
       headers:
@@ -73,9 +73,9 @@ exporters:
         X-Coralogix-Distribution: helm-otel-integration/0.0.2
     subsystem_name: integration
     subsystem_name_attributes:
-    - aws.ecs.container.name
-    - aws.ecs.docker.name
-    - docker.name
+      - aws.ecs.container.name
+      - aws.ecs.docker.name
+      - docker.name
     timeout: 30s
     traces:
       headers:
@@ -99,7 +99,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        cx.cluster.name: ''
+        cx.cluster.name: ""
         helm.chart.opentelemetry-agent.version: 0.119.8
     server:
       http:
@@ -119,24 +119,25 @@ processors:
   ecsattributes/container-logs:
     container_id:
       sources:
-      - log.file.path
+        - log.file.path
+        - container.id
   filter/db_spanmetrics:
     traces:
       span:
-      - attributes["db.system"] == nil
+        - attributes["db.system"] == nil
   memory_limiter:
     check_interval: 5s
     limit_percentage: 80
     spike_limit_percentage: 25
   resource/metadata:
     attributes:
-    - action: upsert
-      key: cx.otel_integration.name
-      value: coralogix-integration-ecs-ec2
+      - action: upsert
+        key: cx.otel_integration.name
+        value: coralogix-integration-ecs-ec2
   resourcedetection/entity:
     detectors:
-    - system
-    - env
+      - system
+      - env
     override: false
     system:
       resource_attributes:
@@ -163,221 +164,133 @@ processors:
     timeout: 2s
   resourcedetection/env:
     detectors:
-    - system
-    - env
+      - system
+      - env
     override: false
     system:
       resource_attributes:
         host.id:
           enabled: true
     timeout: 2s
+  resourcedetection/ecs:
+    detectors:
+      - ecs
+      - docker
+    override: true
+    timeout: 2s
   resourcedetection/region:
     detectors:
-    - gcp
-    - ec2
-    - azure
+      - gcp
+      - ec2
+      - azure
     override: true
     timeout: 2s
   transform/entity-event:
     error_mode: silent
     log_statements:
-    - context: log
-      statements:
-      - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
-      - merge_maps(attributes, resource.attributes, "insert")
-    - context: resource
-      statements:
-      - keep_keys(attributes, [""])
+      - context: log
+        statements:
+          - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+          - merge_maps(attributes, resource.attributes, "insert")
+      - context: resource
+        statements:
+          - keep_keys(attributes, [""])
   transform/prometheus:
     error_mode: ignore
     metric_statements:
-    - context: metric
-      statements:
-      - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
-        "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
-        "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
-        "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
-        "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
-        "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-    - context: resource
-      statements:
-      - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
-        == "opentelemetry-collector"
-      - delete_key(attributes, "service_name") where attributes["service.name"] ==
-        "opentelemetry-collector"
-    - context: datapoint
-      statements:
-      - delete_key(attributes, "service_name") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
-      - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
-        == "opentelemetry-collector"
-  transform/reduce:
-    error_mode: silent
-    log_statements:
-    - context: resource
-      statements:
-      - delete_key(attributes, "cloud.account.id")
-      - delete_key(attributes, "cloud.availability_zone")
-      - delete_key(attributes, "cloud.platform")
-      - delete_key(attributes, "cloud.provider")
-      - delete_key(attributes, "cloud.region")
-      - delete_key(attributes, "container.id")
-      - delete_key(attributes, "cx.otel_integration.name")
-      - delete_key(attributes, "host.image.id")
-      - delete_key(attributes, "host.type")
-      - delete_key(attributes, "os.type")
-      - delete_key(attributes, "os.version")
-      - delete_key(attributes, "process.command")
-      - delete_key(attributes, "process.command_line")
-      - delete_key(attributes, "process.command_args")
-      - delete_key(attributes, "process.executable.name")
-      - delete_key(attributes, "process.executable.path")
-      - delete_key(attributes, "process.owner")
-      - delete_key(attributes, "process.pid")
-      - delete_key(attributes, "process.parent_pid")
-      - delete_key(attributes, "process.runtime.description")
-      - delete_key(attributes, "process.runtime.name")
-      - delete_key(attributes, "process.runtime.version")
-      - delete_key(attributes, "telemetry.distro.name")
-      - delete_key(attributes, "telemetry.distro.version")
-      - delete_key(attributes, "telemetry.sdk.language")
-      - delete_key(attributes, "telemetry.sdk.name")
-      - delete_key(attributes, "telemetry.sdk.version")
-      - delete_key(attributes, "aws.ecs.task.definition.version")
-      - delete_key(attributes, "aws.ecs.task.known.status")
-    metric_statements:
-    - context: resource
-      statements:
-      - delete_key(attributes, "cloud.account.id")
-      - delete_key(attributes, "cloud.availability_zone")
-      - delete_key(attributes, "cloud.platform")
-      - delete_key(attributes, "cloud.provider")
-      - delete_key(attributes, "cloud.region")
-      - delete_key(attributes, "container.id")
-      - delete_key(attributes, "cx.otel_integration.name")
-      - delete_key(attributes, "host.image.id")
-      - delete_key(attributes, "host.type")
-      - delete_key(attributes, "os.type")
-      - delete_key(attributes, "os.version")
-      - delete_key(attributes, "process.command")
-      - delete_key(attributes, "process.command_line")
-      - delete_key(attributes, "process.command_args")
-      - delete_key(attributes, "process.executable.name")
-      - delete_key(attributes, "process.executable.path")
-      - delete_key(attributes, "process.owner")
-      - delete_key(attributes, "process.pid")
-      - delete_key(attributes, "process.parent_pid")
-      - delete_key(attributes, "process.runtime.description")
-      - delete_key(attributes, "process.runtime.name")
-      - delete_key(attributes, "process.runtime.version")
-      - delete_key(attributes, "net.host.name")
-      - delete_key(attributes, "net.host.port")
-      - delete_key(attributes, "telemetry.distro.name")
-      - delete_key(attributes, "telemetry.distro.version")
-      - delete_key(attributes, "telemetry.sdk.language")
-      - delete_key(attributes, "telemetry.sdk.name")
-      - delete_key(attributes, "telemetry.sdk.version")
-      - delete_key(attributes, "aws.ecs.task.definition.version")
-      - delete_key(attributes, "aws.ecs.task.known.status")
-    trace_statements:
-    - context: resource
-      statements:
-      - delete_key(attributes, "cloud.account.id")
-      - delete_key(attributes, "cloud.availability_zone")
-      - delete_key(attributes, "cloud.platform")
-      - delete_key(attributes, "cloud.provider")
-      - delete_key(attributes, "cloud.region")
-      - delete_key(attributes, "container.id")
-      - delete_key(attributes, "cx.otel_integration.name")
-      - delete_key(attributes, "host.image.id")
-      - delete_key(attributes, "host.type")
-      - delete_key(attributes, "os.type")
-      - delete_key(attributes, "os.version")
-      - delete_key(attributes, "process.command")
-      - delete_key(attributes, "process.command_line")
-      - delete_key(attributes, "process.command_args")
-      - delete_key(attributes, "process.executable.name")
-      - delete_key(attributes, "process.executable.path")
-      - delete_key(attributes, "process.owner")
-      - delete_key(attributes, "process.pid")
-      - delete_key(attributes, "process.parent_pid")
-      - delete_key(attributes, "process.runtime.description")
-      - delete_key(attributes, "process.runtime.name")
-      - delete_key(attributes, "process.runtime.version")
-      - delete_key(attributes, "aws.ecs.task.definition.version")
-      - delete_key(attributes, "aws.ecs.task.known.status")
+      - context: metric
+        statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
+            "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+      - context: resource
+        statements:
+          - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(attributes, "service_name") where attributes["service.name"] ==
+            "opentelemetry-collector"
+      - context: datapoint
+        statements:
+          - delete_key(attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
+            == "opentelemetry-collector"
   transform/semconv:
     error_mode: ignore
     trace_statements:
-    - context: span
-      statements:
-      - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
-        != nil
+      - context: span
+        statements:
+          - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
+            != nil
 receivers:
+  profiling/ebpf: {}
   awsecscontainermetricsd: {}
   filelog:
     force_flush_period: 0
     include:
-    - /hostfs/var/lib/docker/containers/*/*.log
-    include_file_name: false
+      - /hostfs/var/lib/docker/containers/*/*.log
+    include_file_name: true
     include_file_path: true
     operators:
-    - default: move_log_file_path
-      id: docker_log_json_parser
-      routes:
-      - expr: body matches "^\\{\"log\".*\\}"
-        output: json_parser
-      type: router
-    - output: recombine
-      parse_from: body
-      parse_to: body
-      timestamp:
-        layout: '%Y-%m-%dT%H:%M:%S.%fZ'
-        parse_from: body.time
-      type: json_parser
-    - combine_field: body.log
-      combine_with: ""
-      force_flush_period: 10s
-      id: recombine
-      is_last_entry: body.log endsWith "\n"
-      on_error: send
-      output: move_log_file_path
-      source_identifier: attributes["log.file.path"]
-      type: recombine
-    - from: attributes["log.file.path"]
-      id: move_log_file_path
-      to: resource["log.file.path"]
-      type: move
+      - default: move_log_file_path
+        id: docker_log_json_parser
+        routes:
+          - expr: body matches "^\\{\"log\".*\\}"
+            output: json_parser
+        type: router
+      - output: recombine
+        parse_from: body
+        parse_to: body
+        timestamp:
+          layout: "%Y-%m-%dT%H:%M:%S.%fZ"
+          parse_from: body.time
+        type: json_parser
+      - combine_field: body.log
+        combine_with: ""
+        force_flush_period: 10s
+        id: recombine
+        is_last_entry: body.log endsWith "\n"
+        on_error: send
+        output: move_log_file_path
+        source_identifier: attributes["log.file.path"]
+        type: recombine
+      - from: attributes["log.file.path"]
+        id: move_log_file_path
+        to: resource["log.file.path"]
+        type: move
     start_at: end
   hostmetrics:
-    collection_interval: '30s'
+    collection_interval: "30s"
     root_path: /
     scrapers:
       cpu:
@@ -388,41 +301,41 @@ receivers:
       filesystem:
         exclude_fs_types:
           fs_types:
-          - autofs
-          - binfmt_misc
-          - bpf
-          - cgroup2
-          - configfs
-          - debugfs
-          - devpts
-          - devtmpfs
-          - fusectl
-          - hugetlbfs
-          - iso9660
-          - mqueue
-          - nsfs
-          - overlay
-          - proc
-          - procfs
-          - pstore
-          - rpc_pipefs
-          - securityfs
-          - selinuxfs
-          - squashfs
-          - sysfs
-          - tracefs
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
           match_type: strict
         exclude_mount_points:
           match_type: regexp
           mount_points:
-          - /dev/*
-          - /proc/*
-          - /sys/*
-          - /run/k3s/containerd/*
-          - /run/containerd/runc/*
-          - /var/lib/docker/*
-          - /var/lib/kubelet/*
-          - /snap/*
+            - /dev/*
+            - /proc/*
+            - /sys/*
+            - /run/k3s/containerd/*
+            - /run/containerd/runc/*
+            - /var/lib/docker/*
+            - /var/lib/kubelet/*
+            - /snap/*
       load: null
       memory:
         metrics:
@@ -460,103 +373,113 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-      - job_name: opentelemetry-collector
-        scrape_interval: '30s'
-        static_configs:
-        - targets:
-          - 0.0.0.0:8888
+        - job_name: opentelemetry-collector
+          scrape_interval: "30s"
+          static_configs:
+            - targets:
+                - 0.0.0.0:8888
   statsd:
     endpoint: 0.0.0.0:8125
   zipkin:
     endpoint: 0.0.0.0:9411
 service:
   extensions:
-  - health_check
-  - opamp
-  - zpages
-  - pprof
+    - health_check
+    - opamp
+    - zpages
+    - pprof
   pipelines:
     logs:
       exporters:
-      - coralogix
+        - coralogix
       processors:
-      - memory_limiter
-      - resource/metadata
-      - resourcedetection/region
-      - resourcedetection/env
-      - ecsattributes/container-logs
-      - transform/reduce
-      - batch
+        - memory_limiter
+        - resource/metadata
+        - resourcedetection/region
+        - resourcedetection/env
+        - ecsattributes/container-logs
+        - batch
       receivers:
-      - filelog
-      - otlp
+        - filelog
+        - otlp
     logs/resource_catalog:
       exporters:
-      - coralogix/resource_catalog
+        - coralogix/resource_catalog
       processors:
-      - memory_limiter
-      - resource/metadata
-      - resourcedetection/entity
-      - resourcedetection/region
-      - transform/entity-event
+        - memory_limiter
+        - resource/metadata
+        - resourcedetection/entity
+        - resourcedetection/region
+        - transform/entity-event
       receivers:
-      - hostmetrics
+        - hostmetrics
     metrics:
       exporters:
-      - coralogix
+        - coralogix
       processors:
-      - memory_limiter
-      - resource/metadata
-      - resourcedetection/region
-      - resourcedetection/env
-      - transform/reduce
-      - transform/prometheus
-      - batch
+        - memory_limiter
+        - resource/metadata
+        - resourcedetection/region
+        - resourcedetection/env
+        - transform/prometheus
+        - batch
       receivers:
-      - hostmetrics
-      - spanmetrics
-      - spanmetrics/db
-      - prometheus
-      - awsecscontainermetricsd
-      - otlp
-      - statsd
+        - hostmetrics
+        - spanmetrics
+        - spanmetrics/db
+        - prometheus
+        - awsecscontainermetricsd
+        - otlp
+        - statsd
+    profiles:
+      exporters:
+        - debug
+        - coralogix
+      processors:
+        - memory_limiter
+        - resource/metadata
+        - resourcedetection/region
+        - resourcedetection/env
+        - resourcedetection/ecs
+        - ecsattributes/container-logs
+      receivers:
+        - otlp
+        - profiling/ebpf
     traces:
       exporters:
-      - spanmetrics
-      - forward/db
-      - coralogix
+        - spanmetrics
+        - forward/db
+        - coralogix
       processors:
-      - memory_limiter
-      - resource/metadata
-      - resourcedetection/region
-      - resourcedetection/env
-      - transform/reduce
-      - transform/semconv
-      - batch
+        - memory_limiter
+        - resource/metadata
+        - resourcedetection/region
+        - resourcedetection/env
+        - transform/semconv
+        - batch
       receivers:
-      - jaeger
-      - zipkin
-      - otlp
+        - jaeger
+        - zipkin
+        - otlp
     traces/db:
       exporters:
-      - spanmetrics/db
+        - spanmetrics/db
       processors:
-      - filter/db_spanmetrics
-      - batch
+        - filter/db_spanmetrics
+        - batch
       receivers:
-      - forward/db
+        - forward/db
   telemetry:
     logs:
       encoding: json
-      level: 'info'
+      level: "info"
     metrics:
       readers:
-      - pull:
-          exporter:
-            prometheus:
-              host: 0.0.0.0
-              port: 8888
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
     resource:
       cx.agent.type: agent
       service.name: opentelemetry-collector
-
