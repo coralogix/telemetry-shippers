@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.256"
+  version: "0.0.259"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -80,7 +80,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.140.0
+      tag: v0.141.0
 
   # serviceAccount:
   #   # Specifies whether a service account should be created
