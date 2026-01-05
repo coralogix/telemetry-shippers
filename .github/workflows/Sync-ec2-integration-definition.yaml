@@ -21,11 +21,10 @@ jobs:
       - name: Extract image version
         id: New_version
         run: |
-          $Chart_version=$(grep 'image:' otel-ecs-ec2/examples/manifest.yaml \
-            | grep coralogix-otel-collector \
+          $Chart_version=$(grep -E '^[[:space:]]*tag:[[:space:]]*v[0-9.]+' otel-ecs-ec2/values.yaml \
             | head -n1 \
-            | sed -E 's/.*:v([0-9.]+).*/\1/')
-          
+            | sed -E 's/^[[:space:]]*tag:[[:space:]]*v([0-9.]+)/\1/')
+  
           if [ -z "$Chart_version" ]; then
             echo "Failed to extract collector version"
             exit 1
