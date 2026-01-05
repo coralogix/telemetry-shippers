@@ -32,9 +32,12 @@ SUPERVISOR_MODE=false
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_BASE_CONFIG_PATH=""
 DETACHED=true
+ENABLE_PROCESS_METRICS=false
 
 MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
 LISTEN_INTERFACE="${LISTEN_INTERFACE:-127.0.0.1}"
+USER_SET_MEMORY_LIMIT=false
+USER_SET_LISTEN_INTERFACE=false
 
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
 
@@ -99,6 +102,10 @@ Options:
     -c, --config <path>         Path to custom configuration file
     -s, --supervisor            Use supervisor mode (requires CORALOGIX_DOMAIN)
     -f, --foreground            Run in foreground (default: detached)
+    --enable-process-metrics    Add Linux capabilities for process metrics collection
+                                Grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH to container
+                                Required only if hostMetrics.process.enabled=true in config
+                                (disabled by default for security)
     --uninstall                 Stop and remove the container
     -h, --help                  Show this help message
 
@@ -112,8 +119,10 @@ Environment Variables (Optional):
     HEALTH_CHECK_PORT       Host port for health check (default: 13133)
     MEMORY_LIMIT_MIB        Memory limit in MiB (default: 512)
                             Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
+                            Will validate config references this variable
     LISTEN_INTERFACE        Network interface for receivers (default: 127.0.0.1)
                             Config must reference: \${env:OTEL_LISTEN_INTERFACE}
+                            Will validate config references this variable
                             Use 0.0.0.0 for all interfaces (gateway mode)
 
 Examples:
@@ -128,6 +137,9 @@ Examples:
 
     # Custom ports
     OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
+
+    # Enable process metrics (requires hostMetrics.process.enabled=true in config)
+    CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --enable-process-metrics
 
     # Quick start with placeholder config (testing only)
     CORALOGIX_PRIVATE_KEY="your-key" $0
@@ -163,6 +175,10 @@ parse_args() {
                 ;;
             -f|--foreground)
                 DETACHED=false
+                shift
+                ;;
+            --enable-process-metrics)
+                ENABLE_PROCESS_METRICS=true
                 shift
                 ;;
             --supervisor-base-config)
@@ -225,6 +241,38 @@ check_ports() {
     check_port "$HEALTH_CHECK_PORT" "HEALTH_CHECK"
 }
 
+validate_config_env_vars() {
+    local config_file="$1"
+    
+    if [ "$SUPERVISOR_MODE" = true ]; then
+        if [ "$USER_SET_MEMORY_LIMIT" = true ] || [ "$USER_SET_LISTEN_INTERFACE" = true ]; then
+            warn "Note: MEMORY_LIMIT_MIB and LISTEN_INTERFACE are ignored in supervisor mode"
+            warn "Configuration is managed by the OpAMP server"
+        fi
+        return 0
+    fi
+    
+    if [ ! -f "$config_file" ] || [ ! -r "$config_file" ]; then
+        return 0
+    fi
+    
+    if [ "$USER_SET_MEMORY_LIMIT" = true ]; then
+        if ! grep -q "OTEL_MEMORY_LIMIT_MIB" "$config_file"; then
+            warn "You set MEMORY_LIMIT_MIB but the config doesn't reference \${env:OTEL_MEMORY_LIMIT_MIB}"
+            warn "The MEMORY_LIMIT_MIB environment variable will have no effect."
+            warn "Update your config to use: limit_mib: \${env:OTEL_MEMORY_LIMIT_MIB}"
+        fi
+    fi
+    
+    if [ "$USER_SET_LISTEN_INTERFACE" = true ]; then
+        if ! grep -q "OTEL_LISTEN_INTERFACE" "$config_file"; then
+            warn "You set LISTEN_INTERFACE but the config doesn't reference \${env:OTEL_LISTEN_INTERFACE}"
+            warn "The LISTEN_INTERFACE environment variable will have no effect."
+            warn "Update your config to use: endpoint: \${env:OTEL_LISTEN_INTERFACE}:<port>"
+        fi
+    fi
+}
+
 stop_container() {
     log "Stopping container: ${CONTAINER_NAME}"
     docker stop "${CONTAINER_NAME}" 2>/dev/null || true
@@ -282,6 +330,8 @@ create_config_dir() {
     else
         log "Using existing config at: ${CONFIG_HOST_DIR}/config.yaml"
     fi
+    
+    validate_config_env_vars "${CONFIG_HOST_DIR}/config.yaml"
 }
 
 run_regular_mode() {
@@ -314,11 +364,15 @@ run_regular_mode() {
         docker_args+=(-e "CORALOGIX_DOMAIN=${CORALOGIX_DOMAIN}")
     fi
     
+    if [ "$ENABLE_PROCESS_METRICS" = true ]; then
+        log "Adding Linux capabilities for process metrics (CAP_SYS_PTRACE, CAP_DAC_READ_SEARCH)"
+        docker_args+=(--cap-add SYS_PTRACE --cap-add DAC_READ_SEARCH)
+    fi
+    
     if [ "$DETACHED" = true ]; then
         docker_args+=(-d)
     fi
     
-    # Remove existing container if present
     docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
     
     docker run "${docker_args[@]}" "$image"
@@ -396,6 +450,7 @@ run_supervisor_mode() {
     if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
         cp "$SUPERVISOR_BASE_CONFIG_PATH" "${CONFIG_HOST_DIR}/config.yaml"
         log "Using custom base config: $SUPERVISOR_BASE_CONFIG_PATH"
+        validate_config_env_vars "${CONFIG_HOST_DIR}/config.yaml"
     else
         get_default_config > "${CONFIG_HOST_DIR}/config.yaml"
         log "Using default base config"
@@ -416,6 +471,12 @@ run_supervisor_mode() {
         -p "${OTLP_HTTP_PORT}:4318"
         -p "${HEALTH_CHECK_PORT}:13133"
     )
+    
+    # Add Linux capabilities for process metrics if requested
+    if [ "$ENABLE_PROCESS_METRICS" = true ]; then
+        log "Adding Linux capabilities for process metrics (CAP_SYS_PTRACE, CAP_DAC_READ_SEARCH)"
+        docker_args+=(--cap-add SYS_PTRACE --cap-add DAC_READ_SEARCH)
+    fi
     
     if [ "$DETACHED" = true ]; then
         docker_args+=(-d)
@@ -481,6 +542,13 @@ EOF
 main() {
     log "Coralogix OpenTelemetry Collector - Docker Installer"
     log "===================================================="
+    
+    if [ -n "${MEMORY_LIMIT_MIB+x}" ] && [ "${MEMORY_LIMIT_MIB}" != "512" ]; then
+        USER_SET_MEMORY_LIMIT=true
+    fi
+    if [ -n "${LISTEN_INTERFACE+x}" ] && [ "${LISTEN_INTERFACE}" != "127.0.0.1" ]; then
+        USER_SET_LISTEN_INTERFACE=true
+    fi
     
     parse_args "$@"
     
