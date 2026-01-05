@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.258 / 2026-01-05
+- [CHORE] Update Windows image to v0.142.0
+
 ### v0.0.257 / 2025-12-30
 - [CHORE] Bump Collector to 0.142.0
 

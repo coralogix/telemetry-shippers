@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.257"
+  version: "0.0.258"
   deploymentEnvironmentName: ""
 
   extensions:
