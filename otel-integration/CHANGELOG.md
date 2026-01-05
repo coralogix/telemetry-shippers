@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.259 / 2026-01-05
+- [CHORE] Update Target Allocator image to v0.141.0
+
 ### v0.0.258 / 2026-01-05
 - [CHORE] Update Windows image to v0.142.0
 
