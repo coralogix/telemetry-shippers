@@ -437,7 +437,7 @@ func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, 
 			resource := rspans.Resource()
 			service, exist := resource.Attributes().Get(serviceNameAttribute)
 
-			expectedTrace := expectedTraces(testNs)[service.AsString()]
+			expectedTrace := expectedTraces(testID, testNs)[service.AsString()]
 			require.NotEmpty(t, expectedTrace, "traces: unexpected service name %v", service.AsString())
 			require.True(t, exist, "traces: resource does not have the 'service.name' attribute")
 			assert.NoError(t, assertExpectedAttributes(resource.Attributes(), expectedTrace.attrs))

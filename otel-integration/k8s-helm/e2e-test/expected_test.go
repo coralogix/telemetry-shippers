@@ -564,7 +564,7 @@ var expectedHostEntityAttributes = map[string]expectedValue{
 	"cloud.region":             newExpectedValue(attributeMatchTypeOptional, ""),
 }
 
-func expectedTraces(testNs string) map[string]struct {
+func expectedTraces(testID string, testNs string) map[string]struct {
 	name    string
 	service string
 	attrs   map[string]expectedValue
@@ -580,10 +580,10 @@ func expectedTraces(testNs string) map[string]struct {
 			attrs: map[string]expectedValue{
 				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
 				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.job.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-job"),
+				"k8s.job.name":             newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-job"),
 				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
 				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
-				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-job-[a-z0-9]*"),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-job-[a-z0-9]*"),
 			},
 		},
 		"test-traces-statefulset": {
@@ -594,8 +594,8 @@ func expectedTraces(testNs string) map[string]struct {
 				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
 				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
 				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
-				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-statefulset-0"),
-				"k8s.statefulset.name":     newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-statefulset"),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset-0"),
+				"k8s.statefulset.name":     newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-statefulset"),
 			},
 		},
 		"test-traces-deployment": {
@@ -604,10 +604,10 @@ func expectedTraces(testNs string) map[string]struct {
 			attrs: map[string]expectedValue{
 				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
 				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.deployment.name":      newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-deployment"),
+				"k8s.deployment.name":      newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-deployment"),
 				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
 				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
-				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-deployment-[a-z0-9]*-[a-z0-9]*"),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-deployment-[a-z0-9]*-[a-z0-9]*"),
 			},
 		},
 		"test-traces-daemonset": {
@@ -616,10 +616,10 @@ func expectedTraces(testNs string) map[string]struct {
 			attrs: map[string]expectedValue{
 				"cx.otel_integration.name": newExpectedValue(attributeMatchTypeEqual, "coralogix-integration-helm"),
 				"k8s.cluster.name":         newExpectedValue(attributeMatchTypeEqual, "otel-integration-agent-e2e"),
-				"k8s.daemonset.name":       newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-daemonset"),
+				"k8s.daemonset.name":       newExpectedValue(attributeMatchTypeEqual, "telemetrygen-"+testID+"-traces-daemonset"),
 				"k8s.namespace.name":       newExpectedValue(attributeMatchTypeEqual, testNs),
 				"k8s.node.name":            newExpectedValue(attributeMatchTypeExist, ""),
-				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-[a-z0-9]{8}-traces-daemonset-[a-z0-9]*"),
+				"k8s.pod.name":             newExpectedValue(attributeMatchTypeRegex, "telemetrygen-"+testID+"-traces-daemonset-[a-z0-9]*"),
 			},
 		},
 	}
