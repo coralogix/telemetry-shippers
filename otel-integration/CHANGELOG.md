@@ -2,6 +2,30 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.259 / 2026-01-05
+- [CHORE] Update Target Allocator image to v0.141.0
+
+### v0.0.258 / 2026-01-05
+- [CHORE] Update Windows image to v0.142.0
+
+### v0.0.257 / 2025-12-30
+- [CHORE] Bump Collector to 0.142.0
+
+### v0.0.256 / 2025-12-24
+- [Feat] Add `provider` field to `reduceResourceAttributes` and `resourceDetection` presets for targeted cloud provider configuration.
+- [Bug] Apply `resourceDetection` preset to `profiles`.
+- [Feat] Add `dynamicSubsystemName` option to `journaldReceiver` preset to extract subsystem name from systemd unit name or syslog identifier.
+- [Fix] Fix `macosSystemLogs` regex pattern to correctly parse multiline log entries.
+- [Fix] Fix `macosSystemLogs` dynamic subsystem naming to use `service.name` instead of `cx.subsystem.name`.
+- [Fix] Remove `nop` exporter and receiver from `profiles` pipeline when the `supervisor` and `profilesCollection` presets are enabled.
+
+### v0.0.255 / 2025-12-22
+- [Feat] Add support for custom pod labels on TargetAllocator pods via `targetAllocator.podLabels`.
+
+### v0.0.254 / 2025-12-19
+- [Fix] Add missing `node` to `k8s_observer` for `kubernetesApiServerMetrics` preset.
+- [Fix] Add support for combining `profilesCollection` preset with `fleetManagement` preset.
+
 ### v0.0.253 / 2025-12-15
 - [Feat] Add the `deltaToCumulative` preset to the agent so operators can opt into converting delta metrics before export.
 

@@ -1,14 +1,15 @@
 global:
-  domain: "eu2.coralogix.com"
+  domain: "coralogix.com"
   defaultApplicationName: "otel"
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.2"
+  version: "0.0.3"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
   enabled: true
+# provider: "aws | azure | gcp | on-prem | "" (empty = all"
   distribution: "standalone"
   presets:
     metadata:
@@ -18,31 +19,141 @@ opentelemetry-agent:
       enabled: true
     fleetManagement:
       enabled: true
-      # customAttributes: {}
       agentType: "agent"
     hostMetrics:
       enabled: true
+      # Enables process metrics scraping.
+      # Disabled by default, requires privilleged mode
       process:
-        enabled: true
+        enabled: false # Requires: sudo setcap cap_sys_ptrace,cap_dac_read_search=+ep /usr/bin/otelcol-contrib
     batch:
       enabled: true
+      # sendBatchSize: 1024
+      # sendBatchMaxSize: 2048
+      # timeout: "1s"
+    
+    # Detects cloud provider and system resource attributes
+    # Based on the provider, "aws | azure | gcp | on-prem | "" (empty = use all))
     resourceDetection:
       enabled: true
-      # detectors:
-      #   cloud:
-      #     - ec2
+      provider: ""
+    # Removes a subset of attributes to be sent to Coralogix. It uses a denylist policy.
+    reduceResourceAttributes:
+      enabled: true
+      pipelines: ["all"]
+      provider: ""
+    # Collects systemd journal logs
     journaldReceiver:
       enabled: true
+      # Enables dynamic subsystem naming based on _SYSTEMD_UNIT or SYSLOG_IDENTIFIER
+      dynamicSubsystemName: true
+ 
+    collectorMetrics:
+      enabled: true
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    
     otlpReceiver:
       enabled: true
+    
+    spanMetrics:
+      enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+    
+    # spanMetricsMulti:
+    #   enabled: false
+    #   collectionInterval: "{{.Values.global.collectionInterval}}"
+    #   metricsExpiration: 5m
+    
+    # headSampling:
+    #   enabled: false
+    #   percentage: 10
+    #   mode: "proportional"
+    
+    transactions:
+      enabled: true
+      waitDuration: 30s
+    
+    zpages:
+      enabled: true
+    
+    pprof:
+      enabled: true
+    
+    semconv:
+      enabled: true
+    
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    
+    # Configures multiple Prometheus scrape targets (disabled by default)
+    # Use this to scrape metrics from application exporters
+    prometheusMulti:
+      enabled: false
+      receivers: []
+      # Example configuration:
+      # - name: mysql-metrics
+      #   scrapeInterval: 30s
+      #   targets:
+      #     - endpoint: "mysql-exporter:9104"
+      #       labels:
+      #         env: "production"
+      #   applicationName: "my-app"
+      #   subsystemName: "mysql"
+      # - name: redis-metrics
+      #   scrapeInterval: 30s
+      #   targets:
+      #     - endpoint: "redis-exporter:9121"
+      #   subsystemName: "redis"
+    
+    # Collects logs from multiple file paths (disabled by default)
+    # Use this to collect application log files
+    filelogMulti:
+      enabled: false
+      receivers: []
+      # Example configuration:
+      # - name: backend-logs
+      #   include:
+      #     - /var/log/messages
+      #     - /var/log/app/*.log
+      #   exclude:
+      #     - /var/log/app/*.gz
+      #   forceFlushPeriod: "0"
+      #   startAt: beginning
+      #   multiline:
+      #     lineStartPattern: "^\\d{4}-"
+      #     lineEndPattern: "END$"
+      #     omitPattern: false
+      #   applicationName: "my-app"
+      #   subsystemName: "backend"
+      #   # Or use attributes for dynamic naming:
+      #   # applicationNameAttribute: "service.namespace"
+      #   # subsystemNameAttribute: "service.name"
+      #   extraOperators:
+      #     - type: regex_parser
+      #       regex: '^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$'
+      #       timestamp:
+      #         parse_from: attributes.time
+      #         layout: '%Y-%m-%d %H:%M:%S'
+      #       severity:
+      #         parse_from: attributes.sev
 
   config:
     extensions:
       health_check:
-        endpoint: 0.0.0.0:13133
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+          http:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
     # exporters:
       #debug:
       # verbosity: detailed

@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "macos"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.1"
+  version: "0.0.2"
 
 opentelemetry-agent:
   enabled: true
@@ -17,28 +17,64 @@ opentelemetry-agent:
       enabled: true
     fleetManagement:
       enabled: true
-      # customAttributes: {}
       agentType: "agent"
-
+      customAttributes: {}
+    
     hostMetrics:
       enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
       process:
         enabled: true
+    
     batch:
       enabled: true
     resourceDetection:
       enabled: true
-      region:
-        enabled: false
-      detectors:
-        env:
-          - system
-          - env
+      provider: "on-prem"
+    # Removes a subset of attributes to be sent to Coralogix. It uses a denylist policy.
+    reduceResourceAttributes:
+      enabled: true
+      pipelines: ["all"]
+      provider: "on-prem"
     macosSystemLogs:
       enabled: true
-      #dynamicSubsystemName: false
+      dynamicSubsystemName: true
+    
+    collectorMetrics:
+      enabled: true
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    
     otlpReceiver:
       enabled: true
+    
+    spanMetrics:
+      enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+    
+    # spanMetricsMulti:
+    #   enabled: false
+    #   collectionInterval: "{{.Values.global.collectionInterval}}"
+    #   metricsExpiration: 5m
+    
+    # headSampling:
+    #   enabled: false
+    #   percentage: 10
+    #   mode: "proportional"
+    
+    transactions:
+      enabled: true
+      waitDuration: 30s
+    
+    zpages:
+      enabled: true
+    
+    pprof:
+      enabled: true
+    
+    semconv:
+      enabled: true
+    
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
@@ -71,10 +107,11 @@ opentelemetry-agent:
       #     lineStartPattern: "^\\d{4}-"
       #     lineEndPattern: "END$"
       #     omitPattern: false
-      #   applicationName: ""
-      #   subsystemName: ""
-      #   applicationNameAttribute: ""
-      #   subsystemNameAttribute: ""
+      #   applicationName: "my-app"
+      #   subsystemName: "backend"
+      #   # Or use attributes for dynamic naming:
+      #   # applicationNameAttribute: "service.namespace"
+      #   # subsystemNameAttribute: "service.name"
       #   extraOperators:
       #     - type: regex_parser
       #       regex: '^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<sev>[A-Z]*) (?P<msg>.*)$'
@@ -86,7 +123,18 @@ opentelemetry-agent:
   config:
     extensions:
       health_check:
-        endpoint: 0.0.0.0:13133
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+          http:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
     service:
       telemetry:
         resource:
