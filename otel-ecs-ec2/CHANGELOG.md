@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.0.6 / 2026-01-02
+
+* [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.7` (aligned in Helm values, example manifest, and Terraform `image_version` default).
+
 ### 0.0.5 / 2025-11-25
 
 * [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.6` (aligned in Helm values, example manifest, and Terraform `image_version` default).
