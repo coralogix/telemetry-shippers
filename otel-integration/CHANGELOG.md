@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.260 / 2026-01-06
+- [Fix] Remove unused `k8s_observer` extension from `kubernetesExtraMetrics` preset to avoid unnecessary API server load.
+
 ### v0.0.259 / 2026-01-05
 - [CHORE] Update Target Allocator image to v0.141.0
 
