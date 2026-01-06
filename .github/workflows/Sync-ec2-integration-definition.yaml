@@ -171,6 +171,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
+      - name: Wait for PR checks
+        if: env.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          check_status() {
+            gh pr checks "$branch" --json state --jq 'all(.[]; .state == "SUCCESS")'
+          }
+
+          max_wait_time=$((10 * 60))
+          elapsed_time=0
+          sleep_interval=10
+
+          echo "Waiting for all status checks to pass for $branch..."
+          sleep 5
+
+          while true; do
+            status=$(check_status || echo "false")
+
+            if [ "$status" = "true" ]; then
+              echo "All status checks passed."
+              break
+            fi
+
+            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+              echo "Timeout reached: Status checks did not pass within 10 minutes."
+              gh pr checks "$branch" || true
+              exit 1
+            fi
+
+            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+            sleep "$sleep_interval"
+            elapsed_time=$((elapsed_time + sleep_interval))
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
       - name: Merge PR
         if: env.exists == 'false'
         run: |
