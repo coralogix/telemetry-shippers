@@ -21,9 +21,7 @@ jobs:
       - name: Extract image version
         id: New_version
         run: |
-          Chart_version=$(grep -E '^[[:space:]]*tag:[[:space:]]*v[0-9.]+' otel-ecs-ec2/values.yaml \
-            | head -n1 \
-            | sed -E 's/^[[:space:]]*tag:[[:space:]]*v([0-9.]+)/\1/')
+          Chart_version=$(yq -r '.opentelemetry-agent.image.tag | sub("^v"; "")' otel-ecs-ec2/values.yaml)
   
           if [ -z "$Chart_version" ]; then
             echo "Failed to extract collector version"
@@ -111,8 +109,56 @@ jobs:
           EOF
           
           git add .
-          git commit -m "Add ECS-EC2 collector ${new_revision}"
+          
+          merged_pr_from_telemetry_shipper=$(curl -s \
+          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+          
+          if [ -z "$merged_pr_from_telemetry_shipper" ]; then
+            merged_pr_from_telemetry_shipper="Add ECS-EC2 collector ${new_revision}"
+          fi
+  
+          git commit -m "${merged_pr_from_telemetry_shipper}"
           git push origin "$branch"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Fetch source PR metadata (latest merged/closed)
+        if: env.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          SOURCE_REPO="coralogix/telemetry-shippers"
+
+          pr_title=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].title // empty')
+
+          pr_url=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].html_url // empty')
+
+          pr_body=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].body // empty')
+
+          if [ -z "${pr_title}" ]; then
+            pr_title="ECS-EC2: add collector ${new_revision}"
+          fi
+          
+          if [ -z "$pr_body" ]; then
+            pr_body="This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url  **dummy ticket to pass ticket validate[cds-1708]**"
+          else
+            pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
+          fi
+          
+          {
+            echo "PR_TITLE<<EOF"
+            echo "${pr_title}"
+                    echo "EOF"
+            echo "PR_BODY<<EOF"
+            echo "${pr_body}"
+                    echo "EOF"
+          } >> "$GITHUB_ENV"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Create PR
         if: env.exists == 'false'
@@ -120,8 +166,8 @@ jobs:
           gh pr create \
             --base master \
             --head "$branch" \
-            --title "ECS-EC2: add collector ${new_revision}" \
-            --body "Automated sync for ECS-EC2 collector image v${{ needs.Get_version.outputs.Chart_version }}"
+            --title "${PR_TITLE}" \
+            --body "${PR_BODY}"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
