@@ -21,7 +21,7 @@ jobs:
       - name: Extract image version
         id: New_version
         run: |
-          $Chart_version=$(grep -E '^[[:space:]]*tag:[[:space:]]*v[0-9.]+' otel-ecs-ec2/values.yaml \
+          Chart_version=$(grep -E '^[[:space:]]*tag:[[:space:]]*v[0-9.]+' otel-ecs-ec2/values.yaml \
             | head -n1 \
             | sed -E 's/^[[:space:]]*tag:[[:space:]]*v([0-9.]+)/\1/')
   
@@ -30,7 +30,7 @@ jobs:
             exit 1
           fi
           
-          echo "$Chart_version=$Chart_version" >> $GITHUB_OUTPUT
+          echo "Chart_version=$Chart_version" >> $GITHUB_OUTPUT
   commit_changes:
     runs-on: ubuntu-latest
     needs: Get_version
