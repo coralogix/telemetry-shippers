@@ -1,4 +1,4 @@
-name: Sync with integration-definitions
+name: Sync k8s with integration-definitions
 on:
   push:
     branches: [master]
