@@ -1,0 +1,305 @@
+exporters:
+  coralogix:
+    application_name: otel
+    application_name_attributes:
+    - service.namespace
+    domain: eu2.coralogix.com
+    logs:
+      headers:
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+    metrics:
+      headers:
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+    private_key: ${env:CORALOGIX_PRIVATE_KEY}
+    profiles:
+      headers:
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+    subsystem_name: windows
+    subsystem_name_attributes:
+    - service.name
+    timeout: 30s
+    traces:
+      headers:
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+  debug: {}
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  opamp:
+    agent_description:
+      include_resource_attributes: true
+      non_identifying_attributes:
+        cx.agent.type: agent
+        helm.chart.opentelemetry-agent.version: 0.128.1
+    server:
+      http:
+        endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+        headers:
+          Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+        polling_interval: 2m
+  pprof:
+    endpoint: localhost:1777
+  zpages:
+    endpoint: localhost:55679
+processors:
+  batch:
+    send_batch_max_size: 2048
+    send_batch_size: 1024
+    timeout: 1s
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+  resource/metadata:
+    attributes:
+    - action: upsert
+      key: cx.otel_integration.name
+      value: coralogix-windows-standalone
+  resourcedetection/env:
+    detectors:
+    - system
+    - env
+    override: false
+    system:
+      resource_attributes:
+        host.id:
+          enabled: true
+    timeout: 2s
+  resourcedetection/region:
+    detectors:
+    - gcp
+    - ec2
+    - azure
+    override: true
+    timeout: 2s
+  transform/prometheus:
+    error_mode: ignore
+    metric_statements:
+    - context: metric
+      statements:
+      - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+        "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+        "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+        "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
+        "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+        "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+    - context: resource
+      statements:
+      - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
+        == "opentelemetry-collector"
+      - delete_key(attributes, "service_name") where attributes["service.name"] ==
+        "opentelemetry-collector"
+    - context: datapoint
+      statements:
+      - delete_key(attributes, "service_name") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
+        == "opentelemetry-collector"
+  transform/semconv:
+    error_mode: ignore
+    trace_statements:
+    - context: span
+      statements:
+      - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
+        != nil
+receivers:
+  filelog/iis:
+    include:
+    - C:\inetpub\logs\LogFiles\W3SVC*\*.log
+    operators:
+    - regex: ^(?P<date>\d{4}-\d{2}-\d{2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+(?P<s_ip>\S+)\s+(?P<cs_method>\S+)\s+(?P<cs_uri_stem>\S+)\s+(?P<cs_uri_query>\S+)\s+(?P<s_port>\S+)\s+(?P<cs_username>\S+)\s+(?P<c_ip>\S+)\s+(?P<cs_user_agent>\S+)\s+(?P<cs_referer>\S+)\s+(?P<sc_status>\d+)\s+(?P<sc_substatus>\d+)\s+(?P<sc_win32_status>\d+)\s+(?P<time_taken>\d+)$
+      timestamp:
+        layout: '%Y-%m-%d %H:%M:%S'
+        parse_from: attributes.date + " " + attributes.time
+      type: regex_parser
+    - from: attributes.c_ip
+      to: attributes["http.client_ip"]
+      type: move
+    - from: attributes.cs_method
+      to: attributes["http.method"]
+      type: move
+    - from: attributes.sc_status
+      to: attributes["http.status_code"]
+      type: move
+    - from: attributes.cs_user_agent
+      to: attributes["user_agent.original"]
+      type: move
+    - from: attributes.cs_uri_stem
+      to: attributes["url.path"]
+      type: move
+    - from: attributes.cs_uri_query
+      to: attributes["url.query"]
+      type: move
+    - field: attributes.date
+      type: remove
+    - field: attributes.time
+      type: remove
+    start_at: end
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu: {}
+      memory: {}
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 20
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: opentelemetry-collector
+        scrape_interval: '30s'
+        static_configs:
+        - targets:
+          - 0.0.0.0:8888
+  windowseventlog/application:
+    channel: Application
+  windowseventlog/security:
+    channel: Security
+  windowseventlog/system:
+    channel: System
+  windowsperfcounters:
+    collection_interval: 10s
+    perfcounters:
+    - counters:
+      - name: '% Processor Time'
+      - name: '% User Time'
+      - name: '% Privileged Time'
+      instances:
+      - '*'
+      object: Processor
+    - counters:
+      - name: Available MBytes
+      - name: Committed Bytes
+      - name: Cache Faults/sec
+      - name: Page Reads/sec
+      - name: Page Writes/sec
+      object: Memory
+    - counters:
+      - name: '% Free Space'
+      - name: Free Megabytes
+      - name: Current Disk Queue Length
+      - name: '% Disk Time'
+      instances:
+      - '*'
+      object: LogicalDisk
+    - counters:
+      - name: '% Disk Time'
+      - name: Disk Reads/sec
+      - name: Disk Writes/sec
+      - name: Avg. Disk sec/Read
+      - name: Avg. Disk sec/Write
+      instances:
+      - '*'
+      object: PhysicalDisk
+    - counters:
+      - name: Bytes Total/sec
+      - name: Packets/sec
+      - name: Packets Received Errors
+      - name: Packets Outbound Errors
+      instances:
+      - '*'
+      object: Network Interface
+    - counters:
+      - name: Context Switches/sec
+      - name: Processor Queue Length
+      - name: System Up Time
+      - name: Processes
+      object: System
+    - counters:
+      - name: '% Usage'
+      instances:
+      - '*'
+      object: Paging File
+service:
+  extensions:
+  - health_check
+  - opamp
+  - zpages
+  - pprof
+  pipelines:
+    logs:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - resource/metadata
+      - batch
+      receivers:
+      - windowseventlog/system
+      - windowseventlog/application
+      - windowseventlog/security
+      - filelog/iis
+      - otlp
+    metrics:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - resource/metadata
+      - transform/prometheus
+      - batch
+      receivers:
+      - hostmetrics
+      - windowsperfcounters
+      - otlp
+      - prometheus
+    traces:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - resource/metadata
+      - transform/semconv
+      - batch
+      receivers:
+      - otlp
+  telemetry:
+    logs:
+      encoding: json
+      level: info
+    metrics:
+      readers:
+      - pull:
+          exporter:
+            prometheus:
+              host: 0.0.0.0
+              port: 8888
+    resource:
+      service.name: opentelemetry-collector
+

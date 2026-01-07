@@ -1,0 +1,199 @@
+global:
+  domain: "eu2.coralogix.com"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "windows"
+  logLevel: "info"
+  collectionInterval: "30s"
+  version: "0.0.1"
+
+opentelemetry-agent:
+  enabled: true
+  distribution: "standalone"
+  isWindows: true
+  
+  presets:
+    metadata:
+      enabled: true
+      integrationName: "coralogix-windows-standalone"
+    hostEntityEvents:
+      enabled: false # Disabled to maintain manual control over hostmetrics on Windows
+    fleetManagement:
+      enabled: true
+      agentType: "agent"
+    hostMetrics:
+      enabled: false # Manually configured in config section below
+    batch:
+      enabled: true
+    resourceDetection:
+      enabled: true
+      provider: ""
+    collectorMetrics:
+      enabled: true
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    otlpReceiver:
+      enabled: true
+    zpages:
+      enabled: true
+    pprof:
+      enabled: true
+    semconv:
+      enabled: true
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    # Added Standard Baselines
+    spanMetrics:
+      enabled: false
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+    
+    transactions:
+      enabled: false
+      waitDuration: 30s
+    
+    reduceResourceAttributes:
+      enabled: false
+      pipelines: ["all"]
+    
+    prometheusMulti:
+      enabled: false
+      scrapeInterval: "15s"
+      targets: []
+
+    filelogMulti:
+      enabled: false
+      receivers: []
+
+  config:
+    extensions:
+      health_check:
+        endpoint: "0.0.0.0:13133"
+    receivers:
+      # Host Metrics (Stable Windows scrapers only)
+      hostmetrics:
+        collection_interval: 10s
+        scrapers:
+          cpu: {}
+          memory: {}
+
+      # Windows Performance Counters
+      windowsperfcounters:
+        collection_interval: 10s
+        perfcounters:
+          - object: "Processor"
+            instances: ["*"]
+            counters:
+              - name: "% Processor Time"
+              - name: "% User Time"
+              - name: "% Privileged Time"
+          - object: "Memory"
+            counters:
+              - name: "Available MBytes"
+              - name: "Committed Bytes"
+              - name: "Cache Faults/sec"
+              - name: "Page Reads/sec"
+              - name: "Page Writes/sec"
+          - object: "LogicalDisk"
+            instances: ["*"]
+            counters:
+              - name: "% Free Space"
+              - name: "Free Megabytes"
+              - name: "Current Disk Queue Length"
+              - name: "% Disk Time"
+          - object: "PhysicalDisk"
+            instances: ["*"]
+            counters:
+              - name: "% Disk Time"
+              - name: "Disk Reads/sec"
+              - name: "Disk Writes/sec"
+              - name: "Avg. Disk sec/Read"
+              - name: "Avg. Disk sec/Write"
+          - object: "Network Interface"
+            instances: ["*"]
+            counters:
+              - name: "Bytes Total/sec"
+              - name: "Packets/sec"
+              - name: "Packets Received Errors"
+              - name: "Packets Outbound Errors"
+          - object: "System"
+            counters:
+              - name: "Context Switches/sec"
+              - name: "Processor Queue Length"
+              - name: "System Up Time"
+              - name: "Processes"
+          - object: "Paging File"
+            instances: ["*"]
+            counters:
+              - name: "% Usage"
+
+      # Windows Event Logs
+      windowseventlog/system:
+        channel: System
+      windowseventlog/application:
+        channel: Application
+      windowseventlog/security:
+        channel: Security
+
+      # IIS Logs Parsing (W3C Format)
+      filelog/iis:
+        include: [ "C:\\inetpub\\logs\\LogFiles\\W3SVC*\\*.log" ]
+        start_at: end
+        operators:
+          - type: regex_parser
+            regex: '^(?P<date>\d{4}-\d{2}-\d{2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+(?P<s_ip>\S+)\s+(?P<cs_method>\S+)\s+(?P<cs_uri_stem>\S+)\s+(?P<cs_uri_query>\S+)\s+(?P<s_port>\S+)\s+(?P<cs_username>\S+)\s+(?P<c_ip>\S+)\s+(?P<cs_user_agent>\S+)\s+(?P<cs_referer>\S+)\s+(?P<sc_status>\d+)\s+(?P<sc_substatus>\d+)\s+(?P<sc_win32_status>\d+)\s+(?P<time_taken>\d+)$'
+            timestamp:
+              parse_from: attributes.date + " " + attributes.time
+              layout: '%Y-%m-%d %H:%M:%S'
+          - type: move
+            from: attributes.c_ip
+            to: attributes["http.client_ip"]
+          - type: move
+            from: attributes.cs_method
+            to: attributes["http.method"]
+          - type: move
+            from: attributes.sc_status
+            to: attributes["http.status_code"]
+          - type: move
+            from: attributes.cs_user_agent
+            to: attributes["user_agent.original"]
+          - type: move
+            from: attributes.cs_uri_stem
+            to: attributes["url.path"]
+          - type: move
+            from: attributes.cs_uri_query
+            to: attributes["url.query"]
+          - type: remove
+            field: attributes.date
+          - type: remove
+            field: attributes.time
+
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+
+    service:
+      telemetry:
+        resource:
+          service.name: "opentelemetry-collector"
+        logs:
+          level: "info"
+      extensions:
+      - health_check
+      - opamp
+      - zpages
+      - pprof
+      pipelines:
+        metrics:
+          receivers: [hostmetrics, windowsperfcounters, otlp]
+          processors: [memory_limiter, batch]
+          exporters: [coralogix]
+        logs:
+          receivers: [windowseventlog/system, windowseventlog/application, windowseventlog/security, filelog/iis, otlp]
+          processors: [memory_limiter, batch]
+          exporters: [coralogix]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [coralogix]
