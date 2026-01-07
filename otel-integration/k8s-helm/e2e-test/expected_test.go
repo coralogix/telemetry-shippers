@@ -1,7 +1,9 @@
 package e2e
 
 var expectedResourceMetricsSchemaURL = map[string]bool{
-	"https://opentelemetry.io/schemas/1.9.0":  false,
+	"":                                       false,
+	"https://opentelemetry.io/schemas/1.6.1": false,
+	"https://opentelemetry.io/schemas/1.9.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 }
 
@@ -371,6 +373,10 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 var expectedMetrics map[string]bool = map[string]bool{
 	"db.calls":                                                  true,
 	"db.duration":                                               true,
+	"compact.calls":                                             true,
+	"compact.duration":                                          true,
+	"db_compact.calls":                                          true,
+	"db_compact.duration":                                       true,
 	"container.cpu.time":                                        false,
 	"container.cpu.utilization":                                 false,
 	"container.filesystem.available":                            false,

@@ -28,7 +28,11 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 )
 
 const (
@@ -92,6 +96,7 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
 	require.NoErrorf(t, err, "failed to read namespace object file %s", nsFile)
+	ensureNamespaceIsClean(t, k8sClient, buf, nsFile)
 	nsObj, err := xk8stest.CreateObject(k8sClient, buf)
 	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
 
@@ -164,6 +169,45 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 		namespace: testNs,
 		testID:    testID,
 	}
+}
+
+func ensureNamespaceIsClean(t *testing.T, client *xk8stest.K8sClient, manifest []byte, manifestPath string) {
+	t.Helper()
+
+	nsObj := decodeManifestObject(t, manifest, manifestPath)
+	nsName := nsObj.GetName()
+
+	namespacesRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	_, err := client.DynamicClient.Resource(namespacesRes).
+		Get(context.Background(), nsName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return
+		}
+		require.NoErrorf(t, err, "failed to inspect existing namespace %s", nsName)
+	}
+
+	err = xk8stest.DeleteObject(client, nsObj)
+	if err != nil && !apierrors.IsNotFound(err) {
+		require.NoErrorf(t, err, "failed to delete existing namespace %s", nsName)
+	}
+
+	require.Eventually(t, func() bool {
+		_, err := client.DynamicClient.Resource(namespacesRes).
+			Get(context.Background(), nsName, metav1.GetOptions{})
+		return apierrors.IsNotFound(err)
+	}, 2*time.Minute, 2*time.Second, "namespace %s still terminating", nsName)
+}
+
+func decodeManifestObject(t *testing.T, manifest []byte, manifestPath string) *unstructured.Unstructured {
+	t.Helper()
+
+	obj := &unstructured.Unstructured{}
+	decoder := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	_, _, err := decoder.Decode(manifest, nil, obj)
+	require.NoErrorf(t, err, "failed to decode manifest object from %s", manifestPath)
+
+	return obj
 }
 
 func cloneMetrics(input []pmetric.Metrics) []pmetric.Metrics {
