@@ -2,6 +2,18 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.260 / 2026-01-06
+- [Fix] Remove unused `k8s_observer` extension from `kubernetesExtraMetrics` preset to avoid unnecessary API server load.
+
+### v0.0.259 / 2026-01-05
+- [CHORE] Update Target Allocator image to v0.141.0
+
+### v0.0.258 / 2026-01-05
+- [CHORE] Update Windows image to v0.142.0
+
+### v0.0.257 / 2025-12-30
+- [CHORE] Bump Collector to 0.142.0
+
 ### v0.0.256 / 2025-12-24
 - [Feat] Add `provider` field to `reduceResourceAttributes` and `resourceDetection` presets for targeted cloud provider configuration.
 - [Bug] Apply `resourceDetection` preset to `profiles`.

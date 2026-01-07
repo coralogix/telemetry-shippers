@@ -30,12 +30,12 @@ opentelemetry-agent:
       enabled: true
     resourceDetection:
       enabled: true
-      region:
-        enabled: false
-      detectors:
-        env:
-          - system
-          - env
+      provider: "on-prem"
+    # Removes a subset of attributes to be sent to Coralogix. It uses a denylist policy.
+    reduceResourceAttributes:
+      enabled: true
+      pipelines: ["all"]
+      provider: "on-prem"
     macosSystemLogs:
       enabled: true
       dynamicSubsystemName: true
@@ -44,17 +44,23 @@ opentelemetry-agent:
       enabled: true
       scrapeInterval: "{{.Values.global.collectionInterval}}"
     
-    jaegerReceiver:
-      enabled: true
-    
-    zipkinReceiver:
-      enabled: true
-    
     otlpReceiver:
       enabled: true
     
-    statsdReceiver:
+    spanMetrics:
       enabled: true
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+    
+    # spanMetricsMulti:
+    #   enabled: false
+    #   collectionInterval: "{{.Values.global.collectionInterval}}"
+    #   metricsExpiration: 5m
+    
+    # headSampling:
+    #   enabled: false
+    #   percentage: 10
+    #   mode: "proportional"
     
     transactions:
       enabled: true

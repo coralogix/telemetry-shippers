@@ -101,6 +101,7 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 		"otelcol_receiver_refused_log_records":               false,
 		"otelcol_processor_incoming_items":                   false,
 		"otelcol_processor_outgoing_items":                   false,
+		"otelcol_processor_filter_datapoints.filtered":       false,
 		"otelcol_processor_batch_batch_send_size":            false,
 		"otelcol_processor_batch_timeout_trigger_send":       false,
 		"otelcol_processor_batch_metadata_cardinality":       false,
@@ -108,6 +109,7 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 		"otelcol_processor_accepted_log_records":             false,
 		"otelcol_processor_filter_logs.filtered_ratio":       false,
 		"otelcol_processor_filter_datapoints.filtered_ratio": false,
+		"otelcol_processor_filter_logs.filtered":             false,
 		"otelcol_process_cpu_seconds":                        false,
 		"otelcol_process_memory_rss_bytes":                   false,
 		"otelcol_process_runtime_heap_alloc_bytes":           false,
@@ -119,12 +121,13 @@ func checkClusterCollectorMetrics(t *testing.T, actual []pmetric.Metrics) error 
 		"otelcol_otelsvc_k8s_pod_deleted_ratio":              false,
 		"otelcol_otelsvc_k8s_pod_table_size_ratio":           false,
 		// Prom scrape/handler
-		"up":                                    false,
-		"scrape_samples_scraped":                false,
-		"scrape_samples_post_metric_relabeling": false,
-		"scrape_series_added":                   false,
-		"scrape_duration_seconds":               false,
-		"promhttp_metric_handler_errors":        false,
+		"up":                                     false,
+		"scrape_samples_scraped":                 false,
+		"scrape_samples_post_metric_relabeling":  false,
+		"scrape_series_added":                    false,
+		"scrape_duration_seconds":                false,
+		"promhttp_metric_handler_errors":         false,
+		"otelcol_exporter_queue_batch_send_size": false,
 	}
 
 	namesFound := map[string]struct{}{}

@@ -1,4 +1,4 @@
-name: Sync with integration-definitions
+name: Sync k8s with integration-definitions
 on:
   push:
     branches: [master]
@@ -129,7 +129,7 @@ jobs:
           
           # Set a default body if no recent PR body is found
           if [ -z "$pr_body" ]; then
-            pr_body="This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url  **dummy ticket to pass ticket validate[cds-1708]**"
+            pr_body="This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
           else
             pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
           fi

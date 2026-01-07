@@ -1,3 +1,107 @@
+connectors:
+  forward/compact: {}
+  forward/db: {}
+  forward/db_compact: {}
+  spanmetrics:
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: http.method
+    - name: cgx.transaction
+    - name: cgx.transaction.root
+    - name: status_code
+    - name: db.namespace
+    - name: db.operation.name
+    - name: db.collection.name
+    - name: db.system
+    - name: http.response.status_code
+    - name: rpc.grpc.status_code
+    - name: service.version
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: ""
+  spanmetrics/compact:
+    aggregation_cardinality_limit: 100000
+    exclude_dimensions:
+    - span.name
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: compact
+  spanmetrics/db:
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: db.namespace
+    - name: db.operation.name
+    - name: db.collection.name
+    - name: db.system
+    - name: service.version
+    histogram:
+      explicit:
+        buckets:
+        - 100us
+        - 1ms
+        - 2ms
+        - 2.5ms
+        - 4ms
+        - 6ms
+        - 10ms
+        - 100ms
+        - 250ms
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: db
+  spanmetrics/db_compact:
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: db.namespace
+    - name: db.system
+    exclude_dimensions:
+    - span.name
+    - span.kind
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: db_compact
 exporters:
   coralogix:
     application_name: otel
@@ -59,11 +163,25 @@ processors:
   coralogix:
     transactions:
       enabled: true
+  filter/db_compact_spanmetrics:
+    traces:
+      span:
+      - kind != SPAN_KIND_CLIENT or attributes["db.namespace"] == nil or attributes["db.system"]
+        == nil
+  filter/db_spanmetrics:
+    traces:
+      span:
+      - attributes["db.system"] == nil
   groupbytrace/transactions:
     wait_duration: 30s
   memory_limiter:
     check_interval: 5s
     limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+  redaction/spanname:
+    allow_all_keys: true
+    db_sanitizer: null
+    url_sanitizer:
+      enabled: true
   resource/metadata:
     attributes:
     - action: upsert
@@ -107,6 +225,19 @@ processors:
         host.id:
           enabled: true
     timeout: 2s
+  transform/compact:
+    trace_statements:
+    - context: resource
+      statements:
+      - keep_keys(attributes, ["service.name", "k8s.cluster.name", "host.name", "deployment.environment.name"])
+  transform/db_compact:
+    trace_statements:
+    - context: resource
+      statements:
+      - keep_keys(attributes, ["service.name", "k8s.cluster.name", "host.name", "deployment.environment.name"])
+    - context: span
+      statements:
+      - keep_keys(attributes, ["db.namespace", "db.system"])
   transform/entity-event:
     error_mode: silent
     log_statements:
@@ -167,6 +298,254 @@ processors:
         == "opentelemetry-collector"
       - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
         == "opentelemetry-collector"
+  transform/reduce:
+    error_mode: silent
+    log_statements:
+    - context: log
+      statements:
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "process.command")
+      - delete_key(resource.attributes, "process.command_line")
+      - delete_key(resource.attributes, "process.command_args")
+      - delete_key(resource.attributes, "process.executable.name")
+      - delete_key(resource.attributes, "process.executable.path")
+      - delete_key(resource.attributes, "process.owner")
+      - delete_key(resource.attributes, "process.pid")
+      - delete_key(resource.attributes, "process.parent_pid")
+      - delete_key(resource.attributes, "process.runtime.description")
+      - delete_key(resource.attributes, "process.runtime.name")
+      - delete_key(resource.attributes, "process.runtime.version")
+      - delete_key(resource.attributes, "azure.resourcegroup.name")
+      - delete_key(resource.attributes, "azure.vm.name")
+      - delete_key(resource.attributes, "azure.vm.scaleset.name")
+      - delete_key(resource.attributes, "azure.vm.size")
+      - delete_key(resource.attributes, "cloud.account.id")
+      - delete_key(resource.attributes, "cloud.availability_zone")
+      - delete_key(resource.attributes, "cloud.platform")
+      - delete_key(resource.attributes, "cloud.provider")
+      - delete_key(resource.attributes, "cloud.region")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "faas.id")
+      - delete_key(resource.attributes, "faas.instance")
+      - delete_key(resource.attributes, "faas.name")
+      - delete_key(resource.attributes, "faas.version")
+      - delete_key(resource.attributes, "gcp.cloud_run.job.execution")
+      - delete_key(resource.attributes, "gcp.cloud_run.job.task_index")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.name")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.region")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.zone")
+      - delete_key(resource.attributes, "host.image.id")
+      - delete_key(resource.attributes, "host.type")
+      - delete_key(resource.attributes, "k8s.cronjob.uid")
+      - delete_key(resource.attributes, "k8s.container.restart_count")
+      - delete_key(resource.attributes, "k8s.daemonset.uid")
+      - delete_key(resource.attributes, "k8s.deployment.uid")
+      - delete_key(resource.attributes, "k8s.hpa.uid")
+      - delete_key(resource.attributes, "k8s.job.uid")
+      - delete_key(resource.attributes, "k8s.namespace.uid")
+      - delete_key(resource.attributes, "k8s.node.uid")
+      - delete_key(resource.attributes, "k8s.pod.start_time")
+      - delete_key(resource.attributes, "k8s.pod.uid")
+      - delete_key(resource.attributes, "k8s.replicaset.uid")
+      - delete_key(resource.attributes, "k8s.statefulset.uid")
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "process.command")
+      - delete_key(resource.attributes, "process.command_line")
+      - delete_key(resource.attributes, "process.command_args")
+      - delete_key(resource.attributes, "process.executable.name")
+      - delete_key(resource.attributes, "process.executable.path")
+      - delete_key(resource.attributes, "process.owner")
+      - delete_key(resource.attributes, "process.pid")
+      - delete_key(resource.attributes, "process.parent_pid")
+      - delete_key(resource.attributes, "process.runtime.description")
+      - delete_key(resource.attributes, "process.runtime.name")
+      - delete_key(resource.attributes, "process.runtime.version")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+    metric_statements:
+    - context: metric
+      statements:
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "process.command") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.command_line") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.command_args") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.executable.name") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.executable.path") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.owner") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.pid") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.parent_pid") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.description") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.name") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.version") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "net.host.name")
+      - delete_key(resource.attributes, "net.host.port")
+      - delete_key(resource.attributes, "azure.resourcegroup.name")
+      - delete_key(resource.attributes, "azure.vm.name")
+      - delete_key(resource.attributes, "azure.vm.scaleset.name")
+      - delete_key(resource.attributes, "azure.vm.size")
+      - delete_key(resource.attributes, "cloud.account.id")
+      - delete_key(resource.attributes, "cloud.availability_zone")
+      - delete_key(resource.attributes, "cloud.platform")
+      - delete_key(resource.attributes, "cloud.provider")
+      - delete_key(resource.attributes, "cloud.region")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "faas.id")
+      - delete_key(resource.attributes, "faas.instance")
+      - delete_key(resource.attributes, "faas.name")
+      - delete_key(resource.attributes, "faas.version")
+      - delete_key(resource.attributes, "gcp.cloud_run.job.execution")
+      - delete_key(resource.attributes, "gcp.cloud_run.job.task_index")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.name")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.region")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.zone")
+      - delete_key(resource.attributes, "host.image.id")
+      - delete_key(resource.attributes, "host.type")
+      - delete_key(resource.attributes, "k8s.cronjob.uid")
+      - delete_key(resource.attributes, "k8s.container.restart_count")
+      - delete_key(resource.attributes, "k8s.daemonset.uid")
+      - delete_key(resource.attributes, "k8s.deployment.uid")
+      - delete_key(resource.attributes, "k8s.hpa.uid")
+      - delete_key(resource.attributes, "k8s.job.uid")
+      - delete_key(resource.attributes, "k8s.namespace.uid")
+      - delete_key(resource.attributes, "k8s.node.uid")
+      - delete_key(resource.attributes, "k8s.pod.start_time")
+      - delete_key(resource.attributes, "k8s.pod.uid")
+      - delete_key(resource.attributes, "k8s.replicaset.uid")
+      - delete_key(resource.attributes, "k8s.statefulset.uid")
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "process.command") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.command_line") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.command_args") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.executable.name") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.executable.path") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.owner") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.pid") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.parent_pid") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.description") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.name") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.version") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "net.host.name")
+      - delete_key(resource.attributes, "net.host.port")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+    trace_statements:
+    - context: span
+      statements:
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "process.command")
+      - delete_key(resource.attributes, "process.command_line")
+      - delete_key(resource.attributes, "process.command_args")
+      - delete_key(resource.attributes, "process.executable.name")
+      - delete_key(resource.attributes, "process.executable.path")
+      - delete_key(resource.attributes, "process.owner")
+      - delete_key(resource.attributes, "process.pid")
+      - delete_key(resource.attributes, "process.parent_pid")
+      - delete_key(resource.attributes, "process.runtime.description")
+      - delete_key(resource.attributes, "process.runtime.name")
+      - delete_key(resource.attributes, "process.runtime.version")
+      - delete_key(resource.attributes, "azure.resourcegroup.name")
+      - delete_key(resource.attributes, "azure.vm.name")
+      - delete_key(resource.attributes, "azure.vm.scaleset.name")
+      - delete_key(resource.attributes, "azure.vm.size")
+      - delete_key(resource.attributes, "cloud.account.id")
+      - delete_key(resource.attributes, "cloud.availability_zone")
+      - delete_key(resource.attributes, "cloud.platform")
+      - delete_key(resource.attributes, "cloud.provider")
+      - delete_key(resource.attributes, "cloud.region")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "faas.id")
+      - delete_key(resource.attributes, "faas.instance")
+      - delete_key(resource.attributes, "faas.name")
+      - delete_key(resource.attributes, "faas.version")
+      - delete_key(resource.attributes, "gcp.cloud_run.job.execution")
+      - delete_key(resource.attributes, "gcp.cloud_run.job.task_index")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.name")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.region")
+      - delete_key(resource.attributes, "gcp.gce.instance_group_manager.zone")
+      - delete_key(resource.attributes, "host.image.id")
+      - delete_key(resource.attributes, "host.type")
+      - delete_key(resource.attributes, "k8s.cronjob.uid")
+      - delete_key(resource.attributes, "k8s.container.restart_count")
+      - delete_key(resource.attributes, "k8s.daemonset.uid")
+      - delete_key(resource.attributes, "k8s.deployment.uid")
+      - delete_key(resource.attributes, "k8s.hpa.uid")
+      - delete_key(resource.attributes, "k8s.job.uid")
+      - delete_key(resource.attributes, "k8s.namespace.uid")
+      - delete_key(resource.attributes, "k8s.node.uid")
+      - delete_key(resource.attributes, "k8s.pod.start_time")
+      - delete_key(resource.attributes, "k8s.pod.uid")
+      - delete_key(resource.attributes, "k8s.replicaset.uid")
+      - delete_key(resource.attributes, "k8s.statefulset.uid")
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "process.command")
+      - delete_key(resource.attributes, "process.command_line")
+      - delete_key(resource.attributes, "process.command_args")
+      - delete_key(resource.attributes, "process.executable.name")
+      - delete_key(resource.attributes, "process.executable.path")
+      - delete_key(resource.attributes, "process.owner")
+      - delete_key(resource.attributes, "process.pid")
+      - delete_key(resource.attributes, "process.parent_pid")
+      - delete_key(resource.attributes, "process.runtime.description")
+      - delete_key(resource.attributes, "process.runtime.name")
+      - delete_key(resource.attributes, "process.runtime.version")
   transform/semconv:
     error_mode: ignore
     trace_statements:
@@ -268,16 +647,6 @@ receivers:
         mute_process_exe_error: true
         mute_process_name_error: true
         mute_process_user_error: true
-  jaeger:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:14250
-      thrift_binary:
-        endpoint: 0.0.0.0:6832
-      thrift_compact:
-        endpoint: 0.0.0.0:6831
-      thrift_http:
-        endpoint: 0.0.0.0:14268
   otlp:
     protocols:
       grpc:
@@ -293,10 +662,6 @@ receivers:
         static_configs:
         - targets:
           - 0.0.0.0:8888
-  statsd:
-    endpoint: 0.0.0.0:8125
-  zipkin:
-    endpoint: 0.0.0.0:9411
 service:
   extensions:
   - health_check
@@ -312,6 +677,7 @@ service:
       - memory_limiter
       - resourcedetection/env
       - resource/metadata
+      - transform/reduce
       - batch
       receivers:
       - filelog/macos-system-log
@@ -334,29 +700,76 @@ service:
       - memory_limiter
       - resourcedetection/env
       - resource/metadata
+      - transform/reduce
       - transform/prometheus
       - batch
       receivers:
       - hostmetrics
+      - spanmetrics
+      - spanmetrics/db
       - prometheus
       - otlp
-      - statsd
+    metrics/compact:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - batch
+      receivers:
+      - spanmetrics/compact
+    metrics/db_compact:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - batch
+      receivers:
+      - spanmetrics/db_compact
     traces:
       exporters:
       - debug
+      - spanmetrics
+      - forward/db
+      - forward/compact
+      - forward/db_compact
       - coralogix
       processors:
       - memory_limiter
       - resourcedetection/env
       - resource/metadata
+      - redaction/spanname
+      - transform/reduce
       - transform/semconv
       - groupbytrace/transactions
       - coralogix
       - batch
       receivers:
-      - jaeger
-      - zipkin
       - otlp
+    traces/compact:
+      exporters:
+      - spanmetrics/compact
+      processors:
+      - transform/compact
+      - batch
+      receivers:
+      - forward/compact
+    traces/db:
+      exporters:
+      - spanmetrics/db
+      processors:
+      - filter/db_spanmetrics
+      - batch
+      receivers:
+      - forward/db
+    traces/db_compact:
+      exporters:
+      - spanmetrics/db_compact
+      processors:
+      - filter/db_compact_spanmetrics
+      - transform/db_compact
+      - batch
+      receivers:
+      - forward/db_compact
   telemetry:
     logs:
       encoding: json

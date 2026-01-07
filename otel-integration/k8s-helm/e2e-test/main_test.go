@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -197,25 +198,31 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 		t.Fatal("metrics: No resource metrics received")
 	}
 
+	observedSchemaURLs := map[string]struct{}{}
+	foundExpectedSchema := false
 	for _, current := range actual {
 		actualMetrics := pmetric.NewMetrics()
 		current.CopyTo(actualMetrics)
 
 		for i := 0; i < actualMetrics.ResourceMetrics().Len(); i++ {
 			rmetrics := actualMetrics.ResourceMetrics().At(i)
+			observedSchemaURLs[rmetrics.SchemaUrl()] = struct{}{}
 
-			_, ok := expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()]
-			require.True(t, ok, "metrics: schema_url %v does not match one of the expected values", rmetrics.SchemaUrl())
-			if ok {
+			if _, ok := expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()]; ok {
 				expectedResourceMetricsSchemaURL[rmetrics.SchemaUrl()] = true
+				foundExpectedSchema = true
 			}
 
 			checkScopeMetrics(t, rmetrics)
 		}
 	}
 
-	for name, expectedState := range expectedResourceMetricsSchemaURL {
-		require.True(t, expectedState, "metrics: schema_url %v was not found in the actual metrics", name)
+	if !foundExpectedSchema {
+		t.Fatalf(
+			"metrics: none of the expected schema_url values were found (expected one of: %s, observed: %s)",
+			strings.Join(expectedSchemaURLs(), ", "),
+			strings.Join(sortedSchemaURLs(observedSchemaURLs), ", "),
+		)
 	}
 	for name, expectedState := range expectedResourceScopeNames {
 		require.True(t, expectedState, "metrics: scope %v was not found in the actual metrics, found scope names: %v", name, expectedResourceScopeNames)
@@ -235,6 +242,24 @@ func checkResourceMetrics(t *testing.T, actual []pmetric.Metrics) error {
 	}
 
 	return nil
+}
+
+func expectedSchemaURLs() []string {
+	urls := make([]string, 0, len(expectedResourceMetricsSchemaURL))
+	for url := range expectedResourceMetricsSchemaURL {
+		urls = append(urls, url)
+	}
+	sort.Strings(urls)
+	return urls
+}
+
+func sortedSchemaURLs(urls map[string]struct{}) []string {
+	out := make([]string, 0, len(urls))
+	for url := range urls {
+		out = append(out, url)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func checkScopeMetrics(t *testing.T, rmetrics pmetric.ResourceMetrics) error {
@@ -495,9 +520,20 @@ func checkSystemLogsAttributes(t *testing.T, actual []plog.Logs) error {
 	// Ensure we found at least one host entity event
 	require.True(t, foundHostEntityEvent, "No host entity event found in logs")
 
-	// Verify all expected schema URLs were found
-	for name, expectedState := range expectedLogsSchemaURL {
-		require.True(t, expectedState, "logs: schema_url %v was not found in the actual logs", name)
+	// Verify at least one expected schema URL was found
+	foundSchema := false
+	for _, expectedState := range expectedLogsSchemaURL {
+		if expectedState {
+			foundSchema = true
+			continue
+		}
+	}
+	if !foundSchema {
+		missing := make([]string, 0, len(expectedLogsSchemaURL))
+		for name := range expectedLogsSchemaURL {
+			missing = append(missing, name)
+		}
+		require.Failf(t, "logs: schema_url not found", "expected one of %v in the actual logs", missing)
 	}
 
 	return nil

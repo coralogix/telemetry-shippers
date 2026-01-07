@@ -1,0 +1,216 @@
+name: Sync ec2 with integration-definitions
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'otel-ecs-ec2/examples/manifest.yaml'
+  workflow_dispatch:
+
+jobs:
+  Get_version:
+    runs-on: ubuntu-latest
+    name: Extract collector image version
+    outputs:
+      Chart_version: "${{ steps.New_version.outputs.Chart_version }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract image version
+        id: New_version
+        run: |
+          Chart_version=$(yq -r '.opentelemetry-agent.image.tag | sub("^v"; "")' otel-ecs-ec2/values.yaml)
+  
+          if [ -z "$Chart_version" ]; then
+            echo "Failed to extract collector version"
+            exit 1
+          fi
+          
+          echo "Chart_version=$Chart_version" >> $GITHUB_OUTPUT
+  commit_changes:
+    runs-on: ubuntu-latest
+    needs: Get_version
+    steps:
+      - name: Checkout destination repository
+        uses: actions/checkout@v4
+        with:
+          repository: coralogix/integration-definitions
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Prepare git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve base revision
+        id: base
+        run: |
+          manifest=integrations/otel-agent-aws-ecs-ec2/manifest.yaml
+          
+          last_revision=$(awk '
+            /^[[:space:]]*-[[:space:]]+revision:/ {
+              if (rev && !testing) last=rev
+              rev=$NF; testing=0
+            }
+            /testing:[[:space:]]*true/ { testing=1 }
+            END {
+              if (rev && !testing) last=rev
+              if (last) print last; else exit 1
+            }
+          ' "$manifest")
+          
+          integration_version=$(echo "$last_revision" | sed 's/+.*//')
+          collector_version=${{ needs.Get_version.outputs.Chart_version }}
+          new_revision="${integration_version}+${collector_version}"
+  
+          echo "last_revision=$last_revision" >> $GITHUB_ENV
+          echo "integration_version=$integration_version" >> $GITHUB_ENV
+          echo "new_revision=$new_revision" >> $GITHUB_ENV
+
+
+      - name: Check if revision exists
+        id: version_exist
+        run: |
+          if [ -d "integrations/otel-agent-aws-ecs-ec2/v${new_revision}" ]; then
+            echo "exists=true" >> $GITHUB_ENV
+          else
+            echo "exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create new revision
+        if: env.exists == 'false'
+        run: |
+          branch="sync-ecs-ec2-${new_revision}-$(date +%m-%d-%H-%M)"
+          echo "branch=$branch" >> $GITHUB_ENV
+          
+          git checkout -b "$branch"
+          git pull origin master
+          
+          base_dir="integrations/otel-agent-aws-ecs-ec2/v${last_revision}"
+          new_dir="integrations/otel-agent-aws-ecs-ec2/v${new_revision}"
+          
+          mkdir -p "$new_dir"
+          cp "$base_dir/commands.yaml" "$new_dir/"
+          cp "$base_dir/fields.yaml" "$new_dir/"
+          cp "$base_dir/template.yaml" "$new_dir/"
+          
+          current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          cat <<EOF >> integrations/otel-agent-aws-ecs-ec2/manifest.yaml
+            - revision: ${new_revision}
+              template:
+                type: CloudFormation
+                cloudformation: v${new_revision}/template.yaml
+                commands: v${new_revision}/commands.yaml
+              field_definitions: v${new_revision}/fields.yaml
+              published_at: ${current_time}
+          EOF
+          
+          git add .
+          
+          merged_pr_from_telemetry_shipper=$(curl -s \
+          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+          
+          if [ -z "$merged_pr_from_telemetry_shipper" ]; then
+            merged_pr_from_telemetry_shipper="Add ECS-EC2 collector ${new_revision}"
+          fi
+  
+          git commit -m "${merged_pr_from_telemetry_shipper}"
+          git push origin "$branch"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Fetch source PR metadata (latest merged/closed)
+        if: env.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          SOURCE_REPO="coralogix/telemetry-shippers"
+
+          pr_title=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].title // empty')
+
+          pr_url=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].html_url // empty')
+
+          pr_body=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].body // empty')
+
+          if [ -z "${pr_title}" ]; then
+            pr_title="ECS-EC2: add collector ${new_revision}"
+          fi
+          
+          if [ -z "$pr_body" ]; then
+            pr_body="This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
+          else
+            pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
+          fi
+          
+          {
+            echo "PR_TITLE<<EOF"
+            echo "${pr_title}"
+                    echo "EOF"
+            echo "PR_BODY<<EOF"
+            echo "${pr_body}"
+                    echo "EOF"
+          } >> "$GITHUB_ENV"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Create PR
+        if: env.exists == 'false'
+        run: |
+          gh pr create \
+            --base master \
+            --head "$branch" \
+            --title "${PR_TITLE}" \
+            --body "${PR_BODY}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Wait for PR checks
+        if: env.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          check_status() {
+            gh pr checks "$branch" --json state --jq 'all(.[]; .state == "SUCCESS")'
+          }
+
+          max_wait_time=$((10 * 60))
+          elapsed_time=0
+          sleep_interval=10
+
+          echo "Waiting for all status checks to pass for $branch..."
+          sleep 5
+
+          while true; do
+            status=$(check_status || echo "false")
+
+            if [ "$status" = "true" ]; then
+              echo "All status checks passed."
+              break
+            fi
+
+            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+              echo "Timeout reached: Status checks did not pass within 10 minutes."
+              gh pr checks "$branch" || true
+              exit 1
+            fi
+
+            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+            sleep "$sleep_interval"
+            elapsed_time=$((elapsed_time + sleep_interval))
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Merge PR
+        if: env.exists == 'false'
+        run: |
+          gh pr merge "$branch" --squash --admin --delete-branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
