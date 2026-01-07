@@ -1,6 +1,10 @@
 # Values file for span metrics E2E tests
 # Uses default preset configuration to detect any breaking changes in the preset itself
 
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
 opentelemetry-agent:
   presets:
     spanMetrics:
@@ -16,6 +20,10 @@ opentelemetry-agent:
           insecure: true
       otlp/traces:
         endpoint: "{{.Values.global.hostedEndpoint}}:4321"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
         tls:
           insecure: true
 
@@ -36,3 +44,7 @@ opentelemetry-agent:
         traces:
           exporters:
             - otlp/traces
+            - debug
+        logs/resource_catalog:
+          exporters:
+            - otlp/logs
