@@ -180,7 +180,7 @@ jobs:
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go clean -testcache
-          go test -v -run='^TestE2E_SpanMetricsConnector$' ./...
+          go test -v -run='^TestE2E_SpanMetrics' ./...
       - name: Pods logs
         if: failure()
         run: |
