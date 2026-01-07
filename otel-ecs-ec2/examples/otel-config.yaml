@@ -100,7 +100,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-agent.version: 0.119.8
+        helm.chart.opentelemetry-agent.version: 0.128.1
     server:
       http:
         endpoint: https://ingress.eu2.coralogix.com/opamp/v1
