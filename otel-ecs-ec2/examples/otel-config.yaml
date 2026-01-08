@@ -120,6 +120,7 @@ processors:
     container_id:
       sources:
       - log.file.path
+      - container.id
   filter/db_spanmetrics:
     traces:
       span:
@@ -170,6 +171,12 @@ processors:
       resource_attributes:
         host.id:
           enabled: true
+    timeout: 2s
+  resourcedetection/ecs:
+    detectors:
+    - ecs
+    - docker
+    override: true
     timeout: 2s
   resourcedetection/region:
     detectors:
@@ -238,101 +245,6 @@ processors:
         == "opentelemetry-collector"
       - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
         == "opentelemetry-collector"
-  transform/reduce:
-    error_mode: silent
-    log_statements:
-    - context: resource
-      statements:
-      - delete_key(attributes, "cloud.account.id")
-      - delete_key(attributes, "cloud.availability_zone")
-      - delete_key(attributes, "cloud.platform")
-      - delete_key(attributes, "cloud.provider")
-      - delete_key(attributes, "cloud.region")
-      - delete_key(attributes, "container.id")
-      - delete_key(attributes, "cx.otel_integration.name")
-      - delete_key(attributes, "host.image.id")
-      - delete_key(attributes, "host.type")
-      - delete_key(attributes, "os.type")
-      - delete_key(attributes, "os.version")
-      - delete_key(attributes, "process.command")
-      - delete_key(attributes, "process.command_line")
-      - delete_key(attributes, "process.command_args")
-      - delete_key(attributes, "process.executable.name")
-      - delete_key(attributes, "process.executable.path")
-      - delete_key(attributes, "process.owner")
-      - delete_key(attributes, "process.pid")
-      - delete_key(attributes, "process.parent_pid")
-      - delete_key(attributes, "process.runtime.description")
-      - delete_key(attributes, "process.runtime.name")
-      - delete_key(attributes, "process.runtime.version")
-      - delete_key(attributes, "telemetry.distro.name")
-      - delete_key(attributes, "telemetry.distro.version")
-      - delete_key(attributes, "telemetry.sdk.language")
-      - delete_key(attributes, "telemetry.sdk.name")
-      - delete_key(attributes, "telemetry.sdk.version")
-      - delete_key(attributes, "aws.ecs.task.definition.version")
-      - delete_key(attributes, "aws.ecs.task.known.status")
-    metric_statements:
-    - context: resource
-      statements:
-      - delete_key(attributes, "cloud.account.id")
-      - delete_key(attributes, "cloud.availability_zone")
-      - delete_key(attributes, "cloud.platform")
-      - delete_key(attributes, "cloud.provider")
-      - delete_key(attributes, "cloud.region")
-      - delete_key(attributes, "container.id")
-      - delete_key(attributes, "cx.otel_integration.name")
-      - delete_key(attributes, "host.image.id")
-      - delete_key(attributes, "host.type")
-      - delete_key(attributes, "os.type")
-      - delete_key(attributes, "os.version")
-      - delete_key(attributes, "process.command")
-      - delete_key(attributes, "process.command_line")
-      - delete_key(attributes, "process.command_args")
-      - delete_key(attributes, "process.executable.name")
-      - delete_key(attributes, "process.executable.path")
-      - delete_key(attributes, "process.owner")
-      - delete_key(attributes, "process.pid")
-      - delete_key(attributes, "process.parent_pid")
-      - delete_key(attributes, "process.runtime.description")
-      - delete_key(attributes, "process.runtime.name")
-      - delete_key(attributes, "process.runtime.version")
-      - delete_key(attributes, "net.host.name")
-      - delete_key(attributes, "net.host.port")
-      - delete_key(attributes, "telemetry.distro.name")
-      - delete_key(attributes, "telemetry.distro.version")
-      - delete_key(attributes, "telemetry.sdk.language")
-      - delete_key(attributes, "telemetry.sdk.name")
-      - delete_key(attributes, "telemetry.sdk.version")
-      - delete_key(attributes, "aws.ecs.task.definition.version")
-      - delete_key(attributes, "aws.ecs.task.known.status")
-    trace_statements:
-    - context: resource
-      statements:
-      - delete_key(attributes, "cloud.account.id")
-      - delete_key(attributes, "cloud.availability_zone")
-      - delete_key(attributes, "cloud.platform")
-      - delete_key(attributes, "cloud.provider")
-      - delete_key(attributes, "cloud.region")
-      - delete_key(attributes, "container.id")
-      - delete_key(attributes, "cx.otel_integration.name")
-      - delete_key(attributes, "host.image.id")
-      - delete_key(attributes, "host.type")
-      - delete_key(attributes, "os.type")
-      - delete_key(attributes, "os.version")
-      - delete_key(attributes, "process.command")
-      - delete_key(attributes, "process.command_line")
-      - delete_key(attributes, "process.command_args")
-      - delete_key(attributes, "process.executable.name")
-      - delete_key(attributes, "process.executable.path")
-      - delete_key(attributes, "process.owner")
-      - delete_key(attributes, "process.pid")
-      - delete_key(attributes, "process.parent_pid")
-      - delete_key(attributes, "process.runtime.description")
-      - delete_key(attributes, "process.runtime.name")
-      - delete_key(attributes, "process.runtime.version")
-      - delete_key(attributes, "aws.ecs.task.definition.version")
-      - delete_key(attributes, "aws.ecs.task.known.status")
   transform/semconv:
     error_mode: ignore
     trace_statements:
@@ -341,12 +253,13 @@ processors:
       - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
         != nil
 receivers:
+  profiling/ebpf: {}
   awsecscontainermetricsd: {}
   filelog:
     force_flush_period: 0
     include:
     - /hostfs/var/lib/docker/containers/*/*.log
-    include_file_name: false
+    include_file_name: true
     include_file_path: true
     operators:
     - default: move_log_file_path
@@ -485,7 +398,6 @@ service:
       - resourcedetection/region
       - resourcedetection/env
       - ecsattributes/container-logs
-      - transform/reduce
       - batch
       receivers:
       - filelog
@@ -509,7 +421,6 @@ service:
       - resource/metadata
       - resourcedetection/region
       - resourcedetection/env
-      - transform/reduce
       - transform/prometheus
       - batch
       receivers:
@@ -520,6 +431,20 @@ service:
       - awsecscontainermetricsd
       - otlp
       - statsd
+    profiles:
+      exporters:
+      - debug
+      - coralogix
+      processors:
+      - memory_limiter
+      - resource/metadata
+      - resourcedetection/region
+      - resourcedetection/env
+      - resourcedetection/ecs
+      - ecsattributes/container-logs
+      receivers:
+      - otlp
+      - profiling/ebpf
     traces:
       exporters:
       - spanmetrics
@@ -530,7 +455,6 @@ service:
       - resource/metadata
       - resourcedetection/region
       - resourcedetection/env
-      - transform/reduce
       - transform/semconv
       - batch
       receivers:
@@ -559,4 +483,3 @@ service:
     resource:
       cx.agent.type: agent
       service.name: opentelemetry-collector
-
