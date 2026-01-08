@@ -2,6 +2,15 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.261 / 2026-01-08
+- [Feature] Ensure new behaviors from span metrics connector, defined behind +connector.spanmetrics.useSecondAsDefaultMetricsUnit, +connector.spanmetrics.excludeResourceMetrics, +spanmetrics.statusCodeConvention.useOtelPrefix feature gates don't break backward compatibility.
+
+1. Added add_resource_attributes: true to maintain resource attributes in span metrics
+2. Added histogram.unit: ms to maintain millisecond units for duration metrics
+3. Added OTTL transformations to convert new otel.status_code back to old status.code format with STATUS_CODE_* values
+
+- [Fix] Add missing field service.loadBalancerClass to support setups with AWS ALB Controller
+
 ### v0.0.260 / 2026-01-06
 - [Fix] Remove unused `k8s_observer` extension from `kubernetesExtraMetrics` preset to avoid unnecessary API server load.
 
