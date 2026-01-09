@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.263 / 2026-01-12
+- [Feat] Add collector-based eBPF profiler configuration and docs, including OTLP header support.
+
 ### v0.0.262 / 2026-01-12
 - [Change] Bump OBI image to v0.4.1
 
