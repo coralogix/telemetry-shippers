@@ -9,6 +9,10 @@
 2. Added histogram.unit: ms to maintain millisecond units for duration metrics
 3. Added OTTL transformations to convert new otel.status_code back to old status.code format with STATUS_CODE_* values
 
+- [Feat] Add an `ebpfProfiler` preset that switches to the otelcol-ebpf-profiler distribution, creates a profiles-only pipeline, and wires the profiling receiver. Allows to configure intervals, thresholds, off-CPU, verbosity, tracers.
+- [Feat] Add a `profilesK8sAttributes` preset to enrich profiles with Kubernetes attributes and map service.name from labels/metadata.
+- [Feat] Add an `otlpExporter` preset to configure an OTLP endpoint with optional headers, plus pipeline selection.
+
 - [Fix] Add missing field service.loadBalancerClass to support setups with AWS ALB Controller
 
 ### v0.0.260 / 2026-01-06
