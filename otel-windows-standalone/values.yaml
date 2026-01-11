@@ -16,12 +16,12 @@ opentelemetry-agent:
       enabled: true
       integrationName: "coralogix-windows-standalone"
     hostEntityEvents:
-      enabled: false # Disabled to maintain manual control over hostmetrics on Windows
+      enabled: false # Manually re-implemented in config section below
     fleetManagement:
       enabled: true
       agentType: "agent"
     hostMetrics:
-      enabled: false # Manually configured in config section below
+      enabled: false # Manually re-implemented in config section below to avoid Unix-specific errors
     batch:
       enabled: true
     resourceDetection:
@@ -42,25 +42,20 @@ opentelemetry-agent:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
 
-    # Added Standard Baselines
     spanMetrics:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-    
     transactions:
       enabled: false
       waitDuration: 30s
-    
     reduceResourceAttributes:
       enabled: false
       pipelines: ["all"]
-    
     prometheusMulti:
       enabled: false
       scrapeInterval: "15s"
       targets: []
-
     filelogMulti:
       enabled: false
       receivers: []
@@ -68,21 +63,49 @@ opentelemetry-agent:
   config:
     extensions:
       health_check:
-        endpoint: "0.0.0.0:13133"
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:13133
+      file_storage:
+        directory: "C:\\ProgramData\\OpenTelemetry\\Collector\\storage"
+    exporters:
+      # Manually added for Host Catalog support
+      coralogix/resource_catalog:
+        application_name: "resource"
+        subsystem_name: "catalog"
+        domain: "{{.Values.global.domain}}"
+        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
+        timeout: 30s
+        logs:
+          headers:
+            X-Coralogix-Distribution: "helm-otel-standalone/{{.Values.global.version}}"
+            x-coralogix-ingress: "metadata-as-otlp-logs/v1"
+
     receivers:
-      # Host Metrics (Stable Windows scrapers only)
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-collector
+              scrape_interval: 30s
+              static_configs:
+                - targets: ["${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:8888"]
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4317
+          http:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4318
+      # Manually defined to only include stable Windows scrapers
       hostmetrics:
         collection_interval: 10s
         scrapers:
           cpu: {}
           memory: {}
-
-      # Windows Performance Counters
+      
       windowsperfcounters:
         collection_interval: 10s
         perfcounters:
           - object: "Processor"
-            instances: ["*"]
+            instances:
+              - "*"
             counters:
               - name: "% Processor Time"
               - name: "% User Time"
@@ -92,17 +115,17 @@ opentelemetry-agent:
               - name: "Available MBytes"
               - name: "Committed Bytes"
               - name: "Cache Faults/sec"
-              - name: "Page Reads/sec"
-              - name: "Page Writes/sec"
           - object: "LogicalDisk"
-            instances: ["*"]
+            instances:
+              - "*"
             counters:
               - name: "% Free Space"
               - name: "Free Megabytes"
               - name: "Current Disk Queue Length"
               - name: "% Disk Time"
           - object: "PhysicalDisk"
-            instances: ["*"]
+            instances:
+              - "*"
             counters:
               - name: "% Disk Time"
               - name: "Disk Reads/sec"
@@ -110,7 +133,8 @@ opentelemetry-agent:
               - name: "Avg. Disk sec/Read"
               - name: "Avg. Disk sec/Write"
           - object: "Network Interface"
-            instances: ["*"]
+            instances:
+              - "*"
             counters:
               - name: "Bytes Total/sec"
               - name: "Packets/sec"
@@ -122,12 +146,13 @@ opentelemetry-agent:
               - name: "Processor Queue Length"
               - name: "System Up Time"
               - name: "Processes"
+              - name: "Threads"
           - object: "Paging File"
-            instances: ["*"]
+            instances:
+              - "*"
             counters:
               - name: "% Usage"
 
-      # Windows Event Logs
       windowseventlog/system:
         channel: System
       windowseventlog/application:
@@ -135,55 +160,82 @@ opentelemetry-agent:
       windowseventlog/security:
         channel: Security
 
-      # IIS Logs Parsing (W3C Format)
       filelog/iis:
         include: [ "C:\\inetpub\\logs\\LogFiles\\W3SVC*\\*.log" ]
-        start_at: end
+        include_file_name: true
+        include_file_path: false
+        start_at: beginning
+        storage: file_storage
+        header:
+          pattern: '^#.*$'
+          metadata_operators:
+            - type: regex_parser
+              if: 'body matches "^#Fields:"'
+              parse_from: body
+              regex: '^#Fields:\s+(?P<csv_header>.+)$'
         operators:
-          - type: regex_parser
-            regex: '^(?P<date>\d{4}-\d{2}-\d{2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+(?P<s_ip>\S+)\s+(?P<cs_method>\S+)\s+(?P<cs_uri_stem>\S+)\s+(?P<cs_uri_query>\S+)\s+(?P<s_port>\S+)\s+(?P<cs_username>\S+)\s+(?P<c_ip>\S+)\s+(?P<cs_user_agent>\S+)\s+(?P<cs_referer>\S+)\s+(?P<sc_status>\d+)\s+(?P<sc_substatus>\d+)\s+(?P<sc_win32_status>\d+)\s+(?P<time_taken>\d+)$'
-            timestamp:
-              parse_from: attributes.date + " " + attributes.time
-              layout: '%Y-%m-%d %H:%M:%S'
-          - type: move
-            from: attributes.c_ip
-            to: attributes["http.client_ip"]
-          - type: move
-            from: attributes.cs_method
-            to: attributes["http.method"]
-          - type: move
-            from: attributes.sc_status
-            to: attributes["http.status_code"]
-          - type: move
-            from: attributes.cs_user_agent
-            to: attributes["user_agent.original"]
-          - type: move
-            from: attributes.cs_uri_stem
-            to: attributes["url.path"]
-          - type: move
-            from: attributes.cs_uri_query
-            to: attributes["url.query"]
-          - type: remove
-            field: attributes.date
-          - type: remove
-            field: attributes.time
+          - type: csv_parser
+            id: iis_csv_parser
+            if: 'body != nil and body not matches "^#"'
+            header_attribute: csv_header
+            delimiter: " "
+            trim_space: true
 
     processors:
       memory_limiter:
         check_interval: 5s
-        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-1024}
+      # Manually defined for Host Catalog integration
+      resourcedetection/entity:
+        detectors: ["system", "env"]
+      transform/entity-event:
+        error_mode: silent
+        log_statements:
+          - context: log
+            statements:
+              - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+              - merge_maps(attributes, resource.attributes, "insert")
+          - context: resource
+            statements:
+              - keep_keys(attributes, [""])
+      
+      # OTTL mapping for IIS fields to OTel Semantic Conventions
+      transform/iis:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            statements:
+              - set(attributes["http.client_ip"], attributes["c-ip"]) where attributes["c-ip"] != nil
+              - set(attributes["http.method"], attributes["cs-method"]) where attributes["cs-method"] != nil
+              - set(attributes["http.status_code"], attributes["sc-status"]) where attributes["sc-status"] != nil
+              - set(attributes["user_agent.original"], attributes["cs(User-Agent)"]) where attributes["cs(User-Agent)"] != nil
+              - set(attributes["url.path"], attributes["cs-uri-stem"]) where attributes["cs-uri-stem"] != nil
+              - set(attributes["url.query"], attributes["cs-uri-query"]) where attributes["cs-uri-query"] != nil
+              - set(attributes["http.request.referrer"], attributes["cs(Referer)"]) where attributes["cs(Referer)"] != nil
+              - set(attributes["http.server.request.duration_ms"], Int(attributes["time-taken"])) where attributes["time-taken"] != nil
+              
+              # Cleanup raw IIS attributes
+              - delete_key(attributes, "c-ip")
+              - delete_key(attributes, "cs-method")
+              - delete_key(attributes, "sc-status")
+              - delete_key(attributes, "cs(User-Agent)")
+              - delete_key(attributes, "cs-uri-stem")
+              - delete_key(attributes, "cs-uri-query")
+              - delete_key(attributes, "cs(Referer)")
+              - delete_key(attributes, "time-taken")
+              - delete_key(attributes, "sc-win32-status")
+              - delete_key(attributes, "s-port")
 
     service:
       telemetry:
-        resource:
-          service.name: "opentelemetry-collector"
-        logs:
-          level: "info"
-      extensions:
-      - health_check
-      - opamp
-      - zpages
-      - pprof
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}
+                    port: 8888
+      extensions: [health_check, file_storage, opamp, zpages, pprof]
       pipelines:
         metrics:
           receivers: [hostmetrics, windowsperfcounters, otlp]
@@ -191,9 +243,10 @@ opentelemetry-agent:
           exporters: [coralogix]
         logs:
           receivers: [windowseventlog/system, windowseventlog/application, windowseventlog/security, filelog/iis, otlp]
-          processors: [memory_limiter, batch]
+          processors: [memory_limiter, transform/iis, batch]
           exporters: [coralogix]
-        traces:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [coralogix]
+        # Manually defined Host Catalog pipeline
+        logs/resource_catalog:
+          receivers: [hostmetrics]
+          processors: [memory_limiter, resourcedetection/region, resourcedetection/env, resource/metadata, resourcedetection/entity, transform/entity-event]
+          exporters: [coralogix/resource_catalog]

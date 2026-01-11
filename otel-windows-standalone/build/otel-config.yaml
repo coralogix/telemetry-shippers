@@ -21,10 +21,22 @@ exporters:
     traces:
       headers:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+  coralogix/resource_catalog:
+    application_name: resource
+    domain: 'eu2.coralogix.com'
+    logs:
+      headers:
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        x-coralogix-ingress: metadata-as-otlp-logs/v1
+    private_key: ${env:CORALOGIX_PRIVATE_KEY}
+    subsystem_name: catalog
+    timeout: 30s
   debug: {}
 extensions:
+  file_storage:
+    directory: C:\ProgramData\OpenTelemetry\Collector\storage
   health_check:
-    endpoint: 0.0.0.0:13133
+    endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:13133
   opamp:
     agent_description:
       include_resource_attributes: true
@@ -48,12 +60,16 @@ processors:
     timeout: 1s
   memory_limiter:
     check_interval: 5s
-    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-1024}
   resource/metadata:
     attributes:
     - action: upsert
       key: cx.otel_integration.name
       value: coralogix-windows-standalone
+  resourcedetection/entity:
+    detectors:
+    - system
+    - env
   resourcedetection/env:
     detectors:
     - system
@@ -71,6 +87,42 @@ processors:
     - azure
     override: true
     timeout: 2s
+  transform/entity-event:
+    error_mode: silent
+    log_statements:
+    - context: log
+      statements:
+      - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+      - merge_maps(attributes, resource.attributes, "insert")
+    - context: resource
+      statements:
+      - keep_keys(attributes, [""])
+  transform/iis:
+    error_mode: ignore
+    log_statements:
+    - context: log
+      statements:
+      - set(attributes["http.client_ip"], attributes["c-ip"]) where attributes["c-ip"]
+        != nil
+      - set(attributes["http.method"], attributes["cs-method"]) where attributes["cs-method"]
+        != nil
+      - set(attributes["http.status_code"], attributes["sc-status"]) where attributes["sc-status"]
+        != nil
+      - set(attributes["user_agent.original"], attributes["cs(User-Agent)"]) where
+        attributes["cs(User-Agent)"] != nil
+      - set(attributes["url.path"], attributes["cs-uri-stem"]) where attributes["cs-uri-stem"]
+        != nil
+      - set(attributes["url.query"], attributes["cs-uri-query"]) where attributes["cs-uri-query"]
+        != nil
+      - set(attributes["http.request.referrer"], attributes["cs(Referer)"]) where
+        attributes["cs(Referer)"] != nil
+      - delete_key(attributes, "c-ip")
+      - delete_key(attributes, "cs-method")
+      - delete_key(attributes, "sc-status")
+      - delete_key(attributes, "cs(User-Agent)")
+      - delete_key(attributes, "cs-uri-stem")
+      - delete_key(attributes, "cs-uri-query")
+      - delete_key(attributes, "cs(Referer)")
   transform/prometheus:
     error_mode: ignore
     metric_statements:
@@ -130,37 +182,26 @@ processors:
         != nil
 receivers:
   filelog/iis:
+    header:
+      metadata_operators:
+      - if: body matches "^#Fields:"
+        parse_from: body
+        regex: ^#Fields:\s+(?P<csv_header>.+)$
+        type: regex_parser
+      pattern: ^#.*$
     include:
     - C:\inetpub\logs\LogFiles\W3SVC*\*.log
+    include_file_name: true
+    include_file_path: false
     operators:
-    - regex: ^(?P<date>\d{4}-\d{2}-\d{2})\s+(?P<time>\d{2}:\d{2}:\d{2})\s+(?P<s_ip>\S+)\s+(?P<cs_method>\S+)\s+(?P<cs_uri_stem>\S+)\s+(?P<cs_uri_query>\S+)\s+(?P<s_port>\S+)\s+(?P<cs_username>\S+)\s+(?P<c_ip>\S+)\s+(?P<cs_user_agent>\S+)\s+(?P<cs_referer>\S+)\s+(?P<sc_status>\d+)\s+(?P<sc_substatus>\d+)\s+(?P<sc_win32_status>\d+)\s+(?P<time_taken>\d+)$
-      timestamp:
-        layout: '%Y-%m-%d %H:%M:%S'
-        parse_from: attributes.date + " " + attributes.time
-      type: regex_parser
-    - from: attributes.c_ip
-      to: attributes["http.client_ip"]
-      type: move
-    - from: attributes.cs_method
-      to: attributes["http.method"]
-      type: move
-    - from: attributes.sc_status
-      to: attributes["http.status_code"]
-      type: move
-    - from: attributes.cs_user_agent
-      to: attributes["user_agent.original"]
-      type: move
-    - from: attributes.cs_uri_stem
-      to: attributes["url.path"]
-      type: move
-    - from: attributes.cs_uri_query
-      to: attributes["url.query"]
-      type: move
-    - field: attributes.date
-      type: remove
-    - field: attributes.time
-      type: remove
-    start_at: end
+    - delimiter: ' '
+      header_attribute: csv_header
+      id: iis_csv_parser
+      if: body != nil and body not matches "^#"
+      trim_space: true
+      type: csv_parser
+    start_at: beginning
+    storage: file_storage
   hostmetrics:
     collection_interval: 10s
     scrapers:
@@ -169,18 +210,18 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4317
         max_recv_msg_size_mib: 20
       http:
-        endpoint: 0.0.0.0:4318
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4318
   prometheus:
     config:
       scrape_configs:
       - job_name: opentelemetry-collector
-        scrape_interval: '30s'
+        scrape_interval: 30s
         static_configs:
         - targets:
-          - 0.0.0.0:8888
+          - ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:8888
   windowseventlog/application:
     channel: Application
   windowseventlog/security:
@@ -201,8 +242,6 @@ receivers:
       - name: Available MBytes
       - name: Committed Bytes
       - name: Cache Faults/sec
-      - name: Page Reads/sec
-      - name: Page Writes/sec
       object: Memory
     - counters:
       - name: '% Free Space'
@@ -234,6 +273,7 @@ receivers:
       - name: Processor Queue Length
       - name: System Up Time
       - name: Processes
+      - name: Threads
       object: System
     - counters:
       - name: '% Usage'
@@ -243,6 +283,7 @@ receivers:
 service:
   extensions:
   - health_check
+  - file_storage
   - opamp
   - zpages
   - pprof
@@ -255,6 +296,7 @@ service:
       - resourcedetection/region
       - resourcedetection/env
       - resource/metadata
+      - transform/iis
       - batch
       receivers:
       - windowseventlog/system
@@ -262,6 +304,18 @@ service:
       - windowseventlog/security
       - filelog/iis
       - otlp
+    logs/resource_catalog:
+      exporters:
+      - coralogix/resource_catalog
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - resource/metadata
+      - resourcedetection/entity
+      - transform/entity-event
+      receivers:
+      - hostmetrics
     metrics:
       exporters:
       - coralogix
@@ -279,6 +333,7 @@ service:
       - prometheus
     traces:
       exporters:
+      - debug
       - coralogix
       processors:
       - memory_limiter
@@ -292,14 +347,11 @@ service:
   telemetry:
     logs:
       encoding: json
-      level: info
     metrics:
       readers:
       - pull:
           exporter:
             prometheus:
-              host: 0.0.0.0
+              host: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}
               port: 8888
-    resource:
-      service.name: opentelemetry-collector
 
