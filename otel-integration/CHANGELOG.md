@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.262 / 2026-01-12
+- [Change] Bump OBI image to v0.4.1
+
 ### v0.0.261 / 2026-01-08
 - [Feature] Ensure new behaviors from span metrics connector, defined behind +connector.spanmetrics.useSecondAsDefaultMetricsUnit, +connector.spanmetrics.excludeResourceMetrics, +spanmetrics.statusCodeConvention.useOtelPrefix feature gates don't break backward compatibility.
 

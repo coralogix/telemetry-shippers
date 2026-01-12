@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-integration
 description: OpenTelemetry Integration
-version: 0.0.261
+version: 0.0.262
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent
@@ -51,7 +51,7 @@ dependencies:
     condition: coralogix-ebpf-profiler.enabled
   - name: opentelemetry-ebpf-instrumentation
     alias: opentelemetry-ebpf-instrumentation
-    version: "0.1.9"
+    version: "0.1.10"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts
     condition: opentelemetry-ebpf-instrumentation.enabled
   - name: coralogix-operator
