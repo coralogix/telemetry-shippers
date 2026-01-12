@@ -244,12 +244,12 @@ bash coralogix-otel-collector.sh --uninstall --purge
 
 ## Configuration Behavior
 
-| Scenario              | Action                            |
-|-----------------------|-----------------------------------|
-| Fresh install    | Creates default empty config      |
-| Config exists    | Preserves existing config         |
-| With `--config`  | Uses provided config              |
-| Supervisor mode  | Config managed remotely via OpAMP |
+| Scenario        | Action                            |
+|-----------------|-----------------------------------|
+| Fresh install   | Creates default empty config      |
+| Config exists   | Preserves existing config         |
+| With `--config` | Uses provided config              |
+| Supervisor mode | Config managed remotely via OpAMP |
 
 ### Environment Variables in Configuration
 
@@ -453,11 +453,11 @@ bash coralogix-otel-collector.sh --uninstall --purge
 
 ## Configuration Behavior
 
-| Scenario              | Action                       |
-|-----------------------|------------------------------|
-| Fresh install   | Creates default empty config |
-| Config exists   | Preserves existing config    |
-| Auto-upgrade    | Preserves existing config    |
+| Scenario      | Action                       |
+|---------------|------------------------------|
+| Fresh install | Creates default empty config |
+| Config exists | Preserves existing config    |
+| Auto-upgrade  | Preserves existing config    |
 
 ### Environment Variables in Configuration
 
