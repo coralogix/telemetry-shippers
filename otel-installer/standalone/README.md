@@ -147,7 +147,7 @@ This grants `CAP_SYS_PTRACE` and `CAP_DAC_READ_SEARCH` capabilities to the colle
 
 ## Supervisor Mode
 
-Supervisor mode enables remote configuration management through Coralogix Fleet Management:
+Supervisor mode enables remote configuration management through Coralogix [Fleet Management](https://coralogix.com/docs/user-guides/fleet-management/overview/):
 
 ```bash
 CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
@@ -162,7 +162,6 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-v, --version <version>`        | Install specific collector version                                                                                 |
 | `-c, --config <path>`            | Path to custom configuration file                                                                                  |
 | `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
-| `-u, --upgrade`                  | Upgrade existing installation (preserves config)                                                                   |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
 | `--enable-process-metrics`       | Grant Linux capabilities for comprehensive process metrics collection                                              |
@@ -229,24 +228,6 @@ tail -f /var/log/opampsupervisor/opampsupervisor.log
 sudo systemctl restart opampsupervisor
 ```
 
-## Upgrade
-
-Upgrade the collector while preserving your existing configuration:
-
-```bash
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --upgrade
-```
-
-To upgrade and replace the configuration:
-
-```bash
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --upgrade --config /path/to/new-config.yaml
-```
-
 ## Uninstall
 
 Remove the collector while keeping configuration and logs:
@@ -265,11 +246,10 @@ bash coralogix-otel-collector.sh --uninstall --purge
 
 | Scenario              | Action                            |
 |-----------------------|-----------------------------------|
-| Fresh install         | Creates default empty config      |
-| Config exists         | Preserves existing config         |
-| With `--config`       | Uses provided config              |
-| Upgrade (`--upgrade`) | Preserves existing config         |
-| Supervisor mode       | Config managed remotely via OpAMP |
+| Fresh install    | Creates default empty config      |
+| Config exists    | Preserves existing config         |
+| With `--config`  | Uses provided config              |
+| Supervisor mode  | Config managed remotely via OpAMP |
 
 ### Environment Variables in Configuration
 
@@ -408,7 +388,6 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 |---------------------------|--------------------------------------------------------------------------------------------------------------------|
 | `-v, --version <version>` | Install specific collector version                                                                                 |
 | `-c, --config <path>`     | Path to custom configuration file                                                                                  |
-| `-u, --upgrade`           | Upgrade existing installation (preserves config)                                                                   |
 | `--memory-limit <MiB>`    | Total memory in MiB to allocate to the collector (default: 512)                                                    |
 | `--listen-interface <ip>` | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
 | `--uninstall`             | Remove the collector (keeps config)                                                                                |
@@ -458,24 +437,6 @@ launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plis
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.plist
 ```
 
-## Upgrade
-
-Upgrade the collector while preserving your existing configuration:
-
-```bash
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --upgrade
-```
-
-To upgrade and replace the configuration:
-
-```bash
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --upgrade --config /path/to/new-config.yaml
-```
-
 ## Uninstall
 
 Remove the collector while keeping configuration and logs:
@@ -494,10 +455,9 @@ bash coralogix-otel-collector.sh --uninstall --purge
 
 | Scenario              | Action                       |
 |-----------------------|------------------------------|
-| Fresh install         | Creates default empty config |
-| Config exists         | Preserves existing config    |
-| With `--config`       | Uses provided config         |
-| Upgrade (`--upgrade`) | Preserves existing config    |
+| Fresh install   | Creates default empty config |
+| Config exists   | Preserves existing config    |
+| Auto-upgrade    | Preserves existing config    |
 
 ### Environment Variables in Configuration
 
