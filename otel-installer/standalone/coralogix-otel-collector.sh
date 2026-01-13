@@ -484,8 +484,17 @@ Actual:   $actual_checksum
 The downloaded file may be corrupted or tampered with."
     fi
     
-    log "✓ Checksum verified: $(basename "$file")"
+    log "Checksum verified: $(basename "$file")"
     return 0
+}
+
+get_pkg_version() {
+    local pkg="$1"
+    if command -v dpkg-query >/dev/null 2>&1; then
+        dpkg-query --showformat='${Version}' --show "$pkg" 2>/dev/null | cut -d':' -f2 | cut -d'-' -f1
+    elif command -v rpm >/dev/null 2>&1; then
+        rpm -q --queryformat='%{VERSION}' "$pkg" 2>/dev/null
+    fi
 }
 
 get_otel_checksum() {
@@ -550,6 +559,38 @@ is_installed() {
     esac
     return 1
 }
+
+verify_installed_version() {
+    local binary_path="$1"
+    local expected_version="$2"
+    local name="$3"
+    local pkg_name="${4:-}"
+    
+    log "Verifying installed version of ${name}..."
+    local actual_version=""
+
+    if [ -n "$pkg_name" ]; then
+        actual_version=$(get_pkg_version "$pkg_name")
+    fi
+
+    if [ -z "$actual_version" ] || [ "$actual_version" = "unknown" ]; then
+        if [ -x "$binary_path" ]; then
+            actual_version=$("$binary_path" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo "")
+        fi
+    fi
+    
+    if [ -z "$actual_version" ]; then
+        actual_version="unknown"
+    fi
+
+    local clean_expected="${expected_version#v}"
+
+    if [ "$actual_version" != "$clean_expected" ]; then
+        fail "Version verification failed for ${name}! Expected: ${clean_expected}, Found: ${actual_version}. The installation or upgrade may have failed silently."
+    fi
+    log "Version verified: ${actual_version}"
+}
+
 get_empty_collector_config() {
     cat <<'EOF'
 receivers:
@@ -623,26 +664,24 @@ install_collector_linux() {
     
     log "Installing OpenTelemetry Collector package..."
     if [ "$pkg_type" = "deb" ]; then
-        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y
+        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y || fail "Failed to install deb package"
     else
         if command -v zypper >/dev/null 2>&1; then
-            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name"
+            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name" || fail "Failed to install package via zypper"
         elif command -v dnf >/dev/null 2>&1; then
-            $SUDO_CMD dnf install -y "$pkg_name"
+            $SUDO_CMD dnf install -y "$pkg_name" || fail "Failed to install package via dnf"
         elif command -v yum >/dev/null 2>&1; then
-            $SUDO_CMD yum install -y "$pkg_name"
+            $SUDO_CMD yum install -y "$pkg_name" || fail "Failed to install package via yum"
         else
-            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to install/upgrade package. Please install dependencies manually."
+            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to install/upgrade package via rpm. Please install dependencies manually."
         fi
     fi
     
     if [ ! -x "$BINARY_PATH_LINUX" ]; then
-        fail "Binary not found at expected location: $BINARY_PATH_LINUX"
+        fail "Binary not found at expected location after installation: $BINARY_PATH_LINUX"
     fi
     
-    if ! "$BINARY_PATH_LINUX" --version >/dev/null 2>&1; then
-        fail "Installation verification failed"
-    fi
+    verify_installed_version "$BINARY_PATH_LINUX" "$version" "OpenTelemetry Collector" "otelcol-contrib"
     
     if getent group systemd-journal >/dev/null 2>&1; then
         if id otelcol-contrib >/dev/null 2>&1; then
@@ -674,7 +713,7 @@ configure_process_metrics_permissions() {
     # CAP_DAC_READ_SEARCH: Required to bypass file read permission checks
     # +ep: Effective and Permitted (not Inherited, for security)
     if $SUDO_CMD setcap cap_sys_ptrace,cap_dac_read_search=+ep "$binary_path" 2>/dev/null; then
-        log "✓ Linux capabilities configured successfully"
+        log "Linux capabilities configured successfully"
         log "  Process metrics will be able to monitor all system processes"
         return 0
     else
@@ -717,9 +756,7 @@ install_collector_darwin() {
     log "Installing binary to $BINARY_PATH_DARWIN"
     $SUDO_CMD install -m 0755 "./${BINARY_NAME}" "$BINARY_PATH_DARWIN"
     
-    if ! "$BINARY_PATH_DARWIN" --version >/dev/null 2>&1; then
-        fail "Installation verification failed"
-    fi
+    verify_installed_version "$BINARY_PATH_DARWIN" "$version" "OpenTelemetry Collector"
     
     log "Collector installed successfully: $($BINARY_PATH_DARWIN --version)"
 }
@@ -823,6 +860,8 @@ install_supervisor() {
     log "Placing Collector binary into /usr/local/bin..."
     $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib
     
+    verify_installed_version "/usr/local/bin/otelcol-contrib" "$collector_ver" "OpenTelemetry Collector" ""
+
     if [ "$ENABLE_PROCESS_METRICS" = true ]; then
         configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" || true
     fi
@@ -859,19 +898,21 @@ install_supervisor() {
     
     log "Installing OpAMP Supervisor ${supervisor_ver}..."
     if [ "$pkg_type" = "deb" ]; then
-        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y
+        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y || fail "Failed to install supervisor deb package"
     else
         if command -v zypper >/dev/null 2>&1; then
-            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name"
+            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name" || fail "Failed to install supervisor via zypper"
         elif command -v dnf >/dev/null 2>&1; then
-            $SUDO_CMD dnf install -y "$pkg_name"
+            $SUDO_CMD dnf install -y "$pkg_name" || fail "Failed to install supervisor via dnf"
         elif command -v yum >/dev/null 2>&1; then
-            $SUDO_CMD yum install -y "$pkg_name"
+            $SUDO_CMD yum install -y "$pkg_name" || fail "Failed to install supervisor via yum"
         else
-            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to install/upgrade supervisor package. Please install dependencies manually."
+            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to install/upgrade supervisor package via rpm. Please install dependencies manually."
         fi
     fi
     
+    verify_installed_version "/usr/bin/opampsupervisor" "$supervisor_ver" "OpAMP Supervisor" "opampsupervisor"
+
     if getent group systemd-journal >/dev/null 2>&1; then
         if id opampsupervisor >/dev/null 2>&1; then
             log "Adding opampsupervisor user to systemd-journal group for journald log access"
