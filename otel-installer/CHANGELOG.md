@@ -2,6 +2,12 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.3] - 2024-01-12
+
+### Changed
+- **BREAKING**: Removed `--upgrade` flag from standalone installer
+- Installer now automatically detects existing installations and upgrades them
+
 ## [0.1.2] - 2024-12-29
 
 ### Fixed
