@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.264 / 2026-01-13
+- [Feat] Add `systemdReceiver` preset which gathers metrics for locally running systemd units on standalone linux deployments with optional scope and units configuration.
+- [Fix] Apply `presets.spanMetrics.histogramBuckets` value to `dbMetrics`.
+
 ### v0.0.263 / 2026-01-12
 - [Feat] Add collector-based eBPF profiler configuration and docs, including OTLP header support.
 
