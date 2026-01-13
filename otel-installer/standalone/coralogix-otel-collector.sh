@@ -488,15 +488,6 @@ The downloaded file may be corrupted or tampered with."
     return 0
 }
 
-get_pkg_version() {
-    local pkg="$1"
-    if command -v dpkg-query >/dev/null 2>&1; then
-        dpkg-query --showformat='${Version}' --show "$pkg" 2>/dev/null | cut -d':' -f2 | cut -d'-' -f1
-    elif command -v rpm >/dev/null 2>&1; then
-        rpm -q --queryformat='%{VERSION}' "$pkg" 2>/dev/null
-    fi
-}
-
 get_otel_checksum() {
     local version="$1"
     local filename="$2"
@@ -558,37 +549,6 @@ is_installed() {
             ;;
     esac
     return 1
-}
-
-verify_installed_version() {
-    local binary_path="$1"
-    local expected_version="$2"
-    local name="$3"
-    local pkg_name="${4:-}"
-    
-    log "Verifying installed version of ${name}..."
-    local actual_version=""
-
-    if [ -n "$pkg_name" ]; then
-        actual_version=$(get_pkg_version "$pkg_name")
-    fi
-
-    if [ -z "$actual_version" ] || [ "$actual_version" = "unknown" ]; then
-        if [ -x "$binary_path" ]; then
-            actual_version=$("$binary_path" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo "")
-        fi
-    fi
-    
-    if [ -z "$actual_version" ]; then
-        actual_version="unknown"
-    fi
-
-    local clean_expected="${expected_version#v}"
-
-    if [ "$actual_version" != "$clean_expected" ]; then
-        fail "Version verification failed for ${name}! Expected: ${clean_expected}, Found: ${actual_version}. The installation or upgrade may have failed silently."
-    fi
-    log "Version verified: ${actual_version}"
 }
 
 get_empty_collector_config() {
@@ -681,8 +641,6 @@ install_collector_linux() {
         fail "Binary not found at expected location after installation: $BINARY_PATH_LINUX"
     fi
     
-    verify_installed_version "$BINARY_PATH_LINUX" "$version" "OpenTelemetry Collector" "otelcol-contrib"
-    
     if getent group systemd-journal >/dev/null 2>&1; then
         if id otelcol-contrib >/dev/null 2>&1; then
             log "Adding otelcol-contrib user to systemd-journal group for journald log access"
@@ -754,9 +712,7 @@ install_collector_darwin() {
     fi
     
     log "Installing binary to $BINARY_PATH_DARWIN"
-    $SUDO_CMD install -m 0755 "./${BINARY_NAME}" "$BINARY_PATH_DARWIN"
-    
-    verify_installed_version "$BINARY_PATH_DARWIN" "$version" "OpenTelemetry Collector"
+    $SUDO_CMD install -m 0755 "./${BINARY_NAME}" "$BINARY_PATH_DARWIN" || fail "Failed to install binary to $BINARY_PATH_DARWIN"
     
     log "Collector installed successfully: $($BINARY_PATH_DARWIN --version)"
 }
@@ -858,10 +814,8 @@ install_supervisor() {
     fi
     
     log "Placing Collector binary into /usr/local/bin..."
-    $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib
+    $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib || fail "Failed to install Collector binary"
     
-    verify_installed_version "/usr/local/bin/otelcol-contrib" "$collector_ver" "OpenTelemetry Collector" ""
-
     if [ "$ENABLE_PROCESS_METRICS" = true ]; then
         configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" || true
     fi
@@ -911,8 +865,6 @@ install_supervisor() {
         fi
     fi
     
-    verify_installed_version "/usr/bin/opampsupervisor" "$supervisor_ver" "OpAMP Supervisor" "opampsupervisor"
-
     if getent group systemd-journal >/dev/null 2>&1; then
         if id opampsupervisor >/dev/null 2>&1; then
             log "Adding opampsupervisor user to systemd-journal group for journald log access"
