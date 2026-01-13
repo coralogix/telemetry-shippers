@@ -32,6 +32,10 @@ spec:
         - "--otlp-endpoint=$(K8S_NODE_IP):4317"
 {{- if eq .DataType "traces" }}
         - --status-code=
+        - --telemetry-attributes=db.system="postgresql"
+        - --telemetry-attributes=db.namespace="e2e_database"
+        - --telemetry-attributes=db.operation.name="SELECT"
+        - --telemetry-attributes=db.collection.name="users"
 {{- end }}
         
       

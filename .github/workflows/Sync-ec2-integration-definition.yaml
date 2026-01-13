@@ -87,6 +87,8 @@ jobs:
           
           git checkout -b "$branch"
           git pull origin master
+          git fetch origin
+          git push origin $branch
           
           base_dir="integrations/otel-agent-aws-ecs-ec2/v${last_revision}"
           new_dir="integrations/otel-agent-aws-ecs-ec2/v${new_revision}"
@@ -117,9 +119,19 @@ jobs:
           if [ -z "$merged_pr_from_telemetry_shipper" ]; then
             merged_pr_from_telemetry_shipper="Add ECS-EC2 collector ${new_revision}"
           fi
-  
-          git commit -m "${merged_pr_from_telemetry_shipper}"
-          git push origin "$branch"
+          
+          echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Commit change
+        if: env.exists == 'false'
+        uses: planetscale/ghcommit-action@v0.1.43
+        with:
+          commit_message: ${{env.commit_message}}
+          repo: coralogix/integration-definitions
+          branch: ${{ env.branch }}
+          file_pattern: '*.yaml *.md'
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
