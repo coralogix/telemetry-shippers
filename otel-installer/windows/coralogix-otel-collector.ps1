@@ -134,6 +134,13 @@ param(
     [switch]$Help = $false
 )
 
+# TLS 1.2 enforcement - must be FIRST before any network operations
+# Windows Server 2016 (build 14393) and older may default to TLS 1.0/1.1
+# which modern services like GitHub reject
+if ([System.Environment]::OSVersion.Version.Build -lt 17763) {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+}
+
 # Script constants
 $SCRIPT_NAME = "coralogix-otel-collector"
 $SERVICE_NAME = "otelcol-contrib"
