@@ -641,6 +641,10 @@ install_collector_linux() {
         fail "Binary not found at expected location after installation: $BINARY_PATH_LINUX"
     fi
     
+    if ! "$BINARY_PATH_LINUX" --version >/dev/null 2>&1; then
+        fail "Installation verification failed: The binary at $BINARY_PATH_LINUX exists but cannot be executed."
+    fi
+    
     if getent group systemd-journal >/dev/null 2>&1; then
         if id otelcol-contrib >/dev/null 2>&1; then
             log "Adding otelcol-contrib user to systemd-journal group for journald log access"
@@ -713,6 +717,10 @@ install_collector_darwin() {
     
     log "Installing binary to $BINARY_PATH_DARWIN"
     $SUDO_CMD install -m 0755 "./${BINARY_NAME}" "$BINARY_PATH_DARWIN" || fail "Failed to install binary to $BINARY_PATH_DARWIN"
+    
+    if ! "$BINARY_PATH_DARWIN" --version >/dev/null 2>&1; then
+        fail "Installation verification failed: The binary at $BINARY_PATH_DARWIN exists but cannot be executed."
+    fi
     
     log "Collector installed successfully: $($BINARY_PATH_DARWIN --version)"
 }
@@ -816,6 +824,10 @@ install_supervisor() {
     log "Placing Collector binary into /usr/local/bin..."
     $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib || fail "Failed to install Collector binary"
     
+    if ! /usr/local/bin/otelcol-contrib --version >/dev/null 2>&1; then
+        fail "Installation verification failed: The binary at /usr/local/bin/otelcol-contrib exists but cannot be executed."
+    fi
+
     if [ "$ENABLE_PROCESS_METRICS" = true ]; then
         configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" || true
     fi
