@@ -35,9 +35,6 @@
     Use 0.0.0.0 to listen on all interfaces (gateway mode)
     (ignored in supervisor mode)
     
-.PARAMETER Upgrade
-    Upgrade existing installation
-    
 .PARAMETER Uninstall
     Uninstall the collector (use Purge to remove all data)
     
@@ -75,10 +72,6 @@
     # Install with custom memory limit and external access
     $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
 
-.EXAMPLE
-    # Upgrade existing installation
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Upgrade
-    
 .EXAMPLE
     # Uninstall (keep config/logs)
     .\coralogix-otel-collector.ps1 -Uninstall
@@ -120,10 +113,6 @@ param(
     [string]$ListenInterface = "127.0.0.1",
     
     [Parameter(ValueFromPipelineByPropertyName)]
-    [Alias("u")]
-    [switch]$Upgrade = $false,
-    
-    [Parameter(ValueFromPipelineByPropertyName)]
     [switch]$Uninstall = $false,
     
     [Parameter(ValueFromPipelineByPropertyName)]
@@ -142,7 +131,6 @@ if ([System.Environment]::OSVersion.Version.Build -lt 17763) {
 }
 
 # Script constants
-$SCRIPT_NAME = "coralogix-otel-collector"
 $SERVICE_NAME = "otelcol-contrib"
 $SUPERVISOR_SERVICE_NAME = "opampsupervisor"
 $BINARY_NAME = "otelcol-contrib.exe"
@@ -170,7 +158,6 @@ $OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contr
 $OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
 
 # Global variables
-$script:BackupDir = ""
 $script:UserSetMemoryLimit = $false
 $script:UserSetListenInterface = $false
 
@@ -205,7 +192,6 @@ Options:
                                     (not available with -Supervisor)
     -Supervisor                     Install with OpAMP Supervisor mode
                                     (config is managed by the OpAMP server)
-    -Upgrade                        Upgrade existing installation
     -SupervisorVersion <ver>        Supervisor version (supervisor mode only)
                                     (default: same as -Version)
     -CollectorVersion <ver>         Collector version (supervisor mode only)
@@ -254,9 +240,6 @@ Examples:
 
     # Install with custom memory limit and external access
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
-
-    # Upgrade existing installation
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Upgrade
 
     # Uninstall (keep config/logs)
     .\coralogix-otel-collector.ps1 -Uninstall
@@ -471,28 +454,6 @@ function Test-Installed {
     return $false
 }
 
-function Backup-Config {
-    if (Test-Path $CONFIG_FILE) {
-        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-        $script:BackupDir = Join-Path $env:TEMP "${SERVICE_NAME}-backup-${timestamp}"
-        Write-Log "Backing up existing configuration to: $script:BackupDir"
-        New-Item -ItemType Directory -Path $script:BackupDir -Force | Out-Null
-        Copy-Item -Path $CONFIG_FILE -Destination (Join-Path $script:BackupDir "config.yaml") -Force -ErrorAction SilentlyContinue
-        Write-Log "Backup created at: $script:BackupDir\config.yaml"
-    }
-}
-
-function Restore-Config {
-    if ($script:BackupDir -and (Test-Path $script:BackupDir)) {
-        $backupConfig = Join-Path $script:BackupDir "config.yaml"
-        if (Test-Path $backupConfig) {
-            Write-Log "Restoring configuration from backup"
-            New-Item -ItemType Directory -Path (Split-Path $CONFIG_FILE -Parent) -Force | Out-Null
-            Copy-Item -Path $backupConfig -Destination $CONFIG_FILE -Force -ErrorAction SilentlyContinue
-        }
-    }
-}
-
 function Get-EmptyCollectorConfig {
     return @"
 receivers:
@@ -533,7 +494,6 @@ function New-EmptyConfig {
 function Get-Timestamp {
     return Get-Date -Format "yyyyMMdd-HHmmss"
 }
-
 
 function Invoke-Download {
     param(
@@ -1289,16 +1249,20 @@ function Uninstall-MsiPackage {
 
 function Remove-PackageWindows {
     if ($Supervisor) {
-        # Supervisor mode uses tar.gz extraction, so manual removal is needed
+        # Remove supervisor binary (manual install)
         if (Test-Path $SUPERVISOR_BINARY_PATH) {
             Write-Log "Removing supervisor binary: $SUPERVISOR_BINARY_PATH"
             Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
         }
         
-        # Remove collector binary (installed via tar.gz for supervisor mode)
-        if (Test-Path $BINARY_PATH) {
-            Write-Log "Removing supervisor collector binary"
-            Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
+        # Remove collector via MSI uninstaller (same install method as regular mode)
+        $msiUninstalled = Uninstall-MsiPackage
+        if (-not $msiUninstalled) {
+            # Fallback to manual removal if MSI uninstall failed
+            if (Test-Path $BINARY_PATH) {
+                Write-Log "Removing collector binary: $BINARY_PATH"
+                Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
+            }
         }
         
         # Clean up install directory if empty
@@ -1471,18 +1435,9 @@ function Main {
     $version = Get-Version
     Write-Log "Installing version: $version"
     
-    # Check for port conflicts before proceeding
-    Test-Ports
-    
-    if ((Test-Installed) -and -not $Upgrade) {
-        Write-Warn "Collector is already installed. Use -Upgrade to upgrade, or uninstall first."
-        exit 1
-    }
-    
-    if ($Upgrade -and (Test-Installed)) {
-        if (-not $Supervisor) {
-            Backup-Config
-        }
+    # Auto-detect if this is an upgrade or fresh install
+    if (Test-Installed) {
+        Write-Log "Existing installation detected - will upgrade"
         
         # Check for mode mismatch - regular and supervisor modes use different binaries
         # In supervisor mode, both collector and supervisor binaries exist
@@ -1496,6 +1451,14 @@ function Main {
         if (-not $Supervisor -and $isSupervisorInstalled) {
             Write-Error "Cannot upgrade: Supervisor mode is installed. Please uninstall first, then install regular mode."
         }
+        
+        # Skip port checks on upgrade (service is already running)
+    }
+    else {
+        Write-Log "No existing installation detected - fresh install"
+        
+        # Check for port conflicts only on fresh install
+        Test-Ports
     }
     
     if ($Supervisor) {
@@ -1564,13 +1527,6 @@ shows the actual merged configuration after applying Fleet Management settings.
     }
     elseif (Test-Path $CONFIG_FILE) {
         Write-Log "Using existing config at: $CONFIG_FILE"
-    }
-    elseif ($Upgrade -and $script:BackupDir -and (Test-Path $script:BackupDir)) {
-        Restore-Config
-        if (-not (Test-Path $CONFIG_FILE)) {
-            Write-Log "Backup restore failed or backup was empty, creating default config"
-            New-EmptyConfig
-        }
     }
     else {
         New-EmptyConfig
