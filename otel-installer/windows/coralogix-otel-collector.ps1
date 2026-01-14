@@ -794,15 +794,6 @@ function Install-CollectorMSI {
     }
 }
 
-function Install-Collector {
-    param(
-        [string]$Version,
-        [string]$Arch
-    )
-    
-    Install-CollectorMSI -Version $Version -Arch $Arch
-}
-
 function Install-NSSM {
     Write-Log "Checking for NSSM (Non-Sucking Service Manager)..."
     
@@ -1564,7 +1555,7 @@ shows the actual merged configuration after applying Fleet Management settings.
         exit 0
     }
     
-    Install-Collector -Version $version -Arch $arch
+    Install-CollectorMSI -Version $version -Arch $arch
     
     if ($Config) {
         Write-Log "Using custom config from: $Config"
