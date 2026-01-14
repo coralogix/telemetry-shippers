@@ -705,80 +705,102 @@ function Test-Ports {
     }
 }
 
-function Install-Collector {
+function Install-CollectorMSI {
+    <#
+    .SYNOPSIS
+    Downloads and installs the OpenTelemetry Collector using MSI installer.
+    
+    .DESCRIPTION
+    Handles MSI download, installation, and verification. Used by both regular
+    and supervisor mode installations.
+    
+    .PARAMETER Version
+    The collector version to install.
+    
+    .PARAMETER Arch
+    The architecture (amd64, arm64).
+    
+    .PARAMETER RemoveService
+    If true, removes the service created by MSI after installation.
+    Used for supervisor mode where the supervisor manages the collector.
+    #>
     param(
         [string]$Version,
-        [string]$Arch
+        [string]$Arch,
+        [switch]$RemoveService = $false
     )
     
     # Map architecture names (MSI uses x64, tar.gz uses amd64)
     $msiArch = if ($Arch -eq "amd64") { "x64" } else { $Arch }
     
-    # Try MSI installer first (preferred for Windows, especially amd64/x64)
     $msiName = "otelcol-contrib_${Version}_windows_${msiArch}.msi"
     $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${Version}/${msiName}"
-    $workDir = Join-Path $env:TEMP "${SERVICE_NAME}-install-$(Get-Timestamp)-$PID"
+    $workDir = Join-Path $env:TEMP "${SERVICE_NAME}-msi-$(Get-Timestamp)-$PID"
     
     try {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+        $originalLocation = Get-Location
         Set-Location $workDir
         
-        # Try MSI installer first
-        Write-Log "Attempting to download MSI installer..."
+        Write-Log "Downloading OpenTelemetry Collector ${Version} MSI..."
         Write-Log "Download URL: $msiUrl"
+        Invoke-Download -Url $msiUrl -Destination $msiName
         
-        try {
-            Invoke-Download -Url $msiUrl -Destination $msiName
-            Write-Log "MSI installer downloaded successfully"
+        Write-Log "Installing OpenTelemetry Collector from MSI..."
+        $msiPath = Join-Path $workDir $msiName
+        $msiArgs = "/i `"$msiPath`" /qn /norestart"
+        $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
+        
+        if ($msiResult.ExitCode -ne 0 -and $msiResult.ExitCode -ne 3010) {
+            Write-Error "MSI installation failed with exit code: $($msiResult.ExitCode)"
+        }
+        # Exit code 3010 means success but requires reboot (acceptable)
+        Write-Log "MSI installation completed successfully"
+        
+        # Verify binary exists at expected location
+        if (-not (Test-Path $BINARY_PATH)) {
+            Write-Error "Collector binary not found at expected location: $BINARY_PATH"
+        }
+        Write-Log "Collector binary installed at: $BINARY_PATH"
+        
+        # Handle the service created by MSI
+        $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+        if ($msiService) {
+            Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
             
-            # Install MSI silently (MSI installer creates its own service, we'll remove it and create ours)
-            Write-Log "Installing OpenTelemetry Collector from MSI..."
-            $msiPath = Join-Path $workDir $msiName
-            
-            # MSI installer typically installs to Program Files\OpenTelemetry\Collector
-            # We'll use /qn for quiet install and let it install to default location, then use that binary
-            $msiArgs = "/i `"$msiPath`" /qn /norestart"
-            $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
-            
-            if ($msiResult.ExitCode -eq 0 -or $msiResult.ExitCode -eq 3010) {
-                # Exit code 3010 means success but requires reboot (acceptable)
-                Write-Log "MSI installation completed successfully"
-                
-                # Verify binary exists at expected location
-                if (-not (Test-Path $BINARY_PATH)) {
-                    Write-Error "Binary not found at expected location after MSI install: $BINARY_PATH"
-                }
-                
-                Write-Log "Collector binary installed at: $BINARY_PATH"
-                
-                # MSI installer creates a service - we'll reconfigure it with our settings
-                $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
-                if ($msiService) {
-                    Write-Log "MSI-installed service detected, will be reconfigured with custom settings..."
-                    Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
-                }
-                
-                # Verify installation
-                $versionOutput = & $BINARY_PATH --version 2>&1
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Error "Installation verification failed"
-                }
-                
-                Write-Log "Collector installed successfully via MSI: $versionOutput"
-                return
+            if ($RemoveService) {
+                Write-Log "Removing MSI-created collector service (supervisor will manage collector)..."
+                & sc.exe delete $SERVICE_NAME 2>&1 | Out-Null
+                Write-Log "Collector service removed"
             } else {
-                Write-Error "MSI installation failed with exit code $($msiResult.ExitCode)"
+                Write-Log "MSI-installed service detected, will be reconfigured with custom settings..."
             }
         }
-        catch {
-            Write-Error "MSI installer failed: $($_.Exception.Message)"
+        
+        # Verify installation
+        $versionOutput = & $BINARY_PATH --version 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Installation verification failed"
         }
+        Write-Log "Collector installed successfully: $versionOutput"
+        
+        Set-Location $originalLocation
     }
     finally {
         if (Test-Path $workDir) {
             Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
+}
+
+function Install-Collector {
+    param(
+        [string]$Version,
+        [string]$Arch
+    )
+    
+    Install-CollectorMSI -Version $Version -Arch $Arch
 }
 
 function Install-NSSM {
@@ -850,40 +872,9 @@ function Install-Supervisor {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
         Set-Location $workDir
         
-        # Install collector binary using MSI (same as regular mode, then remove the service)
+        # Install collector binary using MSI (remove service since supervisor manages the collector)
         Write-Log "Installing OpenTelemetry Collector binary (required for supervisor)..."
-        $msiArch = if ($Arch -eq "amd64") { "x64" } else { $Arch }
-        $msiName = "otelcol-contrib_${CollectorVer}_windows_${msiArch}.msi"
-        $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${CollectorVer}/${msiName}"
-        
-        Write-Log "Downloading OpenTelemetry Collector ${CollectorVer} MSI..."
-        Invoke-Download -Url $msiUrl -Destination $msiName
-        
-        Write-Log "Installing collector from MSI..."
-        $msiPath = Join-Path $workDir $msiName
-        $msiArgs = "/i `"$msiPath`" /qn /norestart"
-        $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
-        
-        if ($msiResult.ExitCode -ne 0 -and $msiResult.ExitCode -ne 3010) {
-            Write-Error "MSI installation failed with exit code: $($msiResult.ExitCode)"
-        }
-        Write-Log "MSI installation completed"
-        
-        # Verify binary exists
-        if (-not (Test-Path $BINARY_PATH)) {
-            Write-Error "Collector binary not found at expected location: $BINARY_PATH"
-        }
-        Write-Log "Collector binary installed at: $BINARY_PATH"
-        
-        # Remove the service created by MSI (supervisor will manage the collector directly)
-        $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
-        if ($msiService) {
-            Write-Log "Removing MSI-created collector service (supervisor will manage collector)..."
-            Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Seconds 2
-            & sc.exe delete $SERVICE_NAME 2>&1 | Out-Null
-            Write-Log "Collector service removed"
-        }
+        Install-CollectorMSI -Version $CollectorVer -Arch $Arch -RemoveService
         
         # Install supervisor
         Write-Log "Creating required directories for supervisor..."
