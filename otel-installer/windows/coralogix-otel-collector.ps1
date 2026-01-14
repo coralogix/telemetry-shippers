@@ -534,15 +534,6 @@ function Get-Timestamp {
     return Get-Date -Format "yyyyMMdd-HHmmss"
 }
 
-function Test-TarAvailable {
-    try {
-        $null = & tar --version 2>&1
-        return $true
-    }
-    catch {
-        return $false
-    }
-}
 
 function Invoke-Download {
     param(
@@ -859,39 +850,40 @@ function Install-Supervisor {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
         Set-Location $workDir
         
-        # Install collector binary first
+        # Install collector binary using MSI (same as regular mode, then remove the service)
         Write-Log "Installing OpenTelemetry Collector binary (required for supervisor)..."
-        $collectorTarName = "otelcol-contrib_${CollectorVer}_windows_${Arch}.tar.gz"
-        $collectorTarUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${CollectorVer}/${collectorTarName}"
+        $msiArch = if ($Arch -eq "amd64") { "x64" } else { $Arch }
+        $msiName = "otelcol-contrib_${CollectorVer}_windows_${msiArch}.msi"
+        $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${CollectorVer}/${msiName}"
         
-        Write-Log "Downloading OpenTelemetry Collector ${CollectorVer}..."
-        $collectorChecksum = Get-OtelChecksum -Version $CollectorVer -Filename $collectorTarName
-        if ($collectorChecksum) {
-            Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName -ExpectedChecksum $collectorChecksum
-        }
-        else {
-            Write-Log "Checksum not available - downloading without verification"
-            Invoke-Download -Url $collectorTarUrl -Destination $collectorTarName
-        }
+        Write-Log "Downloading OpenTelemetry Collector ${CollectorVer} MSI..."
+        Invoke-Download -Url $msiUrl -Destination $msiName
         
-        Write-Log "Extracting Collector..."
-        # Use tar command (available in Windows 10/11) to extract .tar.gz
-        if (-not (Test-TarAvailable)) {
-            Write-Error "tar command is not available. This script requires Windows 10 version 1803 or later, or Windows Server 2019 or later. Please install tar or use a different extraction method."
-        }
-        $tarResult = & tar -xzf $collectorTarName 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to extract collector archive: $tarResult"
-        }
+        Write-Log "Installing collector from MSI..."
+        $msiPath = Join-Path $workDir $msiName
+        $msiArgs = "/i `"$msiPath`" /qn /norestart"
+        $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
         
-        $extractedBinary = Get-ChildItem -Path . -Filter $BINARY_NAME -Recurse | Select-Object -First 1
-        if (-not $extractedBinary) {
-            Write-Error "Expected otelcol-contrib binary after extraction."
+        if ($msiResult.ExitCode -ne 0 -and $msiResult.ExitCode -ne 3010) {
+            Write-Error "MSI installation failed with exit code: $($msiResult.ExitCode)"
         }
+        Write-Log "MSI installation completed"
         
-        Write-Log "Placing Collector binary into $INSTALL_DIR..."
-        New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
-        Copy-Item -Path $extractedBinary.FullName -Destination $BINARY_PATH -Force
+        # Verify binary exists
+        if (-not (Test-Path $BINARY_PATH)) {
+            Write-Error "Collector binary not found at expected location: $BINARY_PATH"
+        }
+        Write-Log "Collector binary installed at: $BINARY_PATH"
+        
+        # Remove the service created by MSI (supervisor will manage the collector directly)
+        $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+        if ($msiService) {
+            Write-Log "Removing MSI-created collector service (supervisor will manage collector)..."
+            Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
+            & sc.exe delete $SERVICE_NAME 2>&1 | Out-Null
+            Write-Log "Collector service removed"
+        }
         
         # Install supervisor
         Write-Log "Creating required directories for supervisor..."
