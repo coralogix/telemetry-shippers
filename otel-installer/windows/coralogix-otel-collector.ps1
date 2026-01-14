@@ -24,6 +24,10 @@
 .PARAMETER CollectorVersion
     Collector version (supervisor mode only, default: same as Version)
 
+.PARAMETER SupervisorMsi
+    Path to a local OpAMP Supervisor MSI file (supervisor mode only)
+    When provided, uses the local MSI instead of downloading from GitHub releases
+
 .PARAMETER MemoryLimit
     Total memory in MiB to allocate to the collector (default: 512)
     Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
@@ -59,6 +63,10 @@
 .EXAMPLE
     # Install with supervisor
     $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor
+
+.EXAMPLE
+    # Install with supervisor using local MSI
+    $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
     
 .EXAMPLE
     # Install with custom memory limit
@@ -107,6 +115,9 @@ param(
     [string]$CollectorVersion = "",
     
     [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$SupervisorMsi = "",
+    
+    [Parameter(ValueFromPipelineByPropertyName)]
     [int]$MemoryLimit = 512,
     
     [Parameter(ValueFromPipelineByPropertyName)]
@@ -148,14 +159,11 @@ $SUPERVISOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "config.yaml"
 $SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "collector.yaml"
 $SUPERVISOR_STATE_DIR = "${env:ProgramData}\OpenTelemetry\Supervisor\state"
 $SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_CONFIG_DIR "logs"
-$NSSM_VERSION = "2.24"
-$NSSM_DOWNLOAD_URL = "https://nssm.cc/release/nssm-${NSSM_VERSION}.zip"
-$NSSM_INSTALL_DIR = "${env:ProgramFiles}\NSSM"
-$NSSM_PATH = Join-Path $NSSM_INSTALL_DIR "nssm.exe"
 $CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
 $OTEL_RELEASES_BASE_URL = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
 $OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
 $OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
+$OTEL_SUPERVISOR_MSI_CHECKSUMS_FILE = "checksums.txt"
 
 # Global variables
 $script:UserSetMemoryLimit = $false
@@ -196,6 +204,8 @@ Options:
                                     (default: same as -Version)
     -CollectorVersion <ver>         Collector version (supervisor mode only)
                                     (default: same as -Version)
+    -SupervisorMsi <path>           Path to local OpAMP Supervisor MSI file
+                                    (supervisor mode only)
     -MemoryLimit <MiB>              Total memory in MiB to allocate to the collector
                                     Sets OTEL_MEMORY_LIMIT_MIB environment variable
                                     Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}
@@ -231,6 +241,9 @@ Examples:
 
     # Install with supervisor using specific versions
     `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
+
+    # Install with supervisor using local MSI
+    `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
 
     # Install with custom memory limit
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
@@ -754,53 +767,97 @@ function Install-CollectorMSI {
     }
 }
 
-function Install-NSSM {
-    Write-Log "Checking for NSSM (Non-Sucking Service Manager)..."
+function Install-SupervisorMSI {
+    <#
+    .SYNOPSIS
+    Downloads and installs the OpAMP Supervisor using MSI installer.
     
-    if (Test-Path $NSSM_PATH) {
-        Write-Log "NSSM already installed at: $NSSM_PATH"
-        return
-    }
+    .DESCRIPTION
+    Handles MSI download or uses a provided local MSI file, then installs via msiexec.
     
-    Write-Log "Downloading NSSM ${NSSM_VERSION}..."
-    $workDir = Join-Path $env:TEMP "nssm-install-$(Get-Timestamp)-$PID"
+    .PARAMETER Version
+    The supervisor version to install.
+    
+    .PARAMETER Arch
+    The architecture (amd64, arm64).
+    
+    .PARAMETER LocalMsiPath
+    Optional path to a local MSI file. If provided, skips download.
+    #>
+    param(
+        [string]$Version,
+        [string]$Arch,
+        [string]$LocalMsiPath = ""
+    )
+    
+    $workDir = Join-Path $env:TEMP "${SUPERVISOR_SERVICE_NAME}-msi-$(Get-Timestamp)-$PID"
     
     try {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+        $originalLocation = Get-Location
         Set-Location $workDir
         
-        $zipFile = "nssm-${NSSM_VERSION}.zip"
-        Invoke-Download -Url $NSSM_DOWNLOAD_URL -Destination $zipFile
-        
-        Write-Log "Extracting NSSM..."
-        Expand-Archive -Path $zipFile -DestinationPath . -Force
-        
-        # Find the 64-bit executable
-        $nssmExe = Get-ChildItem -Path . -Filter "nssm.exe" -Recurse | 
-            Where-Object { $_.FullName -like "*win64*" } | 
-            Select-Object -First 1
-        
-        if (-not $nssmExe) {
-            # Fallback to any nssm.exe
-            $nssmExe = Get-ChildItem -Path . -Filter "nssm.exe" -Recurse | Select-Object -First 1
+        if ($LocalMsiPath) {
+            # Use provided local MSI
+            Write-Log "Using local OpAMP Supervisor MSI: $LocalMsiPath"
+            $msiPath = $LocalMsiPath
+        }
+        else {
+            # Download MSI from GitHub releases
+            $msiName = "opampsupervisor_${Version}_windows_${Arch}.msi"
+            $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${Version}/${msiName}"
+            
+            Write-Log "Downloading OpAMP Supervisor ${Version} MSI..."
+            Write-Log "Download URL: $msiUrl"
+            
+            $supervisorChecksum = Get-SupervisorChecksum -Version $Version -Filename $msiName
+            if ($supervisorChecksum) {
+                Invoke-Download -Url $msiUrl -Destination $msiName -ExpectedChecksum $supervisorChecksum
+            }
+            else {
+                Write-Log "Checksum not available - downloading without verification"
+                Invoke-Download -Url $msiUrl -Destination $msiName
+            }
+            
+            $msiPath = Join-Path $workDir $msiName
         }
         
-        if (-not $nssmExe) {
-            Write-Error "Failed to find nssm.exe after extraction"
+        Write-Log "Installing OpAMP Supervisor from MSI..."
+        $msiArgs = "/i `"$msiPath`" /qn /norestart"
+        $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
+        
+        if ($msiResult.ExitCode -ne 0 -and $msiResult.ExitCode -ne 3010) {
+            Write-Error "Supervisor MSI installation failed with exit code: $($msiResult.ExitCode)"
+        }
+        Write-Log "Supervisor MSI installation completed successfully"
+        
+        # Verify supervisor binary exists
+        if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
+            # Check common MSI installation paths
+            $possiblePaths = @(
+                "${env:ProgramFiles}\OpenTelemetry\Supervisor\opampsupervisor.exe",
+                "${env:ProgramFiles}\OpAMP Supervisor\opampsupervisor.exe",
+                "${env:ProgramFiles}\opampsupervisor\opampsupervisor.exe"
+            )
+            foreach ($path in $possiblePaths) {
+                if (Test-Path $path) {
+                    Write-Log "Found supervisor binary at: $path"
+                    $script:SUPERVISOR_BINARY_PATH = $path
+                    break
+                }
+            }
+            if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
+                Write-Warn "Supervisor binary not found at expected location: $SUPERVISOR_BINARY_PATH"
+                Write-Warn "MSI may have installed to a different location"
+            }
+        }
+        else {
+            Write-Log "Supervisor binary installed to: $SUPERVISOR_BINARY_PATH"
         }
         
-        Write-Log "Installing NSSM to: $NSSM_INSTALL_DIR"
-        New-Item -ItemType Directory -Path $NSSM_INSTALL_DIR -Force | Out-Null
-        Copy-Item -Path $nssmExe.FullName -Destination $NSSM_PATH -Force
-        
-        if (-not (Test-Path $NSSM_PATH)) {
-            Write-Error "Failed to install NSSM"
-        }
-        
-        Write-Log "NSSM installed successfully"
+        Set-Location $originalLocation
     }
     finally {
-        Set-Location $env:TEMP
         if (Test-Path $workDir) {
             Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
         }
@@ -811,15 +868,13 @@ function Install-Supervisor {
     param(
         [string]$SupervisorVer,
         [string]$CollectorVer,
-        [string]$Arch
+        [string]$Arch,
+        [string]$MsiPath = ""
     )
     
     $workDir = Join-Path $env:TEMP "${SUPERVISOR_SERVICE_NAME}-install-$(Get-Timestamp)-$PID"
     
     try {
-        # Install NSSM first (required for running supervisor as a service)
-        Install-NSSM
-        
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
         Set-Location $workDir
         
@@ -827,41 +882,14 @@ function Install-Supervisor {
         Write-Log "Installing OpenTelemetry Collector binary (required for supervisor)..."
         Install-CollectorMSI -Version $CollectorVer -Arch $Arch -RemoveService
         
-        # Install supervisor
+        # Install supervisor via MSI
         Write-Log "Creating required directories for supervisor..."
         New-Item -ItemType Directory -Path $SUPERVISOR_INSTALL_DIR -Force | Out-Null
         New-Item -ItemType Directory -Path $SUPERVISOR_CONFIG_DIR -Force | Out-Null
         New-Item -ItemType Directory -Path $SUPERVISOR_STATE_DIR -Force | Out-Null
         New-Item -ItemType Directory -Path $SUPERVISOR_LOG_DIR -Force | Out-Null
         
-        # Windows supervisor is distributed as a direct .exe file (not tar.gz)
-        $supervisorExeName = "opampsupervisor_${SupervisorVer}_windows_${Arch}.exe"
-        $supervisorExeUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SupervisorVer}/${supervisorExeName}"
-        
-        Write-Log "Downloading OpAMP Supervisor ${SupervisorVer}..."
-        Write-Log "Download URL: $supervisorExeUrl"
-        $supervisorChecksum = Get-SupervisorChecksum -Version $SupervisorVer -Filename $supervisorExeName
-        if ($supervisorChecksum) {
-            Invoke-Download -Url $supervisorExeUrl -Destination $supervisorExeName -ExpectedChecksum $supervisorChecksum
-        }
-        else {
-            Write-Log "Checksum not available - downloading without verification"
-            Invoke-Download -Url $supervisorExeUrl -Destination $supervisorExeName
-        }
-        
-        # Verify download succeeded
-        if (-not (Test-Path $supervisorExeName)) {
-            Write-Error "Failed to download supervisor binary: $supervisorExeName"
-        }
-        
-        Write-Log "Installing OpAMP Supervisor ${SupervisorVer}..."
-        Copy-Item -Path $supervisorExeName -Destination $SUPERVISOR_BINARY_PATH -Force
-        
-        # Verify installation
-        if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
-            Write-Error "Failed to install supervisor binary to: $SUPERVISOR_BINARY_PATH"
-        }
-        Write-Log "Supervisor binary installed to: $SUPERVISOR_BINARY_PATH"
+        Install-SupervisorMSI -Version $SupervisorVer -Arch $Arch -LocalMsiPath $MsiPath
         
         # Stop existing service if running
         $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
@@ -931,16 +959,6 @@ telemetry:
     
     Get-EmptyCollectorConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
     
-    # Create Windows Service using NSSM
-    $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
-    if ($existingService) {
-        Write-Log "Removing existing supervisor service..."
-        Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
-        & $NSSM_PATH remove $SUPERVISOR_SERVICE_NAME confirm 2>&1 | Out-Null
-        Start-Sleep -Seconds 2
-    }
-    
-    Write-Log "Creating Windows Service for supervisor using NSSM..."
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
@@ -950,44 +968,53 @@ telemetry:
     }
     Write-Log "Supervisor binary found at: $SUPERVISOR_BINARY_PATH"
     
-    # Verify NSSM exists
-    if (-not (Test-Path $NSSM_PATH)) {
-        Write-Error "NSSM not found at: $NSSM_PATH"
+    Write-Log "Configuring supervisor service..."
+    
+    # Check if MSI already created the service
+    $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
+    if ($existingService) {
+        Write-Log "Service already exists, reconfiguring..."
+        Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
+        
+        # Update service configuration
+        Set-Service -Name $SUPERVISOR_SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
+        $serviceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
+        & cmd.exe /c "sc.exe config $SUPERVISOR_SERVICE_NAME binPath= `"$serviceBinPath`"" | Out-Null
+    }
+    else {
+        # Create service using native Windows service management
+        Write-Log "Creating Windows Service for supervisor..."
+        $serviceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
+        try {
+            New-Service -Name $SUPERVISOR_SERVICE_NAME `
+                -BinaryPathName $serviceBinPath `
+                -DisplayName $serviceDisplayName `
+                -Description $serviceDescription `
+                -StartupType Automatic `
+                -ErrorAction Stop | Out-Null
+            Write-Log "Service created successfully"
+        }
+        catch {
+            Write-Error "Failed to create supervisor service: $_"
+        }
     }
     
-    # Install service using NSSM
-    Write-Log "Installing service with NSSM..."
-    $nssmResult = & $NSSM_PATH install $SUPERVISOR_SERVICE_NAME $SUPERVISOR_BINARY_PATH 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to install supervisor service with NSSM: $nssmResult"
-    }
-    
-    # Configure service parameters
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppParameters "--config `"$SUPERVISOR_CONFIG_FILE`"" | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppDirectory $SUPERVISOR_INSTALL_DIR | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME DisplayName $serviceDisplayName | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME Description $serviceDescription | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME Start SERVICE_AUTO_START | Out-Null
-    
-    # Configure stdout/stderr logging
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStdout "$SUPERVISOR_LOG_DIR\supervisor-stdout.log" | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStderr "$SUPERVISOR_LOG_DIR\supervisor-stderr.log" | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStdoutCreationDisposition 4 | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppStderrCreationDisposition 4 | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppRotateFiles 1 | Out-Null
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppRotateBytes 10485760 | Out-Null
-    
-    # Set environment variables using NSSM
-    $envString = "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)"
-    $envString += "`nOTEL_MEMORY_LIMIT_MIB=$MemoryLimit"
-    $envString += "`nOTEL_LISTEN_INTERFACE=$ListenInterface"
+    # Set environment variables via registry
+    Write-Log "Setting service environment variables..."
+    $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
+    $envVars = @(
+        "CORALOGIX_PRIVATE_KEY=$($env:CORALOGIX_PRIVATE_KEY)",
+        "OTEL_MEMORY_LIMIT_MIB=$MemoryLimit",
+        "OTEL_LISTEN_INTERFACE=$ListenInterface"
+    )
     if ($env:CORALOGIX_DOMAIN) {
-        $envString += "`nCORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
+        $envVars += "CORALOGIX_DOMAIN=$($env:CORALOGIX_DOMAIN)"
     }
-    & $NSSM_PATH set $SUPERVISOR_SERVICE_NAME AppEnvironmentExtra $envString | Out-Null
+    Set-ItemProperty -Path $serviceRegPath -Name "Environment" -Value $envVars -Type MultiString -ErrorAction SilentlyContinue
     
     Write-Log "Starting supervisor service..."
-    & $NSSM_PATH start $SUPERVISOR_SERVICE_NAME | Out-Null
+    Start-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
     
     Write-Log "Supervisor configured and started"
     
@@ -1161,15 +1188,8 @@ function Stop-ServiceWindows {
         $service = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
         if ($service) {
             Write-Log "Stopping and removing OpAMP Supervisor service..."
-            # Use NSSM if available, otherwise fall back to sc.exe
-            if (Test-Path $NSSM_PATH) {
-                & $NSSM_PATH stop $SUPERVISOR_SERVICE_NAME 2>&1 | Out-Null
-                & $NSSM_PATH remove $SUPERVISOR_SERVICE_NAME confirm 2>&1 | Out-Null
-            }
-            else {
-                Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
-                & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
-            }
+            Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
+            & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
         }
     }
     else {
@@ -1282,10 +1302,6 @@ function Remove-PackageWindows {
             if (Test-Path $SUPERVISOR_INSTALL_DIR) {
                 Write-Log "Removing supervisor install directory: $SUPERVISOR_INSTALL_DIR"
                 Remove-Item -Path $SUPERVISOR_INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
-            }
-            if (Test-Path $NSSM_INSTALL_DIR) {
-                Write-Log "Removing NSSM: $NSSM_INSTALL_DIR"
-                Remove-Item -Path $NSSM_INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
             }
         }
     }
@@ -1413,6 +1429,13 @@ function Main {
         if ($CollectorVersion) {
             Write-Error "-CollectorVersion can only be used with -Supervisor"
         }
+        if ($SupervisorMsi) {
+            Write-Error "-SupervisorMsi can only be used with -Supervisor"
+        }
+    }
+    
+    if ($SupervisorMsi -and -not (Test-Path $SupervisorMsi)) {
+        Write-Error "Supervisor MSI file not found: $SupervisorMsi"
     }
     
     if ($Config -and -not (Test-Path $Config)) {
@@ -1484,7 +1507,7 @@ function Main {
         Write-Log "Supervisor version: $supervisorVer"
         Write-Log "Collector version: $collectorVer"
         
-        Install-Supervisor -SupervisorVer $supervisorVer -CollectorVer $collectorVer -Arch $arch
+        Install-Supervisor -SupervisorVer $supervisorVer -CollectorVer $collectorVer -Arch $arch -MsiPath $SupervisorMsi
         
         $summary = @"
 

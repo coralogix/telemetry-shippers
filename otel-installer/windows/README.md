@@ -79,6 +79,12 @@ Install with supervisor using specific versions:
 $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.1 -CollectorVersion 0.140.0
 ```
 
+Install with supervisor using a local MSI file:
+
+```powershell
+$env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
+```
+
 ## Script Parameters
 
 | Parameter | Description |
@@ -88,6 +94,7 @@ $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private
 | `-Supervisor` | Install with OpAMP Supervisor mode |
 | `-SupervisorVersion <version>` | Supervisor version (supervisor mode only) |
 | `-CollectorVersion <version>` | Collector version (supervisor mode only) |
+| `-SupervisorMsi <path>` | Path to local OpAMP Supervisor MSI file |
 | `-Uninstall` | Remove the collector (keeps config) |
 | `-Uninstall -Purge` | Remove the collector and all configuration |
 | `-Help` | Show help message |
