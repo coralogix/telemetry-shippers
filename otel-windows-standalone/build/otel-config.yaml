@@ -42,7 +42,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.128.1
+        helm.chart.opentelemetry-agent.version: 0.128.6
     server:
       http:
         endpoint: https://ingress.eu2.coralogix.com/opamp/v1
@@ -70,6 +70,30 @@ processors:
     detectors:
     - system
     - env
+    override: false
+    system:
+      resource_attributes:
+        host.cpu.cache.l2.size:
+          enabled: true
+        host.cpu.family:
+          enabled: true
+        host.cpu.model.id:
+          enabled: true
+        host.cpu.model.name:
+          enabled: true
+        host.cpu.stepping:
+          enabled: true
+        host.cpu.vendor.id:
+          enabled: true
+        host.id:
+          enabled: true
+        host.ip:
+          enabled: true
+        host.mac:
+          enabled: true
+        os.description:
+          enabled: true
+    timeout: 2s
   resourcedetection/env:
     detectors:
     - system
@@ -116,6 +140,8 @@ processors:
         != nil
       - set(attributes["http.request.referrer"], attributes["cs(Referer)"]) where
         attributes["cs(Referer)"] != nil
+      - set(attributes["http.server.request.duration_ms"], Int(attributes["time-taken"]))
+        where attributes["time-taken"] != nil
       - delete_key(attributes, "c-ip")
       - delete_key(attributes, "cs-method")
       - delete_key(attributes, "sc-status")
@@ -123,6 +149,9 @@ processors:
       - delete_key(attributes, "cs-uri-stem")
       - delete_key(attributes, "cs-uri-query")
       - delete_key(attributes, "cs(Referer)")
+      - delete_key(attributes, "time-taken")
+      - delete_key(attributes, "sc-win32-status")
+      - delete_key(attributes, "s-port")
   transform/prometheus:
     error_mode: ignore
     metric_statements:
@@ -205,8 +234,33 @@ receivers:
   hostmetrics:
     collection_interval: 10s
     scrapers:
-      cpu: {}
-      memory: {}
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk: null
+      filesystem:
+        exclude_mount_points:
+          match_type: strict
+          mount_points:
+          - ""
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network: null
+      paging: null
+      process:
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.threads:
+            enabled: true
+        mute_process_all_errors: true
+  iis:
+    collection_interval: 10s
   otlp:
     protocols:
       grpc:
@@ -228,58 +282,6 @@ receivers:
     channel: Security
   windowseventlog/system:
     channel: System
-  windowsperfcounters:
-    collection_interval: 10s
-    perfcounters:
-    - counters:
-      - name: '% Processor Time'
-      - name: '% User Time'
-      - name: '% Privileged Time'
-      instances:
-      - '*'
-      object: Processor
-    - counters:
-      - name: Available MBytes
-      - name: Committed Bytes
-      - name: Cache Faults/sec
-      object: Memory
-    - counters:
-      - name: '% Free Space'
-      - name: Free Megabytes
-      - name: Current Disk Queue Length
-      - name: '% Disk Time'
-      instances:
-      - '*'
-      object: LogicalDisk
-    - counters:
-      - name: '% Disk Time'
-      - name: Disk Reads/sec
-      - name: Disk Writes/sec
-      - name: Avg. Disk sec/Read
-      - name: Avg. Disk sec/Write
-      instances:
-      - '*'
-      object: PhysicalDisk
-    - counters:
-      - name: Bytes Total/sec
-      - name: Packets/sec
-      - name: Packets Received Errors
-      - name: Packets Outbound Errors
-      instances:
-      - '*'
-      object: Network Interface
-    - counters:
-      - name: Context Switches/sec
-      - name: Processor Queue Length
-      - name: System Up Time
-      - name: Processes
-      - name: Threads
-      object: System
-    - counters:
-      - name: '% Usage'
-      instances:
-      - '*'
-      object: Paging File
 service:
   extensions:
   - health_check
@@ -299,11 +301,11 @@ service:
       - transform/iis
       - batch
       receivers:
+      - otlp
       - windowseventlog/system
       - windowseventlog/application
       - windowseventlog/security
       - filelog/iis
-      - otlp
     logs/resource_catalog:
       exporters:
       - coralogix/resource_catalog
@@ -327,10 +329,10 @@ service:
       - transform/prometheus
       - batch
       receivers:
-      - hostmetrics
-      - windowsperfcounters
       - otlp
+      - hostmetrics
       - prometheus
+      - iis
     traces:
       exporters:
       - debug
