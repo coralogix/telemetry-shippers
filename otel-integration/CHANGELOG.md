@@ -2,8 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.265 / 2026-01-15
+- [Feat] Add cloud tags collection for Infra Explore by enabling `ec2.tags` and `azure.tags` in the `resourcedetection/entity` processor.
+- [Feat] Add Azure cloud support for Infra Explore by mapping `azure.vm.size` to `host.type` in the host entity events pipeline when provider is Azure.
+
 ### v0.0.264 / 2026-01-13
-- [Feat] Add `systemdReceiver` preset which gathers metrics for locally running systemd units on standalone linux deployments with optional scope and units configuration.
 - [Fix] Apply `presets.spanMetrics.histogramBuckets` value to `dbMetrics`.
 
 ### v0.0.263 / 2026-01-12

@@ -47,6 +47,15 @@ opentelemetry-agent:
       enabled: true
       # Enables dynamic subsystem naming based on _SYSTEMD_UNIT or SYSLOG_IDENTIFIER
       dynamicSubsystemName: true
+    
+    # Collects systemd unit state metrics
+    systemdReceiver:
+      enabled: true
+      collectionInterval: "30s"
+      scope: system  # system or user
+      # units:
+      #   - docker.service
+      #   - sshd.service
  
     collectorMetrics:
       enabled: true
