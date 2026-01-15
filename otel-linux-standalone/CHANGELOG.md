@@ -6,4 +6,3 @@
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.128.8
 - [Feat] Add systemdReceiver
-
