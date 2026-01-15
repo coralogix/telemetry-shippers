@@ -831,29 +831,40 @@ function Install-SupervisorMSI {
         }
         Write-Log "Supervisor MSI installation completed successfully"
         
-        # Verify supervisor binary exists
-        if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
-            # Check common MSI installation paths
-            $possiblePaths = @(
-                "${env:ProgramFiles}\OpenTelemetry\Supervisor\opampsupervisor.exe",
-                "${env:ProgramFiles}\OpAMP Supervisor\opampsupervisor.exe",
-                "${env:ProgramFiles}\opampsupervisor\opampsupervisor.exe"
-            )
-            foreach ($path in $possiblePaths) {
-                if (Test-Path $path) {
-                    Write-Log "Found supervisor binary at: $path"
-                    $script:SUPERVISOR_BINARY_PATH = $path
-                    break
-                }
-            }
-            if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
-                Write-Warn "Supervisor binary not found at expected location: $SUPERVISOR_BINARY_PATH"
-                Write-Warn "MSI may have installed to a different location"
+        # Find the supervisor binary - check multiple possible locations
+        $script:SupervisorBinaryFound = $null
+        $possiblePaths = @(
+            $SUPERVISOR_BINARY_PATH,
+            "${env:ProgramFiles}\OpenTelemetry\Supervisor\opampsupervisor.exe",
+            "${env:ProgramFiles}\OpAMP Supervisor\opampsupervisor.exe",
+            "${env:ProgramFiles}\opampsupervisor\opampsupervisor.exe",
+            "${env:ProgramFiles}\OpenTelemetry Collector\opampsupervisor.exe",
+            "${env:ProgramFiles}\otelcol-contrib\opampsupervisor.exe"
+        )
+        
+        foreach ($path in $possiblePaths) {
+            if (Test-Path $path) {
+                Write-Log "Found supervisor binary at: $path"
+                $script:SupervisorBinaryFound = $path
+                break
             }
         }
-        else {
-            Write-Log "Supervisor binary installed to: $SUPERVISOR_BINARY_PATH"
+        
+        # Also search Program Files recursively for opampsupervisor.exe
+        if (-not $script:SupervisorBinaryFound) {
+            Write-Log "Searching Program Files for opampsupervisor.exe..."
+            $found = Get-ChildItem -Path "${env:ProgramFiles}" -Filter "opampsupervisor.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) {
+                Write-Log "Found supervisor binary at: $($found.FullName)"
+                $script:SupervisorBinaryFound = $found.FullName
+            }
         }
+        
+        if (-not $script:SupervisorBinaryFound) {
+            Write-Error "Supervisor binary not found after MSI installation. Please check the MSI installation logs."
+        }
+        
+        Write-Log "Supervisor binary location: $($script:SupervisorBinaryFound)"
         
         Set-Location $originalLocation
     }
@@ -910,6 +921,15 @@ function Install-Supervisor {
 function Configure-Supervisor {
     Write-Log "Configuring OpAMP Supervisor..."
     
+    # Use the found binary path or fall back to default
+    $supervisorBinary = if ($script:SupervisorBinaryFound) { $script:SupervisorBinaryFound } else { $SUPERVISOR_BINARY_PATH }
+    
+    # Verify binary exists before creating service
+    if (-not (Test-Path $supervisorBinary)) {
+        Write-Error "Supervisor binary not found at: $supervisorBinary"
+    }
+    Write-Log "Using supervisor binary at: $supervisorBinary"
+    
     $domain = $env:CORALOGIX_DOMAIN
     $endpointUrl = "https://ingress.${domain}/opamp/v1"
     
@@ -962,12 +982,6 @@ telemetry:
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
     
-    # Verify binary exists before creating service
-    if (-not (Test-Path $SUPERVISOR_BINARY_PATH)) {
-        Write-Error "Supervisor binary not found at: $SUPERVISOR_BINARY_PATH"
-    }
-    Write-Log "Supervisor binary found at: $SUPERVISOR_BINARY_PATH"
-    
     Write-Log "Configuring supervisor service..."
     
     # Check if MSI already created the service
@@ -979,13 +993,13 @@ telemetry:
         
         # Update service configuration
         Set-Service -Name $SUPERVISOR_SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
-        $serviceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
+        $serviceBinPath = "`"$supervisorBinary`" --config `"$SUPERVISOR_CONFIG_FILE`""
         & cmd.exe /c "sc.exe config $SUPERVISOR_SERVICE_NAME binPath= `"$serviceBinPath`"" | Out-Null
     }
     else {
         # Create service using native Windows service management
         Write-Log "Creating Windows Service for supervisor..."
-        $serviceBinPath = "`"$SUPERVISOR_BINARY_PATH`" --config `"$SUPERVISOR_CONFIG_FILE`""
+        $serviceBinPath = "`"$supervisorBinary`" --config `"$SUPERVISOR_CONFIG_FILE`""
         try {
             New-Service -Name $SUPERVISOR_SERVICE_NAME `
                 -BinaryPathName $serviceBinPath `
