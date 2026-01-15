@@ -2,6 +2,10 @@
 
 ## otel-macos-standalone
 
+### v0.0.4 / 2026-01-15
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.128.8
+
 ### v0.0.3 / 2026-01-06
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.128.1
