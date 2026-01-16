@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.0.8 / 2026-01-16
+
+* [FEATURE] ECS attributes processor now supports spans and profiles.
+* [FEATURE] Add eBPF profiler preset, disabled by default (`presets.ebpfProfiler.enabled=false`).
+
 ### 0.0.7 / 2026-01-06
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.128.1`.
