@@ -1536,9 +1536,9 @@ Collector Config: $SUPERVISOR_COLLECTOR_CONFIG_FILE
 Effective Config: $SUPERVISOR_STATE_DIR\effective.yaml
 
 Useful commands:
-  Supervisor status:     Get-Service $SUPERVISOR_SERVICE_NAME
-  Collector process:     Get-Process otelcol-contrib
-  Supervisor logs:       Get-Content "$SUPERVISOR_LOG_DIR\opampsupervisor.log" -Tail 50 -Wait
+  Supervisor status:      Get-Service $SUPERVISOR_SERVICE_NAME
+  Collector process:      Get-Process otelcol-contrib
+  Supervisor logs:        Get-EventLog -LogName Application -Source $SUPERVISOR_SERVICE_NAME -Newest 50 | Format-List
   View supervisor config: Get-Content "$SUPERVISOR_CONFIG_FILE"
   View collector config:  Get-Content "$SUPERVISOR_COLLECTOR_CONFIG_FILE"
   View effective config:  Get-Content "$SUPERVISOR_STATE_DIR\effective.yaml"
