@@ -45,7 +45,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Detect opentelemetry-collector chart version bump
         id: detect
@@ -57,13 +57,25 @@ jobs:
             new_version="$(scripts/get-otel-collector-chart-version.sh "$file")"
           fi
 
-          old_file="$(mktemp)"
-          if ! git show "HEAD~1:$file" > "$old_file" 2>/dev/null; then
-            old_version=""
-          else
-            old_version="$(scripts/get-otel-collector-chart-version.sh "$old_file")"
+          old_version=""
+          base_sha="${GITHUB_EVENT_BEFORE:-}"
+          if [ -n "$base_sha" ] && [ "$base_sha" != "0000000000000000000000000000000000000000" ]; then
+            if git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
+              old_file="$(mktemp)"
+              if git show "$base_sha:$file" > "$old_file" 2>/dev/null; then
+                old_version="$(scripts/get-otel-collector-chart-version.sh "$old_file")"
+              fi
+              rm -f "$old_file"
+            fi
           fi
-          rm -f "$old_file"
+
+          if [ -z "$old_version" ]; then
+            old_file="$(mktemp)"
+            if git show "HEAD~1:$file" > "$old_file" 2>/dev/null; then
+              old_version="$(scripts/get-otel-collector-chart-version.sh "$old_file")"
+            fi
+            rm -f "$old_file"
+          fi
 
           echo "chart_version=$new_version" >> "$GITHUB_OUTPUT"
           echo "old_version=$old_version" >> "$GITHUB_OUTPUT"
@@ -88,6 +100,7 @@ jobs:
         env:
           FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
           CHART_VERSION_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.chart_version }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
 
       - name: Set up Helm
         if: steps.detect.outputs.bumped == 'true'
