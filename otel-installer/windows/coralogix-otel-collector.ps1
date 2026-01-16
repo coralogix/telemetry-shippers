@@ -1538,10 +1538,10 @@ Effective Config: $SUPERVISOR_STATE_DIR\effective.yaml
 Useful commands:
   Supervisor status:     Get-Service $SUPERVISOR_SERVICE_NAME
   Collector process:     Get-Process otelcol-contrib
-  Supervisor logs:       Get-Content $SUPERVISOR_LOG_DIR\opampsupervisor.log -Tail 50 -Wait
-  View supervisor config: Get-Content $SUPERVISOR_CONFIG_FILE
-  View collector config:  Get-Content $SUPERVISOR_COLLECTOR_CONFIG_FILE
-  View effective config:  Get-Content $SUPERVISOR_STATE_DIR\effective.yaml
+  Supervisor logs:       Get-Content "$SUPERVISOR_LOG_DIR\opampsupervisor.log" -Tail 50 -Wait
+  View supervisor config: Get-Content "$SUPERVISOR_CONFIG_FILE"
+  View collector config:  Get-Content "$SUPERVISOR_COLLECTOR_CONFIG_FILE"
+  View effective config:  Get-Content "$SUPERVISOR_STATE_DIR\effective.yaml"
   Restart supervisor:     Restart-Service $SUPERVISOR_SERVICE_NAME
   Stop supervisor:        Stop-Service $SUPERVISOR_SERVICE_NAME
   Start supervisor:       Start-Service $SUPERVISOR_SERVICE_NAME
@@ -1585,7 +1585,7 @@ Config: $CONFIG_FILE
 
 Useful commands:
   Check status:  Get-Service $SERVICE_NAME
-  View config:   Get-Content $CONFIG_FILE
+  View config:   Get-Content "$CONFIG_FILE"
   View logs:     Get-EventLog -LogName Application -Source $SERVICE_NAME -Newest 50
   Restart:       Restart-Service $SERVICE_NAME
   Stop:          Stop-Service $SERVICE_NAME
