@@ -71,7 +71,7 @@ jobs:
 
           if [ -z "$old_version" ]; then
             old_file="$(mktemp)"
-            if git show "HEAD~1:$file" > "$old_file" 2>/dev/null; then
+            if git show "HEAD^1:$file" > "$old_file" 2>/dev/null; then
               old_version="$(scripts/get-otel-collector-chart-version.sh "$old_file")"
             fi
             rm -f "$old_file"
