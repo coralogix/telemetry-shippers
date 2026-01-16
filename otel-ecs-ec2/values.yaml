@@ -64,6 +64,11 @@ opentelemetry-agent:
       enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
+
+    ebpfProfiler:
+      enabled: false
+      reporterInterval: "{{.Values.global.collectionInterval}}"
+    
     ecsAttributesContainerLogs:
       enabled: true
     ecsLogsCollection:
