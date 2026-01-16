@@ -151,14 +151,16 @@ $BINARY_PATH = Join-Path $INSTALL_DIR $BINARY_NAME
 $CONFIG_DIR = "${env:ProgramData}\OpenTelemetry\Collector"
 $CONFIG_FILE = Join-Path $CONFIG_DIR "config.yaml"
 $LOG_DIR = "${env:ProgramData}\OpenTelemetry\Collector\logs"
-$SUPERVISOR_INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry\Supervisor"
+# Supervisor paths - must match official MSI installer paths
+# See: https://github.com/open-telemetry/opentelemetry-collector-releases/blob/main/cmd/opampsupervisor/windows-installer.wxs
+$SUPERVISOR_INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry OpAMP Supervisor"
 $SUPERVISOR_BINARY_NAME = "opampsupervisor.exe"
 $SUPERVISOR_BINARY_PATH = Join-Path $SUPERVISOR_INSTALL_DIR $SUPERVISOR_BINARY_NAME
-$SUPERVISOR_CONFIG_DIR = "${env:ProgramData}\OpenTelemetry\Supervisor"
-$SUPERVISOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "config.yaml"
-$SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_CONFIG_DIR "collector.yaml"
-$SUPERVISOR_STATE_DIR = "${env:ProgramData}\OpenTelemetry\Supervisor\state"
-$SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_CONFIG_DIR "logs"
+$SUPERVISOR_CONFIG_FILE = Join-Path $SUPERVISOR_INSTALL_DIR "config.yaml"
+$SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_INSTALL_DIR "collector.yaml"
+$SUPERVISOR_DATA_DIR = "${env:ProgramData}\opampsupervisor"
+$SUPERVISOR_STATE_DIR = Join-Path $SUPERVISOR_DATA_DIR "state"
+$SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_DATA_DIR "logs"
 $CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
 $OTEL_RELEASES_BASE_URL = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
 $OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
@@ -832,14 +834,14 @@ function Install-SupervisorMSI {
         Write-Log "Supervisor MSI installation completed successfully"
         
         # Find the supervisor binary - check multiple possible locations
+        # Primary path matches official MSI: C:\Program Files\OpenTelemetry OpAMP Supervisor
         $script:SupervisorBinaryFound = $null
         $possiblePaths = @(
             $SUPERVISOR_BINARY_PATH,
+            "${env:ProgramFiles}\OpenTelemetry OpAMP Supervisor\opampsupervisor.exe",
             "${env:ProgramFiles}\OpenTelemetry\Supervisor\opampsupervisor.exe",
             "${env:ProgramFiles}\OpAMP Supervisor\opampsupervisor.exe",
-            "${env:ProgramFiles}\opampsupervisor\opampsupervisor.exe",
-            "${env:ProgramFiles}\OpenTelemetry Collector\opampsupervisor.exe",
-            "${env:ProgramFiles}\otelcol-contrib\opampsupervisor.exe"
+            "${env:ProgramFiles}\opampsupervisor\opampsupervisor.exe"
         )
         
         foreach ($path in $possiblePaths) {
@@ -893,14 +895,12 @@ function Install-Supervisor {
         Write-Log "Installing OpenTelemetry Collector binary (required for supervisor)..."
         Install-CollectorMSI -Version $CollectorVer -Arch $Arch -RemoveService
         
-        # Install supervisor via MSI
-        Write-Log "Creating required directories for supervisor..."
-        New-Item -ItemType Directory -Path $SUPERVISOR_INSTALL_DIR -Force | Out-Null
-        New-Item -ItemType Directory -Path $SUPERVISOR_CONFIG_DIR -Force | Out-Null
-        New-Item -ItemType Directory -Path $SUPERVISOR_STATE_DIR -Force | Out-Null
-        New-Item -ItemType Directory -Path $SUPERVISOR_LOG_DIR -Force | Out-Null
-        
+        # Install supervisor via MSI (MSI creates install dir and ProgramData folders)
         Install-SupervisorMSI -Version $SupervisorVer -Arch $Arch -LocalMsiPath $MsiPath
+        
+        # Ensure state directory exists (not created by MSI)
+        Write-Log "Creating state directory for supervisor..."
+        New-Item -ItemType Directory -Path $SUPERVISOR_STATE_DIR -Force | Out-Null
         
         # Stop existing service if running
         $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
@@ -1309,9 +1309,9 @@ function Remove-PackageWindows {
         }
         
         if ($Purge) {
-            if (Test-Path $SUPERVISOR_CONFIG_DIR) {
-                Write-Log "Removing supervisor config: $SUPERVISOR_CONFIG_DIR"
-                Remove-Item -Path $SUPERVISOR_CONFIG_DIR -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path $SUPERVISOR_DATA_DIR) {
+                Write-Log "Removing supervisor data: $SUPERVISOR_DATA_DIR"
+                Remove-Item -Path $SUPERVISOR_DATA_DIR -Recurse -Force -ErrorAction SilentlyContinue
             }
             if (Test-Path $SUPERVISOR_INSTALL_DIR) {
                 Write-Log "Removing supervisor install directory: $SUPERVISOR_INSTALL_DIR"
