@@ -59,6 +59,8 @@ jobs:
 
           old_version=""
           base_sha="${GITHUB_EVENT_BEFORE:-}"
+          # GITHUB_EVENT_AFTER can be `0000000000000000000000000000000000000000`
+          # on some cases, like branch creation.
           if [ -n "$base_sha" ] && [ "$base_sha" != "0000000000000000000000000000000000000000" ]; then
             if git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
               old_file="$(mktemp)"
@@ -123,6 +125,9 @@ jobs:
           CHART_VERSION_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.chart_version }}
           APP_VERSION_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.app_version }}
           CREATE_PR: ${{ github.event_name == 'workflow_dispatch' && inputs.create_pr }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_EVENT_AFTER: ${{ github.event.after }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
 
@@ -180,6 +185,31 @@ jobs:
           git commit -m "Add collector chart mapping for ${CHART_VERSION}"
           git push origin "$branch"
 
+          base_sha=""
+          if [ "${GITHUB_EVENT_NAME:-}" = "push" ]; then
+            base_sha="${GITHUB_EVENT_AFTER:-${GITHUB_SHA:-}}"
+          else
+            base_sha="${GITHUB_SHA:-}"
+          fi
+
+          # GITHUB_EVENT_AFTER can be `0000000000000000000000000000000000000000`
+          # on some cases, like branch deletion.
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="${GITHUB_EVENT_BEFORE:-unknown}"
+          fi
+
+          base_link="$base_sha"
+          if [ -n "${GITHUB_REPOSITORY:-}" ] && [ "$base_sha" != "unknown" ]; then
+            base_link="[${base_sha}](https://github.com/${GITHUB_REPOSITORY}/commit/${base_sha})"
+          fi
+
+          pr_body="$(
+            printf 'Adds version mapping from chart version **%s** to Collector version **%s**.\n\nTriggered by telemetry-shippers base commit: %s\n' \
+              "$CHART_VERSION" \
+              "$APP_VERSION" \
+              "$base_link"
+          )"
+
           existing_pr="$(gh pr list -R coralogix/fleet-manager --head "$branch" --json number --jq '.[0].number')"
           if [ -n "$existing_pr" ]; then
             echo "PR already exists: #$existing_pr"
@@ -190,5 +220,5 @@ jobs:
             -R coralogix/fleet-manager \
             --base master \
             --head "$branch" \
-            --title "Add collector chart mapping for ${CHART_VERSION}" \
-            --body "Adds mapping ${CHART_VERSION} -> ${APP_VERSION}."
+            --title "Add mapping from chart \`v${CHART_VERSION}\` to Collector \`v${APP_VERSION}\`" \
+            --body "$pr_body"
