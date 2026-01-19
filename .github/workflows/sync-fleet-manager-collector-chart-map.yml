@@ -59,6 +59,8 @@ jobs:
 
           old_version=""
           base_sha="${GITHUB_EVENT_BEFORE:-}"
+          # GITHUB_EVENT_AFTER can be `0000000000000000000000000000000000000000`
+          # on some cases, like branch creation.
           if [ -n "$base_sha" ] && [ "$base_sha" != "0000000000000000000000000000000000000000" ]; then
             if git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
               old_file="$(mktemp)"
@@ -190,6 +192,8 @@ jobs:
             base_sha="${GITHUB_SHA:-}"
           fi
 
+          # GITHUB_EVENT_AFTER can be `0000000000000000000000000000000000000000`
+          # on some cases, like branch deletion.
           if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
             base_sha="${GITHUB_EVENT_BEFORE:-unknown}"
           fi
