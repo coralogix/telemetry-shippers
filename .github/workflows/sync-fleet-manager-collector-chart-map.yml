@@ -124,6 +124,8 @@ jobs:
           APP_VERSION_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.app_version }}
           CREATE_PR: ${{ github.event_name == 'workflow_dispatch' && inputs.create_pr }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_EVENT_AFTER: ${{ github.event.after }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
 
@@ -181,9 +183,15 @@ jobs:
           git commit -m "Add collector chart mapping for ${CHART_VERSION}"
           git push origin "$branch"
 
-          base_sha="${GITHUB_EVENT_BEFORE:-}"
+          base_sha=""
+          if [ "${GITHUB_EVENT_NAME:-}" = "push" ]; then
+            base_sha="${GITHUB_EVENT_AFTER:-${GITHUB_SHA:-}}"
+          else
+            base_sha="${GITHUB_SHA:-}"
+          fi
+
           if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
-            base_sha="${GITHUB_SHA:-unknown}"
+            base_sha="${GITHUB_EVENT_BEFORE:-unknown}"
           fi
 
           base_link="$base_sha"
