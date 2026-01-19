@@ -208,5 +208,5 @@ jobs:
             -R coralogix/fleet-manager \
             --base master \
             --head "$branch" \
-            --title "Add mapping from chart `v${CHART_VERSION}` to Collector `v${APP_VERSION}`" \
+            --title "Add mapping from chart \`v${CHART_VERSION}\` to Collector \`v${APP_VERSION}\`" \
             --body "$pr_body"
