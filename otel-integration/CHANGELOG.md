@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.267 / 2026-01-20
+- [Fix] Use `instrumentation_scope.name` to detect spanmetrics connector metrics when mapping `otel.status_code` back to `status.code`.
+- [Feat] Add Azure-specific transform to set `host.name` from `azure.vm.name` when `host.name` is empty, applied to all pipelines including `logs/resource_catalog` when provider is Azure.
+
 ### v0.0.266 / 2026-01-15
 - [Fix] Remove unneeded `status_code="STATUS_CODE_UNSET"` label from non-span metrics such as hostmetrics or kubeletmetrics.
 
