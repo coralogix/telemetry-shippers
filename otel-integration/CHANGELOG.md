@@ -2,6 +2,20 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.267 / 2026-01-20
+- [Fix] Use `instrumentation_scope.name` to detect spanmetrics connector metrics when mapping `otel.status_code` back to `status.code`.
+- [Feat] Add Azure-specific transform to set `host.name` from `azure.vm.name` when `host.name` is empty, applied to all pipelines including `logs/resource_catalog` when provider is Azure.
+
+### v0.0.266 / 2026-01-15
+- [Fix] Remove unneeded `status_code="STATUS_CODE_UNSET"` label from non-span metrics such as hostmetrics or kubeletmetrics.
+
+### v0.0.265 / 2026-01-15
+- [Feat] Add cloud tags collection for Infra Explore by enabling `ec2.tags` and `azure.tags` in the `resourcedetection/entity` processor.
+- [Feat] Add Azure cloud support for Infra Explore by mapping `azure.vm.size` to `host.type` in the host entity events pipeline when provider is Azure.
+
+### v0.0.264 / 2026-01-13
+- [Fix] Apply `presets.spanMetrics.histogramBuckets` value to `dbMetrics`.
+
 ### v0.0.263 / 2026-01-12
 - [Feat] Add collector-based eBPF profiler configuration and docs, including OTLP header support.
 

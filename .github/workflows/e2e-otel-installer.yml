@@ -92,25 +92,54 @@ jobs:
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 
-  standalone-linux-upgrade:
-    name: Standalone - Linux Upgrade
+  standalone-linux-upgrade-with-config:
+    name: Standalone - Linux Upgrade with New Config
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install (default version)
+      - name: Install (default version with default config)
         run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
         
-      - name: Verify service running
-        run: sudo systemctl is-active otelcol-contrib
+      - name: Verify default config exists
+        run: |
+          sudo cat /etc/otelcol-contrib/config.yaml
+          # Package default has otlp receiver
+          sudo grep "otlp:" /etc/otelcol-contrib/config.yaml
         
-      - name: Get installed version
-        run: /usr/bin/otelcol-contrib --version
+      - name: Create new custom config with marker
+        run: |
+          printf '%s\n' \
+            '# UPGRADED_CONFIG_MARKER_E2E_TEST' \
+            'receivers:' \
+            '  otlp:' \
+            '    protocols:' \
+            '      grpc:' \
+            '        endpoint: 0.0.0.0:4317' \
+            'exporters:' \
+            '  debug:' \
+            '    verbosity: detailed' \
+            'extensions:' \
+            '  health_check:' \
+            '    endpoint: 127.0.0.1:13133' \
+            'service:' \
+            '  extensions: [health_check]' \
+            '  pipelines:' \
+            '    logs:' \
+            '      receivers: [otlp]' \
+            '      exporters: [debug]' \
+            > /tmp/new-config.yaml
         
-      - name: Run upgrade (same version - tests upgrade mechanism)
-        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -u
+      - name: Upgrade with new config (auto-detects and replaces)
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/new-config.yaml
         
-      - name: Verify service still running after upgrade
+      - name: Verify new config loaded
+        run: |
+          sudo cat /etc/otelcol-contrib/config.yaml
+          sudo grep "UPGRADED_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
+          sudo grep "verbosity: detailed" /etc/otelcol-contrib/config.yaml
+        
+      - name: Verify service still running
         run: sudo systemctl is-active otelcol-contrib
         
       - name: Uninstall

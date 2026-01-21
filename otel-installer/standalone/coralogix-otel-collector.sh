@@ -15,7 +15,6 @@
 #   -v, --version <version>       OTEL Collector version (default: latest from Coralogix Helm chart)
 #   -c, --config <path>           Path to custom configuration file (disabled with --supervisor)
 #   -s, --supervisor              Install with OpAMP Supervisor mode
-#   -u, --upgrade                 Upgrade existing installation
 #   --memory-limit <MiB>          Total memory in MiB to allocate to the collector (default: 512)
 #                                  Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
 #                                  (ignored in supervisor mode)
@@ -68,10 +67,8 @@ VERSION=""
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_MODE=false
 SUPERVISOR_BASE_CONFIG_PATH=""
-UPGRADE_MODE=false
 UNINSTALL_MODE=false
 PURGE=false
-BACKUP_DIR=""
 MACOS_INSTALL_TYPE="daemon"
 SUPERVISOR_VERSION_FLAG=""
 COLLECTOR_VERSION_FLAG=""
@@ -223,7 +220,6 @@ Options:
                                   (not available with -s/--supervisor)
     -s, --supervisor              Install with OpAMP Supervisor mode
                                   (config is managed by the OpAMP server)
-    -u, --upgrade                 Upgrade existing installation
     --memory-limit <MiB>          Total memory in MiB to allocate to the collector
                                   Sets OTEL_MEMORY_LIMIT_MIB environment variable
                                   Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
@@ -281,9 +277,6 @@ Examples:
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
     CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
-
-    # Upgrade existing installation
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -u
 
     # Uninstall (keep config/logs)
     bash coralogix-otel-collector.sh --uninstall
@@ -491,7 +484,7 @@ Actual:   $actual_checksum
 The downloaded file may be corrupted or tampered with."
     fi
     
-    log "✓ Checksum verified: $(basename "$file")"
+    log "Checksum verified: $(basename "$file")"
     return 0
 }
 
@@ -556,27 +549,6 @@ is_installed() {
             ;;
     esac
     return 1
-}
-
-backup_config() {
-    if [ -f "$CONFIG_FILE" ] || [ -d "$CONFIG_DIR" ]; then
-        local timestamp
-        timestamp=$(get_timestamp)
-        BACKUP_DIR="/tmp/${SERVICE_NAME}-backup-${timestamp}"
-        log "Backing up existing configuration to: $BACKUP_DIR"
-        mkdir -p "$BACKUP_DIR"
-        $SUDO_CMD cp -r "$CONFIG_DIR" "$BACKUP_DIR/" 2>/dev/null || true
-        log "Backup created at: $BACKUP_DIR"
-    fi
-}
-
-restore_config() {
-    if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
-        if [ -f "${BACKUP_DIR}/$(basename "$CONFIG_DIR")/config.yaml" ]; then
-            log "Restoring configuration from backup"
-            $SUDO_CMD cp "${BACKUP_DIR}/$(basename "$CONFIG_DIR")/config.yaml" "$CONFIG_FILE" 2>/dev/null || true
-        fi
-    fi
 }
 
 get_empty_collector_config() {
@@ -652,29 +624,25 @@ install_collector_linux() {
     
     log "Installing OpenTelemetry Collector package..."
     if [ "$pkg_type" = "deb" ]; then
-        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y
+        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y || fail "Failed to install deb package"
     else
-        if [ "$UPGRADE_MODE" = true ]; then
-            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to upgrade package. Please install dependencies manually."
+        if command -v zypper >/dev/null 2>&1; then
+            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name" || fail "Failed to install package via zypper"
+        elif command -v dnf >/dev/null 2>&1; then
+            $SUDO_CMD dnf install -y "$pkg_name" || fail "Failed to install package via dnf"
+        elif command -v yum >/dev/null 2>&1; then
+            $SUDO_CMD yum install -y "$pkg_name" || fail "Failed to install package via yum"
         else
-            if command -v zypper >/dev/null 2>&1; then
-                $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name"
-            elif command -v dnf >/dev/null 2>&1; then
-                $SUDO_CMD dnf install -y "$pkg_name"
-            elif command -v yum >/dev/null 2>&1; then
-                $SUDO_CMD yum install -y "$pkg_name"
-            else
-                $SUDO_CMD rpm -i "$pkg_name" || fail "Failed to install package. Please install dependencies manually."
-            fi
+            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to install/upgrade package via rpm. Please install dependencies manually."
         fi
     fi
     
     if [ ! -x "$BINARY_PATH_LINUX" ]; then
-        fail "Binary not found at expected location: $BINARY_PATH_LINUX"
+        fail "Binary not found at expected location after installation: $BINARY_PATH_LINUX"
     fi
     
     if ! "$BINARY_PATH_LINUX" --version >/dev/null 2>&1; then
-        fail "Installation verification failed"
+        fail "Installation verification failed: The binary at $BINARY_PATH_LINUX exists but cannot be executed."
     fi
     
     if getent group systemd-journal >/dev/null 2>&1; then
@@ -707,7 +675,7 @@ configure_process_metrics_permissions() {
     # CAP_DAC_READ_SEARCH: Required to bypass file read permission checks
     # +ep: Effective and Permitted (not Inherited, for security)
     if $SUDO_CMD setcap cap_sys_ptrace,cap_dac_read_search=+ep "$binary_path" 2>/dev/null; then
-        log "✓ Linux capabilities configured successfully"
+        log "Linux capabilities configured successfully"
         log "  Process metrics will be able to monitor all system processes"
         return 0
     else
@@ -748,10 +716,10 @@ install_collector_darwin() {
     fi
     
     log "Installing binary to $BINARY_PATH_DARWIN"
-    $SUDO_CMD install -m 0755 "./${BINARY_NAME}" "$BINARY_PATH_DARWIN"
+    $SUDO_CMD install -m 0755 "./${BINARY_NAME}" "$BINARY_PATH_DARWIN" || fail "Failed to install binary to $BINARY_PATH_DARWIN"
     
     if ! "$BINARY_PATH_DARWIN" --version >/dev/null 2>&1; then
-        fail "Installation verification failed"
+        fail "Installation verification failed: The binary at $BINARY_PATH_DARWIN exists but cannot be executed."
     fi
     
     log "Collector installed successfully: $($BINARY_PATH_DARWIN --version)"
@@ -854,8 +822,12 @@ install_supervisor() {
     fi
     
     log "Placing Collector binary into /usr/local/bin..."
-    $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib
+    $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib || fail "Failed to install Collector binary"
     
+    if ! /usr/local/bin/otelcol-contrib --version >/dev/null 2>&1; then
+        fail "Installation verification failed: The binary at /usr/local/bin/otelcol-contrib exists but cannot be executed."
+    fi
+
     if [ "$ENABLE_PROCESS_METRICS" = true ]; then
         configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" || true
     fi
@@ -892,18 +864,16 @@ install_supervisor() {
     
     log "Installing OpAMP Supervisor ${supervisor_ver}..."
     if [ "$pkg_type" = "deb" ]; then
-        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y
+        $SUDO_CMD dpkg -i "$pkg_name" || $SUDO_CMD apt-get install -f -y || fail "Failed to install supervisor deb package"
     else
-        if [ "$UPGRADE_MODE" = true ]; then
-            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to upgrade supervisor package. Please install dependencies manually."
-        elif command -v zypper >/dev/null 2>&1; then
-            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name"
-        elif command -v yum >/dev/null 2>&1; then
-            $SUDO_CMD yum install -y "$pkg_name"
+        if command -v zypper >/dev/null 2>&1; then
+            $SUDO_CMD zypper --non-interactive --no-gpg-checks install "$pkg_name" || fail "Failed to install supervisor via zypper"
         elif command -v dnf >/dev/null 2>&1; then
-            $SUDO_CMD dnf install -y "$pkg_name"
+            $SUDO_CMD dnf install -y "$pkg_name" || fail "Failed to install supervisor via dnf"
+        elif command -v yum >/dev/null 2>&1; then
+            $SUDO_CMD yum install -y "$pkg_name" || fail "Failed to install supervisor via yum"
         else
-            $SUDO_CMD rpm -i "$pkg_name" || fail "Failed to install supervisor package. Please install dependencies manually."
+            $SUDO_CMD rpm -U --replacepkgs "$pkg_name" || fail "Failed to install/upgrade supervisor package via rpm. Please install dependencies manually."
         fi
     fi
     
@@ -1368,10 +1338,6 @@ parse_args() {
                 SUPERVISOR_MODE=true
                 shift
                 ;;
-            -u|--upgrade)
-                UPGRADE_MODE=true
-                shift
-                ;;
             --memory-limit)
                 MEMORY_LIMIT_MIB="$2"
                 USER_SET_MEMORY_LIMIT=true
@@ -1532,20 +1498,11 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
     version=$(get_version)
     log "Installing version: $version"
     
-    if is_installed && [ "$UPGRADE_MODE" != true ]; then
-        warn "Collector is already installed. Use --upgrade to upgrade, or uninstall first."
-        exit 1
-    fi
-    
-    if [ "$UPGRADE_MODE" != true ]; then
-        check_ports
-    fi
-    
-    if [ "$UPGRADE_MODE" = true ] && is_installed; then
-        if [ "$SUPERVISOR_MODE" != true ]; then
-            backup_config
-        fi
+    # Auto-detect if this is an upgrade or fresh install
+    if is_installed; then
+        log "Existing installation detected - will upgrade"
         
+        # Prevent mode switching between regular and supervisor
         if command -v systemctl >/dev/null 2>&1; then
             if [ "$SUPERVISOR_MODE" != true ] && [ -f "/usr/local/bin/otelcol-contrib" ]; then
                 fail "Cannot upgrade: Supervisor mode is installed. Please uninstall first, then install regular mode."
@@ -1555,6 +1512,13 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
                 fail "Cannot upgrade: Regular mode is installed. Please uninstall first, then install supervisor mode."
             fi
         fi
+        
+        # Skip port checks on upgrade (service is already running)
+    else
+        log "No existing installation detected - fresh install"
+        
+        # Check ports only on fresh install
+        check_ports
     fi
     
     if [ "$SUPERVISOR_MODE" = true ]; then
@@ -1643,12 +1607,6 @@ EOF
         $SUDO_CMD chmod 644 "$CONFIG_FILE"
     elif [ -f "$CONFIG_FILE" ]; then
         log "Using existing config at: $CONFIG_FILE"
-    elif [ "$UPGRADE_MODE" = true ] && [ -n "${BACKUP_DIR:-}" ] && [ -d "$BACKUP_DIR" ]; then
-        restore_config
-        if [ ! -f "$CONFIG_FILE" ]; then
-            log "Backup restore failed or backup was empty, creating default config"
-            create_empty_config
-        fi
     else
         create_empty_config
     fi
