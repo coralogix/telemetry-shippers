@@ -38,6 +38,11 @@
     Config must reference: ${env:OTEL_LISTEN_INTERFACE}
     Use 0.0.0.0 to listen on all interfaces (gateway mode)
     (ignored in supervisor mode)
+
+.PARAMETER EnableDynamicMetadataParsing
+    Enable dynamic metadata parsing for file-based logs (e.g., IIS logs)
+    Creates storage directory and adds --feature-gates=filelog.allowHeaderMetadataParsing
+    (regular mode only, not available with Supervisor)
     
 .PARAMETER Uninstall
     Uninstall the collector (use Purge to remove all data)
@@ -81,6 +86,10 @@
     $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
 
 .EXAMPLE
+    # Install with dynamic metadata parsing for IIS logs
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing
+
+.EXAMPLE
     # Uninstall (keep config/logs)
     .\coralogix-otel-collector.ps1 -Uninstall
     
@@ -122,6 +131,9 @@ param(
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$ListenInterface = "127.0.0.1",
+    
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [switch]$EnableDynamicMetadataParsing = $false,
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [switch]$Uninstall = $false,
@@ -218,6 +230,10 @@ Options:
                                     (default: 127.0.0.1 for localhost only,
                                      use 0.0.0.0 for all interfaces)
                                     (ignored in supervisor mode)
+    -EnableDynamicMetadataParsing   Enable dynamic metadata parsing for file logs
+                                    (e.g., IIS logs with header-based format detection)
+                                    Creates storage directory and enables feature gate
+                                    (regular mode only)
     -Uninstall                      Uninstall the collector
                                     (use -Purge to remove all data)
     -Purge                          Remove all data when uninstalling
@@ -255,6 +271,9 @@ Examples:
 
     # Install with custom memory limit and external access
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
+
+    # Install with dynamic metadata parsing for IIS logs
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing
 
     # Uninstall (keep config/logs)
     .\coralogix-otel-collector.ps1 -Uninstall
@@ -806,7 +825,9 @@ function Install-SupervisorMSI {
         }
         else {
             # Download MSI from GitHub releases
-            $msiName = "opampsupervisor_${Version}_windows_${Arch}.msi"
+            # Map architecture names (MSI uses x64, not amd64)
+            $msiArch = if ($Arch -eq "amd64") { "x64" } else { $Arch }
+            $msiName = "opampsupervisor_${Version}_windows_${msiArch}.msi"
             $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${Version}/${msiName}"
             
             Write-Log "Downloading OpAMP Supervisor ${Version} MSI..."
@@ -1082,10 +1103,25 @@ function New-WindowsService {
     $serviceDisplayName = "OpenTelemetry Collector"
     $serviceDescription = "OpenTelemetry Collector - Collects, processes, and exports telemetry data"
     
+    # Handle dynamic metadata parsing (e.g., for IIS logs)
+    if ($EnableDynamicMetadataParsing) {
+        Write-Log "Enabling dynamic metadata parsing for file logs..."
+        $storageDir = Join-Path $CONFIG_DIR "storage"
+        if (-not (Test-Path $storageDir)) {
+            Write-Log "Creating storage directory: $storageDir"
+            New-Item -ItemType Directory -Force -Path $storageDir | Out-Null
+        }
+    }
+    
     # Check if service already exists (from MSI installation)
     $existingService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
     
+    # Build service binary path with optional feature gates
     $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
+    if ($EnableDynamicMetadataParsing) {
+        $serviceBinPath += " --feature-gates=filelog.allowHeaderMetadataParsing"
+        Write-Log "Added feature gate: filelog.allowHeaderMetadataParsing"
+    }
     
     if ($existingService) {
         Write-Log "Service already exists, stopping for reconfiguration..."
@@ -1431,6 +1467,10 @@ function Main {
         Write-Error "-Config cannot be used with -Supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
     }
     
+    if ($Supervisor -and $EnableDynamicMetadataParsing) {
+        Write-Error "-EnableDynamicMetadataParsing cannot be used with -Supervisor. This feature is only available in regular mode."
+    }
+    
     if ($Supervisor) {
         if (-not $env:CORALOGIX_DOMAIN) {
             Write-Error "CORALOGIX_DOMAIN environment variable is required for supervisor mode"
@@ -1582,6 +1622,7 @@ Installation complete!
 Service: $SERVICE_NAME
 Binary: $BINARY_PATH
 Config: $CONFIG_FILE
+$(if ($EnableDynamicMetadataParsing) { "Dynamic Metadata Parsing: Enabled (filelog.allowHeaderMetadataParsing)`nStorage Directory: $CONFIG_DIR\storage" })
 
 Useful commands:
   Check status:  Get-Service $SERVICE_NAME

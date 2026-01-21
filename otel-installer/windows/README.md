@@ -65,6 +65,20 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Version 0.140.1
 ```
 
+## Dynamic Metadata Parsing (IIS Logs)
+
+Enable dynamic metadata parsing for file-based logs, such as IIS logs with header-based format detection:
+
+```powershell
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing
+```
+
+This option:
+- Creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage`
+- Runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`
+
+> **Note:** This feature is only available in regular mode, not supervisor mode.
+
 ## Supervisor Mode
 
 Supervisor mode enables remote configuration management through Coralogix Fleet Management:
@@ -95,6 +109,7 @@ $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private
 | `-SupervisorVersion <version>` | Supervisor version (supervisor mode only) |
 | `-CollectorVersion <version>` | Collector version (supervisor mode only) |
 | `-SupervisorMsi <path>` | Path to local OpAMP Supervisor MSI file |
+| `-EnableDynamicMetadataParsing` | Enable dynamic metadata parsing for file logs (e.g., IIS) |
 | `-Uninstall` | Remove the collector (keeps config) |
 | `-Uninstall -Purge` | Remove the collector and all configuration |
 | `-Help` | Show help message |
