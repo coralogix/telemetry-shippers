@@ -448,28 +448,6 @@ jobs:
         shell: pwsh
         run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
 
-  standalone-windows-supervisor-versions:
-    name: Standalone - Windows Supervisor Custom Versions
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install with custom versions
-        shell: pwsh
-        run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          $env:CORALOGIX_DOMAIN = "${{ env.CORALOGIX_DOMAIN }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.140.0 -CollectorVersion 0.140.0
-        
-      - name: Verify supervisor running
-        shell: pwsh
-        run: |
-          if ((Get-Service -Name "opampsupervisor").Status -ne 'Running') { exit 1 }
-        
-      - name: Uninstall
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
-
   standalone-windows-purge:
     name: Standalone - Windows Uninstall with Purge
     runs-on: windows-latest

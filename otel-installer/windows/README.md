@@ -87,6 +87,8 @@ Supervisor mode enables remote configuration management through Coralogix Fleet 
 $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor
 ```
 
+> **Note:** Supervisor mode requires version 0.144.0 or higher because the Windows MSI installer is only available from this version onwards. If the detected version is lower, the script will automatically use 0.144.0. Use `-SupervisorVersion` and `-CollectorVersion` to override, or `-SupervisorMsi` to provide a local MSI file.
+
 Install with supervisor using specific versions:
 
 ```powershell
