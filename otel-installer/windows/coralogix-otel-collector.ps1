@@ -170,6 +170,8 @@ if ([System.Environment]::OSVersion.Version.Build -lt 17763) {
 $SERVICE_NAME = "otelcol-contrib"
 $SUPERVISOR_SERVICE_NAME = "opampsupervisor"
 $BINARY_NAME = "otelcol-contrib.exe"
+# Minimum version for supervisor mode (MSI only available from this version onwards)
+$SUPERVISOR_MIN_VERSION = "0.144.0"
 # MSI installs to "OpenTelemetry Collector" folder
 $INSTALL_DIR = "${env:ProgramFiles}\OpenTelemetry Collector"
 $BINARY_PATH = Join-Path $INSTALL_DIR $BINARY_NAME
@@ -1582,9 +1584,37 @@ function Main {
     }
     
     if ($Supervisor) {
-        # Compute supervisor and collector versions
-        $supervisorVer = if ($SupervisorVersion) { $SupervisorVersion } else { $version }
-        $collectorVer = if ($CollectorVersion) { $CollectorVersion } else { $version }
+        # Determine supervisor and collector versions
+        # MSI is only available from version 0.144.0 onwards
+        # Skip version check if local MSI is provided
+        if ($SupervisorMsi) {
+            # User provided local MSI - use their specified versions or detected version
+            $supervisorVer = if ($SupervisorVersion) { $SupervisorVersion } else { $version }
+            $collectorVer = if ($CollectorVersion) { $CollectorVersion } else { $version }
+            Write-Log "Using local supervisor MSI - skipping version minimum check"
+        }
+        elseif ($SupervisorVersion -or $CollectorVersion) {
+            # User explicitly specified versions - use them
+            $supervisorVer = if ($SupervisorVersion) { $SupervisorVersion } else { $version }
+            $collectorVer = if ($CollectorVersion) { $CollectorVersion } else { $version }
+        }
+        else {
+            # No explicit versions - enforce minimum version for MSI availability
+            # Use detected version if >= minimum, otherwise use minimum
+            if ([version]$version -ge [version]$SUPERVISOR_MIN_VERSION) {
+                $supervisorVer = $version
+                $collectorVer = $version
+                Write-Log "Supervisor mode: Using detected version $version (>= minimum $SUPERVISOR_MIN_VERSION)"
+            }
+            else {
+                $supervisorVer = $SUPERVISOR_MIN_VERSION
+                $collectorVer = $SUPERVISOR_MIN_VERSION
+                Write-Log "Supervisor mode: Detected version $version is below minimum for MSI"
+                Write-Warn "Note: Supervisor MSI is only available from version $SUPERVISOR_MIN_VERSION onwards"
+                Write-Warn "      Using minimum version $SUPERVISOR_MIN_VERSION instead of $version"
+                Write-Warn "      Use -SupervisorVersion/-CollectorVersion to override, or -SupervisorMsi for local MSI"
+            }
+        }
         
         if ($CollectorVersion -and $collectorVer -ne $version) {
             Write-Log "Validating collector version: $collectorVer"
