@@ -28,6 +28,12 @@
     Path to a local OpAMP Supervisor MSI file (supervisor mode only)
     When provided, uses the local MSI instead of downloading from GitHub releases
 
+.PARAMETER SupervisorBaseConfig
+    Path to a base collector configuration file for supervisor mode.
+    This config is merged with remote configuration from Fleet Manager.
+    Cannot contain 'opamp' extension (supervisor manages OpAMP connection).
+    (supervisor mode only)
+
 .PARAMETER MemoryLimit
     Total memory in MiB to allocate to the collector (default: 512)
     Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
@@ -72,6 +78,10 @@
 .EXAMPLE
     # Install with supervisor using local MSI
     $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
+
+.EXAMPLE
+    # Install with supervisor and custom base config
+    $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorBaseConfig C:\path\to\collector.yaml
     
 .EXAMPLE
     # Install with custom memory limit
@@ -125,6 +135,9 @@ param(
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SupervisorMsi = "",
+    
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$SupervisorBaseConfig = "",
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [int]$MemoryLimit = 512,
@@ -220,6 +233,9 @@ Options:
                                     (default: same as -Version)
     -SupervisorMsi <path>           Path to local OpAMP Supervisor MSI file
                                     (supervisor mode only)
+    -SupervisorBaseConfig <path>    Path to base collector config for supervisor mode
+                                    Merged with remote config from Fleet Manager
+                                    (supervisor mode only)
     -MemoryLimit <MiB>              Total memory in MiB to allocate to the collector
                                     Sets OTEL_MEMORY_LIMIT_MIB environment variable
                                     Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}
@@ -262,6 +278,9 @@ Examples:
 
     # Install with supervisor using local MSI
     `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
+
+    # Install with supervisor and custom base config
+    `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorBaseConfig C:\path\to\collector.yaml
 
     # Install with custom memory limit
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
@@ -998,7 +1017,15 @@ telemetry:
     
     $supervisorConfig | Out-File -FilePath $SUPERVISOR_CONFIG_FILE -Encoding utf8 -Force
     
-    Get-EmptyCollectorConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
+    # Write collector config - use base config if provided, otherwise empty config
+    if ($SupervisorBaseConfig) {
+        Write-Log "Using custom base config from: $SupervisorBaseConfig"
+        Copy-Item -Path $SupervisorBaseConfig -Destination $SUPERVISOR_COLLECTOR_CONFIG_FILE -Force
+        Write-Log "Base config will be merged with remote configuration from Fleet Manager"
+    }
+    else {
+        Get-EmptyCollectorConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
+    }
     
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"
@@ -1471,6 +1498,22 @@ function Main {
         Write-Error "-EnableDynamicMetadataParsing cannot be used with -Supervisor. This feature is only available in regular mode."
     }
     
+    # Validate SupervisorBaseConfig
+    if ($SupervisorBaseConfig) {
+        if (-not $Supervisor) {
+            Write-Error "-SupervisorBaseConfig can only be used with -Supervisor"
+        }
+        if (-not (Test-Path $SupervisorBaseConfig)) {
+            Write-Error "Supervisor base config file not found: $SupervisorBaseConfig"
+        }
+        # Check that config doesn't contain opamp extension
+        $baseConfigContent = Get-Content $SupervisorBaseConfig -Raw
+        if ($baseConfigContent -match '(?m)^\s*opamp:') {
+            Write-Error "Supervisor base config cannot contain 'opamp' extension. The supervisor manages the OpAMP connection.`nRemove the 'opamp' extension from your config file: $SupervisorBaseConfig"
+        }
+        Write-Log "Using custom base config for supervisor: $SupervisorBaseConfig"
+    }
+    
     if ($Supervisor) {
         if (-not $env:CORALOGIX_DOMAIN) {
             Write-Error "CORALOGIX_DOMAIN environment variable is required for supervisor mode"
@@ -1563,6 +1606,10 @@ function Main {
         
         Install-Supervisor -SupervisorVer $supervisorVer -CollectorVer $collectorVer -Arch $arch -MsiPath $SupervisorMsi
         
+        $baseConfigInfo = if ($SupervisorBaseConfig) {
+            "`nCustom Base Config:`n  Source: $SupervisorBaseConfig`n  Installed: $SUPERVISOR_COLLECTOR_CONFIG_FILE`n  The base config is merged with remote configuration from Fleet Manager.`n"
+        } else { "" }
+        
         $summary = @"
 
 Installation complete with supervisor mode!
@@ -1574,7 +1621,7 @@ Collector Binary: $BINARY_PATH
 Supervisor Config: $SUPERVISOR_CONFIG_FILE
 Collector Config: $SUPERVISOR_COLLECTOR_CONFIG_FILE
 Effective Config: $SUPERVISOR_STATE_DIR\effective.yaml
-
+$baseConfigInfo
 Useful commands:
   Supervisor status:      Get-Service $SUPERVISOR_SERVICE_NAME
   Collector process:      Get-Process otelcol-contrib

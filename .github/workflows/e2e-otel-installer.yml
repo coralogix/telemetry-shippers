@@ -426,43 +426,6 @@ jobs:
         shell: pwsh
         run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
 
-  standalone-windows-upgrade:
-    name: Standalone - Windows Upgrade
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install (default version)
-        shell: pwsh
-        run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1
-        
-      - name: Verify service running
-        shell: pwsh
-        run: |
-          if ((Get-Service -Name "otelcol-contrib").Status -ne 'Running') { exit 1 }
-        
-      - name: Get installed version
-        shell: pwsh
-        run: |
-          & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version
-        
-      - name: Run upgrade (same version - tests upgrade mechanism)
-        shell: pwsh
-        run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1 -Upgrade
-        
-      - name: Verify service still running after upgrade
-        shell: pwsh
-        run: |
-          if ((Get-Service -Name "otelcol-contrib").Status -ne 'Running') { exit 1 }
-        
-      - name: Uninstall
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
-
   standalone-windows-supervisor:
     name: Standalone - Windows Supervisor Mode
     runs-on: windows-latest

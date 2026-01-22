@@ -99,6 +99,14 @@ Install with supervisor using a local MSI file:
 $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
 ```
 
+Install with supervisor and a custom base collector config:
+
+```powershell
+$env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorBaseConfig C:\path\to\collector.yaml
+```
+
+The base config is merged with remote configuration from Fleet Manager. Note: The config cannot contain the `opamp` extension as the supervisor manages the OpAMP connection.
+
 ## Script Parameters
 
 | Parameter | Description |
@@ -109,6 +117,7 @@ $env:CORALOGIX_DOMAIN="<your-domain>"; $env:CORALOGIX_PRIVATE_KEY="<your-private
 | `-SupervisorVersion <version>` | Supervisor version (supervisor mode only) |
 | `-CollectorVersion <version>` | Collector version (supervisor mode only) |
 | `-SupervisorMsi <path>` | Path to local OpAMP Supervisor MSI file |
+| `-SupervisorBaseConfig <path>` | Path to base collector config for supervisor mode |
 | `-EnableDynamicMetadataParsing` | Enable dynamic metadata parsing for file logs (e.g., IIS) |
 | `-Uninstall` | Remove the collector (keeps config) |
 | `-Uninstall -Purge` | Remove the collector and all configuration |
