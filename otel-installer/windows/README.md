@@ -35,10 +35,10 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `CORALOGIX_PRIVATE_KEY` | Yes | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
-| `CORALOGIX_DOMAIN` | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/) |
+| Variable                | Required             | Description                                                                                 |
+|-------------------------|----------------------|---------------------------------------------------------------------------------------------|
+| `CORALOGIX_PRIVATE_KEY` | Yes                  | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
+| `CORALOGIX_DOMAIN`      | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/)                       |
 
 ## Supported Platforms
 
@@ -151,21 +151,21 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ## Script Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `-Version <version>` | Install specific collector version |
-| `-Config <path>` | Path to custom configuration file |
-| `-MemoryLimit <MiB>` | Total memory in MiB to allocate (default: 512) |
-| `-ListenInterface <ip>` | Network interface for receivers (default: 127.0.0.1) |
-| `-Supervisor` | Install with OpAMP Supervisor mode |
-| `-SupervisorVersion <version>` | Supervisor version (supervisor mode only) |
-| `-CollectorVersion <version>` | Collector version (supervisor mode only) |
-| `-SupervisorMsi <path>` | Path to local OpAMP Supervisor MSI file |
-| `-SupervisorBaseConfig <path>` | Path to base collector config for supervisor mode |
+| Parameter                       | Description                                               |
+|---------------------------------|-----------------------------------------------------------|
+| `-Version <version>`            | Install specific collector version                        |
+| `-Config <path>`                | Path to custom configuration file                         |
+| `-MemoryLimit <MiB>`            | Total memory in MiB to allocate (default: 512)            |
+| `-ListenInterface <ip>`         | Network interface for receivers (default: 127.0.0.1)      |
+| `-Supervisor`                   | Install with OpAMP Supervisor mode                        |
+| `-SupervisorVersion <version>`  | Supervisor version (supervisor mode only)                 |
+| `-CollectorVersion <version>`   | Collector version (supervisor mode only)                  |
+| `-SupervisorMsi <path>`         | Path to local OpAMP Supervisor MSI file                   |
+| `-SupervisorBaseConfig <path>`  | Path to base collector config for supervisor mode         |
 | `-EnableDynamicMetadataParsing` | Enable dynamic metadata parsing for file logs (e.g., IIS) |
-| `-Uninstall` | Remove the collector (keeps config) |
-| `-Uninstall -Purge` | Remove the collector and all configuration |
-| `-Help` | Show help message |
+| `-Uninstall`                    | Remove the collector (keeps config)                       |
+| `-Uninstall -Purge`             | Remove the collector and all configuration                |
+| `-Help`                         | Show help message                                         |
 
 ---
 
@@ -173,24 +173,24 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ### Regular Mode
 
-| Component | Location |
-|-----------|----------|
-| Binary | `C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe` |
-| Configuration | `C:\ProgramData\OpenTelemetry\Collector\config.yaml` |
-| Service | `otelcol-contrib` (Windows Service) |
-| Logs | Windows Event Log (Application) |
+| Component     | Location                                                       |
+|---------------|----------------------------------------------------------------|
+| Binary        | `C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe` |
+| Configuration | `C:\ProgramData\OpenTelemetry\Collector\config.yaml`           |
+| Service       | `otelcol-contrib` (Windows Service)                            |
+| Logs          | Windows Event Log (Application)                                |
 
 ### Supervisor Mode
 
-| Component | Location |
-|-----------|----------|
-| Collector Binary | `C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe` |
+| Component         | Location                                                              |
+|-------------------|-----------------------------------------------------------------------|
+| Collector Binary  | `C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe`        |
 | Supervisor Binary | `C:\Program Files\OpenTelemetry OpAMP Supervisor\opampsupervisor.exe` |
-| Supervisor Config | `C:\Program Files\OpenTelemetry OpAMP Supervisor\config.yaml` |
-| Collector Config | `C:\Program Files\OpenTelemetry OpAMP Supervisor\collector.yaml` |
-| Effective Config | `C:\ProgramData\opampsupervisor\state\effective.yaml` |
-| Service | `opampsupervisor` (Windows Service) |
-| Logs | Windows Event Log (Application) - Source: `opampsupervisor` |
+| Supervisor Config | `C:\Program Files\OpenTelemetry OpAMP Supervisor\config.yaml`         |
+| Collector Config  | `C:\Program Files\OpenTelemetry OpAMP Supervisor\collector.yaml`      |
+| Effective Config  | `C:\ProgramData\opampsupervisor\state\effective.yaml`                 |
+| Service           | `opampsupervisor` (Windows Service)                                   |
+| Logs              | Windows Event Log (Application) - Source: `opampsupervisor`           |
 
 ---
 
@@ -269,12 +269,12 @@ Remove the collector and all data:
 
 ## Configuration Behavior
 
-| Scenario | Action |
-|----------|--------|
-| Fresh install | Creates default empty config |
-| Config exists | Preserves existing config |
-| With `-Config` | Uses provided config |
-| Auto-upgrade | Preserves existing config |
+| Scenario        | Action                            |
+|-----------------|-----------------------------------|
+| Fresh install   | Creates default empty config      |
+| Config exists   | Preserves existing config         |
+| With `-Config`  | Uses provided config              |
+| Auto-upgrade    | Preserves existing config         |
 | Supervisor mode | Config managed remotely via OpAMP |
 
 ---
@@ -400,10 +400,10 @@ The script requires administrator privileges. If you see permission errors:
 
 ## Additional Resources
 
-| Resource | Link |
-|----------|------|
-| GitHub Repository | [telemetry-shippers](https://github.com/coralogix/telemetry-shippers/tree/master/otel-installer) |
-| OpenTelemetry Documentation | [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) |
+| Resource                    | Link                                                                                             |
+|-----------------------------|--------------------------------------------------------------------------------------------------|
+| GitHub Repository           | [telemetry-shippers](https://github.com/coralogix/telemetry-shippers/tree/master/otel-installer) |
+| OpenTelemetry Documentation | [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)                              |
 
 ---
 
