@@ -1044,7 +1044,11 @@ telemetry:
         # Update service configuration
         Set-Service -Name $SUPERVISOR_SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
         $serviceBinPath = "`"$supervisorBinary`" --config `"$SUPERVISOR_CONFIG_FILE`""
-        & cmd.exe /c "sc.exe config $SUPERVISOR_SERVICE_NAME binPath= `"$serviceBinPath`"" | Out-Null
+        
+        # Update ImagePath directly in registry (more reliable than sc.exe with complex paths)
+        $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SUPERVISOR_SERVICE_NAME"
+        Set-ItemProperty -Path $serviceRegPath -Name "ImagePath" -Value $serviceBinPath -ErrorAction Stop
+        Write-Log "Service binary path updated to: $serviceBinPath"
     }
     else {
         # Create service using native Windows service management
@@ -1160,8 +1164,11 @@ function New-WindowsService {
         # Update service configuration using Set-Service
         Write-Log "Configuring service binary path..."
         Set-Service -Name $SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
-        # Use sc.exe config for binPath (Set-Service doesn't support it in older PS versions)
-        & cmd.exe /c "sc.exe config $SERVICE_NAME binPath= `"$serviceBinPath`"" | Out-Null
+        
+        # Update ImagePath directly in registry (more reliable than sc.exe with complex paths)
+        $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME"
+        Set-ItemProperty -Path $serviceRegPath -Name "ImagePath" -Value $serviceBinPath -ErrorAction Stop
+        Write-Log "Service binary path updated to: $serviceBinPath"
     }
     else {
         # Create service using New-Service cmdlet
