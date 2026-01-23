@@ -124,7 +124,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CHART_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.chart_version) || '' }}
           APP_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.app_version) || '' }}
-          CREATE_PR: ${{ github.event_name == 'workflow_dispatch' && inputs.create_pr }}
+          CREATE_PR: ${{ github.event_name != 'workflow_dispatch' || inputs.create_pr }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
           GITHUB_EVENT_AFTER: ${{ github.event.after }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
