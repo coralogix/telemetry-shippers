@@ -1292,8 +1292,22 @@ function Stop-ServiceWindows {
         if ($service) {
             Write-Log "Stopping and removing OpAMP Supervisor service..."
             Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
+            
+            # Wait for service to fully stop (max 30 seconds)
+            $timeout = 30
+            $waited = 0
+            while ($waited -lt $timeout) {
+                $service = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
+                if (-not $service -or $service.Status -eq 'Stopped') { break }
+                Start-Sleep -Seconds 1
+                $waited++
+            }
+            
             & sc.exe delete $SUPERVISOR_SERVICE_NAME | Out-Null
         }
+        
+        # Also kill any remaining otelcol-contrib processes (managed by supervisor)
+        Get-Process -Name "otelcol-contrib" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     }
     else {
         # For regular mode, just stop the service - MSI uninstall will remove it
@@ -1301,6 +1315,20 @@ function Stop-ServiceWindows {
         if ($service) {
             Write-Log "Stopping service..."
             Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
+            
+            # Wait for service to fully stop (max 30 seconds)
+            $timeout = 30
+            $waited = 0
+            while ($waited -lt $timeout) {
+                $service = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+                if (-not $service -or $service.Status -eq 'Stopped') { break }
+                Start-Sleep -Seconds 1
+                $waited++
+            }
+            
+            # Kill the process if still running (service stop may not kill immediately)
+            Get-Process -Name "otelcol-contrib" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
         }
         
         # Remove Event Log source registration (in case of manual uninstall)
@@ -1352,15 +1380,41 @@ function Uninstall-MsiPackage {
         $productCode = $msiInfo.ProductCode
         Write-Log "Uninstalling via MSI..."
         
-        $msiArgs = "/x `"$productCode`" /qn /norestart"
-        $msiResult = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -Wait -PassThru -NoNewWindow
+        # Add /l*v for verbose logging in case of issues, and use a timeout
+        $logFile = Join-Path $env:TEMP "otelcol-uninstall-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+        $msiArgs = "/x `"$productCode`" /qn /norestart /l*v `"$logFile`""
+        Write-Log "MSI log file: $logFile"
         
-        if ($msiResult.ExitCode -eq 0 -or $msiResult.ExitCode -eq 3010) {
+        $msiProcess = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -PassThru -NoNewWindow
+        
+        # Wait with timeout (5 minutes should be more than enough for uninstall)
+        $timeout = 300  # seconds
+        $completed = $msiProcess.WaitForExit($timeout * 1000)
+        
+        if (-not $completed) {
+            Write-Warn "MSI uninstallation timed out after $timeout seconds"
+            Write-Warn "Attempting to kill msiexec process..."
+            try {
+                $msiProcess.Kill()
+                # Also kill any child msiexec processes
+                Get-Process -Name "msiexec" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            }
+            catch {
+                Write-Warn "Failed to kill msiexec: $_"
+            }
+            Write-Warn "Check log file for details: $logFile"
+            return $false
+        }
+        
+        if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
             Write-Log "MSI uninstallation completed successfully"
+            # Clean up log file on success
+            Remove-Item -Path $logFile -Force -ErrorAction SilentlyContinue
             return $true
         }
         else {
-            Write-Warn "MSI uninstallation returned exit code: $($msiResult.ExitCode)"
+            Write-Warn "MSI uninstallation returned exit code: $($msiProcess.ExitCode)"
+            Write-Warn "Check log file for details: $logFile"
             return $false
         }
     }
