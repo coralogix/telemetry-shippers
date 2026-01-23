@@ -467,12 +467,24 @@ function Get-Version {
 }
 
 function Get-Architecture {
+    # Win32_Processor.Architecture values:
+    # 0 = x86 (32-bit Intel) - NOT SUPPORTED
+    # 5 = ARM (32-bit ARM) - NOT SUPPORTED
+    # 6 = ia64 (Itanium) - NOT SUPPORTED
+    # 9 = x64 (64-bit AMD/Intel)
+    # 12 = ARM64 (64-bit ARM)
     $arch = (Get-WmiObject Win32_Processor).Architecture
     switch ($arch) {
-        0 { return "amd64" }  # x86
-        5 { return "arm64" }  # ARM
-        9 { return "amd64" }  # x64
+        0 { 
+            Write-Error "32-bit x86 architecture is not supported. Only 64-bit systems (x64, ARM64) are supported."
+        }
+        5 { 
+            Write-Error "32-bit ARM architecture is not supported. Only 64-bit systems (x64, ARM64) are supported."
+        }
+        9 { return "amd64" }   # x64 (64-bit Intel/AMD)
+        12 { return "arm64" }  # ARM64 (64-bit ARM)
         default {
+            # Fallback to environment variable for edge cases
             $machine = $env:PROCESSOR_ARCHITECTURE
             if ($machine -eq "AMD64") {
                 return "amd64"
@@ -480,8 +492,11 @@ function Get-Architecture {
             elseif ($machine -eq "ARM64") {
                 return "arm64"
             }
+            elseif ($machine -eq "x86") {
+                Write-Error "32-bit x86 architecture is not supported. Only 64-bit systems (x64, ARM64) are supported."
+            }
             else {
-                Write-Error "Unsupported architecture: $machine. Only amd64 and arm64 are supported."
+                Write-Error "Unsupported architecture: $machine (WMI code: $arch). Only 64-bit systems (x64, ARM64) are supported."
             }
         }
     }
@@ -1042,7 +1057,8 @@ telemetry:
         Start-Sleep -Seconds 2
         
         # Update service configuration
-        Set-Service -Name $SUPERVISOR_SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
+        # Note: Set-Service -Description is not available in PowerShell 5.1, use sc.exe instead
+        & sc.exe description $SUPERVISOR_SERVICE_NAME "$serviceDescription" | Out-Null
         $serviceBinPath = "`"$supervisorBinary`" --config `"$SUPERVISOR_CONFIG_FILE`""
         
         # Update ImagePath directly in registry (more reliable than sc.exe with complex paths)
@@ -1161,9 +1177,10 @@ function New-WindowsService {
         Stop-Service -Name $SERVICE_NAME -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
         
-        # Update service configuration using Set-Service
+        # Update service configuration
         Write-Log "Configuring service binary path..."
-        Set-Service -Name $SERVICE_NAME -Description $serviceDescription -ErrorAction SilentlyContinue
+        # Note: Set-Service -Description is not available in PowerShell 5.1, use sc.exe instead
+        & sc.exe description $SERVICE_NAME "$serviceDescription" | Out-Null
         
         # Update ImagePath directly in registry (more reliable than sc.exe with complex paths)
         $serviceRegPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SERVICE_NAME"
@@ -1428,6 +1445,16 @@ function Remove-Data {
         if (Test-Path $LOG_DIR) {
             Remove-Item -Path $LOG_DIR -Recurse -Force -ErrorAction SilentlyContinue
             Write-Log "Removed: $LOG_DIR"
+        }
+        
+        # Clean up empty parent folder (C:\ProgramData\OpenTelemetry)
+        $parentDir = "${env:ProgramData}\OpenTelemetry"
+        if (Test-Path $parentDir) {
+            $remainingItems = Get-ChildItem -Path $parentDir -ErrorAction SilentlyContinue
+            if (-not $remainingItems) {
+                Remove-Item -Path $parentDir -Force -ErrorAction SilentlyContinue
+                Write-Log "Removed empty parent directory: $parentDir"
+            }
         }
     }
     else {
