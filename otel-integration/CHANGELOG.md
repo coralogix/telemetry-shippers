@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.268 / 2026-01-22
+- [Fix] Use the configured `from` field for profiles k8sattributes service annotations.
+- [Fix] Fix `deltaToCumulative` preset producing `null` config when no options are set.
+- [Fix] Fix `reduceResourceAttributes` preset to only apply custom denylist when no provider is set (backward compatibility mode).
+
 ### v0.0.267 / 2026-01-20
 - [Fix] Use `instrumentation_scope.name` to detect spanmetrics connector metrics when mapping `otel.status_code` back to `status.code`.
 - [Feat] Add Azure-specific transform to set `host.name` from `azure.vm.name` when `host.name` is empty, applied to all pipelines including `logs/resource_catalog` when provider is Azure.
