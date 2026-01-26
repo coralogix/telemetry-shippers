@@ -1341,7 +1341,11 @@ function Stop-ServiceWindows {
 }
 
 function Get-MsiProductInfo {
-    # Search for OpenTelemetry Collector in the registry (MSI installations)
+    param(
+        [string]$ProductPattern = "*OpenTelemetry*Collector*"
+    )
+    
+    # Search for product in the registry (MSI installations)
     $uninstallPaths = @(
         "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
         "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
@@ -1351,7 +1355,36 @@ function Get-MsiProductInfo {
         if (Test-Path $path) {
             $products = Get-ChildItem $path -ErrorAction SilentlyContinue | 
                 Get-ItemProperty -ErrorAction SilentlyContinue | 
-                Where-Object { $_.DisplayName -like "*OpenTelemetry*Collector*" -or $_.DisplayName -like "*otelcol*" }
+                Where-Object { $_.DisplayName -like $ProductPattern -or $_.DisplayName -like "*otelcol*" }
+            
+            if ($products) {
+                foreach ($product in $products) {
+                    return @{
+                        DisplayName = $product.DisplayName
+                        UninstallString = $product.UninstallString
+                        ProductCode = $product.PSChildName
+                        InstallLocation = $product.InstallLocation
+                    }
+                }
+            }
+        }
+    }
+    
+    return $null
+}
+
+function Get-SupervisorMsiProductInfo {
+    # Search for OpAMP Supervisor in the registry (MSI installations)
+    $uninstallPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+    )
+    
+    foreach ($path in $uninstallPaths) {
+        if (Test-Path $path) {
+            $products = Get-ChildItem $path -ErrorAction SilentlyContinue | 
+                Get-ItemProperty -ErrorAction SilentlyContinue | 
+                Where-Object { $_.DisplayName -like "*OpAMP*Supervisor*" -or $_.DisplayName -like "*opampsupervisor*" }
             
             if ($products) {
                 foreach ($product in $products) {
@@ -1424,12 +1457,69 @@ function Uninstall-MsiPackage {
     }
 }
 
+function Uninstall-SupervisorMsiPackage {
+    $msiInfo = Get-SupervisorMsiProductInfo
+    
+    if ($msiInfo) {
+        Write-Log "Found Supervisor MSI installation: $($msiInfo.DisplayName)"
+        Write-Log "Product Code: $($msiInfo.ProductCode)"
+        
+        # Use msiexec to uninstall
+        $productCode = $msiInfo.ProductCode
+        Write-Log "Uninstalling Supervisor via MSI..."
+        
+        # Add /l*v for verbose logging in case of issues, and use a timeout
+        $logFile = Join-Path $env:TEMP "supervisor_msi_uninstall.log"
+        $msiArgs = "/x `"$productCode`" /qn /norestart /l*v `"$logFile`""
+        
+        $msiProcess = Start-Process -FilePath "msiexec.exe" -ArgumentList $msiArgs -PassThru -NoNewWindow
+        
+        # Wait with timeout (5 minutes should be more than enough for uninstall)
+        $timeout = 300  # seconds
+        $completed = $msiProcess.WaitForExit($timeout * 1000)
+        
+        if (-not $completed) {
+            Write-Warn "Supervisor MSI uninstallation timed out after $timeout seconds"
+            Write-Warn "Attempting to kill msiexec process..."
+            try {
+                $msiProcess.Kill()
+                Get-Process -Name "msiexec" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            }
+            catch {
+                Write-Warn "Failed to kill msiexec: $_"
+            }
+            Write-Warn "Check log file for details: $logFile"
+            return $false
+        }
+        
+        if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
+            Write-Log "Supervisor MSI uninstallation completed successfully"
+            Remove-Item -Path $logFile -Force -ErrorAction SilentlyContinue
+            return $true
+        }
+        else {
+            Write-Warn "Supervisor MSI uninstallation returned exit code: $($msiProcess.ExitCode)"
+            Write-Warn "Check log file for details: $logFile"
+            return $false
+        }
+    }
+    else {
+        Write-Log "No Supervisor MSI installation found in registry"
+        return $false
+    }
+}
+
 function Remove-PackageWindows {
     if ($Supervisor) {
-        # Remove supervisor binary (manual install)
-        if (Test-Path $SUPERVISOR_BINARY_PATH) {
-            Write-Log "Removing supervisor binary: $SUPERVISOR_BINARY_PATH"
-            Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
+        # Uninstall supervisor via MSI (proper cleanup)
+        $supervisorMsiUninstalled = Uninstall-SupervisorMsiPackage
+        if (-not $supervisorMsiUninstalled) {
+            # Fallback to manual removal if MSI uninstall failed or not found
+            Write-Log "Falling back to manual supervisor file removal..."
+            if (Test-Path $SUPERVISOR_BINARY_PATH) {
+                Write-Log "Removing supervisor binary: $SUPERVISOR_BINARY_PATH"
+                Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
+            }
         }
         
         # Remove collector via MSI uninstaller (same install method as regular mode)
