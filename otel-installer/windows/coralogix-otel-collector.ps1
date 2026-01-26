@@ -1243,15 +1243,38 @@ function New-WindowsService {
         }
     }
     catch {
-        Write-Error "Failed to start service: $($_.Exception.Message)"
+        Write-Warn "Failed to start service: $($_.Exception.Message)"
         Write-Host ""
-        Write-Host "Troubleshooting steps:"
-        Write-Host "1. Check if binary exists: Test-Path '$BINARY_PATH'"
-        Write-Host "2. Check if config exists: Test-Path '$CONFIG_FILE'"
-        Write-Host "3. Validate config: & '$BINARY_PATH' validate --config '$CONFIG_FILE'"
-        Write-Host "4. Check Event Log: Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 20"
-        Write-Host "5. Check service path: Get-CimInstance Win32_Service -Filter \"Name='$SERVICE_NAME'\" | Select-Object PathName"
-        Write-Host ""
+        
+        # Try to get the actual error by running the collector directly
+        Write-Host "Checking for configuration errors..."
+        $validateOutput = & "$BINARY_PATH" validate --config "$CONFIG_FILE" 2>&1 | Out-String
+        
+        # Check if the error is about file_storage directory
+        if ($validateOutput -match "file_storage.*directory must exist" -or $validateOutput -match "storage.*cannot find") {
+            Write-Host ""
+            Write-Host "ERROR: Your configuration uses file_storage extension but the storage directory doesn't exist." -ForegroundColor Red
+            Write-Host ""
+            Write-Host "SOLUTION: Re-run the installer with -EnableDynamicMetadataParsing flag:" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "  .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing" -ForegroundColor Cyan
+            Write-Host ""
+            Write-Host "This will create the storage directory at: $CONFIG_DIR\storage" -ForegroundColor Yellow
+            Write-Host "and enable the filelog.allowHeaderMetadataParsing feature gate."
+            Write-Host ""
+        }
+        else {
+            Write-Host "Validation output:"
+            Write-Host $validateOutput
+            Write-Host ""
+            Write-Host "Troubleshooting steps:"
+            Write-Host "1. Check if binary exists: Test-Path '$BINARY_PATH'"
+            Write-Host "2. Check if config exists: Test-Path '$CONFIG_FILE'"
+            Write-Host "3. Validate config: & '$BINARY_PATH' validate --config '$CONFIG_FILE'"
+            Write-Host "4. Check Event Log: Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 20"
+            Write-Host "5. Check service path: Get-CimInstance Win32_Service -Filter \"Name='$SERVICE_NAME'\" | Select-Object PathName"
+            Write-Host ""
+        }
         throw
     }
 }
