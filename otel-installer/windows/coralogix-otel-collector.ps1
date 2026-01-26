@@ -818,6 +818,10 @@ function Install-CollectorMSI {
         Set-Location $originalLocation
     }
     finally {
+        # Restore location in case of error
+        if ($originalLocation) {
+            Set-Location $originalLocation -ErrorAction SilentlyContinue
+        }
         if (Test-Path $workDir) {
             Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
         }
@@ -928,6 +932,10 @@ function Install-SupervisorMSI {
         Set-Location $originalLocation
     }
     finally {
+        # Restore location in case of error
+        if ($originalLocation) {
+            Set-Location $originalLocation -ErrorAction SilentlyContinue
+        }
         if (Test-Path $workDir) {
             Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
         }
@@ -946,6 +954,7 @@ function Install-Supervisor {
     
     try {
         New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+        $originalLocation = Get-Location
         Set-Location $workDir
         
         # Install collector binary using MSI (remove service since supervisor manages the collector)
@@ -967,8 +976,14 @@ function Install-Supervisor {
         }
         
         Configure-Supervisor
+        
+        Set-Location $originalLocation
     }
     finally {
+        # Restore location in case of error
+        if ($originalLocation) {
+            Set-Location $originalLocation -ErrorAction SilentlyContinue
+        }
         if (Test-Path $workDir) {
             Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
         }
