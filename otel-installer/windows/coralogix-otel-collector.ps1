@@ -1439,14 +1439,19 @@ function Uninstall-MsiPackage {
             return $false
         }
         
-        if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
-            Write-Log "MSI uninstallation completed successfully"
+        # Call WaitForExit() without parameters to ensure ExitCode is populated
+        # See: https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexit
+        $msiProcess.WaitForExit()
+        $exitCode = $msiProcess.ExitCode
+        
+        if ($exitCode -eq 0 -or $exitCode -eq 3010) {
+            Write-Log "MSI uninstallation completed successfully (exit code: $exitCode)"
             # Clean up log file on success
             Remove-Item -Path $logFile -Force -ErrorAction SilentlyContinue
             return $true
         }
         else {
-            Write-Warn "MSI uninstallation returned exit code: $($msiProcess.ExitCode)"
+            Write-Warn "MSI uninstallation returned exit code: $exitCode"
             Write-Warn "Check log file for details: $logFile"
             return $false
         }
@@ -1492,13 +1497,17 @@ function Uninstall-SupervisorMsiPackage {
             return $false
         }
         
-        if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
-            Write-Log "Supervisor MSI uninstallation completed successfully"
+        # Call WaitForExit() without parameters to ensure ExitCode is populated
+        $msiProcess.WaitForExit()
+        $exitCode = $msiProcess.ExitCode
+        
+        if ($exitCode -eq 0 -or $exitCode -eq 3010) {
+            Write-Log "Supervisor MSI uninstallation completed successfully (exit code: $exitCode)"
             Remove-Item -Path $logFile -Force -ErrorAction SilentlyContinue
             return $true
         }
         else {
-            Write-Warn "Supervisor MSI uninstallation returned exit code: $($msiProcess.ExitCode)"
+            Write-Warn "Supervisor MSI uninstallation returned exit code: $exitCode"
             Write-Warn "Check log file for details: $logFile"
             return $false
         }
