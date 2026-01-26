@@ -144,7 +144,8 @@ jobs:
         if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
         run: |
           check_status() {
-            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+            # Only check non-neutral checks - neutral checks are acceptable (e.g., cancelled or intentionally neutral)
+            gh pr checks ${{ env.branch_name }} --json state --jq '[.[] | select(.state != "NEUTRAL")] | all(.[]; .state == "SUCCESS")'
           }
 
           # Initialize the timeout variables
@@ -156,6 +157,11 @@ jobs:
           echo "Waiting for all status checks to pass..."
           # Wait for 5 seconds before checking the status
           sleep 5
+          
+          # Show current check statuses for debugging
+          echo "Current PR check statuses:"
+          gh pr checks ${{ env.branch_name }} --json name,state,conclusion || true
+          
           while true; do
             status=$(check_status)
             
@@ -166,6 +172,8 @@ jobs:
             
             if [ "$elapsed_time" -ge "$max_wait_time" ]; then
               echo "Timeout reached: Status checks did not pass within 10 minutes."
+              echo "Final PR check statuses:"
+              gh pr checks ${{ env.branch_name }} --json name,state,conclusion || true
               exit 1
             fi
             

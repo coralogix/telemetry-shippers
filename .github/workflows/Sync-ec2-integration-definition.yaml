@@ -189,7 +189,8 @@ jobs:
           set -euo pipefail
 
           check_status() {
-            gh pr checks "$branch" --json state --jq 'all(.[]; .state == "SUCCESS")'
+            # Only check non-neutral checks - neutral checks are acceptable (e.g., cancelled or intentionally neutral)
+            gh pr checks "$branch" --json state --jq '[.[] | select(.state != "NEUTRAL")] | all(.[]; .state == "SUCCESS")'
           }
 
           max_wait_time=$((10 * 60))
@@ -198,6 +199,10 @@ jobs:
 
           echo "Waiting for all status checks to pass for $branch..."
           sleep 5
+
+          # Show current check statuses for debugging
+          echo "Current PR check statuses:"
+          gh pr checks "$branch" --json name,state,conclusion || true
 
           while true; do
             status=$(check_status || echo "false")
@@ -209,7 +214,8 @@ jobs:
 
             if [ "$elapsed_time" -ge "$max_wait_time" ]; then
               echo "Timeout reached: Status checks did not pass within 10 minutes."
-              gh pr checks "$branch" || true
+              echo "Final PR check statuses:"
+              gh pr checks "$branch" --json name,state,conclusion || true
               exit 1
             fi
 
