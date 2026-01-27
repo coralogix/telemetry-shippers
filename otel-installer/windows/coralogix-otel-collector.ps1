@@ -793,6 +793,14 @@ function Install-CollectorMSI {
         }
         Write-Log "Collector binary installed at: $BINARY_PATH"
         
+        # Rename MSI default config to avoid confusion with our runtime config
+        $msiDefaultConfig = Join-Path $INSTALL_DIR "config.yaml"
+        $msiRenamedConfig = Join-Path $INSTALL_DIR "default-config.yaml"
+        if (Test-Path $msiDefaultConfig) {
+            Rename-Item -Path $msiDefaultConfig -NewName "default-config.yaml" -Force -ErrorAction SilentlyContinue
+            Write-Log "Renamed MSI default config to: $msiRenamedConfig"
+        }
+        
         # Handle the service created by MSI
         $msiService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
         if ($msiService) {
