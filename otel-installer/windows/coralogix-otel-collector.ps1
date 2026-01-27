@@ -45,8 +45,8 @@
     Use 0.0.0.0 to listen on all interfaces (gateway mode)
     (ignored in supervisor mode)
 
-.PARAMETER EnableDynamicMetadataParsing
-    Enable dynamic metadata parsing for file-based logs (e.g., IIS logs)
+.PARAMETER EnableDynamicIISParsing
+    Enable dynamic IIS log parsing with header-based field detection.
     Creates storage directory and adds --feature-gates=filelog.allowHeaderMetadataParsing
     (regular mode only, not available with Supervisor)
     
@@ -97,7 +97,7 @@
 
 .EXAMPLE
     # Install with dynamic metadata parsing for IIS logs
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
 
 .EXAMPLE
     # Uninstall (keep config/logs)
@@ -146,7 +146,7 @@ param(
     [string]$ListenInterface = "127.0.0.1",
     
     [Parameter(ValueFromPipelineByPropertyName)]
-    [switch]$EnableDynamicMetadataParsing = $false,
+    [switch]$EnableDynamicIISParsing = $false,
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [switch]$Uninstall = $false,
@@ -248,8 +248,7 @@ Options:
                                     (default: 127.0.0.1 for localhost only,
                                      use 0.0.0.0 for all interfaces)
                                     (ignored in supervisor mode)
-    -EnableDynamicMetadataParsing   Enable dynamic metadata parsing for file logs
-                                    (e.g., IIS logs with header-based format detection)
+    -EnableDynamicIISParsing        Enable dynamic IIS log parsing with header-based field detection
                                     Creates storage directory and enables feature gate
                                     (regular mode only)
     -Uninstall                      Uninstall the collector
@@ -294,7 +293,7 @@ Examples:
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
 
     # Install with dynamic metadata parsing for IIS logs
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
 
     # Uninstall (keep config/logs)
     .\coralogix-otel-collector.ps1 -Uninstall
@@ -1175,9 +1174,9 @@ function New-WindowsService {
     $serviceDisplayName = "OpenTelemetry Collector"
     $serviceDescription = "OpenTelemetry Collector - Collects, processes, and exports telemetry data"
     
-    # Handle dynamic metadata parsing (e.g., for IIS logs)
-    if ($EnableDynamicMetadataParsing) {
-        Write-Log "Enabling dynamic metadata parsing for file logs..."
+    # Handle dynamic IIS log parsing
+    if ($EnableDynamicIISParsing) {
+        Write-Log "Enabling dynamic IIS log parsing..."
         $storageDir = Join-Path $CONFIG_DIR "storage"
         if (-not (Test-Path $storageDir)) {
             Write-Log "Creating storage directory: $storageDir"
@@ -1190,7 +1189,7 @@ function New-WindowsService {
     
     # Build service binary path with optional feature gates
     $serviceBinPath = "`"$BINARY_PATH`" --config `"$CONFIG_FILE`""
-    if ($EnableDynamicMetadataParsing) {
+    if ($EnableDynamicIISParsing) {
         $serviceBinPath += " --feature-gates=filelog.allowHeaderMetadataParsing"
         Write-Log "Added feature gate: filelog.allowHeaderMetadataParsing"
     }
@@ -1278,9 +1277,9 @@ function New-WindowsService {
             Write-Host ""
             Write-Host "ERROR: Your configuration uses file_storage extension but the storage directory doesn't exist." -ForegroundColor Red
             Write-Host ""
-            Write-Host "SOLUTION: Re-run the installer with -EnableDynamicMetadataParsing flag:" -ForegroundColor Yellow
+            Write-Host "SOLUTION: Re-run the installer with -EnableDynamicIISParsing flag:" -ForegroundColor Yellow
             Write-Host ""
-            Write-Host "  .\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing" -ForegroundColor Cyan
+            Write-Host "  .\coralogix-otel-collector.ps1 -EnableDynamicIISParsing" -ForegroundColor Cyan
             Write-Host ""
             Write-Host "This will create the storage directory at: $CONFIG_DIR\storage" -ForegroundColor Yellow
             Write-Host "and enable the filelog.allowHeaderMetadataParsing feature gate."
@@ -1729,8 +1728,8 @@ function Main {
         Write-Error "-Config cannot be used with -Supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
     }
     
-    if ($Supervisor -and $EnableDynamicMetadataParsing) {
-        Write-Error "-EnableDynamicMetadataParsing cannot be used with -Supervisor. This feature is only available in regular mode."
+    if ($Supervisor -and $EnableDynamicIISParsing) {
+        Write-Error "-EnableDynamicIISParsing cannot be used with -Supervisor. Dynamic IIS log parsing is only available in regular mode."
     }
     
     # Validate SupervisorBaseConfig
@@ -1932,7 +1931,7 @@ Installation complete!
 Service: $SERVICE_NAME
 Binary: $BINARY_PATH
 Config: $CONFIG_FILE
-$(if ($EnableDynamicMetadataParsing) { "Dynamic Metadata Parsing: Enabled (filelog.allowHeaderMetadataParsing)`nStorage Directory: $CONFIG_DIR\storage" })
+$(if ($EnableDynamicIISParsing) { "Dynamic IIS Parsing: Enabled (filelog.allowHeaderMetadataParsing)`nStorage Directory: $CONFIG_DIR\storage" })
 
 Useful commands:
   Check status:  Get-Service $SERVICE_NAME

@@ -93,7 +93,7 @@ Enable dynamic metadata parsing for file-based logs, such as IIS logs with heade
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -EnableDynamicMetadataParsing
+.\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
 ```
 
 This option:
@@ -151,21 +151,21 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ## Script Parameters
 
-| Parameter                       | Description                                               |
-|---------------------------------|-----------------------------------------------------------|
-| `-Version <version>`            | Install specific collector version                        |
-| `-Config <path>`                | Path to custom configuration file                         |
-| `-MemoryLimit <MiB>`            | Total memory in MiB to allocate (default: 512)            |
-| `-ListenInterface <ip>`         | Network interface for receivers (default: 127.0.0.1)      |
-| `-Supervisor`                   | Install with OpAMP Supervisor mode                        |
-| `-SupervisorVersion <version>`  | Supervisor version (supervisor mode only)                 |
-| `-CollectorVersion <version>`   | Collector version (supervisor mode only)                  |
-| `-SupervisorMsi <path>`         | Path to local OpAMP Supervisor MSI file                   |
-| `-SupervisorBaseConfig <path>`  | Path to base collector config for supervisor mode         |
-| `-EnableDynamicMetadataParsing` | Enable dynamic metadata parsing for file logs (e.g., IIS) |
-| `-Uninstall`                    | Remove the collector (keeps config)                       |
-| `-Uninstall -Purge`             | Remove the collector and all configuration                |
-| `-Help`                         | Show help message                                         |
+| Parameter                      | Description                                                      |
+|--------------------------------|------------------------------------------------------------------|
+| `-Version <version>`           | Install specific collector version                               |
+| `-Config <path>`               | Path to custom configuration file                                |
+| `-MemoryLimit <MiB>`           | Total memory in MiB to allocate (default: 512)                   |
+| `-ListenInterface <ip>`        | Network interface for receivers (default: 127.0.0.1)             |
+| `-Supervisor`                  | Install with OpAMP Supervisor mode                               |
+| `-SupervisorVersion <version>` | Supervisor version (supervisor mode only)                        |
+| `-CollectorVersion <version>`  | Collector version (supervisor mode only)                         |
+| `-SupervisorMsi <path>`        | Path to local OpAMP Supervisor MSI file                          |
+| `-SupervisorBaseConfig <path>` | Path to base collector config for supervisor mode                |
+| `-EnableDynamicIISParsing`     | Enable dynamic IIS log parsing with header-based field detection |
+| `-Uninstall`                   | Remove the collector (keeps config)                              |
+| `-Uninstall -Purge`            | Remove the collector and all configuration                       |
+| `-Help`                        | Show help message                                                |
 
 ---
 
