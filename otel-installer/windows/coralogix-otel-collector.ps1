@@ -48,7 +48,7 @@
 .PARAMETER EnableDynamicIISParsing
     Enable dynamic IIS log parsing with header-based field detection.
     Creates storage directory and adds --feature-gates=filelog.allowHeaderMetadataParsing
-    (regular mode only, not available with Supervisor)
+    Works in both regular and supervisor modes.
     
 .PARAMETER Uninstall
     Uninstall the collector (use Purge to remove all data)
@@ -1012,6 +1012,25 @@ function Configure-Supervisor {
     $domain = $env:CORALOGIX_DOMAIN
     $endpointUrl = "https://ingress.${domain}/opamp/v1"
     
+    # Build agent args (feature gates, etc.)
+    $agentArgs = @()
+    if ($EnableDynamicIISParsing) {
+        $agentArgs += "--feature-gates=filelog.allowHeaderMetadataParsing"
+        Write-Log "Adding feature gate for dynamic IIS parsing: filelog.allowHeaderMetadataParsing"
+        
+        # Create storage directory for file_storage extension
+        $storageDir = Join-Path $CONFIG_DIR "storage"
+        if (-not (Test-Path $storageDir)) {
+            Write-Log "Creating storage directory: $storageDir"
+            New-Item -ItemType Directory -Force -Path $storageDir | Out-Null
+        }
+    }
+    $argsYaml = if ($agentArgs.Count -gt 0) { 
+        "[`"$($agentArgs -join '", "')`"]" 
+    } else { 
+        "[]" 
+    }
+    
     $supervisorConfig = @"
 server:
   endpoint: "${endpointUrl}"
@@ -1038,7 +1057,7 @@ agent:
       cx.agent.type: "standalone"
   config_files:
     - $($SUPERVISOR_COLLECTOR_CONFIG_FILE -replace '\\', '/')
-  args: []
+  args: $argsYaml
   env:
     CORALOGIX_PRIVATE_KEY: "`${env:CORALOGIX_PRIVATE_KEY}"
     OTEL_MEMORY_LIMIT_MIB: "`${env:OTEL_MEMORY_LIMIT_MIB}"
@@ -1726,10 +1745,6 @@ function Main {
     
     if ($Supervisor -and $Config) {
         Write-Error "-Config cannot be used with -Supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
-    }
-    
-    if ($Supervisor -and $EnableDynamicIISParsing) {
-        Write-Error "-EnableDynamicIISParsing cannot be used with -Supervisor. Dynamic IIS log parsing is only available in regular mode."
     }
     
     # Validate SupervisorBaseConfig
