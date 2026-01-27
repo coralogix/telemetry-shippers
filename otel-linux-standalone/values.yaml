@@ -46,6 +46,12 @@ opentelemetry-agent:
       enabled: true
       # Enables dynamic subsystem naming based on _SYSTEMD_UNIT or SYSLOG_IDENTIFIER
       dynamicSubsystemName: true
+      # units:
+      #   - docker.service
+      #   - sshd.service
+      # matches:
+      #   - _SYSTEMD_UNIT: nginx.service
+      #   - PRIORITY: "5"
     
     # Collects systemd unit state metrics
     systemdReceiver:
@@ -62,6 +68,10 @@ opentelemetry-agent:
     
     otlpReceiver:
       enabled: true
+    
+    # Receives StatsD metrics on UDP port 8125
+    statsdReceiver:
+      enabled: false
     
     spanMetrics:
       enabled: true
