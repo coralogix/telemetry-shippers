@@ -20,9 +20,51 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      -
+        name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      -
+        name: Check for version change
+        id: version_check
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+          
+          # If for some reason BEFORE_SHA is empty (e.g. new branch), default to true
+          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+             echo "New branch or unknown state, assuming version changed."
+             echo "version_changed=true" >> "$GITHUB_OUTPUT"
+             exit 0
+          fi
+          
+          echo "Fetching previous commit $BEFORE_SHA..."
+          git fetch origin "$BEFORE_SHA" --depth=1
+          
+          echo "Comparing Chart.yaml versions between $BEFORE_SHA and HEAD"
+          
+          # Get previous version using yq to extract only the top-level version field
+          OLD_VERSION=$(git show "$BEFORE_SHA:otel-linux-standalone/Chart.yaml" 2>/dev/null | yq eval '.version' - || echo "")
+          
+          # Get current version using yq to extract only the top-level version field
+          NEW_VERSION=$(yq eval '.version' otel-linux-standalone/Chart.yaml)
+          
+          if [ -z "$OLD_VERSION" ]; then
+            echo "Previous version not found, assuming version changed."
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+          elif [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version changed from '$OLD_VERSION' to '$NEW_VERSION'"
+          else
+            echo "version_changed=false" >> "$GITHUB_OUTPUT"
+            echo "No version change detected (version: $NEW_VERSION)"
+          fi
       -
         name: Setup Helm Repo
+        if: steps.version_check.outputs.version_changed == 'true'
         run: |
           helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
@@ -32,11 +74,13 @@ jobs:
           helm package .
       -
         name: Setup JFrog CLI
+        if: steps.version_check.outputs.version_changed == 'true'
         uses: jfrog/setup-jfrog-cli@v2.1.0
         with:
           version: 2.12.1
       -
         name: use-jfrog-cli
+        if: steps.version_check.outputs.version_changed == 'true'
         run: |
           cd otel-linux-standalone
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}
