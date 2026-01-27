@@ -4,12 +4,11 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.4"
+  version: "0.0.5"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
   enabled: true
-# provider: "aws | azure | gcp | on-prem | "" (empty = all"
   distribution: "standalone"
   presets:
     metadata:
