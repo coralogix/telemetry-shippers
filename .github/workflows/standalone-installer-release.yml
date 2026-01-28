@@ -1,0 +1,97 @@
+name: Standalone Installer Release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'otel-installer/standalone/**'
+      - '!otel-installer/standalone/**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from CHANGELOG
+        id: version
+        run: |
+          VERSION=$(grep -m1 -oP '(?<=## \[)[0-9.]+' otel-installer/standalone/CHANGELOG.md)
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract version from CHANGELOG.md"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}"
+
+      - name: Check if already released
+        id: check
+        run: |
+          if git tag | grep -q "^standalone-installer-v${{ steps.version.outputs.version }}$"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⏭️ Version ${{ steps.version.outputs.version }} already released, skipping"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "🚀 New version ${{ steps.version.outputs.version }} will be released"
+          fi
+
+      - name: Extract changelog
+        if: steps.check.outputs.skip == 'false'
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          {
+            echo 'content<<EOF'
+            awk "/^## \[${VERSION}\]/,/^## \[[0-9]/" otel-installer/standalone/CHANGELOG.md | head -n -1 | tail -n +2
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Prepare assets
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          mkdir -p dist
+          cp otel-installer/standalone/coralogix-otel-collector.sh dist/
+          chmod +x dist/*.sh
+          cd dist
+          sha256sum coralogix-otel-collector.sh > coralogix-otel-collector.sh.sha256
+
+      - name: Create release
+        if: steps.check.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: standalone-installer-v${{ steps.version.outputs.version }}
+          name: Standalone Installer v${{ steps.version.outputs.version }}
+          body: |
+            ## Standalone OpenTelemetry Collector Installer v${{ steps.version.outputs.version }}
+            
+            ### Install
+            
+            **Linux / macOS:**
+            ```bash
+            curl -fsSL https://github.com/${{ github.repository }}/releases/download/standalone-installer-v${{ steps.version.outputs.version }}/coralogix-otel-collector.sh | bash
+            ```
+            
+            ### Changes
+            ${{ steps.changelog.outputs.content }}
+            
+            ### Docs
+            - [Standalone Installer](otel-installer/standalone/)
+          files: |
+            dist/coralogix-otel-collector.sh
+            dist/*.sha256
+          fail_on_unmatched_files: true
+
+      - name: Attestation
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.sh
+

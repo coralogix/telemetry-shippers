@@ -1,22 +1,6 @@
 # Changelog
 
-**⚠️ This changelog is deprecated. Please see the individual changelogs:**
-
-- [Standalone Installer Changelog](./standalone/CHANGELOG.md) - Linux/macOS installer
-- [Docker Installer Changelog](./docker/CHANGELOG.md) - Docker installer
-
----
-
-## Legacy Changelog (Deprecated)
-
-All notable changes to the OTel Installer scripts were previously documented in this file.
-
-## [0.1.4] - 2024-01-12
-
-### Changed
-- **BREAKING**: Removed `--upgrade` flag from standalone installer
-- Installer now automatically detects existing installations and upgrades them
-
+All notable changes to the Standalone OTel Installer script (Linux/macOS) will be documented in this file.
 
 ## [0.1.3] - 2024-01-12
 
@@ -38,7 +22,6 @@ All notable changes to the OTel Installer scripts were previously documented in 
 
 ### Added
 - Standalone installer script for Linux and macOS
-- Docker installer script with container management
 - Supervisor mode support (OpAMP remote configuration) for Linux
 - Custom configuration file support via `-c` flag
 - Upgrade support with automatic config backup and restore
@@ -48,9 +31,8 @@ All notable changes to the OTel Installer scripts were previously documented in 
 - SHA256 checksum verification for downloaded packages (when available from upstream)
 - Port conflict detection with interactive prompts
 - Automatic addition of `otelcol-contrib` user to `systemd-journal` group for journald access
-- GitHub Actions workflow for automated releases
 
 ### Supported Platforms
 - Linux (x86_64, arm64) - systemd service
 - macOS (x86_64, arm64) - launchd service
-- Docker (any platform with Docker installed)
+
