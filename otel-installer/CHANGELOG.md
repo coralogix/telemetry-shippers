@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.4] - 2024-01-28
+
+### Changed
+- Docker installer: Removed `--listen-interface` parameter (Docker port mapping requires binding to `0.0.0.0` inside container)
+
 ## [0.1.3] - 2024-01-12
 
 ### Changed
@@ -33,6 +38,7 @@ All notable changes to the OTel Installer scripts will be documented in this fil
 - Port conflict detection with interactive prompts
 - Automatic addition of `otelcol-contrib` user to `systemd-journal` group for journald access
 - GitHub Actions workflow for automated releases
+- Docker installer: Memory limit configuration via `--memory-limit` flag
 
 ### Supported Platforms
 - Linux (x86_64, arm64) - systemd service
