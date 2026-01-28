@@ -48,13 +48,13 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Optional Variables
 
-| Variable          | Default   | Description                                |
-|-------------------|-----------|--------------------------------------------|
-| OTLP_GRPC_PORT    | 4317      | Host port for OTLP gRPC                    |
-| OTLP_HTTP_PORT    | 4318      | Host port for OTLP HTTP                    |
-| HEALTH_CHECK_PORT | 13133     | Host port for health check                 |
-| MEMORY_LIMIT_MIB  | 512       | Memory limit in MiB for the collector      |
-|                   |           | (can also be set via `--memory-limit` flag)|
+| Variable          | Default | Description                                 |
+|-------------------|---------|---------------------------------------------|
+| OTLP_GRPC_PORT    | 4317    | Host port for OTLP gRPC                     |
+| OTLP_HTTP_PORT    | 4318    | Host port for OTLP HTTP                     |
+| HEALTH_CHECK_PORT | 13133   | Host port for health check                  |
+| MEMORY_LIMIT_MIB  | 512     | Memory limit in MiB for the collector       |
+|                   |         | (can also be set via `--memory-limit` flag) |
 
 ### Configuration Environment Variables
 
@@ -88,19 +88,19 @@ extensions:
 
 ## Script Options
 
-| Option                           | Description                                |
-|----------------------------------|--------------------------------------------|
-| `-v, --version <version>`        | Default version (default: from Helm chart) |
-| `--collector-version <version>`  | Collector image version                    |
-| `--supervisor-version <version>` | Supervisor image version                   |
-| `-c, --config <path>`            | Path to custom configuration file          |
-| `-s, --supervisor`               | Use supervisor mode                        |
-| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512) |
+| Option                           | Description                                           |
+|----------------------------------|-------------------------------------------------------|
+| `-v, --version <version>`        | Default version (default: from Helm chart)            |
+| `--collector-version <version>`  | Collector image version                               |
+| `--supervisor-version <version>` | Supervisor image version                              |
+| `-c, --config <path>`            | Path to custom configuration file                     |
+| `-s, --supervisor`               | Use supervisor mode                                   |
+| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)  |
 |                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |
-|                                  | (ignored in supervisor mode)               |
-| `-f, --foreground`               | Run in foreground (default: detached)      |
-| `--uninstall`                    | Stop and remove the container              |
-| `-h, --help`                     | Show help message                          |
+|                                  | (ignored in supervisor mode)                          |
+| `-f, --foreground`               | Run in foreground (default: detached)                 |
+| `--uninstall`                    | Stop and remove the container                         |
+| `-h, --help`                     | Show help message                                     |
 
 ## Container Images
 
