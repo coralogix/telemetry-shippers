@@ -171,7 +171,7 @@ OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 \
 
 ```bash
 # Supervisor mode (memory limit is ignored, managed by OpAMP server)
-CORALOGIX_DOMAIN="eu2.coralogix.com" \
+  CORALOGIX_DOMAIN="eu2.coralogix.com" \
   CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   ./docker-install.sh --supervisor
 ```

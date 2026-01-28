@@ -1,22 +1,11 @@
 # Changelog
 
-**⚠️ This changelog is deprecated. Please see the individual changelogs:**
+All notable changes to the OTel Installer scripts will be documented in this file.
 
-- [Standalone Installer Changelog](./standalone/CHANGELOG.md) - Linux/macOS installer
-- [Docker Installer Changelog](./docker/CHANGELOG.md) - Docker installer
-
----
-
-## Legacy Changelog (Deprecated)
-
-All notable changes to the OTel Installer scripts were previously documented in this file.
-
-## [0.1.4] - 2024-01-12
+## [0.1.4] - 2024-01-28
 
 ### Changed
-- **BREAKING**: Removed `--upgrade` flag from standalone installer
-- Installer now automatically detects existing installations and upgrades them
-
+- Docker installer: Removed `--listen-interface` parameter (Docker port mapping requires binding to `0.0.0.0` inside container)
 
 ## [0.1.3] - 2024-01-12
 
@@ -49,6 +38,7 @@ All notable changes to the OTel Installer scripts were previously documented in 
 - Port conflict detection with interactive prompts
 - Automatic addition of `otelcol-contrib` user to `systemd-journal` group for journald access
 - GitHub Actions workflow for automated releases
+- Docker installer: Memory limit configuration via `--memory-limit` flag
 
 ### Supported Platforms
 - Linux (x86_64, arm64) - systemd service

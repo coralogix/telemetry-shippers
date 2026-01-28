@@ -162,7 +162,7 @@ parse_args() {
                     fail "--config cannot be used with --supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
                 fi
                 if [ -f "$2" ]; then
-                    CUSTOM_CONFIG_PATH="$(realpath "$2")"
+                CUSTOM_CONFIG_PATH="$(realpath "$2")"
                 else
                     fail "Config file not found: $2"
                 fi
@@ -186,7 +186,7 @@ parse_args() {
                 ;;
             --supervisor-base-config)
                 if [ -f "$2" ]; then
-                    SUPERVISOR_BASE_CONFIG_PATH="$(realpath "$2")"
+                SUPERVISOR_BASE_CONFIG_PATH="$(realpath "$2")"
                 else
                     fail "Supervisor base config file not found: $2"
                 fi
