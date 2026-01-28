@@ -66,6 +66,7 @@ declare -a TEST_CONFIGS=(
     "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
     # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
     "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_FleetManagerSupervisor:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml:component=agent-collector:"
     "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
@@ -467,6 +468,10 @@ install_chart() {
 run_test() {
     local test_name="$1"
     local test_env_vars="$2"
+    local test_package="./..."
+    if [[ "$test_name" == TestE2E_FleetManagerSupervisor* ]]; then
+        test_package="./supervisor"
+    fi
 
     log_test "========================================"
     log_test "Running test: ${test_name}"
@@ -495,11 +500,11 @@ run_test() {
     kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
 
     # Run the test
-    log_info "Executing: go test -v -run='^${test_name}$' ./..."
+    log_info "Executing: go test -v -run='^${test_name}$' ${test_package}"
     local test_start_time=$(date +%s)
 
     # Run test and capture exit code properly (tee doesn't preserve exit codes)
-    go test -v -run="^${test_name}$" ./... 2>&1 | tee /tmp/test-${test_name}-output.log
+    go test -v -run="^${test_name}$" ${test_package} 2>&1 | tee /tmp/test-${test_name}-output.log
     local test_exit_code=${PIPESTATUS[0]}
 
     local test_end_time=$(date +%s)
@@ -548,7 +553,7 @@ run_workflow_mode() {
     fi
 
     log_test "========================================"
-    log_test "Workflow Mode: go test -v -run='^TestE2E.*' ./..."
+    log_test "Workflow Mode: go test -v -run='^TestE2E.*' ."
     log_test "========================================"
 
     export KUBECONFIG="${KUBECONFIG_PATH}"
@@ -560,7 +565,7 @@ run_workflow_mode() {
     (
         cd "${E2E_TEST_DIR}" || exit 1
         go clean -testcache
-        go test -v -run='^TestE2E.*' ./...
+        go test -v -run='^TestE2E.*' .
     )
     local exit_code=$?
     local workflow_end_time

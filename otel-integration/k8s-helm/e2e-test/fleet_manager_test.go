@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"coralogix.com/otel-integration/e2e/internal/opampserver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -16,21 +16,15 @@ import (
 func TestE2E_FleetManager(t *testing.T) {
 	t.Parallel()
 
-	testServer, err := newOpampTestServer()
-	assert.NoError(t, err)
+	testServer := opampserver.StartTestServer(t, "0.0.0.0:4320")
+	k8sClient := newFleetManagerK8sClient(t)
+	kickFleetManagerCollectors(t, k8sClient)
+	waitForFleetManagerMessages(t, testServer)
+}
 
-	// Always listen on all interfaces so pods that connect through HOSTENDPOINT
-	// (for example host.docker.internal) can reach the test OpAMP server even if
-	// that hostname does not resolve locally.
-	listenAddr := "0.0.0.0:4320"
+func newFleetManagerK8sClient(t *testing.T) *xk8stest.K8sClient {
+	t.Helper()
 
-	err = testServer.start(listenAddr)
-	assert.NoError(t, err)
-	t.Cleanup(func() {
-		_ = testServer.stop()
-	})
-
-	// Get the kubeconfig path from env
 	kubeconfigPath := testKubeConfig
 	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {
 		kubeconfigPath = kubeConfigFromEnv
@@ -38,12 +32,14 @@ func TestE2E_FleetManager(t *testing.T) {
 
 	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
 	require.NoError(t, err)
+	return k8sClient
+}
 
-	// We give a kick to all the Collectors to trigger them to be recreated and
-	// reconnect to the OpAMP server, decreasing the likelyhood of a false
-	// positive in the test.
+func kickFleetManagerCollectors(t *testing.T, k8sClient *xk8stest.K8sClient) {
+	t.Helper()
+
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
-	err = k8sClient.
+	err := k8sClient.
 		DynamicClient.
 		Resource(gvr).
 		Namespace("default").
@@ -53,6 +49,10 @@ func TestE2E_FleetManager(t *testing.T) {
 			metav1.ListOptions{LabelSelector: "app.kubernetes.io/instance=otel-integration-agent-e2e"},
 		)
 	require.NoError(t, err)
+}
+
+func waitForFleetManagerMessages(t *testing.T, testServer *opampserver.Server) {
+	t.Helper()
 
 	ctx := context.Background()
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -61,6 +61,5 @@ func TestE2E_FleetManager(t *testing.T) {
 	// We wait for at least two messages:
 	// 1st: reporting the creation of the agent.
 	// 2nd: reporting the agent's initial configuration.
-	// More messages might have arrived, but we don't care about the extra ones at the moment.
-	testServer.assertMessageCount(t, ctxWithTimeout, 2)
+	testServer.AssertMessageCount(t, ctxWithTimeout, 2)
 }
