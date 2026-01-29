@@ -58,7 +58,7 @@ jobs:
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go clean -testcache
-          go test -v -run='^TestE2E.*' ./...
+          go test -v -run='^TestE2E.*' $(go list ./... | rg -v '/supervisor$')
       - name: Pods logs
         if: failure()
         run: |

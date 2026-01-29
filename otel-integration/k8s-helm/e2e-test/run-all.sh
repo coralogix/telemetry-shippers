@@ -566,7 +566,7 @@ run_workflow_mode() {
     (
         cd "${E2E_TEST_DIR}" || exit 1
         go clean -testcache
-        go test -v -run='^TestE2E.*' .
+        go test -v -run='^TestE2E.*' $(go list ./... | rg -v '/supervisor$')
     )
     local exit_code=$?
     local workflow_end_time
