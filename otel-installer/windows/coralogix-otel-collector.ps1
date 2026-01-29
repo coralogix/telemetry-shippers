@@ -1782,6 +1782,8 @@ function Main {
             Write-Error "Supervisor base config cannot contain 'opamp' extension. The supervisor manages the OpAMP connection.`nRemove the 'opamp' extension from your config file: $SupervisorBaseConfig"
         }
         Write-Log "Using custom base config for supervisor: $SupervisorBaseConfig"
+        # Resolve to absolute path before any Set-Location calls
+        $SupervisorBaseConfig = (Resolve-Path $SupervisorBaseConfig).Path
     }
     
     if ($Supervisor) {
@@ -1803,6 +1805,10 @@ function Main {
     
     if ($SupervisorMsi -and -not (Test-Path $SupervisorMsi)) {
         Write-Error "Supervisor MSI file not found: $SupervisorMsi"
+    }
+    # Resolve to absolute path before any Set-Location calls
+    if ($SupervisorMsi) {
+        $SupervisorMsi = (Resolve-Path $SupervisorMsi).Path
     }
     
     if ($Config -and -not (Test-Path $Config)) {
