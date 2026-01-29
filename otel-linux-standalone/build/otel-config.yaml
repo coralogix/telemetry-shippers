@@ -120,27 +120,27 @@ exporters:
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.4
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.4
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.4
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
     subsystem_name: linux
     subsystem_name_attributes:
     - service.name
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.4
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.4
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
@@ -154,7 +154,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.128.8
+        helm.chart.opentelemetry-agent.version: 0.128.15
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -516,12 +516,14 @@ processors:
     - context: datapoint
       statements:
       - set(attributes["status.code"], "STATUS_CODE_ERROR") where attributes["status.code"]
-        == nil and attributes["otel.status_code"] == "ERROR"
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+        == "ERROR"
       - set(attributes["status.code"], "STATUS_CODE_OK") where attributes["status.code"]
-        == nil and attributes["otel.status_code"] == "OK"
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+        == "OK"
       - set(attributes["status.code"], "STATUS_CODE_UNSET") where attributes["status.code"]
-        == nil and (attributes["otel.status_code"] == "UNSET" or attributes["otel.status_code"]
-        == nil)
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and (attributes["otel.status_code"]
+        == "UNSET" or attributes["otel.status_code"] == nil)
 receivers:
   hostmetrics:
     collection_interval: 10s

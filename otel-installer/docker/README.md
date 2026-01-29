@@ -48,20 +48,19 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Optional Variables
 
-| Variable          | Default   | Description                                |
-|-------------------|-----------|--------------------------------------------|
-| OTLP_GRPC_PORT    | 4317      | Host port for OTLP gRPC                    |
-| OTLP_HTTP_PORT    | 4318      | Host port for OTLP HTTP                    |
-| HEALTH_CHECK_PORT | 13133     | Host port for health check                 |
-| MEMORY_LIMIT_MIB  | 512       | Memory limit in MiB for the collector      |
-| LISTEN_INTERFACE  | 127.0.0.1 | Network interface for receivers to bind to |
+| Variable          | Default | Description                                 |
+|-------------------|---------|---------------------------------------------|
+| OTLP_GRPC_PORT    | 4317    | Host port for OTLP gRPC                     |
+| OTLP_HTTP_PORT    | 4318    | Host port for OTLP HTTP                     |
+| HEALTH_CHECK_PORT | 13133   | Host port for health check                  |
+| MEMORY_LIMIT_MIB  | 512     | Memory limit in MiB for the collector       |
+|                   |         | (can also be set via `--memory-limit` flag) |
 
 ### Configuration Environment Variables
 
-The collector configuration can reference these environment variables:
+The collector configuration can reference this environment variable:
 
 - `${env:OTEL_MEMORY_LIMIT_MIB}` - Memory limit for the memory_limiter processor
-- `${env:OTEL_LISTEN_INTERFACE}` - Network interface for receiver endpoints
 
 **Example configuration:**
 
@@ -75,34 +74,33 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+        endpoint: 0.0.0.0:4317
       http:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
+        endpoint: 0.0.0.0:4318
 
 extensions:
   health_check:
-    endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
+    endpoint: 0.0.0.0:13133
 ```
 
 **Notes:**
 - `MEMORY_LIMIT_MIB` controls the collector's memory usage to prevent OOM kills
-- `LISTEN_INTERFACE` determines network binding:
-  - `127.0.0.1` (default): Local only, suitable for agent mode
-  - `0.0.0.0`: All interfaces, suitable for gateway mode
-  - Specific IP: Bind to a particular network interface
 
 ## Script Options
 
-| Option                           | Description                                |
-|----------------------------------|--------------------------------------------|
-| `-v, --version <version>`        | Default version (default: from Helm chart) |
-| `--collector-version <version>`  | Collector image version                    |
-| `--supervisor-version <version>` | Supervisor image version                   |
-| `-c, --config <path>`            | Path to custom configuration file          |
-| `-s, --supervisor`               | Use supervisor mode                        |
-| `-f, --foreground`               | Run in foreground (default: detached)      |
-| `--uninstall`                    | Stop and remove the container              |
-| `-h, --help`                     | Show help message                          |
+| Option                           | Description                                           |
+|----------------------------------|-------------------------------------------------------|
+| `-v, --version <version>`        | Default version (default: from Helm chart)            |
+| `--collector-version <version>`  | Collector image version                               |
+| `--supervisor-version <version>` | Supervisor image version                              |
+| `-c, --config <path>`            | Path to custom configuration file                     |
+| `-s, --supervisor`               | Use supervisor mode                                   |
+| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)  |
+|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |
+|                                  | (ignored in supervisor mode)                          |
+| `-f, --foreground`               | Run in foreground (default: detached)                 |
+| `--uninstall`                    | Stop and remove the container                         |
+| `-h, --help`                     | Show help message                                     |
 
 ## Container Images
 
@@ -134,6 +132,9 @@ OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="<your-private-k
 # With custom config (recommended)
 CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config /path/to/config.yaml
 
+# With custom memory limit
+CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --memory-limit 2048
+
 # Specific version
 CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --version 0.140.1
 
@@ -147,8 +148,12 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.y
 ### Gateway Mode with Custom Memory
 
 ```bash
-# Gateway mode with 2GB memory limit and listen on all interfaces
-MEMORY_LIMIT_MIB=2048 LISTEN_INTERFACE=0.0.0.0 \
+# Gateway mode with 2GB memory limit (using flag)
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  ./docker-install.sh --config gateway-config.yaml --memory-limit 2048
+
+# Alternative: using environment variable
+MEMORY_LIMIT_MIB=2048 \
   CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   ./docker-install.sh --config gateway-config.yaml
 ```
@@ -165,12 +170,13 @@ OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 \
 ### Supervisor Mode with Custom Settings
 
 ```bash
-# Supervisor mode with custom memory limit
-MEMORY_LIMIT_MIB=1024 LISTEN_INTERFACE=0.0.0.0 \
+# Supervisor mode (memory limit is ignored, managed by OpAMP server)
   CORALOGIX_DOMAIN="eu2.coralogix.com" \
   CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   ./docker-install.sh --supervisor
 ```
+
+**Note:** `--memory-limit` and `MEMORY_LIMIT_MIB` are ignored in supervisor mode as configuration is managed remotely by the OpAMP server.
 
 ### Management Commands
 
@@ -209,12 +215,16 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.y
 # Upgrade to specific version
 CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --version 0.141.0
 
-# Upgrade and change memory limit
+# Upgrade and change memory limit (using flag)
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  ./docker-install.sh --config config.yaml --memory-limit 2048
+
+# Alternative: using environment variable
 MEMORY_LIMIT_MIB=2048 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   ./docker-install.sh --config config.yaml
 ```
 
-**Note:** You can change environment variables (like `MEMORY_LIMIT_MIB` or `LISTEN_INTERFACE`) during an upgrade by setting them when running the script again.
+**Note:** You can change the memory limit during an upgrade by using the `--memory-limit` flag or setting the `MEMORY_LIMIT_MIB` environment variable when running the script again.
 
 ## Uninstall
 
@@ -236,6 +246,5 @@ docker stop coralogix-otel-collector && docker rm coralogix-otel-collector
 - **Port conflicts**: Script checks for port availability before starting and provides clear error messages
 - **Environment variables**: Configuration files should use environment variable substitution (e.g., `${env:OTEL_MEMORY_LIMIT_MIB}`) to leverage the script's environment variable support
 - **Memory management**: The `MEMORY_LIMIT_MIB` environment variable helps prevent OOM kills by configuring the memory_limiter processor
-- **Network binding**: Use `LISTEN_INTERFACE=0.0.0.0` for gateway mode (accepts external connections) or `127.0.0.1` for agent mode (local only)
+- **Network binding**: Receivers bind to `0.0.0.0` by default to allow Docker port mapping to work correctly. External access is controlled via Docker port mapping (`-p` flags)
 - Container name: `coralogix-otel-collector`
-- Container restarts automatically unless stopped (`--restart unless-stopped`)
