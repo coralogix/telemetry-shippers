@@ -501,24 +501,38 @@ function Get-Architecture {
     }
 }
 
-function Test-Installed {
-    if ($Supervisor) {
-        $service = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
-        if ($service) {
-            return $true
-        }
-        if (Test-Path $SUPERVISOR_BINARY_PATH) {
-            return $true
-        }
+function Test-SupervisorMode {
+    # Check if supervisor mode is installed
+    $service = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
+    if ($service) {
+        return $true
     }
-    else {
-        $service = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
-        if ($service) {
-            return $true
-        }
-        if (Test-Path $BINARY_PATH) {
-            return $true
-        }
+    if (Test-Path $SUPERVISOR_BINARY_PATH) {
+        return $true
+    }
+    return $false
+}
+
+function Test-RegularMode {
+    # Check if regular (non-supervisor) mode is installed
+    $service = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+    if ($service) {
+        return $true
+    }
+    if (Test-Path $BINARY_PATH) {
+        return $true
+    }
+    return $false
+}
+
+function Test-Installed {
+    # Check for ANY existing installation (either mode)
+    # This ensures mode mismatch detection works properly
+    if (Test-SupervisorMode) {
+        return $true
+    }
+    if (Test-RegularMode) {
+        return $true
     }
     return $false
 }
@@ -1337,17 +1351,6 @@ function Test-Service {
     }
     
     Write-Warn "Service may not be running. Check status with: Get-Service $SERVICE_NAME"
-}
-
-function Test-SupervisorMode {
-    $service = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
-    if ($service) {
-        return $true
-    }
-    if (Test-Path $SUPERVISOR_BINARY_PATH) {
-        return $true
-    }
-    return $false
 }
 
 function Stop-ServiceWindows {
