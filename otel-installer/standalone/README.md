@@ -223,7 +223,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
-| `--disable-capabilities`         | Disable automatic Linux capabilities enablement (not recommended)                                                 |
+| `--disable-capabilities`         | Disable automatic Linux capabilities enablement (not recommended)                                                  |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
 | `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
 | `--uninstall`                    | Remove the collector (keeps config)                                                                                |
@@ -238,27 +238,27 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Regular Mode
 
-| Component     | Location                            |
-|---------------|-------------------------------------|
-| Binary        | `/usr/bin/otelcol-contrib`          |
-| Configuration | `/etc/otelcol-contrib/config.yaml`  |
-| Discovery Credentials | `/etc/otelcol-contrib/discovery.env` |
-| Installation Summary | `/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt` |
-| Service       | `otelcol-contrib.service` (systemd) |
-| Logs          | `journalctl -u otelcol-contrib`     |
+| Component             | Location                                        |
+|-----------------------|-------------------------------------------------|
+| Binary                | `/usr/bin/otelcol-contrib`                      |
+| Configuration         | `/etc/otelcol-contrib/config.yaml`              |
+| Discovery Credentials | `/etc/otelcol-contrib/discovery.env`            |
+| Installation Summary  | `/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt` |
+| Service               | `otelcol-contrib.service` (systemd)             |
+| Logs                  | `journalctl -u otelcol-contrib`                 |
 
 ### Supervisor Mode
 
-| Component         | Location                                       |
-|-------------------|------------------------------------------------|
-| Collector Binary  | `/usr/local/bin/otelcol-contrib`               |
-| Supervisor Config | `/etc/opampsupervisor/config.yaml`             |
-| Collector Config  | `/etc/opampsupervisor/collector.yaml`          |
-| Effective Config  | `/var/lib/opampsupervisor/effective.yaml`      |
-| Discovery Credentials | `/etc/opampsupervisor/opampsupervisor.conf` |
-| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
-| Service           | `opampsupervisor.service` (systemd)            |
-| Logs              | `/var/log/opampsupervisor/opampsupervisor.log` |
+| Component             | Location                                        |
+|-----------------------|-------------------------------------------------|
+| Collector Binary      | `/usr/local/bin/otelcol-contrib`                |
+| Supervisor Config     | `/etc/opampsupervisor/config.yaml`              |
+| Collector Config      | `/etc/opampsupervisor/collector.yaml`           |
+| Effective Config      | `/var/lib/opampsupervisor/effective.yaml`       |
+| Discovery Credentials | `/etc/opampsupervisor/opampsupervisor.conf`     |
+| Installation Summary  | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
+| Service               | `opampsupervisor.service` (systemd)             |
+| Logs                  | `/var/log/opampsupervisor/opampsupervisor.log`  |
 
 ## Service Management
 
