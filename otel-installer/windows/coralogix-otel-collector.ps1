@@ -1593,6 +1593,14 @@ function Remove-PackageWindows {
         if (-not $supervisorMsiUninstalled) {
             # Fallback to manual removal if MSI uninstall failed or not found
             Write-Log "Falling back to manual supervisor file removal..."
+            
+            # Remove the Windows service if it exists (MSI would normally do this)
+            $supervisorService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
+            if ($supervisorService) {
+                Write-Log "Removing supervisor service: $SUPERVISOR_SERVICE_NAME"
+                sc.exe delete $SUPERVISOR_SERVICE_NAME 2>&1 | Out-Null
+            }
+            
             if (Test-Path $SUPERVISOR_BINARY_PATH) {
                 Write-Log "Removing supervisor binary: $SUPERVISOR_BINARY_PATH"
                 Remove-Item -Path $SUPERVISOR_BINARY_PATH -Force -ErrorAction SilentlyContinue
@@ -1603,6 +1611,8 @@ function Remove-PackageWindows {
         $msiUninstalled = Uninstall-MsiPackage
         if (-not $msiUninstalled) {
             # Fallback to manual removal if MSI uninstall failed
+            # Note: In supervisor mode, the collector service is managed by the supervisor,
+            # not as a separate Windows service, so we only need to remove files here
             if (Test-Path $BINARY_PATH) {
                 Write-Log "Removing collector binary: $BINARY_PATH"
                 Remove-Item -Path $BINARY_PATH -Force -ErrorAction SilentlyContinue
@@ -1637,6 +1647,13 @@ function Remove-PackageWindows {
         if (-not $msiUninstalled) {
             # Fallback to manual removal if MSI uninstall failed or not found
             Write-Log "Falling back to manual file removal..."
+            
+            # Remove the Windows service if it exists (MSI would normally do this)
+            $collectorService = Get-Service -Name $SERVICE_NAME -ErrorAction SilentlyContinue
+            if ($collectorService) {
+                Write-Log "Removing collector service: $SERVICE_NAME"
+                sc.exe delete $SERVICE_NAME 2>&1 | Out-Null
+            }
             
             if (Test-Path $BINARY_PATH) {
                 Write-Log "Removing binary: $BINARY_PATH"
