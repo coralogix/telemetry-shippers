@@ -26,8 +26,7 @@ const (
 
 func TestE2E_FleetManagerSupervisor(t *testing.T) {
 	host := testhelpers.HostEndpoint(t)
-	opampPort := testhelpers.GetFreePort(t)
-	testServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", opampPort))
+	testServer, opampPort := opampserver.StartTestServerOnFreePort(t, "0.0.0.0")
 	k8sClient := newFleetManagerK8sClient(t)
 	setSupervisorConfigEndpoint(t, k8sClient, defaultOpampEndpoint())
 	rawConfig := assertSupervisorConfigRendered(t, k8sClient)
@@ -78,10 +77,8 @@ func TestE2E_FleetManagerSupervisor(t *testing.T) {
 
 func TestE2E_FleetManagerSupervisor_ConfigMapReload(t *testing.T) {
 	host := testhelpers.HostEndpoint(t)
-	firstPort := testhelpers.GetFreePort(t)
-	secondPort := testhelpers.GetFreePort(t)
-	testServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", firstPort))
-	secondaryServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", secondPort))
+	testServer, firstPort := opampserver.StartTestServerOnFreePort(t, "0.0.0.0")
+	secondaryServer, secondPort := opampserver.StartTestServerOnFreePort(t, "0.0.0.0")
 	k8sClient := newFleetManagerK8sClient(t)
 	setSupervisorConfigEndpoint(t, k8sClient, defaultOpampEndpoint())
 	assertSupervisorConfigRendered(t, k8sClient)

@@ -22,8 +22,7 @@ func TestE2E_FleetManager(t *testing.T) {
 
 	k8sClient := newFleetManagerK8sClient(t)
 	hostEndpoint := testhelpers.HostEndpoint(t)
-	opampPort := testhelpers.GetFreePort(t)
-	testServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", opampPort))
+	testServer, opampPort := opampserver.StartTestServerOnFreePort(t, "0.0.0.0")
 	patchOpampEndpoint(t, k8sClient, hostEndpoint, opampPort)
 
 	kickFleetManagerCollectors(t, k8sClient)

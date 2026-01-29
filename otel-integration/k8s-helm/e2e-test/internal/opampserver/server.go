@@ -3,6 +3,7 @@ package opampserver
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"sync"
 	"testing"
@@ -53,6 +54,18 @@ func StartTestServer(t *testing.T, listenAddr string) *Server {
 	return testServer
 }
 
+func StartTestServerOnFreePort(t *testing.T, host string) (*Server, int) {
+	t.Helper()
+
+	testServer := StartTestServer(t, fmt.Sprintf("%s:0", host))
+	addr := testServer.Addr()
+	tcpAddr, ok := addr.(*net.TCPAddr)
+	if !ok || tcpAddr == nil || tcpAddr.Port == 0 {
+		t.Fatalf("failed to resolve OpAMP server port from addr %v", addr)
+	}
+	return testServer, tcpAddr.Port
+}
+
 func (s *Server) Start(listenAddr string) error {
 	settings := server.StartSettings{
 		ListenEndpoint: listenAddr,
@@ -67,6 +80,10 @@ func (s *Server) Start(listenAddr string) error {
 
 func (s *Server) Stop() error {
 	return s.opampSrv.Stop(context.TODO())
+}
+
+func (s *Server) Addr() net.Addr {
+	return s.opampSrv.Addr()
 }
 
 func (s *Server) AssertMessageCount(t *testing.T, ctx context.Context, count int) {
