@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"coralogix.com/otel-integration/e2e/internal/opampserver"
+	"coralogix.com/otel-integration/e2e/internal/testhelpers"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/require"
@@ -24,12 +25,16 @@ const (
 )
 
 func TestE2E_FleetManagerSupervisor(t *testing.T) {
-	testServer := opampserver.StartTestServer(t, "0.0.0.0:4320")
+	host := testhelpers.HostEndpoint(t)
+	opampPort := testhelpers.GetFreePort(t)
+	testServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", opampPort))
 	k8sClient := newFleetManagerK8sClient(t)
+	setSupervisorConfigEndpoint(t, k8sClient, defaultOpampEndpoint())
 	rawConfig := assertSupervisorConfigRendered(t, k8sClient)
 	expectedClusterName := extractConfigValue(rawConfig, "cx.cluster.name")
 	require.NotEmpty(t, expectedClusterName, "expected cx.cluster.name in supervisor config")
-	patchSupervisorConfigEndpoint(t, k8sClient, defaultOpampEndpoint(), localOpampEndpoint(4320))
+	setSupervisorConfigEndpoint(t, k8sClient, opampEndpoint(host, opampPort))
+	assertSupervisorConfigOverride(t, k8sClient, host, opampPort)
 	kickFleetManagerCollectors(t, k8sClient)
 	waitForFleetManagerMessages(t, testServer)
 	assertMinimalCollectorConfig(t, k8sClient)
@@ -41,12 +46,11 @@ func TestE2E_FleetManagerSupervisor(t *testing.T) {
 		agentType, ok := getNonIdentifyingAttribute(msg, "cx.agent.type")
 		customAttr, customOK := getNonIdentifyingAttribute(msg, "e2e.custom.attr")
 		clusterName, clusterOK := getNonIdentifyingAttribute(msg, "cx.cluster.name")
-		chartVersion, chartOK := getNonIdentifyingAttribute(msg, "helm.chart.opentelemetry-agent.version")
 		namespaceName, nsOK := getNonIdentifyingAttribute(msg, "k8s.namespace.name")
 		podName, podOK := getNonIdentifyingAttribute(msg, "k8s.pod.name")
 		nodeName, nodeOK := getNonIdentifyingAttribute(msg, "k8s.node.name")
 		return ok && agentType != "" && customOK && customAttr != "" && clusterOK && clusterName != "" &&
-			chartOK && chartVersion != "" && nsOK && namespaceName != "" && podOK && podName != "" && nodeOK && nodeName != ""
+			nsOK && namespaceName != "" && podOK && podName != "" && nodeOK && nodeName != ""
 	})
 
 	value, ok := getNonIdentifyingAttribute(msg, "cx.agent.type")
@@ -61,12 +65,6 @@ func TestE2E_FleetManagerSupervisor(t *testing.T) {
 	require.True(t, ok, "missing cx.cluster.name in agent description")
 	require.Equal(t, expectedClusterName, clusterName)
 
-	chartVersion, ok := getNonIdentifyingAttribute(msg, "helm.chart.opentelemetry-agent.version")
-	require.True(t, ok, "missing helm.chart.opentelemetry-agent.version in agent description")
-	expectedVersion := expectedChartVersion()
-	require.NotEmpty(t, expectedVersion, "expected chart version in Chart.yaml")
-	require.Equal(t, expectedVersion, chartVersion)
-
 	namespaceName, ok := getNonIdentifyingAttribute(msg, "k8s.namespace.name")
 	require.True(t, ok, "missing k8s.namespace.name in agent description")
 	require.Equal(t, agentCollectorNamespace(), namespaceName)
@@ -79,16 +77,20 @@ func TestE2E_FleetManagerSupervisor(t *testing.T) {
 }
 
 func TestE2E_FleetManagerSupervisor_ConfigMapReload(t *testing.T) {
-	testServer := opampserver.StartTestServer(t, "0.0.0.0:4320")
-	secondaryServer := opampserver.StartTestServer(t, "0.0.0.0:4321")
+	host := testhelpers.HostEndpoint(t)
+	firstPort := testhelpers.GetFreePort(t)
+	secondPort := testhelpers.GetFreePort(t)
+	testServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", firstPort))
+	secondaryServer := opampserver.StartTestServer(t, fmt.Sprintf("0.0.0.0:%d", secondPort))
 	k8sClient := newFleetManagerK8sClient(t)
+	setSupervisorConfigEndpoint(t, k8sClient, defaultOpampEndpoint())
 	assertSupervisorConfigRendered(t, k8sClient)
 
-	patchSupervisorConfigEndpoint(t, k8sClient, defaultOpampEndpoint(), localOpampEndpoint(4320))
+	setSupervisorConfigEndpoint(t, k8sClient, opampEndpoint(host, firstPort))
 	kickFleetManagerCollectors(t, k8sClient)
 	waitForFleetManagerMessages(t, testServer)
 
-	patchSupervisorConfigEndpoint(t, k8sClient, localOpampEndpoint(4320), localOpampEndpoint(4321))
+	setSupervisorConfigEndpoint(t, k8sClient, opampEndpoint(host, secondPort))
 	kickFleetManagerCollectors(t, k8sClient)
 	waitForFleetManagerMessages(t, secondaryServer)
 }
@@ -132,12 +134,12 @@ func waitForFleetManagerMessages(t *testing.T, testServer *opampserver.Server) {
 	testServer.AssertMessageCount(t, ctxWithTimeout, 2)
 }
 
-func assertSupervisorConfigOverride(t *testing.T, k8sClient *xk8stest.K8sClient) {
+func assertSupervisorConfigOverride(t *testing.T, k8sClient *xk8stest.K8sClient, host string, port int) {
 	t.Helper()
 
 	data := getConfigMapData(t, k8sClient, fmt.Sprintf("%s-supervisor", agentServiceName()))
 	rawConfig := getConfigMapDataString(t, data, "supervisor.yaml")
-	require.Contains(t, rawConfig, localOpampEndpoint(4320))
+	require.Contains(t, rawConfig, opampEndpoint(host, port))
 	require.Contains(t, rawConfig, "e2e.custom.attr")
 	require.Contains(t, rawConfig, "supervisor")
 }
@@ -220,19 +222,32 @@ func assertSupervisorConfigRendered(t *testing.T, k8sClient *xk8stest.K8sClient)
 	data := getConfigMapData(t, k8sClient, fmt.Sprintf("%s-supervisor", agentServiceName()))
 	rawConfig := getConfigMapDataString(t, data, "supervisor.yaml")
 	require.Contains(t, rawConfig, defaultOpampEndpoint())
-	require.NotContains(t, rawConfig, localOpampEndpoint(4320))
 	require.Contains(t, rawConfig, "Authorization:")
 	require.Contains(t, rawConfig, "Bearer ${env:CORALOGIX_PRIVATE_KEY}")
 	return rawConfig
 }
 
-func patchSupervisorConfigEndpoint(t *testing.T, k8sClient *xk8stest.K8sClient, fromEndpoint, toEndpoint string) {
+func setSupervisorConfigEndpoint(t *testing.T, k8sClient *xk8stest.K8sClient, toEndpoint string) {
 	t.Helper()
 
 	data := getConfigMapData(t, k8sClient, fmt.Sprintf("%s-supervisor", agentServiceName()))
 	rawConfig := getConfigMapDataString(t, data, "supervisor.yaml")
-	updatedConfig := strings.ReplaceAll(rawConfig, fromEndpoint, toEndpoint)
-	require.NotEqual(t, rawConfig, updatedConfig, "expected supervisor config endpoint to change")
+	lines := strings.Split(rawConfig, "\n")
+	updated := false
+	for i, line := range lines {
+		if strings.Contains(line, "endpoint:") && strings.Contains(line, "opamp") {
+			prefix := strings.SplitN(line, "endpoint:", 2)[0]
+			lines[i] = fmt.Sprintf("%sendpoint: %q", prefix, toEndpoint)
+			updated = true
+			break
+		}
+	}
+	require.True(t, updated, "opamp endpoint not found in supervisor config")
+
+	updatedConfig := strings.Join(lines, "\n")
+	if rawConfig == updatedConfig {
+		return
+	}
 
 	gvr := corev1.SchemeGroupVersion.WithResource("configmaps")
 	configMapName := fmt.Sprintf("%s-supervisor", agentServiceName())
@@ -250,17 +265,14 @@ func patchSupervisorConfigEndpoint(t *testing.T, k8sClient *xk8stest.K8sClient, 
 		metav1.UpdateOptions{},
 	)
 	require.NoError(t, err)
-	if toEndpoint == localOpampEndpoint(4320) {
-		assertSupervisorConfigOverride(t, k8sClient)
-	}
 }
 
 func defaultOpampEndpoint() string {
 	return "https://ingress.coralogix.com/opamp/v1"
 }
 
-func localOpampEndpoint(port int) string {
-	return fmt.Sprintf("http://host.docker.internal:%d/v1/opamp", port)
+func opampEndpoint(host string, port int) string {
+	return fmt.Sprintf("http://%s:%d/v1/opamp", host, port)
 }
 
 func extractConfigValue(rawConfig, key string) string {

@@ -553,7 +553,8 @@ run_workflow_mode() {
     fi
 
     log_test "========================================"
-    log_test "Workflow Mode: go test -v -run='^TestE2E.*' ."
+    # Base package only; supervisor tests require different chart values and run below.
+    log_test "Workflow Mode (Base): go test -v -run='^TestE2E.*' ."
     log_test "========================================"
 
     export KUBECONFIG="${KUBECONFIG_PATH}"
@@ -586,6 +587,46 @@ run_workflow_mode() {
     fi
 
     log_success "Workflow-mode tests PASSED (duration: ${workflow_duration}s)"
+
+    # Run supervisor-specific E2E tests with supervisor values
+    uninstall_chart
+    local supervisor_values="./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml"
+    if ! install_chart "$supervisor_values" "component=agent-collector"; then
+        log_error "Failed to install chart for supervisor workflow tests."
+        return 1
+    fi
+
+    log_test "========================================"
+    log_test "Workflow Mode (Supervisor): go test -v -run='^TestE2E.*' ./supervisor"
+    log_test "========================================"
+
+    local supervisor_start_time
+    supervisor_start_time=$(date +%s)
+
+    (
+        cd "${E2E_TEST_DIR}" || exit 1
+        go clean -testcache
+        go test -v -run='^TestE2E.*' ./supervisor
+    )
+    local supervisor_exit_code=$?
+    local supervisor_end_time
+    supervisor_end_time=$(date +%s)
+    local supervisor_duration=$((supervisor_end_time - supervisor_start_time))
+
+    if [ $supervisor_exit_code -ne 0 ]; then
+        log_error "Supervisor workflow tests FAILED (duration: ${supervisor_duration}s, exit code: ${supervisor_exit_code})"
+        log_warning "Collecting pod logs..."
+        for pod in $(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
+            log_error "===== Last 50 log lines for pod: $pod ====="
+            kubectl logs --tail=50 "$pod" 2>/dev/null || true
+            echo
+        done
+        log_error "Pod status:"
+        kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
+        return $supervisor_exit_code
+    fi
+
+    log_success "Supervisor workflow tests PASSED (duration: ${supervisor_duration}s)"
 
     return 0
 }

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"coralogix.com/otel-integration/e2e/internal/testhelpers"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +79,7 @@ func startAgentOTLPPortForward(t *testing.T, k8sClient *xk8stest.K8sClient, kube
 func startPortForward(t *testing.T, kubeconfigPath, namespace, resource string, remotePort int) (int, func()) {
 	t.Helper()
 
-	localPort := getFreePort(t)
+	localPort := testhelpers.GetFreePort(t)
 	args := []string{
 		"--namespace", namespace,
 		"port-forward",
@@ -162,12 +163,4 @@ func waitForLocalPort(t *testing.T, port int, done <-chan error, output *bytes.B
 		time.Sleep(150 * time.Millisecond)
 	}
 	t.Fatalf("timed out waiting for port-forward on port %d: %s", port, output.String())
-}
-
-func getFreePort(t *testing.T) int {
-	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port
 }
