@@ -373,7 +373,12 @@ jobs:
       - name: Verify version
         shell: pwsh
         run: |
-          & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version | Select-String "0.140.1"
+          $versionOutput = & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version
+          $versionMatch = $versionOutput | Select-String -Pattern "0.140.1" -Quiet
+          if (-not $versionMatch) {
+            Write-Error "Version mismatch: Expected 0.140.1, but got: $versionOutput"
+            exit 1
+          }
         
       - name: Uninstall
         shell: pwsh

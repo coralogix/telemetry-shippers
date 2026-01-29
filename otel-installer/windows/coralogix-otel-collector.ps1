@@ -788,7 +788,16 @@ function Install-CollectorMSI {
         
         Write-Log "Downloading OpenTelemetry Collector ${Version} MSI..."
         Write-Log "Download URL: $msiUrl"
-        Invoke-Download -Url $msiUrl -Destination $msiName
+        
+        # Fetch checksum for verification
+        $collectorChecksum = Get-OtelChecksum -Version $Version -Filename $msiName
+        if ($collectorChecksum) {
+            Invoke-Download -Url $msiUrl -Destination $msiName -ExpectedChecksum $collectorChecksum
+        }
+        else {
+            Write-Log "Checksum not available - downloading without verification"
+            Invoke-Download -Url $msiUrl -Destination $msiName
+        }
         
         Write-Log "Installing OpenTelemetry Collector from MSI..."
         $msiPath = Join-Path $workDir $msiName
