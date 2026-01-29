@@ -17,6 +17,9 @@ jobs:
   #############################################
   # Standalone Script Tests
   #############################################
+  #############################################
+  # Standalone Script Tests
+  #############################################
 
   standalone-linux-install:
     name: Standalone - Linux Install
@@ -32,7 +35,25 @@ jobs:
         
       - name: Verify health check
         run: curl -sf http://127.0.0.1:13133/ || true
+      
+      - name: Verify capabilities NOT set (no discovery/process metrics)
+        run: |
+          if getcap /usr/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace"; then
+            echo "Capabilities should not be set without discovery/process metrics" && exit 1
+          fi
         
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+      
+      - name: Install with --disable-capabilities flag
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh --disable-capabilities
+      
+      - name: Verify capabilities NOT set with --disable-capabilities
+        run: |
+          if getcap /usr/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace"; then
+            echo "Capabilities should not be set with --disable-capabilities flag" && exit 1
+          fi
+      
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 
@@ -52,16 +73,29 @@ jobs:
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 
   standalone-linux-config:
-    name: Standalone - Linux Custom Config
+    name: Standalone - Linux Custom Config with Discovery
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Create test config with unique marker
+      - name: Create test config with discovery enabled
         run: |
           printf '%s\n' \
             '# CUSTOM_CONFIG_MARKER_E2E_TEST' \
+            'extensions:' \
+            '  host_observer:' \
+            '    refresh_interval: 10s' \
+            '  health_check:' \
+            '    endpoint: 127.0.0.1:13133' \
             'receivers:' \
+            '  receiver_creator/discovery:' \
+            '    watch_observers:' \
+            '      - host_observer' \
+            '    receivers:' \
+            '      nginx:' \
+            '        rule: type == "hostport" and command matches "(?i)nginx"' \
+            '        config:' \
+            '          endpoint: "http://`endpoint`/nginx_status"' \
             '  otlp:' \
             '    protocols:' \
             '      grpc:' \
@@ -69,25 +103,33 @@ jobs:
             'exporters:' \
             '  debug:' \
             '    verbosity: basic' \
-            'extensions:' \
-            '  health_check:' \
-            '    endpoint: 127.0.0.1:13133' \
             'service:' \
-            '  extensions: [health_check]' \
+            '  extensions: [host_observer, health_check]' \
             '  pipelines:' \
-            '    logs:' \
-            '      receivers: [otlp]' \
+            '    metrics:' \
+            '      receivers: [receiver_creator/discovery, otlp]' \
             '      exporters: [debug]' \
             > /tmp/test-config.yaml
           
-      - name: Install with custom config
+      - name: Install with discovery config
         run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
         
       - name: Verify custom config loaded
         run: |
           sudo cat /etc/otelcol-contrib/config.yaml
           sudo grep "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
-          sudo grep "otlp:" /etc/otelcol-contrib/config.yaml
+          sudo grep "host_observer" /etc/otelcol-contrib/config.yaml
+      
+      - name: Verify discovery.env file created
+        run: |
+          sudo test -f /etc/otelcol-contrib/discovery.env
+          sudo cat /etc/otelcol-contrib/discovery.env
+          sudo grep -q "POSTGRES" /etc/otelcol-contrib/discovery.env || true
+      
+      - name: Verify capabilities auto-enabled
+        run: |
+          getcap /usr/bin/otelcol-contrib | grep -q "cap_sys_ptrace" || (echo "CAP_SYS_PTRACE not set" && exit 1)
+          getcap /usr/bin/otelcol-contrib | grep -q "cap_dac_read_search" || (echo "CAP_DAC_READ_SEARCH not set" && exit 1)
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
@@ -156,6 +198,16 @@ jobs:
         
       - name: Verify supervisor running
         run: sudo systemctl is-active opampsupervisor
+      
+      - name: Verify capabilities auto-enabled in supervisor mode
+        run: |
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_sys_ptrace" || (echo "CAP_SYS_PTRACE not set" && exit 1)
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_dac_read_search" || (echo "CAP_DAC_READ_SEARCH not set" && exit 1)
+      
+      - name: Verify opampsupervisor.conf exists
+        run: |
+          sudo test -f /etc/opampsupervisor/opampsupervisor.conf
+          sudo cat /etc/opampsupervisor/opampsupervisor.conf
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
@@ -174,7 +226,26 @@ jobs:
         
       - name: Verify supervisor running
         run: sudo systemctl is-active opampsupervisor
+      
+      - name: Verify capabilities auto-enabled in supervisor mode
+        run: |
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_sys_ptrace" || (echo "CAP_SYS_PTRACE not set" && exit 1)
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_dac_read_search" || (echo "CAP_DAC_READ_SEARCH not set" && exit 1)
         
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+      
+      - name: Install supervisor with --disable-capabilities
+        run: |
+          sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
+            bash ./otel-installer/standalone/coralogix-otel-collector.sh -s --disable-capabilities
+      
+      - name: Verify capabilities NOT set with --disable-capabilities in supervisor mode
+        run: |
+          if getcap /usr/local/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace"; then
+            echo "Capabilities should not be set with --disable-capabilities flag in supervisor mode" && exit 1
+          fi
+      
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 

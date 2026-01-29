@@ -129,21 +129,74 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   -- --memory-limit 2048 --listen-interface 0.0.0.0
 ```
 
-## Enable Comprehensive Process Metrics
+## Service Discovery
 
-By default, the collector may not have permissions to read detailed process metrics (CPU, memory, disk I/O) for all processes. Use the `--enable-process-metrics` flag to grant the necessary Linux capabilities:
+The installer supports automatic service discovery for databases and services (PostgreSQL, MySQL, Redis, MongoDB, NGINX, Apache, RabbitMQ, Memcached, Elasticsearch, Kafka, and Cassandra).
+
+When discovery is enabled in your configuration, the installer will:
+- Create a credentials file template (`/etc/otelcol-contrib/discovery.env`)
+- Automatically enable Linux capabilities (required for discovery to work)
+
+### Configure Discovery Credentials
+
+After installation, edit the credentials file:
+
+```bash
+sudo nano /etc/otelcol-contrib/discovery.env
+```
+
+Uncomment and set your credentials:
+
+```bash
+# PostgreSQL
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=postgres
+
+# MySQL
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
+
+# Redis
+REDIS_PASSWORD=your_password
+```
+
+Then restart the service:
+
+```bash
+sudo systemctl restart otelcol-contrib
+```
+
+Alternatively, set environment variables before installation:
+
+```bash
+POSTGRES_PASSWORD="your_password" \
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+```
+
+## Linux Capabilities
+
+Linux capabilities (`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) are required for:
+- **Service discovery**: To identify processes on listening ports
+- **Process metrics**: To read detailed process information (CPU, memory, disk I/O)
+
+### Automatic Enablement
+
+Capabilities are automatically enabled when:
+- Installing in supervisor mode (enabled by default)
+- Service discovery is detected in your configuration
+- Process metrics are detected in your configuration
+
+You can disable automatic enablement with the `--disable-capabilities` flag:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --enable-process-metrics
+  -- --disable-capabilities
 ```
 
-This grants `CAP_SYS_PTRACE` and `CAP_DAC_READ_SEARCH` capabilities to the collector binary, allowing it to:
-- Read `/proc/[pid]/io` for all processes (disk I/O metrics)
-- Access process information for all users (not just the collector user)
-
-> **Security Note:** This is a secure, opt-in mechanism that avoids running the collector as root. The capabilities are granted only to the collector binary using Linux capabilities.
+> **Security Note:** Capabilities are granted only to the collector binary using Linux capabilities, avoiding the need to run as root. This is a secure, opt-in mechanism.
 
 ## Supervisor Mode
 
@@ -155,6 +208,12 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   -- --supervisor
 ```
 
+### Supervisor Mode Features
+
+- **Automatic capabilities**: Linux capabilities are enabled by default to support service discovery when added via Fleet Manager
+- **Discovery credentials**: Configure credentials in `/etc/opampsupervisor/opampsupervisor.conf` for discovered services
+- **Installation summary**: View installation details and useful commands in `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt`
+
 ## Script Options
 
 | Option                           | Description                                                                                                        |
@@ -164,7 +223,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
-| `--enable-process-metrics`       | Grant Linux capabilities for comprehensive process metrics collection                                              |
+| `--disable-capabilities`         | Disable automatic Linux capabilities enablement (not recommended)                                                 |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
 | `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
 | `--uninstall`                    | Remove the collector (keeps config)                                                                                |
@@ -183,6 +242,8 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 |---------------|-------------------------------------|
 | Binary        | `/usr/bin/otelcol-contrib`          |
 | Configuration | `/etc/otelcol-contrib/config.yaml`  |
+| Discovery Credentials | `/etc/otelcol-contrib/discovery.env` |
+| Installation Summary | `/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt` |
 | Service       | `otelcol-contrib.service` (systemd) |
 | Logs          | `journalctl -u otelcol-contrib`     |
 
@@ -192,7 +253,10 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 |-------------------|------------------------------------------------|
 | Collector Binary  | `/usr/local/bin/otelcol-contrib`               |
 | Supervisor Config | `/etc/opampsupervisor/config.yaml`             |
+| Collector Config  | `/etc/opampsupervisor/collector.yaml`          |
 | Effective Config  | `/var/lib/opampsupervisor/effective.yaml`      |
+| Discovery Credentials | `/etc/opampsupervisor/opampsupervisor.conf` |
+| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
 | Service           | `opampsupervisor.service` (systemd)            |
 | Logs              | `/var/log/opampsupervisor/opampsupervisor.log` |
 
