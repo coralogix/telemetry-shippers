@@ -660,7 +660,8 @@ function Get-SupervisorChecksum {
         [string]$Filename
     )
     
-    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/cmd/opampsupervisor/v${Version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    # Tag must be URL-encoded (cmd/opampsupervisor/v -> cmd%2Fopampsupervisor%2Fv)
+    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${Version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
     
     try {
         $checksums = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing -ErrorAction Stop
