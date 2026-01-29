@@ -916,7 +916,7 @@ create_installation_summary() {
             echo "  journalctl -u opampsupervisor | grep -E '(password|authentication)'"
         else
             # Regular mode - only show if discovery is enabled
-            local discovery_enabled=false
+            discovery_enabled=false
             if config_has_discovery "${CONFIG_FILE}"; then
                 discovery_enabled=true
             fi
@@ -1020,7 +1020,8 @@ create_installation_summary() {
                 echo ""
                 echo "View Configuration:"
                 echo "  cat ${CONFIG_FILE}"
-                if [ "$discovery_enabled" = true ]; then
+                # Check discovery status again (variable may not be set if we're in supervisor mode)
+                if [ "$mode" != "supervisor" ] && config_has_discovery "${CONFIG_FILE}"; then
                     echo "  cat ${CONFIG_DIR}/discovery.env"
                 fi
             else
@@ -2067,8 +2068,20 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
         
         install_supervisor "$supervisor_ver" "$collector_ver" "$arch"
         
-        # Wait a moment for effective config to be generated
-        sleep 2
+        # Wait for effective config to be generated (with timeout)
+        local max_wait=10
+        local wait_count=0
+        while [ $wait_count -lt $max_wait ]; do
+            if [ -f "/var/lib/opampsupervisor/effective.yaml" ]; then
+                log "Effective config generated"
+                break
+            fi
+            sleep 0.5
+            wait_count=$((wait_count + 1))
+        done
+        if [ $wait_count -eq $max_wait ]; then
+            warn "Effective config not generated after $max_wait seconds"
+        fi
         
         local base_config_note=""
         if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then

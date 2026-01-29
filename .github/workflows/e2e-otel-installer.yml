@@ -17,9 +17,6 @@ jobs:
   #############################################
   # Standalone Script Tests
   #############################################
-  #############################################
-  # Standalone Script Tests
-  #############################################
 
   standalone-linux-install:
     name: Standalone - Linux Install
