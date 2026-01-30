@@ -28,10 +28,16 @@
     Path to a local OpAMP Supervisor MSI file (supervisor mode only)
     When provided, uses the local MSI instead of downloading from GitHub releases
 
-.PARAMETER SupervisorBaseConfig
+.PARAMETER SupervisorCollectorBaseConfig
     Path to a base collector configuration file for supervisor mode.
     This config is merged with remote configuration from Fleet Manager.
     Cannot contain 'opamp' extension (supervisor manages OpAMP connection).
+    (supervisor mode only)
+
+.PARAMETER SupervisorOpampConfig
+    Path to a custom OpAMP supervisor configuration file.
+    When provided, this file is used instead of the auto-generated supervisor config.
+    The config can reference environment variables like ${env:CORALOGIX_PRIVATE_KEY}.
     (supervisor mode only)
 
 .PARAMETER MemoryLimit
@@ -81,7 +87,7 @@
 
 .EXAMPLE
     # Install with supervisor and custom base config
-    $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorBaseConfig C:\path\to\collector.yaml
+    $env:CORALOGIX_DOMAIN="your-domain"; $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorCollectorBaseConfig C:\path\to\collector.yaml
     
 .EXAMPLE
     # Install with custom memory limit
@@ -137,7 +143,10 @@ param(
     [string]$SupervisorMsi = "",
     
     [Parameter(ValueFromPipelineByPropertyName)]
-    [string]$SupervisorBaseConfig = "",
+    [string]$SupervisorCollectorBaseConfig = "",
+    
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string]$SupervisorOpampConfig = "",
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [int]$MemoryLimit = 512,
@@ -235,8 +244,11 @@ Options:
                                     (default: same as -Version)
     -SupervisorMsi <path>           Path to local OpAMP Supervisor MSI file
                                     (supervisor mode only)
-    -SupervisorBaseConfig <path>    Path to base collector config for supervisor mode
+    -SupervisorCollectorBaseConfig <path>    Path to base collector config for supervisor mode
                                     Merged with remote config from Fleet Manager
+                                    (supervisor mode only)
+    -SupervisorOpampConfig <path>   Path to custom OpAMP supervisor config file
+                                    Uses this instead of auto-generated config
                                     (supervisor mode only)
     -MemoryLimit <MiB>              Total memory in MiB to allocate to the collector
                                     Sets OTEL_MEMORY_LIMIT_MIB environment variable
@@ -281,7 +293,7 @@ Examples:
     `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
 
     # Install with supervisor and custom base config
-    `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorBaseConfig C:\path\to\collector.yaml
+    `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorCollectorBaseConfig C:\path\to\collector.yaml
 
     # Install with custom memory limit
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
@@ -1059,7 +1071,7 @@ function Configure-Supervisor {
         "[]" 
     }
     
-    $supervisorConfig = @"
+    $supervisorOpampDefaultConfig = @"
 server:
   endpoint: "${endpointUrl}"
   headers:
@@ -1101,12 +1113,19 @@ telemetry:
       - $($SUPERVISOR_LOG_DIR -replace '\\', '/')/opampsupervisor.log
 "@
     
-    $supervisorConfig | Out-File -FilePath $SUPERVISOR_CONFIG_FILE -Encoding utf8 -Force
+    # Write supervisor config - use custom config if provided, otherwise use generated config
+    if ($SupervisorOpampConfig) {
+        Write-Log "Using custom OpAMP supervisor config from: $SupervisorOpampConfig"
+        Copy-Item -Path $SupervisorOpampConfig -Destination $SUPERVISOR_CONFIG_FILE -Force
+    }
+    else {
+        $supervisorOpampDefaultConfig | Out-File -FilePath $SUPERVISOR_CONFIG_FILE -Encoding utf8 -Force
+    }
     
     # Write collector config - use base config if provided, otherwise empty config
-    if ($SupervisorBaseConfig) {
-        Write-Log "Using custom base config from: $SupervisorBaseConfig"
-        Copy-Item -Path $SupervisorBaseConfig -Destination $SUPERVISOR_COLLECTOR_CONFIG_FILE -Force
+    if ($SupervisorCollectorBaseConfig) {
+        Write-Log "Using custom base config from: $SupervisorCollectorBaseConfig"
+        Copy-Item -Path $SupervisorCollectorBaseConfig -Destination $SUPERVISOR_COLLECTOR_CONFIG_FILE -Force
         Write-Log "Base config will be merged with remote configuration from Fleet Manager"
     }
     else {
@@ -1781,22 +1800,35 @@ function Main {
         Write-Error "-Config cannot be used with -Supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
     }
     
-    # Validate SupervisorBaseConfig
-    if ($SupervisorBaseConfig) {
+    # Validate SupervisorCollectorBaseConfig
+    if ($SupervisorCollectorBaseConfig) {
         if (-not $Supervisor) {
-            Write-Error "-SupervisorBaseConfig can only be used with -Supervisor"
+            Write-Error "-SupervisorCollectorBaseConfig can only be used with -Supervisor"
         }
-        if (-not (Test-Path $SupervisorBaseConfig)) {
-            Write-Error "Supervisor base config file not found: $SupervisorBaseConfig"
+        if (-not (Test-Path $SupervisorCollectorBaseConfig)) {
+            Write-Error "Supervisor base config file not found: $SupervisorCollectorBaseConfig"
         }
         # Check that config doesn't contain opamp extension
-        $baseConfigContent = Get-Content $SupervisorBaseConfig -Raw
+        $baseConfigContent = Get-Content $SupervisorCollectorBaseConfig -Raw
         if ($baseConfigContent -match '(?m)^\s*opamp:') {
-            Write-Error "Supervisor base config cannot contain 'opamp' extension. The supervisor manages the OpAMP connection.`nRemove the 'opamp' extension from your config file: $SupervisorBaseConfig"
+            Write-Error "Supervisor base config cannot contain 'opamp' extension. The supervisor manages the OpAMP connection.`nRemove the 'opamp' extension from your config file: $SupervisorCollectorBaseConfig"
         }
-        Write-Log "Using custom base config for supervisor: $SupervisorBaseConfig"
+        Write-Log "Using custom base config for supervisor: $SupervisorCollectorBaseConfig"
         # Resolve to absolute path before any Set-Location calls
-        $SupervisorBaseConfig = (Resolve-Path $SupervisorBaseConfig).Path
+        $SupervisorCollectorBaseConfig = (Resolve-Path $SupervisorCollectorBaseConfig).Path
+    }
+    
+    # Validate SupervisorOpampConfig
+    if ($SupervisorOpampConfig) {
+        if (-not $Supervisor) {
+            Write-Error "-SupervisorOpampConfig can only be used with -Supervisor"
+        }
+        if (-not (Test-Path $SupervisorOpampConfig)) {
+            Write-Error "OpAMP supervisor config file not found: $SupervisorOpampConfig"
+        }
+        Write-Log "Using custom OpAMP supervisor config: $SupervisorOpampConfig"
+        # Resolve to absolute path before any Set-Location calls
+        $SupervisorOpampConfig = (Resolve-Path $SupervisorOpampConfig).Path
     }
     
     if ($Supervisor) {
@@ -1923,8 +1955,8 @@ function Main {
         
         Install-Supervisor -SupervisorVer $supervisorVer -CollectorVer $collectorVer -Arch $arch -MsiPath $SupervisorMsi
         
-        $baseConfigInfo = if ($SupervisorBaseConfig) {
-            "`nCustom Base Config:`n  Source: $SupervisorBaseConfig`n  Installed: $SUPERVISOR_COLLECTOR_CONFIG_FILE`n  The base config is merged with remote configuration from Fleet Manager.`n"
+        $baseConfigInfo = if ($SupervisorCollectorBaseConfig) {
+            "`nCustom Base Config:`n  Source: $SupervisorCollectorBaseConfig`n  Installed: $SUPERVISOR_COLLECTOR_CONFIG_FILE`n  The base config is merged with remote configuration from Fleet Manager.`n"
         } else { "" }
         
         $summary = @"
