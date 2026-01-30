@@ -999,6 +999,10 @@ function Install-Supervisor {
         Write-Log "Creating state directory for supervisor..."
         New-Item -ItemType Directory -Path $SUPERVISOR_STATE_DIR -Force | Out-Null
         
+        # Ensure log directory exists (required for file output in config)
+        Write-Log "Creating log directory for supervisor..."
+        New-Item -ItemType Directory -Path $SUPERVISOR_LOG_DIR -Force | Out-Null
+        
         # Stop existing service if running
         $existingService = Get-Service -Name $SUPERVISOR_SERVICE_NAME -ErrorAction SilentlyContinue
         if ($existingService) {

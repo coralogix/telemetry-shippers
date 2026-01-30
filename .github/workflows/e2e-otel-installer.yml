@@ -423,9 +423,16 @@ jobs:
       - name: Verify custom config loaded
         shell: pwsh
         run: |
-          Get-Content "${env:ProgramData}\OpenTelemetry\Collector\config.yaml"
-          Select-String -Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml" -Pattern "CUSTOM_CONFIG_MARKER_E2E_TEST"
-          Select-String -Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml" -Pattern "otlp:"
+          $configPath = "${env:ProgramData}\OpenTelemetry\Collector\config.yaml"
+          Get-Content $configPath
+          if (-not (Select-String -Path $configPath -Pattern "CUSTOM_CONFIG_MARKER_E2E_TEST" -Quiet)) {
+            Write-Error "Custom config marker not found in $configPath"
+            exit 1
+          }
+          if (-not (Select-String -Path $configPath -Pattern "otlp:" -Quiet)) {
+            Write-Error "otlp: pattern not found in $configPath"
+            exit 1
+          }
         
       - name: Uninstall
         shell: pwsh
