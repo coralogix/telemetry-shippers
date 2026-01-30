@@ -332,3 +332,153 @@ jobs:
           
       - name: Uninstall
         run: bash ./otel-installer/docker/docker-install.sh --uninstall
+
+  #############################################
+  # Windows Script Tests
+  #############################################
+
+  standalone-windows-install:
+    name: Standalone - Windows Install
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install (default)
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1
+        
+      - name: Verify service running
+        shell: pwsh
+        run: |
+          if ((Get-Service -Name "otelcol-contrib").Status -ne 'Running') { exit 1 }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-version:
+    name: Standalone - Windows Specific Version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install specific version
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Version 0.140.1
+        
+      - name: Verify version
+        shell: pwsh
+        run: |
+          $versionOutput = & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version
+          $versionMatch = $versionOutput | Select-String -Pattern "0.140.1" -Quiet
+          if (-not $versionMatch) {
+            Write-Error "Version mismatch: Expected 0.140.1, but got: $versionOutput"
+            exit 1
+          }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-config:
+    name: Standalone - Windows Custom Config
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create test config with unique marker
+        shell: pwsh
+        run: |
+          @"
+          # CUSTOM_CONFIG_MARKER_E2E_TEST
+          receivers:
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: 0.0.0.0:4317
+          exporters:
+            debug:
+              verbosity: basic
+          extensions:
+            health_check:
+              endpoint: 127.0.0.1:13133
+          service:
+            extensions: [health_check]
+            pipelines:
+              logs:
+                receivers: [otlp]
+                exporters: [debug]
+          "@ | Out-File -FilePath "$env:TEMP\test-config.yaml" -Encoding utf8
+          
+      - name: Install with custom config
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Config "$env:TEMP\test-config.yaml"
+        
+      - name: Verify custom config loaded
+        shell: pwsh
+        run: |
+          $configPath = "${env:ProgramData}\OpenTelemetry\Collector\config.yaml"
+          Get-Content $configPath
+          if (-not (Select-String -Path $configPath -Pattern "CUSTOM_CONFIG_MARKER_E2E_TEST" -Quiet)) {
+            Write-Error "Custom config marker not found in $configPath"
+            exit 1
+          }
+          if (-not (Select-String -Path $configPath -Pattern "otlp:" -Quiet)) {
+            Write-Error "otlp: pattern not found in $configPath"
+            exit 1
+          }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-supervisor:
+    name: Standalone - Windows Supervisor Mode
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install supervisor mode
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          $env:CORALOGIX_DOMAIN = "${{ env.CORALOGIX_DOMAIN }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Supervisor
+        
+      - name: Verify supervisor running
+        shell: pwsh
+        run: |
+          if ((Get-Service -Name "opampsupervisor").Status -ne 'Running') { exit 1 }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-purge:
+    name: Standalone - Windows Uninstall with Purge
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1
+        
+      - name: Uninstall with purge
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall -Purge
+        
+      - name: Verify config removed
+        shell: pwsh
+        run: |
+          if (Test-Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml") {
+            Write-Host "Config still exists!" ; exit 1
+          }
