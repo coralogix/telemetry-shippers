@@ -183,17 +183,21 @@ Linux capabilities (`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) are required for:
 
 ### Automatic Enablement
 
-Capabilities are automatically enabled when:
-- Installing in supervisor mode (enabled by default)
-- Service discovery is detected in your configuration
-- Process metrics are detected in your configuration
+Capabilities are automatically enabled based on your installation mode:
 
-You can disable automatic enablement with the `--disable-capabilities` flag:
+**Regular Mode:**
+- Capabilities are automatically enabled when:
+  - Service discovery is detected in your configuration
+  - Process metrics are detected in your configuration
+
+**Supervisor Mode:**
+- Capabilities are enabled by default
+- Use `--disable-capabilities` flag to opt-out:
 
 ```bash
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --disable-capabilities
+  -- --supervisor --disable-capabilities
 ```
 
 > **Security Note:** Capabilities are granted only to the collector binary using Linux capabilities, avoiding the need to run as root. This is a secure, opt-in mechanism.
@@ -210,7 +214,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Supervisor Mode Features
 
-- **Automatic capabilities**: Linux capabilities are enabled by default to support service discovery when added via Fleet Manager
+- **Automatic capabilities**: Linux capabilities are enabled by default to support service discovery and process metrics when added via Fleet Manager (use `--disable-capabilities` to opt-out)
 - **Discovery credentials**: Configure credentials in `/etc/opampsupervisor/opampsupervisor.conf` for discovered services
 - **Installation summary**: View installation details and useful commands in `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt`
 
@@ -223,7 +227,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
-| `--disable-capabilities`         | Disable automatic Linux capabilities enablement (not recommended)                                                  |
+| `--disable-capabilities`         | Disable automatic Linux capabilities enablement (supervisor mode only, not recommended)                            |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
 | `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
 | `--uninstall`                    | Remove the collector (keeps config)                                                                                |

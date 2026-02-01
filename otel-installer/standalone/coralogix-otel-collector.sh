@@ -21,12 +21,11 @@
 #   --listen-interface <ip>       Network interface for receivers to listen on (default: 127.0.0.1)
 #                                  Config must reference: ${env:OTEL_LISTEN_INTERFACE}
 #                                  (ignored in supervisor mode)
-#   --disable-capabilities        Disable Linux capabilities (CAP_SYS_PTRACE, CAP_DAC_READ_SEARCH)
-#                                  Capabilities are auto-enabled when:
-#                                  - Supervisor mode is used (for discovery support)
-#                                  - Process metrics are enabled in config
-#                                  - Service discovery is enabled in config
-#                                  Use this flag to disable for stricter security
+#   --disable-capabilities        Disable Linux capabilities (supervisor mode only)
+#                                  In supervisor mode, capabilities are enabled by default
+#                                  to support discovery/process metrics from OpAMP configs.
+#                                  Use this flag to disable for stricter security.
+#                                  (Regular mode: capabilities auto-enabled based on config)
 #                                  (Linux only)
 #   --supervisor-version <ver>    Supervisor version (supervisor mode only, default: same as --version)
 #   --collector-version <ver>     Collector version (supervisor mode only, default: same as --version)
@@ -233,12 +232,11 @@ Options:
                                   (default: 127.0.0.1 for localhost only,
                                    use 0.0.0.0 for all interfaces)
                                   (ignored in supervisor mode)
-    --disable-capabilities        Disable Linux capabilities (CAP_SYS_PTRACE, CAP_DAC_READ_SEARCH)
-                                  Capabilities are auto-enabled when:
-                                  - Supervisor mode is used (for discovery support)
-                                  - Process metrics are enabled in config
-                                  - Service discovery is enabled in config
-                                  Use this flag to disable for stricter security
+    --disable-capabilities        Disable Linux capabilities (supervisor mode only)
+                                  In supervisor mode, capabilities are enabled by default
+                                  to support discovery/process metrics from OpAMP configs.
+                                  Use this flag to disable for stricter security.
+                                  (Regular mode: capabilities auto-enabled based on config)
                                   (Linux only)
     --supervisor-version <ver>    Supervisor version (supervisor mode only)
                                   (default: same as --version)
@@ -278,8 +276,8 @@ Examples:
     # Install with custom memory limit and external access
     CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --memory-limit 2048 --listen-interface 0.0.0.0
 
-    # Capabilities are auto-enabled when needed (supervisor mode, process metrics, or discovery)
-    # Use --disable-capabilities to disable for stricter security
+    # Supervisor mode: capabilities enabled by default (use --disable-capabilities to disable)
+    # Regular mode: capabilities auto-enabled based on config (process metrics or discovery)
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
     CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
@@ -980,9 +978,10 @@ create_installation_summary() {
         fi
         fi
         
-        if [ "$DISABLE_CAPABILITIES_FLAG" = true ] && [ "$os" = "linux" ]; then
+        if [ "$DISABLE_CAPABILITIES_FLAG" = true ] && [ "$SUPERVISOR_MODE" = true ] && [ "$os" = "linux" ]; then
             echo ""
-            echo "⚠️  WARNING: Linux capabilities are DISABLED - service discovery and process metrics may not work correctly"
+            echo "⚠️  WARNING: Linux capabilities are DISABLED in supervisor mode"
+            echo "   Service discovery and process metrics from OpAMP configs may not work correctly"
         fi
         
         echo ""
@@ -1153,7 +1152,7 @@ configure_process_metrics_permissions() {
     if $SUDO_CMD setcap cap_sys_ptrace,cap_dac_read_search=+ep "$binary_path" 2>/dev/null; then
         log "Linux capabilities configured successfully"
         warn "Capabilities enabled: grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH for service discovery and process metrics"
-        warn "Use --disable-capabilities to disable for stricter security"
+        warn "Disable capabilities by disabling process metrics or service discovery in your configuration"
         return 0
     else
         warn "Failed to set Linux capabilities on $binary_path"
@@ -2186,23 +2185,17 @@ EOF
     # Validate that config references the env vars if user set them
     validate_config_env_vars "$CONFIG_FILE"
     
-    # Auto-enable capabilities based on mode and config
-    if [ "$os" = "linux" ]; then
-        # Auto-enable if process metrics are enabled in config (supervisor already handled earlier)
-        if [ "$SUPERVISOR_MODE" != true ] && [ "$DISABLE_CAPABILITIES_FLAG" != true ]; then
-            if config_has_process_metrics "$CONFIG_FILE"; then
-                ENABLE_CAPABILITIES=true
-            fi
-            
-            # Auto-enable if discovery is enabled in config
-            if config_has_discovery "$CONFIG_FILE"; then
-                ENABLE_CAPABILITIES=true
-            fi
+    # Auto-enable capabilities based on config (regular mode only)
+    # Supervisor mode capabilities are handled earlier
+    if [ "$os" = "linux" ] && [ "$SUPERVISOR_MODE" != true ]; then
+        # Auto-enable if process metrics are enabled in config
+        if config_has_process_metrics "$CONFIG_FILE"; then
+            ENABLE_CAPABILITIES=true
         fi
         
-        # User can override with --disable-capabilities
-        if [ "$DISABLE_CAPABILITIES_FLAG" = true ]; then
-            ENABLE_CAPABILITIES=false
+        # Auto-enable if discovery is enabled in config
+        if config_has_discovery "$CONFIG_FILE"; then
+            ENABLE_CAPABILITIES=true
         fi
     fi
     
@@ -2210,7 +2203,7 @@ EOF
     if [ "$os" = "linux" ] && [ "$SUPERVISOR_MODE" != true ]; then
         setup_discovery_env_file || true
         
-        # Set capabilities (can be disabled with --disable-capabilities flag) for discovery or process metrics
+        # Set capabilities for discovery or process metrics (regular mode: based on config)
         if [ "$ENABLE_CAPABILITIES" = true ]; then
             if ! getcap "$BINARY_PATH_LINUX" 2>/dev/null | grep -q "cap_sys_ptrace\|cap_dac_read_search"; then
                 if config_has_discovery "$CONFIG_FILE" || config_has_process_metrics "$CONFIG_FILE"; then
@@ -2305,10 +2298,6 @@ EOF
 
     # Show discovery instructions if discovery is enabled
     show_discovery_instructions "$CONFIG_FILE" false
-    
-    if [ "$DISABLE_CAPABILITIES_FLAG" = true ] && [ "$os" = "linux" ]; then
-        warn "Linux capabilities are DISABLED - service discovery and process metrics may not work correctly"
-    fi
     
     case "$os" in
         linux)
