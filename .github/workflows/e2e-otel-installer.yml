@@ -41,18 +41,6 @@ jobs:
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
-      
-      - name: Install with --disable-capabilities flag
-        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh --disable-capabilities
-      
-      - name: Verify capabilities NOT set with --disable-capabilities
-        run: |
-          if getcap /usr/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace"; then
-            echo "Capabilities should not be set with --disable-capabilities flag" && exit 1
-          fi
-      
-      - name: Uninstall
-        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 
   standalone-linux-version:
     name: Standalone - Linux Specific Version

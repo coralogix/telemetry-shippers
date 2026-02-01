@@ -16,7 +16,6 @@ All notable changes to the OTel Installer scripts will be documented in this fil
   - Auto-enabled in regular mode when process metrics are detected in configuration
 - `--disable-capabilities` flag to opt-out of automatic capabilities enablement (supervisor mode only)
 
-
 ## [0.1.4] - 2024-01-28
 
 ### Changed
