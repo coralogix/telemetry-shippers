@@ -726,8 +726,11 @@ ENV_EOF
 config_has_discovery() {
     local config_file="$1"
     [ -f "$config_file" ] || return 1
+    # Check for host_observer extension (required for discovery)
+    # Check for receiver_creator (any instance name, e.g., receiver_creator, receiver_creator/discovery, receiver_creator/default)
+    # The combination of both indicates discovery is enabled
     grep -q "host_observer" "$config_file" 2>/dev/null && \
-    grep -q "receiver_creator/discovery" "$config_file" 2>/dev/null
+    grep -q "receiver_creator" "$config_file" 2>/dev/null
 }
 
 config_has_process_metrics() {
