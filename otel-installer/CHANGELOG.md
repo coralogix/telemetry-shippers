@@ -2,6 +2,20 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.6] - 2026-02-02
+
+### Added
+- Service discovery support with automatic credential management
+  - Automatic creation of discovery credentials file (`/etc/otelcol-contrib/discovery.env` for regular mode, `/etc/opampsupervisor/opampsupervisor.conf` for supervisor mode)
+  - Support for PostgreSQL, MySQL, Redis, MongoDB, RabbitMQ, and Elasticsearch credentials
+  - Post-installation instructions for configuring credentials
+- Installation summary file (`INSTALLATION_SUMMARY.txt`) with installation details, discovery status, and useful commands
+- Automatic Linux capabilities enablement:
+  - Enabled by default in supervisor mode (for discovery/process metrics support from OpAMP configs)
+  - Auto-enabled in regular mode when service discovery is detected in configuration
+  - Auto-enabled in regular mode when process metrics are detected in configuration
+- `--disable-capabilities` flag to opt-out of automatic capabilities enablement (supervisor mode only)
+
 ## [0.1.5] - 2025-02-02
 
 ### Added

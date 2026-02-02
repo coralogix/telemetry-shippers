@@ -21,10 +21,12 @@
 #   --listen-interface <ip>       Network interface for receivers to listen on (default: 127.0.0.1)
 #                                  Config must reference: ${env:OTEL_LISTEN_INTERFACE}
 #                                  (ignored in supervisor mode)
-#   --enable-process-metrics      Enable Linux capabilities for process metrics collection
-#                                  Grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH to the collector
-#                                  Required only if hostMetrics.process.enabled=true in config
-#                                  (Linux only, disabled by default for security)
+#   --disable-capabilities        Disable Linux capabilities (supervisor mode only)
+#                                  In supervisor mode, capabilities are enabled by default
+#                                  to support discovery/process metrics from OpAMP configs.
+#                                  Use this flag to disable for stricter security.
+#                                  (Regular mode: capabilities auto-enabled based on config)
+#                                  (Linux only)
 #   --supervisor-version <ver>    Supervisor version (supervisor mode only, default: same as --version)
 #   --collector-version <ver>     Collector version (supervisor mode only, default: same as --version)
 #   --uninstall                   Uninstall the collector (use --purge to remove all data)
@@ -76,7 +78,8 @@ MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
 LISTEN_INTERFACE="${LISTEN_INTERFACE:-127.0.0.1}"
 USER_SET_MEMORY_LIMIT=false
 USER_SET_LISTEN_INTERFACE=false
-ENABLE_PROCESS_METRICS=false
+ENABLE_CAPABILITIES=false
+DISABLE_CAPABILITIES_FLAG=false
 
 if [ "$UID" = "0" ] || [ "$(id -u)" -eq 0 ]; then
     SUDO_CMD=""
@@ -84,7 +87,6 @@ else
     SUDO_CMD="sudo"
 fi
 
-# Colors (disabled if not a terminal)
 if [ -t 1 ]; then
     RED='\033[0;31m'
     GREEN='\033[0;32m'
@@ -230,10 +232,12 @@ Options:
                                   (default: 127.0.0.1 for localhost only,
                                    use 0.0.0.0 for all interfaces)
                                   (ignored in supervisor mode)
-    --enable-process-metrics      Enable Linux capabilities for process metrics collection
-                                  Grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH to the collector
-                                  Required only if hostMetrics.process.enabled=true in config
-                                  (Linux only, disabled by default for security)
+    --disable-capabilities        Disable Linux capabilities (supervisor mode only)
+                                  In supervisor mode, capabilities are enabled by default
+                                  to support discovery/process metrics from OpAMP configs.
+                                  Use this flag to disable for stricter security.
+                                  (Regular mode: capabilities auto-enabled based on config)
+                                  (Linux only)
     --supervisor-version <ver>    Supervisor version (supervisor mode only)
                                   (default: same as --version)
     --collector-version <ver>     Collector version (supervisor mode only)
@@ -272,8 +276,8 @@ Examples:
     # Install with custom memory limit and external access
     CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --memory-limit 2048 --listen-interface 0.0.0.0
 
-    # Install with process metrics enabled (requires hostMetrics.process.enabled=true in config)
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --enable-process-metrics
+    # Supervisor mode: capabilities enabled by default (use --disable-capabilities to disable)
+    # Regular mode: capabilities auto-enabled based on config (process metrics or discovery)
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
     CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
@@ -591,6 +595,482 @@ create_empty_config() {
     $SUDO_CMD chmod 644 "$CONFIG_FILE"
 }
 
+setup_discovery_env_file() {
+    local env_file="${CONFIG_DIR}/discovery.env"
+    
+    if [ -f "$env_file" ]; then
+        log "Discovery environment file already exists, preserving: $env_file"
+        return 0
+    fi
+    
+    # Check if credentials were provided via environment variables
+    local has_creds=false
+    if [ -n "${POSTGRES_PASSWORD:-}" ] || [ -n "${MYSQL_PASSWORD:-}" ] || \
+       [ -n "${REDIS_PASSWORD:-}" ] || [ -n "${MONGODB_PASSWORD:-}" ] || \
+       [ -n "${RABBITMQ_PASSWORD:-}" ] || [ -n "${ELASTICSEARCH_PASSWORD:-}" ]; then
+        has_creds=true
+    fi
+    
+    if [ "$has_creds" = true ]; then
+        log "Creating discovery credentials file from environment variables"
+        
+        {
+            echo "# Coralogix OpenTelemetry Collector - Service Discovery Credentials"
+            echo "# Generated from environment variables during installation"
+            echo ""
+            
+            # PostgreSQL
+            if [ -n "${POSTGRES_USER:-}" ] || [ -n "${POSTGRES_PASSWORD:-}" ]; then
+                echo "# PostgreSQL"
+                [ -n "${POSTGRES_USER:-}" ] && echo "POSTGRES_USER=${POSTGRES_USER}"
+                [ -n "${POSTGRES_PASSWORD:-}" ] && echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+                [ -n "${POSTGRES_DB:-}" ] && echo "POSTGRES_DB=${POSTGRES_DB}" || echo "POSTGRES_DB=postgres"
+                echo ""
+            fi
+            
+            # MySQL
+            if [ -n "${MYSQL_USER:-}" ] || [ -n "${MYSQL_PASSWORD:-}" ]; then
+                echo "# MySQL"
+                [ -n "${MYSQL_USER:-}" ] && echo "MYSQL_USER=${MYSQL_USER}"
+                [ -n "${MYSQL_PASSWORD:-}" ] && echo "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+                echo ""
+            fi
+            
+            # Redis
+            if [ -n "${REDIS_PASSWORD:-}" ]; then
+                echo "# Redis"
+                echo "REDIS_PASSWORD=${REDIS_PASSWORD}"
+                echo ""
+            fi
+            
+            # MongoDB
+            if [ -n "${MONGODB_USER:-}" ] || [ -n "${MONGODB_PASSWORD:-}" ]; then
+                echo "# MongoDB"
+                [ -n "${MONGODB_USER:-}" ] && echo "MONGODB_USER=${MONGODB_USER}"
+                [ -n "${MONGODB_PASSWORD:-}" ] && echo "MONGODB_PASSWORD=${MONGODB_PASSWORD}"
+                echo ""
+            fi
+            
+            # RabbitMQ
+            if [ -n "${RABBITMQ_USER:-}" ] || [ -n "${RABBITMQ_PASSWORD:-}" ]; then
+                echo "# RabbitMQ"
+                [ -n "${RABBITMQ_USER:-}" ] && echo "RABBITMQ_USER=${RABBITMQ_USER}"
+                [ -n "${RABBITMQ_PASSWORD:-}" ] && echo "RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}"
+                echo ""
+            fi
+            
+            # Elasticsearch
+            if [ -n "${ELASTICSEARCH_USER:-}" ] || [ -n "${ELASTICSEARCH_PASSWORD:-}" ]; then
+                echo "# Elasticsearch"
+                [ -n "${ELASTICSEARCH_USER:-}" ] && echo "ELASTICSEARCH_USER=${ELASTICSEARCH_USER}"
+                [ -n "${ELASTICSEARCH_PASSWORD:-}" ] && echo "ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}"
+                echo ""
+            fi
+        } | $SUDO_CMD tee "$env_file" >/dev/null
+    else
+        log "Creating discovery credentials template: $env_file"
+        
+        $SUDO_CMD tee "$env_file" >/dev/null <<'ENV_EOF'
+# Coralogix OpenTelemetry Collector - Service Discovery Credentials
+#
+# The collector's discovery feature (if enabled) will automatically detect
+# services running on this host. For services requiring authentication,
+# uncomment and set the credentials below.
+#
+# After editing, restart the collector:
+#   sudo systemctl restart otelcol-contrib
+#
+# Services without authentication (NGINX, Apache, Memcached, Kafka)
+# will start automatically without requiring credentials.
+#
+# You can also set these as environment variables before running the installer:
+#   export POSTGRES_PASSWORD="your_password"
+#   export MYSQL_PASSWORD="your_password"
+#   bash coralogix-otel-collector.sh
+
+# PostgreSQL
+#POSTGRES_USER=postgres
+#POSTGRES_PASSWORD=
+#POSTGRES_DB=postgres
+
+# MySQL
+#MYSQL_USER=root
+#MYSQL_PASSWORD=
+
+# Redis
+#REDIS_PASSWORD=
+
+# MongoDB
+#MONGODB_USER=admin
+#MONGODB_PASSWORD=
+
+# RabbitMQ
+#RABBITMQ_USER=guest
+#RABBITMQ_PASSWORD=guest
+
+# Elasticsearch
+#ELASTICSEARCH_USER=
+#ELASTICSEARCH_PASSWORD=
+ENV_EOF
+    fi
+
+    $SUDO_CMD chmod 600 "$env_file" || warn "Failed to set permissions on $env_file"
+    
+    if id "${SERVICE_NAME}" >/dev/null 2>&1; then
+        $SUDO_CMD chown "${SERVICE_NAME}:${SERVICE_NAME}" "$env_file" 2>/dev/null || true
+    fi
+    
+    return 0
+}
+
+config_has_discovery() {
+    local config_file="$1"
+    [ -f "$config_file" ] || return 1
+    # Check for host_observer extension (required for discovery)
+    # Check for receiver_creator (any instance name, e.g., receiver_creator, receiver_creator/discovery, receiver_creator/default)
+    # The combination of both indicates discovery is enabled
+    grep -q "host_observer" "$config_file" 2>/dev/null && \
+    grep -q "receiver_creator" "$config_file" 2>/dev/null
+}
+
+config_has_process_metrics() {
+    local config_file="$1"
+    [ -f "$config_file" ] || return 1
+    grep -q "hostmetrics" "$config_file" 2>/dev/null && \
+    grep -q "process:" "$config_file" 2>/dev/null || \
+    grep -q "process.*enabled.*true" "$config_file" 2>/dev/null
+}
+
+show_discovery_instructions() {
+    local config_file="${1:-$CONFIG_FILE}"
+    local is_supervisor="${2:-false}"
+    
+    # For supervisor mode, always show instructions (capabilities enabled by default, discovery can be added later)
+    # For regular mode, only show if discovery is enabled
+    if [ "$is_supervisor" != true ]; then
+        if ! config_has_discovery "$config_file"; then
+            return 0
+        fi
+    fi
+    
+    echo ""
+    if [ "$is_supervisor" = true ]; then
+        warn "Service discovery can be enabled via OpAMP server (Fleet Manager)"
+        echo "  Capabilities are already enabled, so discovery will work automatically when added"
+        echo "  Some services (PostgreSQL, MySQL, MongoDB, Redis) require credentials to collect metrics"
+    else
+        warn "Service discovery is enabled in your configuration"
+        echo "  Some services (PostgreSQL, MySQL, MongoDB, Redis) require credentials to collect metrics"
+        echo "  Authentication errors are EXPECTED until credentials are configured"
+    fi
+    echo ""
+    
+    if [ "$is_supervisor" = true ]; then
+        echo "  To configure credentials: sudo nano /etc/opampsupervisor/opampsupervisor.conf"
+        echo "  Then restart: sudo systemctl restart opampsupervisor"
+    else
+        echo "  To configure credentials: sudo nano ${CONFIG_DIR}/discovery.env"
+        echo "  Or set environment variables before installation: export POSTGRES_PASSWORD=\"your_password\""
+        echo "  Then restart: sudo systemctl restart ${SERVICE_NAME}"
+    fi
+    
+    echo ""
+    if [ "$is_supervisor" = true ]; then
+        echo "  Check discovered services: journalctl -u opampsupervisor | grep 'starting receiver'"
+        echo "  Check auth errors: journalctl -u opampsupervisor | grep -E '(password|authentication)'"
+    else
+        echo "  Check discovered services: journalctl -u ${SERVICE_NAME} | grep 'starting receiver'"
+        echo "  Check auth errors: journalctl -u ${SERVICE_NAME} | grep -E '(password|authentication)'"
+    fi
+}
+
+create_installation_summary() {
+    local summary_file="$1"
+    local mode="$2"
+    local os="$3"
+    shift 3
+    local extra_info="$*"
+    
+    local install_date
+    install_date=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    {
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  Coralogix OpenTelemetry Collector - Installation Summary"
+        echo "═══════════════════════════════════════════════════════════"
+        echo ""
+        echo "Installation Date: $install_date"
+        echo "Installation Mode: $mode"
+        echo ""
+        
+        if [ "$mode" = "supervisor" ]; then
+            echo "Supervisor Service: opampsupervisor"
+            echo "Collector Binary: /usr/local/bin/otelcol-contrib"
+            echo "Supervisor Config: /etc/opampsupervisor/config.yaml"
+            echo "Collector Config: /etc/opampsupervisor/collector.yaml"
+            echo "Effective Config: /var/lib/opampsupervisor/effective.yaml"
+            echo "Credentials Config: /etc/opampsupervisor/opampsupervisor.conf"
+            echo ""
+            echo "$extra_info"
+            echo ""
+            if [ "$os" = "linux" ]; then
+                echo "═══════════════════════════════════════════════════════════"
+                echo "  Linux Capabilities"
+                echo "═══════════════════════════════════════════════════════════"
+                echo ""
+                # Check if capabilities are actually set
+                local caps_enabled=false
+                if command -v getcap >/dev/null 2>&1; then
+                    if getcap /usr/local/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace\|cap_dac_read_search"; then
+                        caps_enabled=true
+                    fi
+                fi
+                
+                if [ "$caps_enabled" = true ]; then
+                    echo "✓ Linux capabilities are ENABLED"
+                else
+                    echo "Linux capabilities status: Not detected (may require manual verification)"
+                fi
+                echo ""
+                echo "Capabilities allow service discovery and process metrics to work"
+                echo "automatically when added via OpAMP server, without requiring"
+                echo "additional configuration or restarts."
+                echo ""
+                echo "Capabilities enabled:"
+                echo "  - CAP_SYS_PTRACE (for process identification)"
+                echo "  - CAP_DAC_READ_SEARCH (for reading process information)"
+                echo ""
+                echo "To verify capabilities:"
+                echo "  getcap /usr/local/bin/otelcol-contrib"
+                echo ""
+                echo "To disable capabilities (not recommended):"
+                echo "  Reinstall with: --disable-capabilities flag"
+                echo ""
+            fi
+        else
+            echo "Service: ${SERVICE_NAME}"
+            echo "Binary: ${BINARY_PATH}"
+            echo "Config: ${CONFIG_FILE}"
+            if [ "$os" = "linux" ]; then
+                echo "Discovery Credentials: ${CONFIG_DIR}/discovery.env"
+            fi
+            echo ""
+            echo "$extra_info"
+        fi
+        
+        echo ""
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  Service Discovery Status"
+        echo "═══════════════════════════════════════════════════════════"
+        echo ""
+        
+        if [ "$mode" = "supervisor" ]; then
+            # For supervisor mode, always show instructions (capabilities enabled by default, discovery can be added later)
+            # Check if discovery is currently enabled (just for status message)
+            local discovery_currently_enabled=false
+            if [ -f "/var/lib/opampsupervisor/effective.yaml" ]; then
+                if config_has_discovery "/var/lib/opampsupervisor/effective.yaml"; then
+                    discovery_currently_enabled=true
+                fi
+            fi
+            
+            if [ "$discovery_currently_enabled" = true ]; then
+                echo "✓ Service discovery is ENABLED (added via OpAMP server)"
+            else
+                echo "Service discovery is NOT enabled by default"
+                echo ""
+                echo "Discovery can be enabled later via OpAMP server (Fleet Manager)."
+                echo "When enabled, it will work automatically without requiring"
+                echo "additional configuration or restarts (capabilities are already set)."
+            fi
+            echo ""
+            echo "═══════════════════════════════════════════════════════════"
+            echo "  Configuring Discovery Credentials"
+            echo "═══════════════════════════════════════════════════════════"
+            echo ""
+            echo "When service discovery is enabled (now or later), some services"
+            echo "(PostgreSQL, MySQL, MongoDB, Redis) require credentials to collect metrics."
+            echo ""
+            echo "To configure credentials:"
+            echo "  1. Edit: sudo nano /etc/opampsupervisor/opampsupervisor.conf"
+            echo "  2. Add your credentials (e.g., POSTGRES_PASSWORD=your_password)"
+            echo "  3. Restart: sudo systemctl restart opampsupervisor"
+            echo ""
+            echo "Available credential variables:"
+            echo "  POSTGRES_USER=postgres"
+            echo "  POSTGRES_PASSWORD=your_password"
+            echo "  POSTGRES_DB=postgres"
+            echo "  MYSQL_USER=root"
+            echo "  MYSQL_PASSWORD=your_password"
+            echo "  REDIS_PASSWORD=your_password"
+            echo "  MONGODB_USER=admin"
+            echo "  MONGODB_PASSWORD=your_password"
+            echo "  RABBITMQ_USER=guest"
+            echo "  RABBITMQ_PASSWORD=guest"
+            echo "  ELASTICSEARCH_USER=elastic"
+            echo "  ELASTICSEARCH_PASSWORD=your_password"
+            echo ""
+            echo "Check discovered services (after discovery is enabled):"
+            echo "  journalctl -u opampsupervisor | grep 'starting receiver'"
+            echo ""
+            echo "Check authentication errors:"
+            echo "  journalctl -u opampsupervisor | grep -E '(password|authentication)'"
+        else
+            # Regular mode - only show if discovery is enabled
+            discovery_enabled=false
+            if config_has_discovery "${CONFIG_FILE}"; then
+                discovery_enabled=true
+            fi
+            
+            if [ "$discovery_enabled" = true ]; then
+            echo "✓ Service discovery is ENABLED"
+            echo ""
+            echo "Some services (PostgreSQL, MySQL, MongoDB, Redis) require"
+            echo "credentials to collect metrics. Authentication errors are"
+            echo "EXPECTED until credentials are configured."
+            echo ""
+            echo "To configure credentials:"
+            if [ "$os" = "linux" ]; then
+                echo "  1. Edit: sudo nano ${CONFIG_DIR}/discovery.env"
+                echo "  2. Uncomment and set your credentials"
+                echo "  3. Restart: sudo systemctl restart ${SERVICE_NAME}"
+                echo ""
+                echo "Or set environment variables before installation:"
+                echo "  export POSTGRES_PASSWORD=\"your_password\""
+                echo "  bash coralogix-otel-collector.sh"
+                echo ""
+                echo "Check discovered services:"
+                echo "  journalctl -u ${SERVICE_NAME} | grep 'starting receiver'"
+                echo ""
+                echo "Check authentication errors:"
+                echo "  journalctl -u ${SERVICE_NAME} | grep -E '(password|authentication)'"
+            else
+                # macOS
+                if [ "${MACOS_INSTALL_TYPE:-daemon}" = "agent" ]; then
+                    echo "  1. Edit: nano \${HOME}/.otelcol-contrib/discovery.env"
+                    echo "  2. Uncomment and set your credentials"
+                    echo "  3. Restart the service"
+                    echo ""
+                    echo "Or set environment variables before installation:"
+                    echo "  export POSTGRES_PASSWORD=\"your_password\""
+                    echo "  bash coralogix-otel-collector.sh"
+                    echo ""
+                    echo "Check discovered services:"
+                    echo "  tail -f ${LOG_DIR}/otel-collector.log | grep 'starting receiver'"
+                    echo ""
+                    echo "Check authentication errors:"
+                    echo "  tail -f ${LOG_DIR}/otel-collector.log | grep -E '(password|authentication)'"
+                else
+                    echo "  1. Edit: sudo nano /usr/local/etc/otelcol-contrib/discovery.env"
+                    echo "  2. Uncomment and set your credentials"
+                    echo "  3. Restart the service"
+                    echo ""
+                    echo "Or set environment variables before installation:"
+                    echo "  export POSTGRES_PASSWORD=\"your_password\""
+                    echo "  bash coralogix-otel-collector.sh"
+                    echo ""
+                    echo "Check discovered services:"
+                    echo "  tail -f ${LOG_DIR}/otel-collector.log | grep 'starting receiver'"
+                    echo ""
+                    echo "Check authentication errors:"
+                    echo "  tail -f ${LOG_DIR}/otel-collector.log | grep -E '(password|authentication)'"
+                fi
+            fi
+        else
+            echo "Service discovery is not enabled in your configuration"
+        fi
+        fi
+        
+        if [ "$DISABLE_CAPABILITIES_FLAG" = true ] && [ "$SUPERVISOR_MODE" = true ] && [ "$os" = "linux" ]; then
+            echo ""
+            echo "⚠️  WARNING: Linux capabilities are DISABLED in supervisor mode"
+            echo "   Service discovery and process metrics from OpAMP configs may not work correctly"
+        fi
+        
+        echo ""
+        echo "═══════════════════════════════════════════════════════════"
+        echo "  Useful Commands"
+        echo "═══════════════════════════════════════════════════════════"
+        echo ""
+        
+        if [ "$mode" = "supervisor" ]; then
+            echo "Service Management:"
+            echo "  systemctl status opampsupervisor"
+            echo "  systemctl restart opampsupervisor"
+            echo "  systemctl stop opampsupervisor"
+            echo "  systemctl start opampsupervisor"
+            echo ""
+            echo "View Logs:"
+            echo "  journalctl -u opampsupervisor -f"
+            echo "  tail -f /var/log/opampsupervisor/opampsupervisor.log"
+            echo ""
+            echo "View Configurations:"
+            echo "  cat /etc/opampsupervisor/config.yaml"
+            echo "  cat /etc/opampsupervisor/collector.yaml"
+            echo "  cat /var/lib/opampsupervisor/effective.yaml"
+            echo "  cat /etc/opampsupervisor/opampsupervisor.conf"
+        else
+            if [ "$os" = "linux" ]; then
+                echo "Service Management:"
+                echo "  systemctl status ${SERVICE_NAME}"
+                echo "  systemctl restart ${SERVICE_NAME}"
+                echo "  systemctl stop ${SERVICE_NAME}"
+                echo "  systemctl start ${SERVICE_NAME}"
+                echo ""
+                echo "View Logs:"
+                echo "  journalctl -u ${SERVICE_NAME} -f"
+                echo ""
+                echo "View Configuration:"
+                echo "  cat ${CONFIG_FILE}"
+                # Check discovery status again (variable may not be set if we're in supervisor mode)
+                if [ "$mode" != "supervisor" ] && config_has_discovery "${CONFIG_FILE}"; then
+                    echo "  cat ${CONFIG_DIR}/discovery.env"
+                fi
+            else
+                if [ "${MACOS_INSTALL_TYPE:-daemon}" = "agent" ]; then
+                    echo "Service Management (LaunchAgent - user-level):"
+                    echo "  launchctl list | grep otelcol"
+                    echo "  launchctl bootout gui/\$(id -u) ${LAUNCHD_PLIST_AGENT}"
+                    echo "  launchctl bootstrap gui/\$(id -u) ${LAUNCHD_PLIST_AGENT}"
+                    echo ""
+                    echo "View Logs:"
+                    echo "  tail -f ${LOG_DIR}/otel-collector.log"
+                else
+                    echo "Service Management (LaunchDaemon - system-wide):"
+                    echo "  sudo launchctl list | grep otelcol"
+                    echo "  sudo launchctl bootout system ${LAUNCHD_PLIST_DAEMON}"
+                    echo "  sudo launchctl bootstrap system ${LAUNCHD_PLIST_DAEMON}"
+                    echo ""
+                    echo "View Logs:"
+                    echo "  tail -f ${LOG_DIR}/otel-collector.log"
+                fi
+                echo ""
+                echo "View Configuration:"
+                echo "  cat ${CONFIG_FILE}"
+            fi
+        fi
+        
+        echo ""
+        echo "═══════════════════════════════════════════════════════════"
+        echo ""
+        echo "View this summary later:"
+        echo "  cat $summary_file"
+        echo ""
+    } | $SUDO_CMD tee "$summary_file" >/dev/null
+    
+    $SUDO_CMD chmod 644 "$summary_file" || true
+    
+    if [ "$mode" = "supervisor" ]; then
+        if id opampsupervisor >/dev/null 2>&1; then
+            $SUDO_CMD chown opampsupervisor:opampsupervisor "$summary_file" 2>/dev/null || true
+        fi
+    else
+        if id "${SERVICE_NAME}" >/dev/null 2>&1; then
+            $SUDO_CMD chown "${SERVICE_NAME}:${SERVICE_NAME}" "$summary_file" 2>/dev/null || true
+        fi
+    fi
+}
+
 install_collector_linux() {
     local version="$1"
     local arch="$2"
@@ -652,36 +1132,40 @@ install_collector_linux() {
         fi
     fi
     
-    if [ "$ENABLE_PROCESS_METRICS" = true ]; then
-        configure_process_metrics_permissions "$BINARY_PATH_LINUX" || true
-    fi
-    
     log "Collector installed successfully: $($BINARY_PATH_LINUX --version)"
 }
 
 configure_process_metrics_permissions() {
     local binary_path="$1"
+    local reason="${2:-process metrics}"
     
     if ! command -v setcap >/dev/null 2>&1; then
-        warn "setcap not found. Process metrics may not work correctly."
-        warn "Install libcap2-bin (Debian/Ubuntu) or libcap (RHEL/CentOS) to enable process metrics."
+        warn "setcap not found. $reason may not work correctly."
+        warn "Install libcap2-bin (Debian/Ubuntu) or libcap (RHEL/CentOS) to enable $reason."
         return 1
     fi
     
-    log "Configuring Linux capabilities for process metrics..."
-    log "This allows the collector to read /proc/[pid]/io for all processes"
+    log "Configuring Linux capabilities..."
     
     # CAP_SYS_PTRACE: Required to read /proc/[pid]/io for other users' processes
+    #                 Also required by host_observer to map network connections to PIDs
     # CAP_DAC_READ_SEARCH: Required to bypass file read permission checks
+    #                      Also required by host_observer to read /proc/[pid]/cmdline
     # +ep: Effective and Permitted (not Inherited, for security)
     if $SUDO_CMD setcap cap_sys_ptrace,cap_dac_read_search=+ep "$binary_path" 2>/dev/null; then
         log "Linux capabilities configured successfully"
-        log "  Process metrics will be able to monitor all system processes"
+        warn "Capabilities enabled: grants CAP_SYS_PTRACE and CAP_DAC_READ_SEARCH for service discovery and process metrics"
+        warn "Disable capabilities by disabling process metrics or service discovery in your configuration"
         return 0
     else
         warn "Failed to set Linux capabilities on $binary_path"
-        warn "Process metrics will only monitor processes owned by otelcol-contrib user"
-        warn "To enable full process metrics, run: sudo setcap cap_sys_ptrace,cap_dac_read_search=+ep $binary_path"
+        if [ "$reason" = "process metrics" ]; then
+            warn "Process metrics will only monitor processes owned by otelcol-contrib user"
+            warn "To enable full process metrics, run: sudo setcap cap_sys_ptrace,cap_dac_read_search=+ep $binary_path"
+        elif [ "$reason" = "service discovery" ]; then
+            warn "Service discovery may not be able to identify processes (command/process_name fields may be empty)"
+            warn "To enable service discovery, run: sudo setcap cap_sys_ptrace,cap_dac_read_search=+ep $binary_path"
+        fi
         return 1
     fi
 }
@@ -828,8 +1312,8 @@ install_supervisor() {
         fail "Installation verification failed: The binary at /usr/local/bin/otelcol-contrib exists but cannot be executed."
     fi
 
-    if [ "$ENABLE_PROCESS_METRICS" = true ]; then
-        configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" || true
+    if [ "$ENABLE_CAPABILITIES" = true ]; then
+        configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" "capabilities" || true
     fi
 
     log "Creating required directories for supervisor..."
@@ -927,6 +1411,19 @@ agent:
     CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
     OTEL_MEMORY_LIMIT_MIB: "\${env:OTEL_MEMORY_LIMIT_MIB}"
     OTEL_LISTEN_INTERFACE: "\${env:OTEL_LISTEN_INTERFACE}"
+    # Discovery credentials
+    POSTGRES_USER: "\${env:POSTGRES_USER}"
+    POSTGRES_PASSWORD: "\${env:POSTGRES_PASSWORD}"
+    POSTGRES_DB: "\${env:POSTGRES_DB}"
+    MYSQL_USER: "\${env:MYSQL_USER}"
+    MYSQL_PASSWORD: "\${env:MYSQL_PASSWORD}"
+    REDIS_PASSWORD: "\${env:REDIS_PASSWORD}"
+    MONGODB_USER: "\${env:MONGODB_USER}"
+    MONGODB_PASSWORD: "\${env:MONGODB_PASSWORD}"
+    RABBITMQ_USER: "\${env:RABBITMQ_USER}"
+    RABBITMQ_PASSWORD: "\${env:RABBITMQ_PASSWORD}"
+    ELASTICSEARCH_USER: "\${env:ELASTICSEARCH_USER}"
+    ELASTICSEARCH_PASSWORD: "\${env:ELASTICSEARCH_PASSWORD}"
 
 storage:
   directory: /var/lib/opampsupervisor/
@@ -959,12 +1456,32 @@ EOF
         $SUDO_CMD sed -i '/OTEL_MEMORY_LIMIT_MIB/d' /etc/opampsupervisor/opampsupervisor.conf
         $SUDO_CMD sed -i '/OTEL_LISTEN_INTERFACE/d' /etc/opampsupervisor/opampsupervisor.conf
         $SUDO_CMD sed -i '/OPAMP_OPTIONS/d' /etc/opampsupervisor/opampsupervisor.conf
+        # Clean up discovery credentials (will be re-added with defaults)
+        $SUDO_CMD sed -i '/^POSTGRES_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/^MYSQL_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/^REDIS_PASSWORD/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/^MONGODB_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/^RABBITMQ_/d' /etc/opampsupervisor/opampsupervisor.conf
+        $SUDO_CMD sed -i '/^ELASTICSEARCH_/d' /etc/opampsupervisor/opampsupervisor.conf
     fi
     {
         echo "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
         echo "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
         echo "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         echo "OPAMP_OPTIONS=--config /etc/opampsupervisor/config.yaml"
+        # Discovery credentials (use env vars if provided, otherwise empty/defaults)
+        echo "POSTGRES_USER=${POSTGRES_USER:-}"
+        echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}"
+        echo "POSTGRES_DB=${POSTGRES_DB:-postgres}"
+        echo "MYSQL_USER=${MYSQL_USER:-}"
+        echo "MYSQL_PASSWORD=${MYSQL_PASSWORD:-}"
+        echo "REDIS_PASSWORD=${REDIS_PASSWORD:-}"
+        echo "MONGODB_USER=${MONGODB_USER:-}"
+        echo "MONGODB_PASSWORD=${MONGODB_PASSWORD:-}"
+        echo "RABBITMQ_USER=${RABBITMQ_USER:-guest}"
+        echo "RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}"
+        echo "ELASTICSEARCH_USER=${ELASTICSEARCH_USER:-}"
+        echo "ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD:-}"
     } | $SUDO_CMD tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null
 
     $SUDO_CMD systemctl daemon-reload
@@ -1348,8 +1865,8 @@ parse_args() {
                 USER_SET_LISTEN_INTERFACE=true
                 shift 2
                 ;;
-            --enable-process-metrics)
-                ENABLE_PROCESS_METRICS=true
+            --disable-capabilities)
+                DISABLE_CAPABILITIES_FLAG=true
                 shift
                 ;;
             --supervisor-version)
@@ -1522,6 +2039,16 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
     fi
     
     if [ "$SUPERVISOR_MODE" = true ]; then
+        # Auto-enable capabilities for supervisor mode (for discovery support)
+        if [ "$DISABLE_CAPABILITIES_FLAG" != true ]; then
+            ENABLE_CAPABILITIES=true
+            if [ "$os" = "linux" ]; then
+                warn "Linux capabilities enabled by default in supervisor mode for service discovery support"
+                warn "This allows discovery to work automatically when added via OpAMP server"
+                warn "Use --disable-capabilities to disable if not needed"
+            fi
+        fi
+        
         # Compute supervisor and collector versions
         # Both default to VERSION (from --version or Helm chart)
         # --supervisor-version overrides supervisor version only
@@ -1543,6 +2070,44 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
         
         install_supervisor "$supervisor_ver" "$collector_ver" "$arch"
         
+        # Wait for effective config to be generated (with timeout)
+        local max_wait=10
+        local wait_count=0
+        while [ $wait_count -lt $max_wait ]; do
+            if [ -f "/var/lib/opampsupervisor/effective.yaml" ]; then
+                log "Effective config generated"
+                break
+            fi
+            sleep 0.5
+            wait_count=$((wait_count + 1))
+        done
+        if [ $wait_count -eq $max_wait ]; then
+            warn "Effective config not generated after $max_wait seconds"
+        fi
+        
+        local base_config_note=""
+        if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
+            base_config_note="Custom Base Config:
+  Source: $SUPERVISOR_BASE_CONFIG_PATH
+  Installed: /etc/opampsupervisor/collector.yaml
+  
+The base config is merged with remote configuration from Fleet Manager.
+The effective merged configuration is at: /var/lib/opampsupervisor/effective.yaml"
+        fi
+        
+        # Create installation summary file
+        create_installation_summary \
+            "/etc/opampsupervisor/INSTALLATION_SUMMARY.txt" \
+            "supervisor" \
+            "$os" \
+            "Supervisor Version: $supervisor_ver
+Collector Version: $collector_ver
+
+Note: The collector is managed by the supervisor. Configuration updates
+will be received from the OpAMP server automatically.
+
+$base_config_note"
+        
         cat <<EOF
 
 Installation complete with supervisor mode!
@@ -1555,6 +2120,12 @@ Supervisor Config: /etc/opampsupervisor/config.yaml
 Collector Config: /etc/opampsupervisor/collector.yaml
 Effective Config: /var/lib/opampsupervisor/effective.yaml
 
+EOF
+        
+        # Show discovery instructions if discovery is enabled
+        show_discovery_instructions "" true
+        
+        cat <<EOF
 Useful commands:
   Supervisor status:    systemctl status opampsupervisor
   Collector process:    ps aux | grep otelcol-contrib
@@ -1569,6 +2140,9 @@ Useful commands:
 
 Note: The collector is managed by the supervisor. Configuration updates
 will be received from the OpAMP server automatically.
+
+Installation summary saved to: /etc/opampsupervisor/INSTALLATION_SUMMARY.txt
+View it later with: cat /etc/opampsupervisor/INSTALLATION_SUMMARY.txt
 EOF
         
         if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
@@ -1614,6 +2188,36 @@ EOF
     # Validate that config references the env vars if user set them
     validate_config_env_vars "$CONFIG_FILE"
     
+    # Auto-enable capabilities based on config (regular mode only)
+    # Supervisor mode capabilities are handled earlier
+    if [ "$os" = "linux" ] && [ "$SUPERVISOR_MODE" != true ]; then
+        # Auto-enable if process metrics are enabled in config
+        if config_has_process_metrics "$CONFIG_FILE"; then
+            ENABLE_CAPABILITIES=true
+        fi
+        
+        # Auto-enable if discovery is enabled in config
+        if config_has_discovery "$CONFIG_FILE"; then
+            ENABLE_CAPABILITIES=true
+        fi
+    fi
+    
+    # Create discovery environment file template (Linux only)
+    if [ "$os" = "linux" ] && [ "$SUPERVISOR_MODE" != true ]; then
+        setup_discovery_env_file || true
+        
+        # Set capabilities for discovery or process metrics (regular mode: based on config)
+        if [ "$ENABLE_CAPABILITIES" = true ]; then
+            if ! getcap "$BINARY_PATH_LINUX" 2>/dev/null | grep -q "cap_sys_ptrace\|cap_dac_read_search"; then
+                if config_has_discovery "$CONFIG_FILE" || config_has_process_metrics "$CONFIG_FILE"; then
+                    configure_process_metrics_permissions "$BINARY_PATH_LINUX" "capabilities" || true
+                fi
+            else
+                log "Linux capabilities already configured"
+            fi
+        fi
+    fi
+    
     case "$os" in
         linux)
             $SUDO_CMD mkdir -p /var/lib/otelcol
@@ -1635,6 +2239,10 @@ Environment=\"OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}\""
                 env_lines="${env_lines}
 Environment=\"CORALOGIX_DOMAIN=${CORALOGIX_DOMAIN}\""
             fi
+            
+            # Load discovery credentials file (optional - won't fail if missing)
+            env_lines="${env_lines}
+EnvironmentFile=-${CONFIG_DIR}/discovery.env"
             
             $SUDO_CMD tee "/etc/systemd/system/${SERVICE_NAME}.service.d/override.conf" >/dev/null <<EOF
 [Service]
@@ -1666,6 +2274,21 @@ EOF
     
     verify_service "$os"
     
+    # Create installation summary file
+    local summary_file="${CONFIG_DIR}/INSTALLATION_SUMMARY.txt"
+    if [ "$os" = "darwin" ]; then
+        # For macOS, use a user-accessible location
+        if [ "${MACOS_INSTALL_TYPE:-daemon}" = "agent" ]; then
+            summary_file="${HOME}/.otelcol-contrib/INSTALLATION_SUMMARY.txt"
+            mkdir -p "${HOME}/.otelcol-contrib" 2>/dev/null || true
+        else
+            summary_file="/usr/local/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt"
+            $SUDO_CMD mkdir -p "/usr/local/etc/otelcol-contrib" 2>/dev/null || true
+        fi
+    fi
+    
+    create_installation_summary "$summary_file" "regular" "$os" ""
+    
     cat <<EOF
 
 Installation complete!
@@ -1675,6 +2298,9 @@ Binary: ${BINARY_PATH}
 Config: ${CONFIG_FILE}
 
 EOF
+
+    # Show discovery instructions if discovery is enabled
+    show_discovery_instructions "$CONFIG_FILE" false
     
     case "$os" in
         linux)
@@ -1686,6 +2312,9 @@ Useful commands:
   Restart:       systemctl restart ${SERVICE_NAME}
   Stop:          systemctl stop ${SERVICE_NAME}
   Start:         systemctl start ${SERVICE_NAME}
+
+Installation summary saved to: ${summary_file}
+View it later with: cat ${summary_file}
 
 EOF
             ;;
@@ -1700,6 +2329,9 @@ Useful commands (LaunchAgent - user-level):
   Start:         launchctl bootstrap gui/\$(id -u) ${LAUNCHD_PLIST_AGENT}
   Restart:       launchctl bootout gui/\$(id -u) ${LAUNCHD_PLIST_AGENT}; launchctl bootstrap gui/\$(id -u) ${LAUNCHD_PLIST_AGENT}
 
+Installation summary saved to: ${summary_file}
+View it later with: cat ${summary_file}
+
 EOF
             else
                 cat <<EOF
@@ -1710,6 +2342,9 @@ Useful commands (LaunchDaemon - system-wide):
   Stop:          sudo launchctl bootout system ${LAUNCHD_PLIST_DAEMON}
   Start:         sudo launchctl bootstrap system ${LAUNCHD_PLIST_DAEMON}
   Restart:       sudo launchctl bootout system ${LAUNCHD_PLIST_DAEMON}; sudo launchctl bootstrap system ${LAUNCHD_PLIST_DAEMON}
+
+Installation summary saved to: ${summary_file}
+View it later with: cat ${summary_file}
 
 EOF
             fi
