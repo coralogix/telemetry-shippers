@@ -50,6 +50,8 @@ jobs:
             - 'metrics/prometheus-agent/**'
           metrics-prometheus-operator:
             - 'metrics/prometheus/operator/**'
+          otel-installer:
+            - 'otel-installer/**'
       # Look for diff in the changelog file.
     - name: Logs Changelog
       if: steps.filter.outputs.logs-fluent-bit-coralogix == 'true' ||
@@ -72,3 +74,6 @@ jobs:
     - name: Prometheus Agent Changelog
       if: steps.filter.outputs.metrics-prometheus-agent == 'true'
       run: scripts/changelog_check.sh metrics/prometheus-agent
+    - name: OpenTelemetry Installer Changelog
+      if: steps.filter.outputs.otel-installer == 'true'
+      run: scripts/changelog_check.sh otel-installer
