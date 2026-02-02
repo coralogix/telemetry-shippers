@@ -2,7 +2,7 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
-## [0.1.5] - 2026-01-29
+## [0.1.6] - 2026-02-02
 
 ### Added
 - Service discovery support with automatic credential management
@@ -15,6 +15,20 @@ All notable changes to the OTel Installer scripts will be documented in this fil
   - Auto-enabled in regular mode when service discovery is detected in configuration
   - Auto-enabled in regular mode when process metrics are detected in configuration
 - `--disable-capabilities` flag to opt-out of automatic capabilities enablement (supervisor mode only)
+
+## [0.1.5] - 2025-02-02
+
+### Added
+- Windows installer script (`coralogix-otel-collector.ps1`) for deploying the collector as a Windows Service
+- Windows supervisor mode support (OpAMP remote configuration via Fleet Management)
+- Dynamic IIS log parsing support via `-EnableDynamicIISParsing` flag
+- Custom OpAMP supervisor config support via `-SupervisorOpampConfig` flag
+- Base collector config for supervisor mode via `-SupervisorCollectorBaseConfig` flag
+- Local MSI installation support via `-SupervisorMsi` flag
+- E2E tests for Windows installer (install, version, config, supervisor, purge)
+
+### Supported Platforms
+- Windows 10/11, Windows Server 2016+ (x64, ARM64) - Windows Service
 
 ## [0.1.4] - 2024-01-28
 
