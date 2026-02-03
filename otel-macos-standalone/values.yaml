@@ -1,5 +1,5 @@
 global:
-  domain: "eu2.coralogix.com"
+  domain: "coralogix.com"
   defaultApplicationName: "otel"
   defaultSubsystemName: "macos"
   logLevel: "info"
