@@ -67,6 +67,7 @@ declare -a TEST_CONFIGS=(
     # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
     "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_FleetManagerSupervisor:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml:component=agent-collector:"
+    "TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml:component=agent-collector:"
     "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
@@ -597,7 +598,7 @@ run_workflow_mode() {
     fi
 
     log_test "========================================"
-    log_test "Workflow Mode (Supervisor): go test -v -run='^TestE2E.*' ./supervisor"
+    log_test "Workflow Mode (Supervisor): go test -v -run='^TestE2E_FleetManagerSupervisor(_ConfigMapReload)?$' ./supervisor"
     log_test "========================================"
 
     local supervisor_start_time
@@ -606,7 +607,7 @@ run_workflow_mode() {
     (
         cd "${E2E_TEST_DIR}" || exit 1
         go clean -testcache
-        go test -v -run='^TestE2E.*' ./supervisor
+        go test -v -run='^TestE2E_FleetManagerSupervisor(_ConfigMapReload)?$' ./supervisor
     )
     local supervisor_exit_code=$?
     local supervisor_end_time
@@ -627,6 +628,46 @@ run_workflow_mode() {
     fi
 
     log_success "Supervisor workflow tests PASSED (duration: ${supervisor_duration}s)"
+
+    # Run non-minimal collector config test with dedicated values
+    uninstall_chart
+    local supervisor_non_min_values="./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml"
+    if ! install_chart "$supervisor_non_min_values" "component=agent-collector"; then
+        log_error "Failed to install chart for supervisor non-minimal workflow tests."
+        return 1
+    fi
+
+    log_test "========================================"
+    log_test "Workflow Mode (Supervisor Non-Minimal): go test -v -run='^TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig$' ./supervisor"
+    log_test "========================================"
+
+    local supervisor_non_min_start_time
+    supervisor_non_min_start_time=$(date +%s)
+
+    (
+        cd "${E2E_TEST_DIR}" || exit 1
+        go clean -testcache
+        go test -v -run='^TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig$' ./supervisor
+    )
+    local supervisor_non_min_exit_code=$?
+    local supervisor_non_min_end_time
+    supervisor_non_min_end_time=$(date +%s)
+    local supervisor_non_min_duration=$((supervisor_non_min_end_time - supervisor_non_min_start_time))
+
+    if [ $supervisor_non_min_exit_code -ne 0 ]; then
+        log_error "Supervisor non-minimal workflow tests FAILED (duration: ${supervisor_non_min_duration}s, exit code: ${supervisor_non_min_exit_code})"
+        log_warning "Collecting pod logs..."
+        for pod in $(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
+            log_error "===== Last 50 log lines for pod: $pod ====="
+            kubectl logs --tail=50 "$pod" 2>/dev/null || true
+            echo
+        done
+        log_error "Pod status:"
+        kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
+        return $supervisor_non_min_exit_code
+    fi
+
+    log_success "Supervisor non-minimal workflow tests PASSED (duration: ${supervisor_non_min_duration}s)"
 
     return 0
 }

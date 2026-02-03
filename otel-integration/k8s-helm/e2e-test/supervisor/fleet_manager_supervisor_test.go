@@ -92,6 +92,11 @@ func TestE2E_FleetManagerSupervisor_ConfigMapReload(t *testing.T) {
 	waitForFleetManagerMessages(t, secondaryServer)
 }
 
+func TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig(t *testing.T) {
+	k8sClient := newFleetManagerK8sClient(t)
+	assertNonMinimalCollectorConfig(t, k8sClient)
+}
+
 func newFleetManagerK8sClient(t *testing.T) *xk8stest.K8sClient {
 	t.Helper()
 
@@ -149,6 +154,17 @@ func assertMinimalCollectorConfig(t *testing.T, k8sClient *xk8stest.K8sClient) {
 	require.Contains(t, relayConfig, "receivers:\n  nop:")
 	require.Contains(t, relayConfig, "exporters:\n  nop:")
 	require.Contains(t, relayConfig, "extensions:\n  health_check:")
+}
+
+func assertNonMinimalCollectorConfig(t *testing.T, k8sClient *xk8stest.K8sClient) {
+	t.Helper()
+
+	data := getConfigMapData(t, k8sClient, fmt.Sprintf("%s-agent", agentServiceName()))
+	relayConfig := getConfigMapDataString(t, data, "relay")
+	require.NotContains(t, relayConfig, "receivers:\n  nop:")
+	require.NotContains(t, relayConfig, "exporters:\n  nop:")
+	require.Contains(t, relayConfig, "\n  otlp:\n")
+	require.Contains(t, relayConfig, "\n  coralogix:\n")
 }
 
 func waitForOpampMessage(

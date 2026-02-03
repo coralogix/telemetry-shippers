@@ -117,7 +117,28 @@ jobs:
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go clean -testcache
-          go test -v -run='^TestE2E.*' ./supervisor
+          go test -v -run='^TestE2E_FleetManagerSupervisor(_ConfigMapReload)?$' ./supervisor
+      - name: Install chart for supervisor non-minimal testing
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm
+          helm upgrade --install otel-integration-agent-e2e . \
+          --set global.clusterName="otel-integration-agent-e2e" \
+          --set global.domain="coralogix.com"  \
+          --set global.hostedEndpoint=$HOSTENDPOINT \
+          -f ./values.yaml \
+          -f ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
+      - name: Run Supervisor Non-Minimal E2E test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
+          go test -v -run='^TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig$' ./supervisor
       - name: Pods logs
         if: failure()
         run: |
