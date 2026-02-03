@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.269/ 2026-02-03
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.128.18
+
 ### v0.0.268 / 2026-01-22
 - [Fix] Use the configured `from` field for profiles k8sattributes service annotations.
 - [Fix] Fix `deltaToCumulative` preset producing `null` config when no options are set.

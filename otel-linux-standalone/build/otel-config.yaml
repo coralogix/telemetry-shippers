@@ -154,7 +154,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.128.15
+        helm.chart.opentelemetry-agent.version: 0.128.18
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
