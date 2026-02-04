@@ -117,7 +117,7 @@ func kickFleetManagerCollectors(t *testing.T, k8sClient *xk8stest.K8sClient) {
 	err := k8sClient.
 		DynamicClient.
 		Resource(gvr).
-		Namespace("default").
+		Namespace(agentCollectorNamespace()).
 		DeleteCollection(
 			context.Background(),
 			metav1.DeleteOptions{},
