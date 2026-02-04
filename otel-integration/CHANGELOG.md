@@ -2,8 +2,13 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.269/ 2026-02-03
+### v0.0.270 / 2026-02-04
+- [Fix] Use `collection_interval` for prometheus annotation discovery preset receivers (via base chart update).
 
+### v0.0.269 / 2026-02-03
+- [Feat] Add an option to disable the collector metrics Prometheus receiver and transform while keeping telemetry readers enabled.
+- [Feat] Add prometheus annotation discovery preset for cluster-collector with receiver_creator support for pod and service rules.
+- [Change] Enable `collectorMetrics` for the eBPF profiler with `disablePrometheusReceiver: true` by default.
 - [Chore] Bump chart dependency to opentelemetry-collector 0.128.18
 
 ### v0.0.268 / 2026-01-22

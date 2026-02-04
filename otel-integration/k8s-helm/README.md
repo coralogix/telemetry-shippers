@@ -1423,7 +1423,7 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 The OpenTelemetry eBPF Profiler Collector runs the [otelcol-ebpf-profiler distribution](https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol-ebpf-profiler) as a DaemonSet to collect CPU profiles with eBPF and emit OTLP profiles. It is deployed as the `opentelemetry-ebpf-profiler` subchart and uses the same base chart values as the other collectors.
 
-The `ebpfProfiler` and `profilesK8sAttributes` presets are intended for the eBPF profiler distribution. Use the `metadata` preset to attach Coralogix integration attributes. If you export directly to Coralogix, enable the `otlpExporter` preset and keep `collectorMetrics` disabled (the eBPF profiler distribution does not support collector metrics).
+The `ebpfProfiler` and `profilesK8sAttributes` presets are intended for the eBPF profiler distribution. Use the `metadata` preset to attach Coralogix integration attributes. If you export directly to Coralogix, enable the `otlpExporter` preset. To expose profiler metrics for scraping, enable `collectorMetrics` with `disablePrometheusReceiver: true` and rely on annotation-based discovery from the cluster-collector.
 
 To find your Coralogix OTLP endpoint, see [Identify your Coralogix domain](https://coralogix.com/docs/integrations/coralogix-endpoints/#1-identify-your-coralogix-domain).
 For OTLP over gRPC, use port `443` on the ingress endpoint (for example, `ingress.eu1.coralogix.com:443`).
@@ -1436,6 +1436,13 @@ Example configuration:
 opentelemetry-ebpf-profiler:
   enabled: true
   mode: daemonset
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8888"
+  ports:
+    metrics:
+      enabled: true
 
   presets:
     ebpfProfiler:
@@ -1453,9 +1460,9 @@ opentelemetry-ebpf-profiler:
         Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
     otlpReceiver:
       enabled: false
-    # unsupported by ebpf profiler distro
     collectorMetrics:
-      enabled: false
+      enabled: true
+      disablePrometheusReceiver: true
 
   config:
     exporters:
@@ -1478,6 +1485,26 @@ opentelemetry-ebpf-profiler:
 ```
 
 See `k8s-helm/values-ebpf-profiler-collector.yaml` for a full example and the base [opentelemetry-collector chart](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) for additional values.
+
+### eBPF profiler metrics scrape via cluster-collector annotation discovery
+
+Enable the `prometheusAnnotationDiscovery` preset on the cluster-collector to discover pods (and optionally services) annotated with `prometheus.io/*`.
+
+```yaml
+opentelemetry-cluster-collector:
+  presets:
+    prometheusAnnotationDiscovery:
+      enabled: true
+      scrapeInterval: "30s"
+      observePods: true
+      observeServices: false
+      enableServiceRule: false
+```
+
+Notes:
+- To discover services via annotations, set `observeServices: true` and `enableServiceRule: true`.
+- Pod discovery uses `prometheus.io/scrape`, `prometheus.io/path`, and `prometheus.io/port` annotations.
+- Use the `prometheusAnnotationDiscovery` preset on the cluster-collector instead of adding a custom receiver_creator block to avoid double-scraping.
 
 ## Opentelemetry EBPF Instrumentation
 

@@ -1,0 +1,98 @@
+global:
+  clusterName: "otel-integration-ebpf-profiler"
+  deploymentEnvironmentName: "ebpf-eks"
+  logLevel: "debug"
+  domain: "eu2.coralogix.com"
+
+opentelemetry-ebpf-profiler:
+  enabled: true
+  command:
+    extraArgs:
+      - "--feature-gates=service.profilesSupport"
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+    - name: OTELCOL_FEATURE_GATES
+      value: "service.profilesSupport"
+  ports:
+    otlp:
+      enabled: false
+    otlp-http:
+      enabled: false
+    metrics:
+      enabled: true
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8888"
+  presets:
+    resourceDetection:
+      enabled: true
+      deploymentEnvironmentName: "ebpf-eks"
+    ebpfProfiler:
+      enabled: true
+    profilesK8sAttributes:
+      enabled: true
+      serviceLabels:
+        - tag_name: service.label
+          key: app.kubernetes.io/name
+          from: pod
+      serviceAnnotations:
+        - tag_name: service.annotation
+          key: app.coralogix.com/service
+          from: pod
+    fleetManagement:
+      enabled: true
+      agentType: "ebpf-profiler"
+      clusterName: "{{.Values.global.clusterName}}"
+    metadata:
+      enabled: true
+      clusterName: "otel-integration-ebpf-profiler"
+      integrationName: "coralogix-integration-helm"
+    otlpExporter:
+      enabled: true
+      endpoint: "ingress.eu2.coralogix.com:443"
+      headers:
+        Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
+        CX-Application-Name: "otel"
+        CX-Subsystem-Name: "integration"
+    otlpReceiver:
+      enabled: false
+    collectorMetrics:
+      enabled: true
+      disablePrometheusReceiver: true
+
+  config:
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      telemetry:
+        resource:
+          service.name: "opentelemetry-collector"
+          cx.agent.type: "ebpf-profiler"
+        logs:
+          level: "debug"
+      pipelines:
+        profiles:
+          exporters:
+            - debug
+            - otlp
+          processors:
+            - memory_limiter
+
+opentelemetry-cluster-collector:
+  enabled: true
+  presets:
+    prometheusAnnotationDiscovery:
+      enabled: true
+      scrapeInterval: "30s"
+      observePods: true
+      observeServices: false
+      enableServiceRule: false
+
+opentelemetry-agent:
+  enabled: true

@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.269"
+  version: "0.0.270"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -259,6 +259,7 @@ opentelemetry-agent:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
+
     # Configures the collector to receive Jaeger data in all supported protocols.
     # Adds the jaeger receiver to the traces pipeline with all protocols configured.
     jaegerReceiver:
@@ -443,6 +444,15 @@ opentelemetry-cluster-collector:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
+
+    # Configures the cluster-collector to dynamically discover Prometheus targets
+    # based on Kubernetes annotations.
+    # prometheusAnnotationDiscovery:
+    #   enabled: false
+    #   scrapeInterval: "{{.Values.global.collectionInterval}}"
+    #   observePods: true
+    #   observeServices: false
+    #   enableServiceRule: false
 
     # Configures the collector to expose zPages for debugging.
     # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
@@ -857,12 +867,23 @@ coralogix-ebpf-profiler:
 opentelemetry-ebpf-profiler:
   enabled: false
   mode: daemonset
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8888"
+  ports:
+    metrics:
+      enabled: true
 
   presets:
     ebpfProfiler:
       enabled: true
     profilesK8sAttributes:
       enabled: true
+    fleetManagement:
+      enabled: true
+      agentType: "ebpf-profiler"
+      clusterName: "{{.Values.global.clusterName}}"
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
@@ -871,9 +892,9 @@ opentelemetry-ebpf-profiler:
       enabled: false
     otlpReceiver:
       enabled: false
-    # unsupported by ebpf profiler distro
     collectorMetrics:
-      enabled: false
+      enabled: true
+      disablePrometheusReceiver: true
 
   config:
     service:
