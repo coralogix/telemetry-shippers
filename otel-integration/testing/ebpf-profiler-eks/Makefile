@@ -15,7 +15,6 @@ EBPF_NAMESPACE ?= coralogix-otel
 EBPF_RELEASE ?= otel-ebpf-profiler
 EBPF_VALUES ?= values-ebpf-profiler.yaml
 EBPF_CHART ?= ../../k8s-helm
-COLLECTOR_CHART ?= ../../k8s-helm/charts/opentelemetry-collector-0.128.17.tgz
 CORALOGIX_SECRET_NAME ?= coralogix-keys
 EBPF_DEPLOYMENT_ENV ?= ebpf-eks
 EBPF_ANNOTATION_SERVICE ?= ebpf-annotated-service
@@ -52,12 +51,12 @@ clean-ebpf-profiler:
 # Render Helm templates for preset checks
 test-ebpf-profiler-presets:
 	@echo "Rendering resource detection preset..."
-	helm template my-collector $(COLLECTOR_CHART) \
+	helm template my-integration $(EBPF_CHART) \
 		--set presets.resourceDetection.enabled=true \
 		--set presets.resourceDetection.deploymentEnvironmentName=$(EBPF_DEPLOYMENT_ENV) \
 		| rg -n "OTEL_RESOURCE_ATTRIBUTES|deployment.environment.name"
 	@echo "Rendering eBPF profiler + profiles K8s attributes presets..."
-	helm template my-collector $(COLLECTOR_CHART) \
+	helm template my-integration $(EBPF_CHART) \
 		--set presets.ebpfProfiler.enabled=true \
 		--set presets.profilesK8sAttributes.enabled=true \
 		--set presets.profilesK8sAttributes.serviceLabels[0].tag_name=service.label \
@@ -68,11 +67,11 @@ test-ebpf-profiler-presets:
 		--set presets.profilesK8sAttributes.serviceAnnotations[0].from=pod \
 		| rg -n "transform/profiles|k8sattributes/profiles|service.label|service.annotation"
 	@echo "Rendering annotation discovery preset..."
-	helm template my-collector $(COLLECTOR_CHART) \
+	helm template my-integration $(EBPF_CHART) \
 		--set presets.prometheusAnnotationDiscovery.enabled=true \
 		--set presets.prometheusAnnotationDiscovery.observePods=true \
 		--set presets.prometheusAnnotationDiscovery.observeServices=false \
-		| rg -n "receiver_creator|k8s_observer|prometheus_simple"
+		| rg -n "receiver_creator|k8s_observer|prometheus_simple|collection_interval"
 
 # Create/update Coralogix API key secret
 create-ebpf-secret:
