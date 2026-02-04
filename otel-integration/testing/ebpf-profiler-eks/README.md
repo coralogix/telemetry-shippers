@@ -47,33 +47,35 @@ Run all commands from `otel-integration/testing/ebpf-profiler-eks`.
 
 1) Render preset checks:
 
-    make test-ebpf-profiler-presets
+   make test-ebpf-profiler-presets
 
 Expected evidence includes lines containing:
 
-    deployment.environment.name=ebpf-eks
-    k8sattributes/profiles
-    transform/profiles
-    receiver_creator
-    k8s_observer
+```
+deployment.environment.name=ebpf-eks
+k8sattributes/profiles
+transform/profiles
+receiver_creator
+k8s_observer
+```
 
 2) Create the EKS cluster:
 
-    make create-ebpf-profiler
+   make create-ebpf-profiler
 
 3) Create the Coralogix secret and install the stack:
 
-    CORALOGIX_API_KEY=... make create-ebpf-secret
-    CORALOGIX_API_KEY=... make install-ebpf-profiler
+   CORALOGIX_API_KEY=... make create-ebpf-secret
+   CORALOGIX_API_KEY=... make install-ebpf-profiler
 
 4) Deploy telemetrygen:
 
-    make deploy-telemetrygen
+   make deploy-telemetrygen
 
 5) Verify config and logs:
 
-    make check-cluster-collector-config
-    make check-ebpf-profiler-logs
+   make check-cluster-collector-config
+   make check-ebpf-profiler-logs
 
 ## Validation and Acceptance
 
@@ -92,11 +94,11 @@ All Makefile targets are safe to re-run. `kubectl apply` is idempotent. Helm use
 
 - Uninstall the release:
 
-    helm uninstall otel-ebpf-profiler -n coralogix-otel
+  helm uninstall otel-ebpf-profiler -n coralogix-otel
 
 - Delete the cluster:
 
-    make clean-ebpf-profiler
+  make clean-ebpf-profiler
 
 ## Notes
 
