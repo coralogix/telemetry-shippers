@@ -445,14 +445,6 @@ opentelemetry-cluster-collector:
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
 
-    # Configures the cluster-collector to dynamically discover Prometheus targets
-    # based on Kubernetes annotations.
-    # prometheusAnnotationDiscovery:
-    #   enabled: false
-    #   scrapeInterval: "{{.Values.global.collectionInterval}}"
-    #   observePods: true
-    #   observeServices: false
-    #   enableServiceRule: false
 
     # Configures the collector to expose zPages for debugging.
     # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
