@@ -15,9 +15,9 @@ $(TOOLING): $(TOOLS_BIN_DIR)
 .PHONY: check-docs
 check-docs: $(MDOX_BINARY)
 	@echo ">> formatting and local/remote link check"
-	find . -type f -regex ".*.md" | xargs $(MDOX_BINARY) fmt --links.validate.config-file .mdox.validate.yaml -l --check --soft-wraps
+	find . -type f -regex ".*.md" -not -path "*/.agent/*" | xargs $(MDOX_BINARY) fmt --links.validate.config-file .mdox.validate.yaml -l --check --soft-wraps
 
 .PHONY: fmt-docs
 fmt-docs: $(MDOX_BINARY)
 	@echo ">> formatting and local/remote link check"
-	find . -type f -regex ".*.md" | xargs $(MDOX_BINARY) fmt --links.validate.config-file .mdox.validate.yaml -l --soft-wraps
+	find . -type f -regex ".*.md" -not -path "*/.agent/*" | xargs $(MDOX_BINARY) fmt --links.validate.config-file .mdox.validate.yaml -l --soft-wraps
