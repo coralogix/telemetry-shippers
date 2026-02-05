@@ -35,8 +35,8 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cp ./scripts/bump-otel-collector-version.sh /tmp/bump-script.sh
-          git fetch origin main
-          git checkout main
+          git fetch origin master
+          git checkout master
           cp /tmp/bump-script.sh ./scripts/bump-otel-collector-version.sh
 
       - uses: azure/setup-helm@v4
