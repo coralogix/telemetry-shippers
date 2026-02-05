@@ -354,6 +354,15 @@ process_chart() {
     return 1
   fi
 
+  local chart_yaml="$REPO_ROOT/$chart_path/Chart.yaml"
+  local current_dep_version
+  current_dep_version=$(get_dependency_version "$chart_yaml")
+  if [[ "$current_dep_version" == "$NEW_VERSION" ]]; then
+    log_warn "  Already at version $NEW_VERSION - skipping"
+    set_chart_status "$chart" "skipped"
+    return 0
+  fi
+
   local new_chart_version
   new_chart_version=$(update_chart_yaml "$chart")
 
