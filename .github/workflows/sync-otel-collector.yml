@@ -37,6 +37,11 @@ jobs:
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
 
+      - name: Add helm repos
+        run: |
+          helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+          helm repo update
+
       - name: Get version
         id: version
         run: |
@@ -89,6 +94,14 @@ jobs:
           echo "" >> /tmp/pr-body.md
           echo "---" >> /tmp/pr-body.md
           echo "**To skip a chart:** Remove its \`chart:*\` label → changes auto-revert." >> /tmp/pr-body.md
+
+      - name: Ensure labels exist
+        run: |
+          for label in otel-collector-bump chart:otel-integration chart:otel-linux-standalone chart:otel-macos-standalone chart:otel-windows-standalone; do
+            gh label create "$label" --description "Auto-created for otel-collector sync" --color "0E8A16" 2>/dev/null || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build labels
         id: labels
