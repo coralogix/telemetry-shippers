@@ -5,6 +5,7 @@ var expectedResourceMetricsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.6.1": false,
 	"https://opentelemetry.io/schemas/1.9.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
+	"https://opentelemetry.io/schemas/1.38.0": false,
 }
 
 const expectedScopeVersion = ""
@@ -529,6 +530,7 @@ var expectedTracesSchemaURL = map[string]bool{
 var expectedLogsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.6.1":  false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
+	"https://opentelemetry.io/schemas/1.38.0": false,
 }
 
 var expectedHostEntityAttributes = map[string]expectedValue{
