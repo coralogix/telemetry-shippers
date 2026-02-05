@@ -30,6 +30,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      # For testing: copy script from current branch, then reset to main
+      - name: Setup for testing
+        if: github.event_name == 'push'
+        run: |
+          cp ./scripts/bump-otel-collector-version.sh /tmp/bump-script.sh
+          git checkout main
+          cp /tmp/bump-script.sh ./scripts/bump-otel-collector-version.sh
+
       - uses: azure/setup-helm@v4
 
       - name: Install yq
@@ -84,8 +92,8 @@ jobs:
         run: |
           git add -A
           if git diff --staged --quiet; then
-            echo "No changes to commit"
-            exit 0
+            echo "::error::No changes to commit - version ${{ steps.version.outputs.value }} may already be applied"
+            exit 1
           fi
           git commit -m "chore: bump opentelemetry-collector to ${{ steps.version.outputs.value }}"
           git push origin $branch_name
