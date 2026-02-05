@@ -49,7 +49,7 @@ jobs:
             VERSION="${{ github.event.client_payload.version }}"
           elif [[ "${{ github.event_name }}" == "push" ]]; then
             # TODO: Remove after testing - hardcoded test version
-            VERSION="0.128.16"
+            VERSION="0.129.0"
           else
             VERSION="${{ inputs.version }}"
           fi
