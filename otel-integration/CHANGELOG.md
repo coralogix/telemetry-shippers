@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.271 / 2026-02-05
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.128.16
+
 ### v0.0.270 / 2026-02-04
 - [Fix] Use `collection_interval` for prometheus annotation discovery preset receivers (via base chart update).
 
