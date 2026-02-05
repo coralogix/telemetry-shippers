@@ -132,7 +132,7 @@ jobs:
       - name: Create pull request
         run: |
           gh pr create \
-            --base main \
+            --base master \
             --head "$branch_name" \
             --title "chore: bump opentelemetry-collector to ${{ steps.version.outputs.value }}" \
             --body-file /tmp/pr-body.md \
