@@ -35,6 +35,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           cp ./scripts/bump-otel-collector-version.sh /tmp/bump-script.sh
+          git fetch origin main
           git checkout main
           cp /tmp/bump-script.sh ./scripts/bump-otel-collector-version.sh
 
