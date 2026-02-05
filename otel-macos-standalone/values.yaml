@@ -4,8 +4,7 @@ global:
   defaultSubsystemName: "macos"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.5"
-
+  version: "0.0.6"
 opentelemetry-agent:
   enabled: true
   distribution: "macos"
@@ -19,13 +18,11 @@ opentelemetry-agent:
       enabled: true
       agentType: "agent"
       customAttributes: {}
-    
     hostMetrics:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
       process:
         enabled: true
-    
     batch:
       enabled: true
     resourceDetection:
@@ -39,42 +36,33 @@ opentelemetry-agent:
     macosSystemLogs:
       enabled: true
       dynamicSubsystemName: true
-    
     collectorMetrics:
       enabled: true
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-    
     otlpReceiver:
       enabled: true
-    
     spanMetrics:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-    
     # spanMetricsMulti:
     #   enabled: false
     #   collectionInterval: "{{.Values.global.collectionInterval}}"
     #   metricsExpiration: 5m
-    
+
     # headSampling:
     #   enabled: false
     #   percentage: 10
     #   mode: "proportional"
-    
     transactions:
       enabled: true
       waitDuration: 30s
-    
     zpages:
       enabled: true
-    
     pprof:
       enabled: true
-    
     semconv:
       enabled: true
-    
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}

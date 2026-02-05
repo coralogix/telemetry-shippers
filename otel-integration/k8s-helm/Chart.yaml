@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-integration
 description: OpenTelemetry Integration
-version: 0.0.271
+version: 0.0.272
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent
@@ -64,7 +64,6 @@ dependencies:
     version: "1.0.0"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: coralogix-operator.enabled
-
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
