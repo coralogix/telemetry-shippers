@@ -5,18 +5,15 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.270"
+  version: "0.0.271"
   deploymentEnvironmentName: ""
-
   extensions:
     kubernetesDashboard:
       enabled: true
-
 # Set distribution for:
 # - openshift
 # - eks/fargate
 # - gke/autopilot
-
 distribution: ""
 opentelemetry-agent:
   enabled: true
@@ -81,7 +78,6 @@ opentelemetry-agent:
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
       tag: v0.141.0
-
   # serviceAccount:
   #   # Specifies whether a service account should be created
   #   create: true
@@ -104,7 +100,6 @@ opentelemetry-agent:
   #   priorityValue: 1000000000
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
-
   presets:
     metadata:
       enabled: true
@@ -125,7 +120,6 @@ opentelemetry-agent:
       #     environment: "production"
       #     team: "platform"
       customAttributes: {}
-
     logsCollection:
       enabled: true
       includeCollectorLogs: true
@@ -162,15 +156,12 @@ opentelemetry-agent:
         enabled: false
       nodeFilter:
         enabled: true
-
     kubernetesExtraMetrics:
       enabled: true
       perNode: true
       scrapeAll: false
-
     # deltaToCumulative:
     #   enabled: false
-
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
@@ -190,7 +181,6 @@ opentelemetry-agent:
     transactions:
       enabled: true
       waitDuration: 30s
-
     #   transformStatements:
     #     - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
     #     - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
@@ -237,10 +227,10 @@ opentelemetry-agent:
     # This reduces target_info cardinality.
     # reduceResourceAttributes:
     #   enabled: false
-     # Configures Host Metrics receiver to collect Entity Events.
+    # Configures Host Metrics receiver to collect Entity Events.
+
     hostEntityEvents:
       enabled: true
-
     # Head sampling configuration for traces.
     # When enabled, this creates a separate pipeline for sampled traces using probabilistic sampler.
     # More info: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/probabilisticsamplerprocessor/README.md
@@ -259,7 +249,6 @@ opentelemetry-agent:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-
     # Configures the collector to receive Jaeger data in all supported protocols.
     # Adds the jaeger receiver to the traces pipeline with all protocols configured.
     jaegerReceiver:
@@ -276,16 +265,13 @@ opentelemetry-agent:
     # Adds the statsd receiver to the metrics pipeline.
     statsdReceiver:
       enabled: true
-
     # Configures the collector to expose zPages for debugging.
     # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
     zpages:
       enabled: true
-
     # Configures the collector to expose pprof for profiling.
     pprof:
       enabled: true
-
     # Configuration for the batch processor.
     # Adds the batch processor to the logs, metrics, and traces pipelines.
     # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
@@ -294,7 +280,6 @@ opentelemetry-agent:
       # sendBatchSize: 1024
       # sendBatchMaxSize: 2048
       # timeout: "1s"
-
     # Configures the collector to export data to Coralogix.
     coralogixExporter:
       enabled: true
@@ -303,7 +288,6 @@ opentelemetry-agent:
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
       enabled: true
-
     # Applies semantic convention transformations.
     semconv:
       enabled: true
@@ -330,20 +314,19 @@ opentelemetry-agent:
           exporters: []
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
         traces:
           exporters: []
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
         logs:
           exporters: []
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
   tolerations:
     - operator: Exists
-
   resources:
     requests:
       cpu: 100m
@@ -351,20 +334,18 @@ opentelemetry-agent:
     limits:
       cpu: 1
       memory: 2G
+      # ports:
+      #   In order to enable podMonitor, following part must be enabled in order to expose the required port:
+      #   metrics:
+      #     enabled: true
 
-  # ports:
-  #   In order to enable podMonitor, following part must be enabled in order to expose the required port:
-  #   metrics:
-  #     enabled: true
+      # podMonitor:
+      #   enabled: true
 
-  # podMonitor:
-  #   enabled: true
-
-  # prometheusRule:
-  #   enabled: true
-  #   defaultRules:
-  #     enabled: true
-
+      # prometheusRule:
+      #   enabled: true
+      #   defaultRules:
+      #     enabled: true
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
@@ -433,9 +414,9 @@ opentelemetry-cluster-collector:
       enabled: true
       # OTTL filter statements for filtering out resources by name regex
       filterStatements:
-        # Filter out pods given a regex. This example is for telemetrygen pods.
-        # - 'body["object"]["kind"] == "Pod" and IsMatch(body["object"]["metadata"]["name"], "telemetrygen.*")'
-        # - 'body["kind"] == "Pod" and IsMatch(body["metadata"]["name"], "telemetrygen.*")'
+      # Filter out pods given a regex. This example is for telemetrygen pods.
+      # - 'body["object"]["kind"] == "Pod" and IsMatch(body["object"]["metadata"]["name"], "telemetrygen.*")'
+      # - 'body["kind"] == "Pod" and IsMatch(body["metadata"]["name"], "telemetrygen.*")'
     # Configures the collector to collect its own metrics using Prometheus receiver.
     # Adds the prometheus receiver to the metrics pipeline with a scrape config
     # targeting the collector's metrics endpoint.
@@ -444,17 +425,13 @@ opentelemetry-cluster-collector:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-
-
     # Configures the collector to expose zPages for debugging.
     # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
     zpages:
       enabled: true
-
     # Configures the collector to expose pprof for profiling.
     pprof:
       enabled: true
-
     # Configuration for the batch processor.
     # Adds the batch processor to the logs, metrics, and traces pipelines.
     # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
@@ -463,12 +440,10 @@ opentelemetry-cluster-collector:
       # sendBatchSize: 1024
       # sendBatchMaxSize: 2048
       # timeout: "1s"
-
     # Configures the collector to export data to Coralogix.
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -530,22 +505,20 @@ opentelemetry-cluster-collector:
           exporters: []
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
         metrics:
           exporters: []
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
   tolerations:
     - operator: Exists
-
   startupProbe:
     failureThreshold: 4
     initialDelaySeconds: 30
     periodSeconds: 15
     httpGet:
       port: 13133
-
   resources:
     requests:
       cpu: 100m
@@ -553,14 +526,12 @@ opentelemetry-cluster-collector:
     limits:
       cpu: 1
       memory: 2G
-
   ports:
     otlp-http:
       enabled: false
     # In order to enable serviceMonitor, following part must be enabled in order to expose the required port:
     # metrics:
     #   enabled: true
-
   # serviceMonitor:
   #   enabled: true
 
@@ -568,7 +539,6 @@ opentelemetry-cluster-collector:
   #   enabled: true
   #   defaultRules:
   #     enabled: true
-
 opentelemetry-agent-windows:
   enabled: false
 opentelemetry-gateway:
@@ -578,14 +548,12 @@ opentelemetry-gateway:
   service:
     enabled: true
     clusterIP: "None"
-
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
         secretKeyRef:
           name: coralogix-keys
           key: PRIVATE_KEY
-
   # Extra config for the collector
   # This is used to add extra receivers, processors, exporters, and connectors
   # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
@@ -653,16 +621,13 @@ opentelemetry-gateway:
     resourceDetection:
       enabled: true
       pipeline: "metrics"
-
     # Configures the collector to expose zPages for debugging.
     # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
     zpages:
       enabled: true
-
     # Configures the collector to expose pprof for profiling.
     pprof:
       enabled: true
-
     # Configuration for the batch processor.
     # Adds the batch processor to the logs, metrics, and traces pipelines.
     # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
@@ -671,12 +636,10 @@ opentelemetry-gateway:
       # sendBatchSize: 1024
       # sendBatchMaxSize: 2048
       # timeout: "1s"
-
     # Configures the collector to export data to Coralogix.
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-
     # Configures the collector to receive OTLP data.
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
@@ -684,7 +647,6 @@ opentelemetry-gateway:
     k8sResourceAttributes:
       enabled: true
       agentType: "gateway"
-
   config:
     # extensions: {}
     # exporters: {}
@@ -705,20 +667,17 @@ opentelemetry-gateway:
             - memory_limiter
             - tail_sampling
           # receivers: []
-
   tolerations:
     - operator: Exists
   ports:
     otlp-http:
       enabled: false
-
 opentelemetry-receiver:
   enabled: false
   mode: deployment
   fullnameOverride: coralogix-opentelemetry-receiver
   service:
     enabled: true
-
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -757,7 +716,6 @@ opentelemetry-receiver:
     resourceDetection:
       enabled: true
       pipeline: "none"
-
     # Configuration for the batch processor.
     # Adds the batch processor to the logs, metrics, and traces pipelines.
     # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
@@ -766,12 +724,10 @@ opentelemetry-receiver:
       # sendBatchSize: 1024
       # sendBatchMaxSize: 2048
       # timeout: "1s"
-
     # Configures the collector to expose zPages for debugging.
     # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
     zpages:
       enabled: true
-
     # Configures the collector to expose pprof for profiling.
     pprof:
       enabled: true
@@ -779,7 +735,6 @@ opentelemetry-receiver:
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
-
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
@@ -811,26 +766,24 @@ opentelemetry-receiver:
             - coralogix
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
         traces:
           exporters:
             - loadbalancing
           processors:
             - memory_limiter
-          # receivers: []
+            # receivers: []
         logs:
           exporters:
             - coralogix
           processors:
             - memory_limiter
           # receivers: []
-
   tolerations:
     - operator: Exists
   ports:
     otlp-http:
       enabled: false
-
 coralogix-ebpf-profiler:
   enabled: false
   profiling:
@@ -855,7 +808,6 @@ coralogix-ebpf-profiler:
       requests:
         cpu: 100m
         memory: 128Mi
-
 opentelemetry-ebpf-profiler:
   enabled: false
   mode: daemonset
@@ -866,7 +818,6 @@ opentelemetry-ebpf-profiler:
   ports:
     metrics:
       enabled: true
-
   presets:
     ebpfProfiler:
       enabled: true
@@ -887,7 +838,6 @@ opentelemetry-ebpf-profiler:
     collectorMetrics:
       enabled: true
       disablePrometheusReceiver: true
-
   config:
     service:
       telemetry:
@@ -902,7 +852,6 @@ opentelemetry-ebpf-profiler:
             - debug
           processors:
             - memory_limiter
-
 opentelemetry-ebpf-instrumentation:
   enabled: false
   k8sCache:
@@ -937,26 +886,22 @@ opentelemetry-agent-eks-fargate:
   replicaCount: 1
   networkMode: "ipv4"
   distribution: "eks/fargate"
-
   presets:
     # Configures metadata collection for EKS Fargate
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-
     # Configures the collector to export data to Coralogix.
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-
     # Configuration for the batch processor.
     # Adds the batch processor to the logs, metrics, and traces pipelines.
     # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
     batch:
       enabled: true
       timeout: "60s"
-
     # Configures EKS Fargate specific collection
     eksFargate:
       monitoringCollector: false
@@ -967,24 +912,20 @@ opentelemetry-agent-eks-fargate:
         image:
           repository: "public.ecr.aws/aws-cli/aws-cli"
           tag: "2.28.17"
-
     # Configures Kubernetes attributes processor
     kubernetesAttributes:
       enabled: true
-
     # Configures the collector to receive OTLP data.
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
       maxRecvMsgSizeMiB: 20
-
     # Configures resource detection processors to add system and environment information.
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
       enabled: true
       dbusMachineId:
         enabled: false
-
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -995,11 +936,9 @@ opentelemetry-agent-eks-fargate:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-
   ports:
     metrics:
       enabled: true
-
   resources:
     limits:
       cpu: 1
@@ -1007,10 +946,8 @@ opentelemetry-agent-eks-fargate:
     requests:
       cpu: 1
       memory: 2Gi
-
   podSecurityContext:
     fsGroup: 65534
-
 # OpenTelemetry Agent for EKS Fargate Monitoring
 # Separate collector deployment for monitoring metrics collection
 opentelemetry-agent-eks-fargate-monitoring:
@@ -1019,7 +956,6 @@ opentelemetry-agent-eks-fargate-monitoring:
   mode: deployment
   replicaCount: 1
   distribution: "eks/fargate"
-
   config:
     exporters: {}
     extensions:
@@ -1035,49 +971,41 @@ opentelemetry-agent-eks-fargate-monitoring:
           encoding: json
       extensions:
         - health_check
-
   presets:
     # Configures metadata collection for EKS Fargate monitoring
     metadata:
       enabled: true
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
-
     # Configures the collector to export data to Coralogix.
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-
     # Configuration for the batch processor.
     # Adds the batch processor to the logs, metrics, and traces pipelines.
     # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
     batch:
       enabled: true
       timeout: "60s"
-
     # Configures EKS Fargate monitoring collector
     eksFargate:
       monitoringCollector: true
       kubeletStats:
         collectionInterval: "{{.Values.global.collectionInterval}}"
-
     # Configures Kubernetes attributes processor
     kubernetesAttributes:
       enabled: false
-
     # Configures the collector to receive OTLP data.
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
       maxRecvMsgSizeMiB: 20
-
     # Configures resource detection processors to add system and environment information.
     # Also configures volumes and volume mounts for the collector.
     resourceDetection:
       enabled: true
       dbusMachineId:
         enabled: false
-
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -1088,7 +1016,6 @@ opentelemetry-agent-eks-fargate-monitoring:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-
   resources:
     limits:
       cpu: 1
@@ -1096,10 +1023,8 @@ opentelemetry-agent-eks-fargate-monitoring:
     requests:
       cpu: 1
       memory: 2Gi
-
   podSecurityContext:
     fsGroup: 65534
-
   ports:
     metrics:
       enabled: true
