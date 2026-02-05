@@ -518,6 +518,8 @@ var optionalExpectedMetrics = map[string]bool{
 	"otelcol_deltatocumulative_datapoints":            false,
 	"delta_to_cumulative_e2e_counter":                 false,
 	"otelcol_processor_batch_batch_size_trigger_send": false,
+	// Added in newer collector versions (0.145.0+): internal k8s pod association metric.
+	"otelcol_otelcol.k8s.pod.association": false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
