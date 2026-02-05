@@ -43,10 +43,13 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
             VERSION="${{ github.event.client_payload.version }}"
+            SOURCE_PR="${{ github.event.client_payload.pr_url }}"
           else
             VERSION="${{ inputs.version }}"
+            SOURCE_PR=""
           fi
           echo "value=$VERSION" >> $GITHUB_OUTPUT
+          echo "source_pr=$SOURCE_PR" >> $GITHUB_OUTPUT
 
       - name: Create branch
         run: |
@@ -91,6 +94,10 @@ jobs:
             echo "Bumping opentelemetry-collector to \`${{ steps.version.outputs.value }}\`" > /tmp/pr-body.md
           fi
           echo "" >> /tmp/pr-body.md
+          if [[ -n "${{ steps.version.outputs.source_pr }}" ]]; then
+            echo "**Source:** ${{ steps.version.outputs.source_pr }}" >> /tmp/pr-body.md
+            echo "" >> /tmp/pr-body.md
+          fi
           echo "---" >> /tmp/pr-body.md
           echo "**To skip a chart:** Remove its \`chart:*\` label → changes auto-revert." >> /tmp/pr-body.md
 
