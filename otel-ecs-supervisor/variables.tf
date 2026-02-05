@@ -44,7 +44,7 @@ variable "subsystem_name" {
 variable "container_image" {
   description = "Container image for the supervisor"
   type        = string
-  default     = "coralogixrepo/otel-supervised-collector:0.140.1"
+  default     = "coralogixrepo/otel-supervised-collector:0.145.0"
 }
 
 variable "use_entrypoint_script" {
