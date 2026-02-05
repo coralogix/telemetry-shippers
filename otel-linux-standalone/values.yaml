@@ -4,9 +4,8 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.6"
+  version: "0.0.7"
   # deploymentEnvironmentName: "development"
-
 opentelemetry-agent:
   enabled: true
   distribution: "standalone"
@@ -30,7 +29,6 @@ opentelemetry-agent:
       # sendBatchSize: 1024
       # sendBatchMaxSize: 2048
       # timeout: "1s"
-    
     # Detects cloud provider and system resource attributes
     # Based on the provider, "aws | azure | gcp | on-prem | "" (empty = use all))
     resourceDetection:
@@ -52,59 +50,47 @@ opentelemetry-agent:
       # matches:
       #   - _SYSTEMD_UNIT: nginx.service
       #   - PRIORITY: "5"
-    
     # Collects systemd unit state metrics
     systemdReceiver:
       enabled: true
       collectionInterval: "30s"
-      scope: system  # system or user
+      scope: system # system or user
       # units:
       #   - docker.service
       #   - sshd.service
- 
     collectorMetrics:
       enabled: true
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-    
     otlpReceiver:
       enabled: true
-    
     # Receives StatsD metrics on UDP port 8125
     statsdReceiver:
       enabled: false
-    
     spanMetrics:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
-    
     # spanMetricsMulti:
     #   enabled: false
     #   collectionInterval: "{{.Values.global.collectionInterval}}"
     #   metricsExpiration: 5m
-    
+
     # headSampling:
     #   enabled: false
     #   percentage: 10
     #   mode: "proportional"
-    
     transactions:
       enabled: true
       waitDuration: 30s
-    
     zpages:
       enabled: true
-    
     pprof:
       enabled: true
-    
     semconv:
       enabled: true
-    
     coralogixExporter:
       enabled: true
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-    
     # Configures multiple Prometheus scrape targets (disabled by default)
     # Use this to scrape metrics from application exporters
     prometheusMulti:
@@ -124,7 +110,6 @@ opentelemetry-agent:
       #   targets:
       #     - endpoint: "redis-exporter:9121"
       #   subsystemName: "redis"
-    
     # Collects logs from multiple file paths (disabled by default)
     # Use this to collect application log files
     filelogMulti:
@@ -156,7 +141,6 @@ opentelemetry-agent:
       #         layout: '%Y-%m-%d %H:%M:%S'
       #       severity:
       #         parse_from: attributes.sev
-
   config:
     extensions:
       health_check:
@@ -172,7 +156,7 @@ opentelemetry-agent:
             endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
           http:
             endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
-    # exporters:
+            # exporters:
       #debug:
       # verbosity: detailed
     service:

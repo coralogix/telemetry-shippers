@@ -1,7 +1,7 @@
 apiVersion: v2
 name: macos-standalone
 description: Standalone macOS OpenTelemetry Collector configuration
-version: 0.0.5
+version: 0.0.6
 keywords:
   - OpenTelemetry Collector
   - Coralogix
@@ -9,7 +9,7 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.128.18"
+    version: "0.129.0"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
 sources:
