@@ -101,12 +101,18 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+
+if ! command -v yq >/dev/null 2>&1; then
+  echo "yq is required." >&2
+  exit 1
+fi
+
 if [ -z "$chart_file" ]; then
   chart_file="$repo_root/otel-integration/k8s-helm/Chart.yaml"
 fi
 
 if [ -z "$chart_version" ]; then
-  chart_version="$("$script_dir/get-otel-collector-chart-version.sh" "$chart_file")"
+  chart_version="$(yq -r '[.dependencies[] | select(.name == "opentelemetry-collector") | .version] | unique | .[0]' "$chart_file")"
 fi
 
 if [ -z "$chart_version" ]; then
