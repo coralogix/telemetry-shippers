@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+#
+# Extracts the pinned version of the "opentelemetry-collector" sub-chart from
+# a Helm Chart.yaml file (defaults to otel-integration/k8s-helm/Chart.yaml).
+#
+# The script parses the dependencies list with awk, looking for entries whose
+# name is "opentelemetry-collector", and prints the corresponding version field.
+# It exits with an error if no matching dependency is found, or if multiple
+# distinct versions are present.
+#
+# Usage:
+#   ./get-otel-collector-chart-version.sh [path/to/Chart.yaml]
+#
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
