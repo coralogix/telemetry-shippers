@@ -58,7 +58,37 @@ jobs:
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           go clean -testcache
-          go test -v -run='^TestE2E.*' $(go list ./... | rg -v '/supervisor$')
+          go test -v -run='^TestE2E.*' -skip='^TestE2E_TargetAllocator_ServiceMonitorMetrics$' $(go list ./... | rg -v '/supervisor$')
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done
+
+  otel-integration-target-allocator-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Run Target Allocator ServiceMonitor E2E test
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          chmod +x ./run-all.sh
+          ./run-all.sh --test TestE2E_TargetAllocator_ServiceMonitorMetrics
       - name: Pods logs
         if: failure()
         run: |
