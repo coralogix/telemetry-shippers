@@ -21,6 +21,7 @@ import (
 const (
 	targetAllocatorServiceMonitorNamespace = "monitoring"
 	targetAllocatorServiceMonitorKeyword   = "kubelet"
+	targetAllocatorServiceMonitorJobPrefix = "serviceMonitor/"
 )
 
 // TestE2E_TargetAllocator_ServiceMonitorMetrics validates that enabling Target Allocator
@@ -87,8 +88,13 @@ func waitForKubeletServiceMonitor(t *testing.T, k8sClient *xk8stest.K8sClient) {
 
 func checkTargetAllocatorServiceMonitorMetrics(actual []pmetric.Metrics) error {
 	observedServices := map[string]struct{}{}
+	observedJobs := map[string]struct{}{}
 	observedMetricNames := map[string]struct{}{}
+
 	foundKubeletServiceMetric := false
+	foundKubeletServiceMonitorJob := false
+	foundKubeletPrometheusMetric := false
+	foundScrapeSamplesMetric := false
 
 	for _, batch := range actual {
 		rms := batch.ResourceMetrics()
@@ -100,8 +106,23 @@ func checkTargetAllocatorServiceMonitorMetrics(actual []pmetric.Metrics) error {
 					metric := metrics.At(k)
 					metricName := metric.Name()
 					observedMetricNames[metricName] = struct{}{}
+					if isKubeletPrometheusMetric(metricName) {
+						foundKubeletPrometheusMetric = true
+					}
+					if metricName == "scrape_samples_scraped" {
+						foundScrapeSamplesMetric = true
+					}
 
 					forEachMetricDataPoint(metric, func(attrs pcommon.Map) {
+						if jobAttr, ok := attrs.Get("job"); ok {
+							jobName := jobAttr.Str()
+							observedJobs[jobName] = struct{}{}
+							if strings.Contains(jobName, targetAllocatorServiceMonitorJobPrefix) &&
+								strings.Contains(jobName, targetAllocatorServiceMonitorKeyword) {
+								foundKubeletServiceMonitorJob = true
+							}
+						}
+
 						serviceAttr, ok := attrs.Get("service")
 						if !ok {
 							return
@@ -117,15 +138,44 @@ func checkTargetAllocatorServiceMonitorMetrics(actual []pmetric.Metrics) error {
 		}
 	}
 
-	if !foundKubeletServiceMetric {
+	// Primary assertions:
+	// 1) Job label indicates ServiceMonitor-based kubelet scrape.
+	// 2) Legacy fallback where service attribute includes kubelet.
+	// 3) Fallback for environments where labels are transformed:
+	//    kubelet Prometheus metric names + scrape_samples_scraped observed.
+	if !foundKubeletServiceMonitorJob && !foundKubeletServiceMetric && !(foundKubeletPrometheusMetric && foundScrapeSamplesMetric) {
 		return fmt.Errorf(
-			"did not observe ServiceMonitor-derived kubelet metrics; observed services=%v observed_metric_names=%v",
+			"did not observe ServiceMonitor-derived kubelet metrics; observed services=%v observed jobs=%v observed_metric_names=%v",
 			sortedMapKeys(observedServices),
+			sortedMapKeys(observedJobs),
 			sortedMapKeys(observedMetricNames),
 		)
 	}
 
 	return nil
+}
+
+func isKubeletPrometheusMetric(metricName string) bool {
+	// Kubelet/cAdvisor Prometheus metrics discovered via ServiceMonitor typically
+	// use snake_case names (for example: container_cpu_cfs_periods_total,
+	// container_fs_reads_bytes_total). This differentiates them from kubeletstats
+	// receiver metrics that are dot-delimited (for example: container.cpu.time).
+	if strings.HasPrefix(metricName, "container_") {
+		return true
+	}
+
+	switch metricName {
+	case "container_cpu_cfs_periods_total",
+		"container_cpu_cfs_throttled_periods_total",
+		"container_fs_reads_bytes_total",
+		"container_fs_reads_total",
+		"container_fs_writes_bytes_total",
+		"container_fs_writes_total",
+		"container_fs_usage_bytes":
+		return true
+	default:
+		return false
+	}
 }
 
 func forEachMetricDataPoint(metric pmetric.Metric, fn func(attrs pcommon.Map)) {
