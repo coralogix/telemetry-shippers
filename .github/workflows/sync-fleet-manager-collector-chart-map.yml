@@ -60,35 +60,10 @@ jobs:
           set -euo pipefail
           file="otel-integration/k8s-helm/Chart.yaml"
 
-          resolve_collector_chart_version() {
-            local chart_file="$1"
-            local versions
-            local count
-
-            versions="$(
-              yq -r '.dependencies[]? | select(.name == "opentelemetry-collector") | .version' "$chart_file" \
-                | sed -e '/^null$/d' -e '/^$/d' \
-                | sort -u
-            )"
-
-            if [ -z "$versions" ]; then
-              echo "No opentelemetry-collector dependency versions found in $chart_file" >&2
-              exit 1
-            fi
-
-            count="$(printf '%s\n' "$versions" | wc -l | tr -d '[:space:]')"
-            if [ "$count" -ne 1 ]; then
-              echo "Expected exactly one opentelemetry-collector dependency version in $chart_file, found $count: $versions" >&2
-              exit 1
-            fi
-
-            printf '%s\n' "$versions"
-          }
-
           # ── otel-integration chart version ──────────────────────────
           integration_chart_version="${INTEGRATION_CHART_VERSION_OVERRIDE:-}"
           if [ -z "$integration_chart_version" ]; then
-            integration_chart_version="$(yq -r '.version' "$file")"
+            integration_chart_version="$(scripts/resolve-integration-chart-version.sh "$file")"
           fi
 
           old_integration_chart_version=""
@@ -116,7 +91,7 @@ jobs:
           # ── opentelemetry-collector chart version ───────────────────
           collector_chart_version="${COLLECTOR_CHART_VERSION_OVERRIDE:-}"
           if [ -z "$collector_chart_version" ]; then
-            collector_chart_version="$(resolve_collector_chart_version "$file")"
+            collector_chart_version="$(scripts/resolve-collector-chart-version.sh "$file")"
           fi
 
           # ── app version (override only; helm lookup happens later) ──
