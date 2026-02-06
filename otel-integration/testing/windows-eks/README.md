@@ -48,6 +48,7 @@ Defaults used by the Makefile (override as needed):
 - Cluster name: `otel-integration-windows-cluster`
 - Namespace: `coralogix-otel`
 - Helm release: `otel-windows`
+- Windows collector image tag: `0.145.0-windows-2019-amd64`
 - Windows log marker: `WINDOWS-OTEL-LOG-CHECK`
 
 ## Plan of Work
