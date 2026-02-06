@@ -1,0 +1,49 @@
+global:
+  clusterName: kind-target-allocator
+  domain: eu2.coralogix.com
+  logLevel: debug
+
+opentelemetry-cluster-collector:
+  enabled: false
+
+opentelemetry-agent:
+  fullnameOverride: target-allocator-opentelemetry
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  ports:
+    otlp:
+      enabled: true
+      hostPort: null
+    otlp-http:
+      enabled: true
+      hostPort: null
+  clusterRole:
+    name: target-allocator-opentelemetry-agent
+    clusterRoleBinding:
+      name: target-allocator-opentelemetry-agent
+  presets:
+    jaegerReceiver:
+      enabled: false
+    zipkinReceiver:
+      enabled: false
+    statsdReceiver:
+      enabled: false
+    otlpReceiver:
+      enabled: true
+    logsCollection:
+      enabled: false
+  targetAllocator:
+    enabled: true
+    prometheusCR:
+      enabled: true
+      scrapeInterval: 30s
+  config:
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - coralogix
+            - debug

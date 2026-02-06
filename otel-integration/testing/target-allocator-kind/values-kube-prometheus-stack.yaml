@@ -1,0 +1,27 @@
+grafana:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+kubeStateMetrics:
+  enabled: false
+
+nodeExporter:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+prometheusOperator:
+  admissionWebhooks:
+    enabled: false
