@@ -194,6 +194,12 @@ jobs:
 
           if [ "${CREATE_PR:-false}" != "true" ]; then
             echo "CREATE_PR is false; skipping branch/commit/push/PR. (Dry run complete.)"
+            echo ""
+            echo "Changed files in Fleet Manager:"
+            git -C "$FLEET_MANAGER_DIR" --no-pager diff --stat
+            echo ""
+            echo "Full diff:"
+            git -C "$FLEET_MANAGER_DIR" --no-pager diff
             exit 0
           fi
 
