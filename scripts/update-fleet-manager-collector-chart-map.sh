@@ -107,12 +107,37 @@ if ! command -v yq >/dev/null 2>&1; then
   exit 1
 fi
 
+resolve_collector_chart_version() {
+  local chart_file="$1"
+  local versions
+  local count
+
+  versions="$(
+    yq -r '.dependencies[]? | select(.name == "opentelemetry-collector") | .version' "$chart_file" \
+      | sed -e '/^null$/d' -e '/^$/d' \
+      | sort -u
+  )"
+
+  if [ -z "$versions" ]; then
+    echo "No opentelemetry-collector dependency versions found in $chart_file" >&2
+    exit 1
+  fi
+
+  count="$(printf '%s\n' "$versions" | wc -l | tr -d '[:space:]')"
+  if [ "$count" -ne 1 ]; then
+    echo "Expected exactly one opentelemetry-collector dependency version in $chart_file, found $count: $versions" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$versions"
+}
+
 if [ -z "$chart_file" ]; then
   chart_file="$repo_root/otel-integration/k8s-helm/Chart.yaml"
 fi
 
 if [ -z "$chart_version" ]; then
-  chart_version="$(yq -r '[.dependencies[] | select(.name == "opentelemetry-collector") | .version] | unique | .[0]' "$chart_file")"
+  chart_version="$(resolve_collector_chart_version "$chart_file")"
 fi
 
 if [ -z "$chart_version" ]; then
