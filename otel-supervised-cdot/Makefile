@@ -1,7 +1,7 @@
 # OpenTelemetry Supervised Collector (Coralogix distro) Makefile
 
 # Default values
-IMAGE_NAME ?= coralogix-otel-supervised-collector
+IMAGE_NAME ?= coralogix-otel-supervised-cdot
 IMAGE_TAG ?= latest
 SUPERVISOR_VERSION ?= $(shell cat CURRENT_SUPERVISOR_VERSION)
 COLLECTOR_VERSION ?= $(shell cat CURRENT_COLLECTOR_VERSION)
@@ -47,7 +47,7 @@ help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ''
 	@echo 'Variables:'
-	@echo '  IMAGE_NAME             Docker image name (default: coralogix-otel-supervised-collector)'
+	@echo '  IMAGE_NAME             Docker image name (default: coralogix-otel-supervised-cdot)'
 	@echo '  IMAGE_TAG              Docker image tag (default: latest)'
 	@echo '  COLLECTOR_VERSION      Coralogix OTEL Collector version (default: contents of CURRENT_COLLECTOR_VERSION)'
 	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: contents of CURRENT_SUPERVISOR_VERSION)'
@@ -58,7 +58,7 @@ help:
 	@echo '  make build COLLECTOR_VERSION=v0.5.7'
 	@echo '  make build SUPERVISOR_VERSION=0.141.0'
 	@echo '  make build COLLECTOR_VERSION=v0.5.7 SUPERVISOR_VERSION=0.141.0'
-	@echo '  make build IMAGE_TAG=v1.0.0' IMAGE_NAME=coralogix-otel-supervised-collector
+	@echo '  make build IMAGE_TAG=v1.0.0' IMAGE_NAME=coralogix-otel-supervised-cdot
 	@echo '  make build-multiarch'
 	@echo '  make build-multiarch-push'
 .DEFAULT_GOAL := help

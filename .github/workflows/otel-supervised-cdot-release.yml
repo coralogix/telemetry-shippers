@@ -13,7 +13,7 @@ on:
       image_name:
         description: "Image name (no organization or tag should be provided)"
         required: false
-        default: "coralogix-otel-supervised-collector"
+        default: "coralogix-otel-supervised-cdot"
         type: string
       registry_org:
         description: "Container registry and organization"
@@ -24,7 +24,7 @@ on:
           - cgx.jfrog.io/coralogix-docker-images
           - docker.io/coralogixrepo
 env:
-  IMAGE_NAME: ${{ github.event.inputs.image_name || 'coralogix-otel-supervised-collector' }}
+  IMAGE_NAME: ${{ github.event.inputs.image_name || 'coralogix-otel-supervised-cdot' }}
   REGISTRY_ORG: ${{ github.event.inputs.registry_org || 'docker.io/coralogixrepo' }}
 
 jobs:

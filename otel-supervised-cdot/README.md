@@ -14,7 +14,7 @@ The container image is built and pushed to registries via GitHub Actions.
 Images are tagged with the Coralogix collector version in the following format:
 
 ```
-coralogix-otel-supervised-collector:v0.5.7
+coralogix-otel-supervised-cdot:v0.5.7
 ```
 
 ### Supported platforms
@@ -52,14 +52,14 @@ testing purposes and are not part of the released image.
 
 ### Configuration variables
 
-| Variable             | Description                               | Default                                |
-|----------------------|-------------------------------------------|----------------------------------------|
-| `IMAGE_NAME`         | Container image name                      | `coralogix-otel-supervised-collector`  |
-| `IMAGE_TAG`          | Container image tag                       | `latest`                               |
-| `COLLECTOR_VERSION`  | Coralogix OTEL Collector version          | `$(cat CURRENT_COLLECTOR_VERSION)`     |
-| `SUPERVISOR_VERSION` | OpAMP Supervisor version                  | `$(cat CURRENT_SUPERVISOR_VERSION)`    |
-| `REGISTRY`           | Container registry (optional)             | (empty)                                |
-| `PLATFORMS`          | Target platforms for multi-arch builds    | `linux/amd64,linux/arm64`              |
+| Variable             | Description                            | Default                             |
+|----------------------|----------------------------------------|-------------------------------------|
+| `IMAGE_NAME`         | Container image name                   | `coralogix-otel-supervised-cdot`    |
+| `IMAGE_TAG`          | Container image tag                    | `latest`                            |
+| `COLLECTOR_VERSION`  | Coralogix OTEL Collector version       | `$(cat CURRENT_COLLECTOR_VERSION)`  |
+| `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `$(cat CURRENT_SUPERVISOR_VERSION)` |
+| `REGISTRY`           | Container registry (optional)          | (empty)                             |
+| `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`           |
 
 ### Available targets
 
@@ -95,7 +95,7 @@ make build SUPERVISOR_VERSION=0.141.0
 make build IMAGE_TAG=v1.0.0
 
 # Build with all custom settings
-make build IMAGE_TAG=v1.0.0 IMAGE_NAME=coralogix-otel-supervised-collector COLLECTOR_VERSION=v0.5.7
+make build IMAGE_TAG=v1.0.0 IMAGE_NAME=coralogix-otel-supervised-cdot COLLECTOR_VERSION=v0.5.7
 ```
 
 #### Multi-Architecture Builds
