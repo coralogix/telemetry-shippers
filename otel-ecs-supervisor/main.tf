@@ -67,7 +67,9 @@ locals {
 
   # Container command - two approaches based on image capabilities
   container_command = var.use_entrypoint_script ? [
-    "mkdir -p /etc/otel && echo \"$SUPERVISOR_CONFIG_CONTENT\" > /etc/otel/supervisor.yaml && echo \"$OTEL_CONFIG_CONTENT\" > /etc/otel/config.yaml && echo 'Starting opampsupervisor...' && /opampsupervisor --config /etc/otel/supervisor.yaml"
+    join("", [
+      "mkdir -p /tmp/otel && echo \"$SUPERVISOR_CONFIG_CONTENT\" > /tmp/otel/supervisor.yaml && echo \"$OTEL_CONFIG_CONTENT\" > /tmp/otel/config.yaml && /opampsupervisor --config /tmp/otel/supervisor.yaml"
+    ])
     ] : [
     "--config", "env:SUPERVISOR_CONFIG_CONTENT"
   ]
@@ -87,6 +89,18 @@ resource "null_resource" "validate_private_key" {
 
   provisioner "local-exec" {
     command = "echo 'ERROR: At least one of coralogix_private_key, coralogix_private_key_ssm_parameter, or coralogix_private_key_secret_arn must be provided.' && exit 1"
+  }
+}
+
+# Validation check: vpc_id required when subnet_ids are provided
+resource "null_resource" "validate_network_inputs" {
+  count = 1
+
+  lifecycle {
+    precondition {
+      condition     = length(var.subnet_ids) == 0 || var.vpc_id != ""
+      error_message = "vpc_id must be provided when supplying subnet_ids."
+    }
   }
 }
 

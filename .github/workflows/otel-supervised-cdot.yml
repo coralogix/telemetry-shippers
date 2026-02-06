@@ -1,0 +1,78 @@
+name: OpenTelemetry-Supervised-CDOT
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+    - 'otel-supervised-cdot/CURRENT_COLLECTOR_VERSION'
+    - 'otel-supervised-cdot/CURRENT_SUPERVISOR_VERSION'
+
+jobs:
+  trigger-release:
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for version change
+        id: check
+        run: |
+          BEFORE_SHA="${{ github.event.before }}"
+
+          # If for some reason BEFORE_SHA is empty (e.g. new branch), default to true
+          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+             echo "New branch or unknown state, assuming change."
+             echo "changed=true" >> "$GITHUB_OUTPUT"
+             exit 0
+          fi
+
+          echo "Fetching previous commit $BEFORE_SHA..."
+          git fetch origin "$BEFORE_SHA" --depth=1
+
+          echo "Comparing versions between $BEFORE_SHA and HEAD"
+
+          # Get previous versions
+          git show "$BEFORE_SHA":otel-supervised-cdot/CURRENT_COLLECTOR_VERSION > old_collector_ver 2>/dev/null || echo "" > old_collector_ver
+          git show "$BEFORE_SHA":otel-supervised-cdot/CURRENT_SUPERVISOR_VERSION > old_supervisor_ver 2>/dev/null || echo "" > old_supervisor_ver
+
+          # Get current versions
+          cat otel-supervised-cdot/CURRENT_COLLECTOR_VERSION > new_collector_ver
+          cat otel-supervised-cdot/CURRENT_SUPERVISOR_VERSION > new_supervisor_ver
+
+          # Compare stripping all whitespace
+          OLD_COLLECTOR=$(tr -d '[:space:]' < old_collector_ver)
+          NEW_COLLECTOR=$(tr -d '[:space:]' < new_collector_ver)
+          OLD_SUPERVISOR=$(tr -d '[:space:]' < old_supervisor_ver)
+          NEW_SUPERVISOR=$(tr -d '[:space:]' < new_supervisor_ver)
+
+          if [ "$OLD_COLLECTOR" != "$NEW_COLLECTOR" ] || [ "$OLD_SUPERVISOR" != "$NEW_SUPERVISOR" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Collector version changed from '$OLD_COLLECTOR' to '$NEW_COLLECTOR'"
+            echo "Supervisor version changed from '$OLD_SUPERVISOR' to '$NEW_SUPERVISOR'"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No version change detected (ignoring whitespace)"
+          fi
+
+      - name: Trigger Release workflow (CGX JFrog)
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          gh workflow run otel-supervised-cdot-release.yml \
+           --ref master \
+           -f push_image=true \
+           -f registry_org=cgx.jfrog.io/coralogix-docker-images
+      - name: Trigger Release workflow (Docker Hub)
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          gh workflow run otel-supervised-cdot-release.yml \
+           --ref master \
+           -f push_image=true \
+           -f registry_org=docker.io/coralogixrepo
