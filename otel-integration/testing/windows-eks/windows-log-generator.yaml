@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: windows-log-generator
+  labels:
+    app: windows-log-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: windows-log-generator
+  template:
+    metadata:
+      labels:
+        app: windows-log-generator
+    spec:
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+        - name: log-writer
+          image: mcr.microsoft.com/windows/servercore:ltsc2019
+          imagePullPolicy: IfNotPresent
+          command:
+            - powershell
+            - -Command
+            - |
+              $i = 0
+              while ($true) {
+                Write-Output "WINDOWS-OTEL-LOG-CHECK iteration=$i source=stdout"
+                $i = $i + 1
+                Start-Sleep -Seconds 5
+              }

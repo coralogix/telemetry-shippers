@@ -1,0 +1,8 @@
+global:
+  logLevel: "debug"
+
+opentelemetry-agent-windows:
+  config:
+    exporters:
+      debug:
+        verbosity: detailed

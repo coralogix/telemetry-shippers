@@ -2,6 +2,9 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.273 / 2026-02-06
+- [CHORE] Update Windows image to v0.145.0.
+
 ### v0.0.272 / 2026-02-06
 - [CHORE] Update Target Allocator image to v0.144.0.
 - [Feat] Add target allocator e2e test that validates ServiceMonitor metrics ingestion.
