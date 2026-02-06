@@ -1,0 +1,132 @@
+name: Sync OTel Collector Version
+
+on:
+  repository_dispatch:
+    types: [otel-collector-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New opentelemetry-collector chart version'
+        required: true
+        type: string
+
+env:
+  # Charts to skip by default (not released yet)
+  SKIP_CHARTS: 'otel-windows-standalone'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Add helm repos
+        run: |
+          helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+          helm repo update
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            VERSION="${{ github.event.client_payload.version }}"
+            SOURCE_PR="${{ github.event.client_payload.pr_url }}"
+          else
+            VERSION="${{ inputs.version }}"
+            SOURCE_PR=""
+          fi
+          echo "value=$VERSION" >> $GITHUB_OUTPUT
+          echo "source_pr=$SOURCE_PR" >> $GITHUB_OUTPUT
+
+      - name: Create branch
+        run: |
+          branch_name="chore/bump-otel-collector-${{ steps.version.outputs.value }}"
+          echo "branch_name=$branch_name" >> $GITHUB_ENV
+          
+          # Delete remote branch if exists
+          git push origin --delete "$branch_name" 2>/dev/null || true
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b $branch_name
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run bump script
+        run: |
+          # Build skip args
+          SKIP_ARGS=""
+          for chart in $(echo "$SKIP_CHARTS" | tr ',' ' '); do
+            [[ -n "$chart" ]] && SKIP_ARGS="$SKIP_ARGS --skip $chart"
+          done
+          
+          chmod +x ./scripts/bump-otel-collector-version.sh
+          ./scripts/bump-otel-collector-version.sh --version "${{ steps.version.outputs.value }}" $SKIP_ARGS
+
+      - name: Commit and push
+        run: |
+          git add -A
+          if git diff --staged --quiet; then
+            echo "::error::No changes to commit - version ${{ steps.version.outputs.value }} may already be applied"
+            exit 1
+          fi
+          git commit -m "chore: bump opentelemetry-collector to ${{ steps.version.outputs.value }}"
+          git push origin $branch_name
+
+      - name: Build PR body
+        run: |
+          if [[ -f "/tmp/otel-bump-summary.md" ]]; then
+            cat /tmp/otel-bump-summary.md > /tmp/pr-body.md
+          else
+            echo "Bumping opentelemetry-collector to \`${{ steps.version.outputs.value }}\`" > /tmp/pr-body.md
+          fi
+          echo "" >> /tmp/pr-body.md
+          if [[ -n "${{ steps.version.outputs.source_pr }}" ]]; then
+            echo "**Source:** ${{ steps.version.outputs.source_pr }}" >> /tmp/pr-body.md
+            echo "" >> /tmp/pr-body.md
+          fi
+          echo "---" >> /tmp/pr-body.md
+          echo "**To skip a chart:** Remove its \`chart:*\` label → changes auto-revert." >> /tmp/pr-body.md
+
+      - name: Ensure labels exist
+        run: |
+          for label in otel-collector-bump chart:otel-integration chart:otel-linux-standalone chart:otel-macos-standalone chart:otel-windows-standalone; do
+            gh label create "$label" --description "Auto-created for otel-collector sync" --color "0E8A16" 2>/dev/null || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build labels
+        id: labels
+        run: |
+          LABELS="otel-collector-bump"
+          for chart in otel-integration otel-linux-standalone otel-macos-standalone otel-windows-standalone; do
+            if ! echo "$SKIP_CHARTS" | tr ',' '\n' | grep -qw "$chart"; then
+              LABELS="$LABELS,chart:$chart"
+            fi
+          done
+          echo "value=$LABELS" >> $GITHUB_OUTPUT
+
+      - name: Create pull request
+        run: |
+          gh pr create \
+            --base master \
+            --head "$branch_name" \
+            --title "chore: bump opentelemetry-collector to ${{ steps.version.outputs.value }}" \
+            --body-file /tmp/pr-body.md \
+            --label "${{ steps.labels.outputs.value }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
