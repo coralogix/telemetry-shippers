@@ -1,6 +1,6 @@
-# Version args must be provided (e.g., via Makefile which reads CURRENT_*_VERSION)
-ARG COLLECTOR_VERSION
-ARG SUPERVISOR_VERSION
+# Version args default to repo-pinned versions (override via build args)
+ARG COLLECTOR_VERSION=v0.5.7
+ARG SUPERVISOR_VERSION=0.142.0
 
 FROM alpine:3.22 AS certs
 RUN apk --update add ca-certificates
