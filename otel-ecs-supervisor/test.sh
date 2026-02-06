@@ -7,6 +7,15 @@ set -e
 echo "Checking prerequisites..."
 command -v terraform >/dev/null || { echo "terraform not found"; exit 1; }
 command -v aws >/dev/null || { echo "aws cli not found"; exit 1; }
+
+# Ensure AWS CLI uses a profile/output that exists in this environment.
+if [ -z "${AWS_PROFILE:-}" ] && [ -z "${AWS_DEFAULT_PROFILE:-}" ]; then
+    export AWS_PROFILE=default
+fi
+if [ -z "${AWS_DEFAULT_OUTPUT:-}" ]; then
+    export AWS_DEFAULT_OUTPUT=json
+fi
+
 aws sts get-caller-identity >/dev/null || { echo "AWS credentials not configured"; exit 1; }
 
 # Change to terraform directory if needed

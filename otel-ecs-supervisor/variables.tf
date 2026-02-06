@@ -44,7 +44,7 @@ variable "subsystem_name" {
 variable "container_image" {
   description = "Container image for the supervisor"
   type        = string
-  default     = "coralogixrepo/otel-supervised-collector:0.140.1"
+  default     = "coralogixrepo/otel-supervised-collector:v0.5.7"
 }
 
 variable "use_entrypoint_script" {
@@ -76,11 +76,6 @@ variable "subnet_ids" {
   description = "Optional list of subnet IDs; defaults to the default VPC subnets when empty."
   type        = list(string)
   default     = []
-
-  validation {
-    condition     = length(var.subnet_ids) == 0 || var.vpc_id != ""
-    error_message = "vpc_id must be provided when supplying subnet_ids."
-  }
 }
 
 variable "security_group_id" {
@@ -222,7 +217,7 @@ variable "health_check_enabled" {
 variable "health_check_command" {
   description = "Health check command"
   type        = list(string)
-  default     = ["CMD-SHELL", "curl -f http://localhost:13133/ || exit 1"]
+  default     = ["CMD-SHELL", "wget -qO- http://localhost:13133/ >/dev/null || exit 1"]
 }
 
 variable "health_check_start_period" {

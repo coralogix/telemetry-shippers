@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.4 / 2026-02-05
+
+* [IMPROVEMENT] Added supervisor image using cdot 0.5.7.
+
 ### 0.0.3 / 2025-11-21
 
 * [IMPROVEMENT] Updated the default supervised collector image tag to `0.140.1` to align with the latest collector and supervisor release.

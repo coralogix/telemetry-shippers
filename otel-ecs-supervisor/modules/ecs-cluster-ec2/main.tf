@@ -4,6 +4,22 @@ locals {
   }, var.tags)
 }
 
+resource "null_resource" "validate_capacity_inputs" {
+  count = 1
+
+  lifecycle {
+    precondition {
+      condition     = !var.enable_capacity || var.vpc_id != ""
+      error_message = "vpc_id must be provided when enable_capacity is true."
+    }
+
+    precondition {
+      condition     = !var.enable_capacity || length(var.subnet_ids) > 0
+      error_message = "Provide at least one subnet when enable_capacity is true."
+    }
+  }
+}
+
 resource "aws_ecs_cluster" "this" {
   name = var.cluster_name
 
