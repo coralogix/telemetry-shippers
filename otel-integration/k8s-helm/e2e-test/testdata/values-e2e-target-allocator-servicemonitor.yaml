@@ -1,0 +1,63 @@
+# E2E overrides for target allocator + ServiceMonitor metrics validation.
+# The test sink listens on host OTLP gRPC port 7337.
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
+opentelemetry-cluster-collector:
+  enabled: false
+
+opentelemetry-agent:
+  fullnameOverride: target-allocator-opentelemetry-e2e
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  ports:
+    otlp:
+      enabled: true
+      hostPort: null
+    otlp-http:
+      enabled: true
+      hostPort: null
+  clusterRole:
+    name: target-allocator-opentelemetry-agent-e2e
+    clusterRoleBinding:
+      name: target-allocator-opentelemetry-agent-e2e
+  presets:
+    logsCollection:
+      enabled: false
+    jaegerReceiver:
+      enabled: false
+    zipkinReceiver:
+      enabled: false
+    statsdReceiver:
+      enabled: false
+  targetAllocator:
+    enabled: true
+    replicas: 1
+    allocationStrategy: "per-node"
+    prometheusCR:
+      enabled: true
+      scrapeInterval: 30s
+
+  config:
+    exporters:
+      debug:
+        verbosity: detailed
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:7337"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+            - debug
+        "metrics/compact":
+          exporters:
+            - otlp/metrics
+            - debug
+        "metrics/db_compact":
+          exporters:
+            - otlp/metrics
+            - debug

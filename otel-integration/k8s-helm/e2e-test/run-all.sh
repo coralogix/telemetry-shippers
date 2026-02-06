@@ -38,8 +38,9 @@ log_debug() {
 }
 
 # Configuration
-CLUSTER_NAME="otel-integration-agent-e2e"
-KUBECONFIG_PATH="/tmp/kind-otel-integration-agent-e2e"
+CLUSTER_NAME="${CLUSTER_NAME:-otel-integration-agent-e2e}"
+KUBECONFIG_PATH="${KUBECONFIG_PATH:-/tmp/kind-${CLUSTER_NAME}}"
+KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.30.0}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 HELM_CHART_DIR="${PROJECT_ROOT}/otel-integration/k8s-helm"
 E2E_TEST_DIR="${PROJECT_ROOT}/otel-integration/k8s-helm/e2e-test"
@@ -47,6 +48,11 @@ COLLECTOR_CONTRIB_DIR=""
 CUSTOM_IMAGE_REPOSITORY="docker.io/library/otelcontribcol"
 CUSTOM_IMAGE_TAG="latest"
 HELM_RELEASE_NAME="otel-integration-agent-e2e"
+SERVICE_MONITOR_CRD_URL="${SERVICE_MONITOR_CRD_URL:-https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.88.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml}"
+SERVICE_MONITOR_FIXTURE_FILE="./e2e-test/testdata/manifests-e2e-servicemonitor-kubelet.yaml"
+SERVICE_MONITOR_NAME="e2e-kubelet"
+SERVICE_MONITOR_NAMESPACE="monitoring"
+SERVICE_MONITOR_TARGET_NAMESPACE="kube-system"
 
 # Test results tracking
 declare -a TEST_RESULTS
@@ -64,6 +70,7 @@ RUN_SPECIFIC_TEST=""
 declare -a TEST_CONFIGS=(
     "TestE2E_ClusterCollector_Metrics:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml:component=agent-collector:"
     "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
+    "TestE2E_TargetAllocator_ServiceMonitorMetrics:./values.yaml ./e2e-test/testdata/values-e2e-target-allocator-servicemonitor.yaml:component=agent-collector:RUN_TARGET_ALLOCATOR_E2E=1"
     # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
     "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_FleetManagerSupervisor:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml:component=agent-collector:"
@@ -168,7 +175,7 @@ setup_kind_cluster() {
         kind get kubeconfig --name "${CLUSTER_NAME}" > "${KUBECONFIG_PATH}"
     else
         log_info "Creating kind cluster '${CLUSTER_NAME}'..."
-        kind create cluster --name "${CLUSTER_NAME}" --image kindest/node:v1.24.12 || {
+        kind create cluster --name "${CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" || {
             if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
                 log_info "Cluster was created by another process, using existing cluster."
             else
@@ -314,6 +321,103 @@ uninstall_chart() {
     else
         log_debug "Chart not installed, skipping uninstall"
     fi
+}
+
+install_servicemonitor_fixture() {
+    log_info "Installing ServiceMonitor fixture (without kube-prometheus-stack)..."
+    cd "${HELM_CHART_DIR}"
+
+    if [ ! -f "${HELM_CHART_DIR}/${SERVICE_MONITOR_FIXTURE_FILE}" ]; then
+        log_error "ServiceMonitor fixture file not found: ${HELM_CHART_DIR}/${SERVICE_MONITOR_FIXTURE_FILE}"
+        return 1
+    fi
+
+    if ! kubectl get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; then
+        log_info "Installing ServiceMonitor CRD..."
+        if ! kubectl apply -f "${SERVICE_MONITOR_CRD_URL}"; then
+            log_error "Failed to install ServiceMonitor CRD from ${SERVICE_MONITOR_CRD_URL}"
+            return 1
+        fi
+    fi
+
+    if ! kubectl wait --for=condition=Established --timeout=180s crd/servicemonitors.monitoring.coreos.com >/dev/null 2>&1; then
+        log_warning "ServiceMonitor CRD was not established within timeout; continuing"
+    fi
+
+    if ! kubectl apply -f "${HELM_CHART_DIR}/${SERVICE_MONITOR_FIXTURE_FILE}"; then
+        log_error "Failed to apply ServiceMonitor fixture manifests"
+        return 1
+    fi
+
+    local tmp_endpoints
+    tmp_endpoints="$(mktemp /tmp/e2e-kubelet-endpoints.XXXXXX.yaml)"
+    {
+        cat <<EOF
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ${SERVICE_MONITOR_NAME}
+  namespace: ${SERVICE_MONITOR_TARGET_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: kubelet
+    k8s-app: kubelet
+    app.kubernetes.io/managed-by: otel-e2e
+subsets:
+- addresses:
+EOF
+        local node_count=0
+        while IFS= read -r node_name; do
+            [ -z "${node_name}" ] && continue
+            local node_ip
+            node_ip="$(kubectl get node "${node_name}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)"
+            [ -z "${node_ip}" ] && continue
+            node_count=$((node_count + 1))
+            cat <<EOF
+  - ip: ${node_ip}
+    nodeName: ${node_name}
+EOF
+        done < <(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+
+        if [ "${node_count}" -eq 0 ]; then
+            log_error "No node InternalIP addresses found to build kubelet Endpoints"
+            rm -f "${tmp_endpoints}"
+            return 1
+        fi
+
+        cat <<EOF
+  ports:
+  - name: https-metrics
+    port: 10250
+    protocol: TCP
+  - name: http-metrics
+    port: 10255
+    protocol: TCP
+  - name: cadvisor
+    port: 4194
+    protocol: TCP
+EOF
+    } > "${tmp_endpoints}"
+
+    if ! kubectl apply -f "${tmp_endpoints}"; then
+        log_error "Failed to apply kubelet Endpoints fixture"
+        rm -f "${tmp_endpoints}"
+        return 1
+    fi
+    rm -f "${tmp_endpoints}"
+
+    if ! kubectl -n "${SERVICE_MONITOR_NAMESPACE}" get servicemonitors.monitoring.coreos.com "${SERVICE_MONITOR_NAME}" >/dev/null 2>&1; then
+        log_error "ServiceMonitor ${SERVICE_MONITOR_NAMESPACE}/${SERVICE_MONITOR_NAME} was not created"
+        return 1
+    fi
+
+    log_success "ServiceMonitor fixture installed successfully"
+}
+
+uninstall_servicemonitor_fixture() {
+    log_info "Uninstalling ServiceMonitor fixture (if exists)..."
+    kubectl -n "${SERVICE_MONITOR_NAMESPACE}" delete servicemonitors.monitoring.coreos.com "${SERVICE_MONITOR_NAME}" --ignore-not-found >/dev/null 2>&1 || true
+    kubectl -n "${SERVICE_MONITOR_TARGET_NAMESPACE}" delete endpoints "${SERVICE_MONITOR_NAME}" --ignore-not-found >/dev/null 2>&1 || true
+    kubectl -n "${SERVICE_MONITOR_TARGET_NAMESPACE}" delete service "${SERVICE_MONITOR_NAME}" --ignore-not-found >/dev/null 2>&1 || true
 }
 
 # Build helm dependencies
@@ -691,6 +795,18 @@ print_summary() {
     echo -e "${BLUE}========================================${NC}"
 }
 
+requires_servicemonitor_fixture() {
+    local test_name="$1"
+    case "$test_name" in
+        TestE2E_TargetAllocator_ServiceMonitorMetrics)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 # Run specific test
 run_specific_test() {
     local target_test="$1"
@@ -710,16 +826,35 @@ run_specific_test() {
             # Setup environment
             uninstall_chart
             build_helm_dependencies
+
+            local needs_servicemonitor_fixture=0
+            if requires_servicemonitor_fixture "$test_name"; then
+                needs_servicemonitor_fixture=1
+                uninstall_servicemonitor_fixture
+                if ! install_servicemonitor_fixture; then
+                    log_error "Failed to install ServiceMonitor fixture for ${test_name}"
+                    return 1
+                fi
+            fi
             
             # Install chart with test-specific values
             if ! install_chart "$values_files" "$wait_label"; then
                 log_error "Failed to install chart for ${test_name}"
+                if [ $needs_servicemonitor_fixture -eq 1 ]; then
+                    uninstall_servicemonitor_fixture || true
+                fi
                 return 1
             fi
             
             # Run the test
             run_test "$test_name" "$env_vars"
-            return $?
+            local test_exit_code=$?
+
+            if [ $needs_servicemonitor_fixture -eq 1 ]; then
+                uninstall_servicemonitor_fixture || true
+            fi
+
+            return $test_exit_code
         fi
     done
     
