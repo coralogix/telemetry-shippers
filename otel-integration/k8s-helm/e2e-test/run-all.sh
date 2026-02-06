@@ -618,13 +618,13 @@ run_test() {
     if [ $test_exit_code -eq 0 ]; then
         log_success "✓ Test ${test_name} PASSED (duration: ${test_duration}s)"
         TEST_RESULTS+=("PASS")
-        ((PASSED_TESTS++))
+        ((++PASSED_TESTS))
         return 0
     else
         log_error "✗ Test ${test_name} FAILED (duration: ${test_duration}s, exit code: ${test_exit_code})"
         TEST_RESULTS+=("FAIL")
         TEST_NAMES+=("$test_name")
-        ((FAILED_TESTS++))
+        ((++FAILED_TESTS))
 
         # Show test output
         log_error "Test output saved to: /tmp/test-${test_name}-output.log"
