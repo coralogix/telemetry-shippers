@@ -15,6 +15,7 @@ opentelemetry-receiver:
     # type: LoadBalancer
     # loadBalancerIP: 1.2.3.4
     # loadBalancerSourceRanges: []
+    # loadBalancerClass: service.k8s.aws/nlb
   
     # By default, Service of type 'LoadBalancer' will be created setting 'externalTrafficPolicy: Cluster'
     # unless other value is explicitly set.

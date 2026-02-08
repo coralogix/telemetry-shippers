@@ -18,13 +18,9 @@ CORALOGIX_PRIVATE_KEY="your-key" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
 ```
 
-**Enable process metrics (Linux only):**
+**Note:** For specific versions, see [releases](https://github.com/coralogix/telemetry-shippers/releases) (look for `otel-installer-v*` tags).
 
-```bash
-CORALOGIX_PRIVATE_KEY="your-key" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --enable-process-metrics
-```
+> **Note:** Linux capabilities are automatically enabled when service discovery or process metrics are detected in your configuration. See [standalone/README.md](./standalone/README.md) for details.
 
 ### Docker
 
@@ -33,6 +29,8 @@ CORALOGIX_PRIVATE_KEY="your-key" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" \
   -- -c /path/to/config.yaml
 ```
+
+**Note:** For specific versions, see [releases](https://github.com/coralogix/telemetry-shippers/releases) (look for `otel-installer-v*` tags).
 
 ### Supervisor Mode (Fleet Management)
 

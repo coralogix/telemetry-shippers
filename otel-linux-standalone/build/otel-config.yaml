@@ -3,6 +3,7 @@ connectors:
   forward/db: {}
   forward/db_compact: {}
   spanmetrics:
+    add_resource_attributes: true
     aggregation_cardinality_limit: 100000
     dimensions:
     - name: http.method
@@ -30,10 +31,12 @@ connectors:
         - 1s
         - 2s
         - 5s
+      unit: ms
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: ""
   spanmetrics/compact:
+    add_resource_attributes: true
     aggregation_cardinality_limit: 100000
     exclude_dimensions:
     - span.name
@@ -51,10 +54,12 @@ connectors:
         - 1s
         - 2s
         - 5s
+      unit: ms
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: compact
   spanmetrics/db:
+    add_resource_attributes: true
     aggregation_cardinality_limit: 100000
     dimensions:
     - name: db.namespace
@@ -65,19 +70,23 @@ connectors:
     histogram:
       explicit:
         buckets:
-        - 100us
         - 1ms
-        - 2ms
-        - 2.5ms
         - 4ms
-        - 6ms
         - 10ms
+        - 20ms
+        - 50ms
         - 100ms
-        - 250ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+      unit: ms
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: db
   spanmetrics/db_compact:
+    add_resource_attributes: true
     aggregation_cardinality_limit: 100000
     dimensions:
     - name: db.namespace
@@ -99,6 +108,7 @@ connectors:
         - 1s
         - 2s
         - 5s
+      unit: ms
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: db_compact
@@ -110,27 +120,27 @@ exporters:
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
     subsystem_name: linux
     subsystem_name_attributes:
     - service.name
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.3
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
@@ -144,7 +154,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.127.7
+        helm.chart.opentelemetry-agent.version: 0.128.18
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -500,6 +510,20 @@ processors:
       statements:
       - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
         != nil
+  transform/spanmetrics:
+    error_mode: silent
+    metric_statements:
+    - context: datapoint
+      statements:
+      - set(attributes["status.code"], "STATUS_CODE_ERROR") where attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+        == "ERROR"
+      - set(attributes["status.code"], "STATUS_CODE_OK") where attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+        == "OK"
+      - set(attributes["status.code"], "STATUS_CODE_UNSET") where attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and (attributes["otel.status_code"]
+        == "UNSET" or attributes["otel.status_code"] == nil)
 receivers:
   hostmetrics:
     collection_interval: 10s
@@ -570,6 +594,9 @@ receivers:
         static_configs:
         - targets:
           - 0.0.0.0:8888
+  systemd:
+    collection_interval: 30s
+    scope: system
 service:
   extensions:
   - health_check
@@ -612,6 +639,7 @@ service:
       - resourcedetection/region
       - resourcedetection/env
       - resource/metadata
+      - transform/spanmetrics
       - transform/reduce
       - transform/prometheus
       - batch
@@ -620,12 +648,14 @@ service:
       - spanmetrics
       - spanmetrics/db
       - prometheus
+      - systemd
       - otlp
     metrics/compact:
       exporters:
       - coralogix
       processors:
       - memory_limiter
+      - transform/spanmetrics
       - batch
       receivers:
       - spanmetrics/compact
@@ -634,6 +664,7 @@ service:
       - coralogix
       processors:
       - memory_limiter
+      - transform/spanmetrics
       - batch
       receivers:
       - spanmetrics/db_compact
@@ -650,6 +681,7 @@ service:
       - resourcedetection/region
       - resourcedetection/env
       - resource/metadata
+      - transform/spanmetrics
       - redaction/spanname
       - transform/reduce
       - transform/semconv

@@ -1,0 +1,265 @@
+name: Sync Fleet Manager Collector Chart Map
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - otel-integration/k8s-helm/Chart.yaml
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run even if no version bump is detected (useful for testing)"
+        type: boolean
+        default: false
+      integration_chart_version:
+        description: "Override otel-integration chart version (e.g. 0.0.268)"
+        type: string
+        required: false
+      collector_chart_version:
+        description: "Override opentelemetry-collector chart version (e.g. 0.128.15)"
+        type: string
+        required: false
+      app_version:
+        description: "Override collector appVersion (skips helm lookup)"
+        type: string
+        required: false
+      fleet_manager_repo:
+        description: "Fleet Manager repo in owner/repo format"
+        type: string
+        default: "coralogix/fleet-manager"
+        required: false
+      fleet_manager_ref:
+        description: "Fleet Manager ref (branch/tag/SHA)"
+        type: string
+        default: "master"
+        required: false
+      create_pr:
+        description: "If true, create branch/commit/push and open PR in Fleet Manager"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync-map:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up yq
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Detect otel-integration chart version bump
+        id: detect
+        run: |
+          set -euo pipefail
+          file="otel-integration/k8s-helm/Chart.yaml"
+
+          # ── otel-integration chart version ──────────────────────────
+          integration_chart_version="${INTEGRATION_CHART_VERSION_OVERRIDE:-}"
+          if [ -z "$integration_chart_version" ]; then
+            integration_chart_version="$(scripts/resolve-integration-chart-version.sh "$file")"
+          fi
+
+          old_integration_chart_version=""
+          base_sha="${GITHUB_EVENT_BEFORE:-}"
+          # GITHUB_EVENT_AFTER can be `0000000000000000000000000000000000000000`
+          # on some cases, like branch creation.
+          if [ -n "$base_sha" ] && [ "$base_sha" != "0000000000000000000000000000000000000000" ]; then
+            if git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
+              old_file="$(mktemp)"
+              if git show "$base_sha:$file" > "$old_file" 2>/dev/null; then
+                old_integration_chart_version="$(yq -r '.version' "$old_file")"
+              fi
+              rm -f "$old_file"
+            fi
+          fi
+
+          if [ -z "$old_integration_chart_version" ]; then
+            old_file="$(mktemp)"
+            if git show "HEAD^1:$file" > "$old_file" 2>/dev/null; then
+              old_integration_chart_version="$(yq -r '.version' "$old_file")"
+            fi
+            rm -f "$old_file"
+          fi
+
+          # ── opentelemetry-collector chart version ───────────────────
+          collector_chart_version="${COLLECTOR_CHART_VERSION_OVERRIDE:-}"
+          if [ -z "$collector_chart_version" ]; then
+            collector_chart_version="$(scripts/resolve-collector-chart-version.sh "$file")"
+          fi
+
+          # ── app version (override only; helm lookup happens later) ──
+          app_version="${APP_VERSION_OVERRIDE:-}"
+
+          # ── outputs ─────────────────────────────────────────────────
+          echo "integration_chart_version=$integration_chart_version" >> "$GITHUB_OUTPUT"
+          echo "old_integration_chart_version=$old_integration_chart_version" >> "$GITHUB_OUTPUT"
+          echo "collector_chart_version=$collector_chart_version" >> "$GITHUB_OUTPUT"
+          echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
+
+          bumped="false"
+          if [ "${FORCE_RUN:-false}" = "true" ]; then
+            bumped="true"
+          elif [ -n "$old_integration_chart_version" ] && [ "$integration_chart_version" != "$old_integration_chart_version" ]; then
+            bumped="true"
+          fi
+
+          echo "bumped=$bumped" >> "$GITHUB_OUTPUT"
+          if [ "$bumped" = "true" ]; then
+            if [ -n "$old_integration_chart_version" ]; then
+              echo "otel-integration chart version bump detected: $old_integration_chart_version -> $integration_chart_version"
+            else
+              echo "otel-integration chart version bump detected: (no previous version found) -> $integration_chart_version"
+            fi
+          else
+            echo "No otel-integration chart version bump detected."
+          fi
+
+          echo "Resolved versions:"
+          echo "  otel-integration chart : $integration_chart_version"
+          echo "  opentelemetry-collector: $collector_chart_version"
+          echo "  app version            : ${app_version:-(will be resolved via helm)}"
+        env:
+          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+          INTEGRATION_CHART_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.integration_chart_version) || '' }}
+          COLLECTOR_CHART_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.collector_chart_version) || '' }}
+          APP_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.app_version) || '' }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+
+      - name: Set up Helm
+        if: steps.detect.outputs.bumped == 'true'
+        uses: azure/setup-helm@v4
+
+      - name: Checkout Fleet Manager
+        if: steps.detect.outputs.bumped == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.fleet_manager_repo || 'coralogix/fleet-manager' }}
+          ref: ${{ inputs.fleet_manager_ref || 'master' }}
+          path: fleet-manager
+          fetch-depth: 1
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Update Fleet Manager mapping and open PR
+        if: steps.detect.outputs.bumped == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          INTEGRATION_CHART_VERSION: ${{ steps.detect.outputs.integration_chart_version }}
+          COLLECTOR_CHART_VERSION: ${{ steps.detect.outputs.collector_chart_version }}
+          APP_VERSION_OVERRIDE: ${{ steps.detect.outputs.app_version }}
+          CREATE_PR: ${{ github.event_name != 'workflow_dispatch' || inputs.create_pr }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_EVENT_AFTER: ${{ github.event.after }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Missing GH_TOKEN secret"
+            exit 1
+          fi
+
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
+          output_env="$RUNNER_TEMP/fleet-manager-output.env"
+          args=(
+            --chart-file otel-integration/k8s-helm/Chart.yaml
+            --fleet-manager-dir "$GITHUB_WORKSPACE/fleet-manager"
+            --output-env "$output_env"
+            --integration-chart-version "$INTEGRATION_CHART_VERSION"
+            --chart-version "$COLLECTOR_CHART_VERSION"
+          )
+          if [ -n "${APP_VERSION_OVERRIDE:-}" ]; then
+            args+=(--app-version "$APP_VERSION_OVERRIDE")
+          fi
+          scripts/update-fleet-manager-collector-chart-map.sh "${args[@]}"
+
+          set -a
+          . "$output_env"
+          set +a
+
+          if [ "${MAPPING_UPDATED:-false}" != "true" ]; then
+            echo "Mapping already exists; nothing to do."
+            exit 0
+          fi
+
+          if [ "${CREATE_PR:-false}" != "true" ]; then
+            echo "CREATE_PR is false; skipping branch/commit/push/PR. (Dry run complete.)"
+            echo ""
+            echo "Changed files in Fleet Manager:"
+            git -C "$FLEET_MANAGER_DIR" --no-pager diff --stat
+            echo ""
+            echo "Full diff:"
+            git -C "$FLEET_MANAGER_DIR" --no-pager diff
+            exit 0
+          fi
+
+          cd "$FLEET_MANAGER_DIR"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          branch="bot/collector-chart-map-${INTEGRATION_CHART_VERSION}-${CHART_VERSION}"
+          git checkout -b "$branch"
+
+          git add pkg/helm/data/collector_chart_versions_map.json
+          git add pkg/helm/data/otel_integration_chart_versions_map.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Add chart mappings for otel-integration v${INTEGRATION_CHART_VERSION}"
+          git push origin "$branch"
+
+          base_sha=""
+          if [ "${GITHUB_EVENT_NAME:-}" = "push" ]; then
+            base_sha="${GITHUB_EVENT_AFTER:-${GITHUB_SHA:-}}"
+          else
+            base_sha="${GITHUB_SHA:-}"
+          fi
+
+          # GITHUB_EVENT_AFTER can be `0000000000000000000000000000000000000000`
+          # on some cases, like branch deletion.
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="${GITHUB_EVENT_BEFORE:-unknown}"
+          fi
+
+          base_link="$base_sha"
+          if [ -n "${GITHUB_REPOSITORY:-}" ] && [ "$base_sha" != "unknown" ]; then
+            base_link="[${base_sha}](https://github.com/${GITHUB_REPOSITORY}/commit/${base_sha})"
+          fi
+
+          pr_body="$(cat <<EOF
+          otel-integration chart version bump to **${INTEGRATION_CHART_VERSION}**.
+
+          | Component | Version |
+          |---|---|
+          | otel-integration chart | \`${INTEGRATION_CHART_VERSION}\` |
+          | opentelemetry-collector chart | \`${CHART_VERSION}\` |
+          | Collector appVersion | \`${APP_VERSION}\` |
+
+          Triggered by telemetry-shippers commit: ${base_link}
+          EOF
+          )"
+
+          existing_pr="$(gh pr list -R coralogix/fleet-manager --head "$branch" --json number --jq '.[0].number')"
+          if [ -n "$existing_pr" ]; then
+            echo "PR already exists: #$existing_pr"
+            exit 0
+          fi
+
+          gh pr create \
+            -R coralogix/fleet-manager \
+            --base master \
+            --head "$branch" \
+            --title "Add collector chart mapping for otel-integration \`v${INTEGRATION_CHART_VERSION}\`" \
+            --body "$pr_body"

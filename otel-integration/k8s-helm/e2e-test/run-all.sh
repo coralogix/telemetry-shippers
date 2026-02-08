@@ -38,8 +38,9 @@ log_debug() {
 }
 
 # Configuration
-CLUSTER_NAME="otel-integration-agent-e2e"
-KUBECONFIG_PATH="/tmp/kind-otel-integration-agent-e2e"
+CLUSTER_NAME="${CLUSTER_NAME:-otel-integration-agent-e2e}"
+KUBECONFIG_PATH="${KUBECONFIG_PATH:-/tmp/kind-${CLUSTER_NAME}}"
+KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.30.0}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 HELM_CHART_DIR="${PROJECT_ROOT}/otel-integration/k8s-helm"
 E2E_TEST_DIR="${PROJECT_ROOT}/otel-integration/k8s-helm/e2e-test"
@@ -47,6 +48,11 @@ COLLECTOR_CONTRIB_DIR=""
 CUSTOM_IMAGE_REPOSITORY="docker.io/library/otelcontribcol"
 CUSTOM_IMAGE_TAG="latest"
 HELM_RELEASE_NAME="otel-integration-agent-e2e"
+SERVICE_MONITOR_CRD_URL="${SERVICE_MONITOR_CRD_URL:-https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.88.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml}"
+SERVICE_MONITOR_FIXTURE_FILE="./e2e-test/testdata/manifests-e2e-servicemonitor-kubelet.yaml"
+SERVICE_MONITOR_NAME="e2e-kubelet"
+SERVICE_MONITOR_NAMESPACE="monitoring"
+SERVICE_MONITOR_TARGET_NAMESPACE="kube-system"
 
 # Test results tracking
 declare -a TEST_RESULTS
@@ -55,6 +61,25 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+# Test to run (empty means run all in workflow mode)
+RUN_SPECIFIC_TEST=""
+
+# Define test configurations globally
+# Format: test_name:values_files:wait_label:env_vars
+# NOTE: TestE2E_HeadSampling_Simple is skipped - test appears to be broken
+declare -a TEST_CONFIGS=(
+    "TestE2E_ClusterCollector_Metrics:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml:component=agent-collector:"
+    "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
+    "TestE2E_TargetAllocator_ServiceMonitorMetrics:./values.yaml ./e2e-test/testdata/values-e2e-target-allocator-servicemonitor.yaml:component=agent-collector:RUN_TARGET_ALLOCATOR_E2E=1"
+    # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
+    "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_FleetManagerSupervisor:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml:component=agent-collector:"
+    "TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml:component=agent-collector:"
+    "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
+)
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -62,13 +87,38 @@ while [[ $# -gt 0 ]]; do
             COLLECTOR_CONTRIB_DIR="$2"
             shift 2
             ;;
+        --test)
+            RUN_SPECIFIC_TEST="$2"
+            shift 2
+            ;;
+        --list-tests)
+            echo "Available tests:"
+            for config in "${TEST_CONFIGS[@]}"; do
+                IFS=':' read -r test_name _ _ _ <<< "$config"
+                echo "  - $test_name"
+            done
+            exit 0
+            ;;
         -h|--help)
-            echo "Usage: $0 [--collector-contrib PATH]"
+            echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  --collector-contrib PATH  Path to opentelemetry-collector-contrib repository"
             echo "                           If provided, will build and use a custom image"
+            echo "  --test TEST_NAME         Run a specific test instead of all tests"
+            echo "  --list-tests             List all available tests"
             echo "  -h, --help               Show this help message"
+            echo ""
+            echo "Available tests:"
+            for config in "${TEST_CONFIGS[@]}"; do
+                IFS=':' read -r test_name _ _ _ <<< "$config"
+                echo "  - $test_name"
+            done
+            echo ""
+            echo "Examples:"
+            echo "  $0                                              # Run all tests"
+            echo "  $0 --test TestE2E_TailSampling_Simple          # Run specific test"
+            echo "  $0 --list-tests                                # List available tests"
             exit 0
             ;;
         *)
@@ -125,7 +175,7 @@ setup_kind_cluster() {
         kind get kubeconfig --name "${CLUSTER_NAME}" > "${KUBECONFIG_PATH}"
     else
         log_info "Creating kind cluster '${CLUSTER_NAME}'..."
-        kind create cluster --name "${CLUSTER_NAME}" --image kindest/node:v1.24.12 || {
+        kind create cluster --name "${CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" || {
             if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
                 log_info "Cluster was created by another process, using existing cluster."
             else
@@ -273,6 +323,103 @@ uninstall_chart() {
     fi
 }
 
+install_servicemonitor_fixture() {
+    log_info "Installing ServiceMonitor fixture (without kube-prometheus-stack)..."
+    cd "${HELM_CHART_DIR}"
+
+    if [ ! -f "${HELM_CHART_DIR}/${SERVICE_MONITOR_FIXTURE_FILE}" ]; then
+        log_error "ServiceMonitor fixture file not found: ${HELM_CHART_DIR}/${SERVICE_MONITOR_FIXTURE_FILE}"
+        return 1
+    fi
+
+    if ! kubectl get crd servicemonitors.monitoring.coreos.com >/dev/null 2>&1; then
+        log_info "Installing ServiceMonitor CRD..."
+        if ! kubectl apply -f "${SERVICE_MONITOR_CRD_URL}"; then
+            log_error "Failed to install ServiceMonitor CRD from ${SERVICE_MONITOR_CRD_URL}"
+            return 1
+        fi
+    fi
+
+    if ! kubectl wait --for=condition=Established --timeout=180s crd/servicemonitors.monitoring.coreos.com >/dev/null 2>&1; then
+        log_warning "ServiceMonitor CRD was not established within timeout; continuing"
+    fi
+
+    if ! kubectl apply -f "${HELM_CHART_DIR}/${SERVICE_MONITOR_FIXTURE_FILE}"; then
+        log_error "Failed to apply ServiceMonitor fixture manifests"
+        return 1
+    fi
+
+    local tmp_endpoints
+    tmp_endpoints="$(mktemp /tmp/e2e-kubelet-endpoints.XXXXXX.yaml)"
+    {
+        cat <<EOF
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ${SERVICE_MONITOR_NAME}
+  namespace: ${SERVICE_MONITOR_TARGET_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: kubelet
+    k8s-app: kubelet
+    app.kubernetes.io/managed-by: otel-e2e
+subsets:
+- addresses:
+EOF
+        local node_count=0
+        while IFS= read -r node_name; do
+            [ -z "${node_name}" ] && continue
+            local node_ip
+            node_ip="$(kubectl get node "${node_name}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)"
+            [ -z "${node_ip}" ] && continue
+            node_count=$((node_count + 1))
+            cat <<EOF
+  - ip: ${node_ip}
+    nodeName: ${node_name}
+EOF
+        done < <(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+
+        if [ "${node_count}" -eq 0 ]; then
+            log_error "No node InternalIP addresses found to build kubelet Endpoints"
+            rm -f "${tmp_endpoints}"
+            return 1
+        fi
+
+        cat <<EOF
+  ports:
+  - name: https-metrics
+    port: 10250
+    protocol: TCP
+  - name: http-metrics
+    port: 10255
+    protocol: TCP
+  - name: cadvisor
+    port: 4194
+    protocol: TCP
+EOF
+    } > "${tmp_endpoints}"
+
+    if ! kubectl apply -f "${tmp_endpoints}"; then
+        log_error "Failed to apply kubelet Endpoints fixture"
+        rm -f "${tmp_endpoints}"
+        return 1
+    fi
+    rm -f "${tmp_endpoints}"
+
+    if ! kubectl -n "${SERVICE_MONITOR_NAMESPACE}" get servicemonitors.monitoring.coreos.com "${SERVICE_MONITOR_NAME}" >/dev/null 2>&1; then
+        log_error "ServiceMonitor ${SERVICE_MONITOR_NAMESPACE}/${SERVICE_MONITOR_NAME} was not created"
+        return 1
+    fi
+
+    log_success "ServiceMonitor fixture installed successfully"
+}
+
+uninstall_servicemonitor_fixture() {
+    log_info "Uninstalling ServiceMonitor fixture (if exists)..."
+    kubectl -n "${SERVICE_MONITOR_NAMESPACE}" delete servicemonitors.monitoring.coreos.com "${SERVICE_MONITOR_NAME}" --ignore-not-found >/dev/null 2>&1 || true
+    kubectl -n "${SERVICE_MONITOR_TARGET_NAMESPACE}" delete endpoints "${SERVICE_MONITOR_NAME}" --ignore-not-found >/dev/null 2>&1 || true
+    kubectl -n "${SERVICE_MONITOR_TARGET_NAMESPACE}" delete service "${SERVICE_MONITOR_NAME}" --ignore-not-found >/dev/null 2>&1 || true
+}
+
 # Build helm dependencies
 build_helm_dependencies() {
     log_info "Building helm dependencies..."
@@ -286,7 +433,15 @@ build_helm_dependencies() {
     if [ $BUILD_EXIT_CODE -ne 0 ]; then
         if echo "$BUILD_OUTPUT" | grep -q "out of sync"; then
             log_warning "Chart.lock is out of sync, updating dependencies..."
-            helm dependency update
+            set +e
+            UPDATE_OUTPUT=$(helm dependency update 2>&1)
+            UPDATE_EXIT_CODE=$?
+            set -e
+            if [ $UPDATE_EXIT_CODE -ne 0 ]; then
+                log_error "Failed to update helm dependencies"
+                echo "$UPDATE_OUTPUT"
+                exit 1
+            fi
             log_success "Dependencies updated successfully"
         else
             log_error "Failed to build helm dependencies"
@@ -296,6 +451,21 @@ build_helm_dependencies() {
     else
         log_success "Dependencies built successfully"
     fi
+
+    # Verify that required charts exist
+    if [ ! -d "charts" ]; then
+        log_error "Charts directory was not created"
+        exit 1
+    fi
+
+    # Check for opentelemetry-collector charts (required dependencies)
+    local collector_charts=$(ls charts/opentelemetry-collector-*.tgz 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$collector_charts" -eq 0 ]; then
+        log_error "No opentelemetry-collector charts found in charts/ directory"
+        log_error "This may indicate that local file paths in Chart.yaml are not resolving correctly"
+        exit 1
+    fi
+    log_debug "Found ${collector_charts} opentelemetry-collector chart(s)"
 }
 
 # Install helm chart with specific values
@@ -331,10 +501,31 @@ install_chart() {
         log_debug "Using custom image args: ${HELM_IMAGE_ARGS}"
     fi
 
+    # Verify charts directory exists before installation
+    if [ ! -d "charts" ]; then
+        log_error "Charts directory does not exist. Run helm dependency build first."
+        return 1
+    fi
+
     # Execute helm command
     log_debug "Executing: ${helm_cmd}"
-    if ! eval "$helm_cmd"; then
-        log_error "Failed to install helm chart"
+    set +e
+    INSTALL_OUTPUT=$(eval "$helm_cmd" 2>&1)
+    INSTALL_EXIT_CODE=$?
+    set -e
+
+    if [ $INSTALL_EXIT_CODE -ne 0 ]; then
+        log_error "Failed to install helm chart (exit code: ${INSTALL_EXIT_CODE})"
+        echo "$INSTALL_OUTPUT"
+        
+        # Provide helpful error messages for common issues
+        if echo "$INSTALL_OUTPUT" | grep -qi "chart.*not found\|dependency.*not found"; then
+            log_error "Chart dependencies may be missing. Try running: helm dependency build"
+        fi
+        if echo "$INSTALL_OUTPUT" | grep -qi "file://"; then
+            log_error "Local file path resolution issue detected. Check that file:// paths in Chart.yaml are correct."
+        fi
+        
         return 1
     fi
 
@@ -382,6 +573,10 @@ install_chart() {
 run_test() {
     local test_name="$1"
     local test_env_vars="$2"
+    local test_package="./..."
+    if [[ "$test_name" == TestE2E_FleetManagerSupervisor* ]]; then
+        test_package="./supervisor"
+    fi
 
     log_test "========================================"
     log_test "Running test: ${test_name}"
@@ -410,11 +605,11 @@ run_test() {
     kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
 
     # Run the test
-    log_info "Executing: go test -v -run='^${test_name}$' ./..."
+    log_info "Executing: go test -v -run='^${test_name}$' ${test_package}"
     local test_start_time=$(date +%s)
 
     # Run test and capture exit code properly (tee doesn't preserve exit codes)
-    go test -v -run="^${test_name}$" ./... 2>&1 | tee /tmp/test-${test_name}-output.log
+    go test -v -run="^${test_name}$" ${test_package} 2>&1 | tee /tmp/test-${test_name}-output.log
     local test_exit_code=${PIPESTATUS[0]}
 
     local test_end_time=$(date +%s)
@@ -423,13 +618,13 @@ run_test() {
     if [ $test_exit_code -eq 0 ]; then
         log_success "✓ Test ${test_name} PASSED (duration: ${test_duration}s)"
         TEST_RESULTS+=("PASS")
-        ((PASSED_TESTS++))
+        ((++PASSED_TESTS))
         return 0
     else
         log_error "✗ Test ${test_name} FAILED (duration: ${test_duration}s, exit code: ${test_exit_code})"
         TEST_RESULTS+=("FAIL")
         TEST_NAMES+=("$test_name")
-        ((FAILED_TESTS++))
+        ((++FAILED_TESTS))
 
         # Show test output
         log_error "Test output saved to: /tmp/test-${test_name}-output.log"
@@ -463,7 +658,8 @@ run_workflow_mode() {
     fi
 
     log_test "========================================"
-    log_test "Workflow Mode: go test -v -run='^TestE2E.*' ./..."
+    # Base package only; supervisor tests require different chart values and run below.
+    log_test "Workflow Mode (Base): go test -v -run='^TestE2E.*' ."
     log_test "========================================"
 
     export KUBECONFIG="${KUBECONFIG_PATH}"
@@ -475,7 +671,7 @@ run_workflow_mode() {
     (
         cd "${E2E_TEST_DIR}" || exit 1
         go clean -testcache
-        go test -v -run='^TestE2E.*' ./...
+        go test -v -run='^TestE2E.*' $(go list ./... | rg -v '/supervisor$')
     )
     local exit_code=$?
     local workflow_end_time
@@ -496,6 +692,86 @@ run_workflow_mode() {
     fi
 
     log_success "Workflow-mode tests PASSED (duration: ${workflow_duration}s)"
+
+    # Run supervisor-specific E2E tests with supervisor values
+    uninstall_chart
+    local supervisor_values="./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml"
+    if ! install_chart "$supervisor_values" "component=agent-collector"; then
+        log_error "Failed to install chart for supervisor workflow tests."
+        return 1
+    fi
+
+    log_test "========================================"
+    log_test "Workflow Mode (Supervisor): go test -v -run='^TestE2E_FleetManagerSupervisor(_ConfigMapReload)?$' ./supervisor"
+    log_test "========================================"
+
+    local supervisor_start_time
+    supervisor_start_time=$(date +%s)
+
+    (
+        cd "${E2E_TEST_DIR}" || exit 1
+        go clean -testcache
+        go test -v -run='^TestE2E_FleetManagerSupervisor(_ConfigMapReload)?$' ./supervisor
+    )
+    local supervisor_exit_code=$?
+    local supervisor_end_time
+    supervisor_end_time=$(date +%s)
+    local supervisor_duration=$((supervisor_end_time - supervisor_start_time))
+
+    if [ $supervisor_exit_code -ne 0 ]; then
+        log_error "Supervisor workflow tests FAILED (duration: ${supervisor_duration}s, exit code: ${supervisor_exit_code})"
+        log_warning "Collecting pod logs..."
+        for pod in $(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
+            log_error "===== Last 50 log lines for pod: $pod ====="
+            kubectl logs --tail=50 "$pod" 2>/dev/null || true
+            echo
+        done
+        log_error "Pod status:"
+        kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
+        return $supervisor_exit_code
+    fi
+
+    log_success "Supervisor workflow tests PASSED (duration: ${supervisor_duration}s)"
+
+    # Run non-minimal collector config test with dedicated values
+    uninstall_chart
+    local supervisor_non_min_values="./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml"
+    if ! install_chart "$supervisor_non_min_values" "component=agent-collector"; then
+        log_error "Failed to install chart for supervisor non-minimal workflow tests."
+        return 1
+    fi
+
+    log_test "========================================"
+    log_test "Workflow Mode (Supervisor Non-Minimal): go test -v -run='^TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig$' ./supervisor"
+    log_test "========================================"
+
+    local supervisor_non_min_start_time
+    supervisor_non_min_start_time=$(date +%s)
+
+    (
+        cd "${E2E_TEST_DIR}" || exit 1
+        go clean -testcache
+        go test -v -run='^TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig$' ./supervisor
+    )
+    local supervisor_non_min_exit_code=$?
+    local supervisor_non_min_end_time
+    supervisor_non_min_end_time=$(date +%s)
+    local supervisor_non_min_duration=$((supervisor_non_min_end_time - supervisor_non_min_start_time))
+
+    if [ $supervisor_non_min_exit_code -ne 0 ]; then
+        log_error "Supervisor non-minimal workflow tests FAILED (duration: ${supervisor_non_min_duration}s, exit code: ${supervisor_non_min_exit_code})"
+        log_warning "Collecting pod logs..."
+        for pod in $(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true); do
+            log_error "===== Last 50 log lines for pod: $pod ====="
+            kubectl logs --tail=50 "$pod" 2>/dev/null || true
+            echo
+        done
+        log_error "Pod status:"
+        kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
+        return $supervisor_non_min_exit_code
+    fi
+
+    log_success "Supervisor non-minimal workflow tests PASSED (duration: ${supervisor_non_min_duration}s)"
 
     return 0
 }
@@ -519,6 +795,80 @@ print_summary() {
     echo -e "${BLUE}========================================${NC}"
 }
 
+requires_servicemonitor_fixture() {
+    local test_name="$1"
+    case "$test_name" in
+        TestE2E_TargetAllocator_ServiceMonitorMetrics)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# Run specific test
+run_specific_test() {
+    local target_test="$1"
+    local found=0
+    
+    log_info "Looking for test: ${target_test}"
+    
+    for test_config in "${TEST_CONFIGS[@]}"; do
+        IFS=':' read -r test_name values_files wait_label env_vars <<< "$test_config"
+        
+        if [ "$test_name" = "$target_test" ]; then
+            found=1
+            log_test "========================================"
+            log_test "Running: ${test_name}"
+            log_test "========================================"
+            
+            # Setup environment
+            uninstall_chart
+            build_helm_dependencies
+
+            local needs_servicemonitor_fixture=0
+            if requires_servicemonitor_fixture "$test_name"; then
+                needs_servicemonitor_fixture=1
+                uninstall_servicemonitor_fixture
+                if ! install_servicemonitor_fixture; then
+                    log_error "Failed to install ServiceMonitor fixture for ${test_name}"
+                    return 1
+                fi
+            fi
+            
+            # Install chart with test-specific values
+            if ! install_chart "$values_files" "$wait_label"; then
+                log_error "Failed to install chart for ${test_name}"
+                if [ $needs_servicemonitor_fixture -eq 1 ]; then
+                    uninstall_servicemonitor_fixture || true
+                fi
+                return 1
+            fi
+            
+            # Run the test
+            run_test "$test_name" "$env_vars"
+            local test_exit_code=$?
+
+            if [ $needs_servicemonitor_fixture -eq 1 ]; then
+                uninstall_servicemonitor_fixture || true
+            fi
+
+            return $test_exit_code
+        fi
+    done
+    
+    if [ $found -eq 0 ]; then
+        log_error "Test '${target_test}' not found"
+        log_info "Available tests:"
+        for config in "${TEST_CONFIGS[@]}"; do
+            IFS=':' read -r test_name _ _ _ <<< "$config"
+            echo "  - $test_name"
+        done
+        return 1
+    fi
+}
+
 # Main execution
 main() {
     check_prerequisites
@@ -528,64 +878,15 @@ main() {
     setup_helm_repos
     create_secret
 
+    # Run specific test if requested
+    if [ -n "$RUN_SPECIFIC_TEST" ]; then
+        run_specific_test "$RUN_SPECIFIC_TEST"
+        return $?
+    fi
+
+    # Otherwise run workflow mode (all tests)
     run_workflow_mode
     return $?
-
-    # Define test configurations
-    # Format: test_name:values_files:wait_label:env_vars
-    # NOTE: TestE2E_HeadSampling_Simple is skipped - test appears to be broken
-    # (fails with "expected no traces with head sampling at 0%, but some were received")
-    # even when RUN_HEAD_SAMPLING_E2E=1 is set. In our CI we are skipping it.
-    declare -a test_configs=(
-        "TestE2E_ClusterCollector_Metrics:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml:component=agent-collector:"
-        "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
-        # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
-        "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-        "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-        "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-    )
-
-    TOTAL_TESTS=${#test_configs[@]}
-
-    # Run each test
-    local test_num=0
-    for test_config in "${test_configs[@]}"; do
-        ((test_num++))
-        IFS=':' read -r test_name values_files wait_label env_vars <<< "$test_config"
-
-        log_test "========================================"
-        log_test "Test ${test_num}/${TOTAL_TESTS}: ${test_name}"
-        log_test "========================================"
-
-        # Uninstall previous chart
-        uninstall_chart
-
-        # Build dependencies (only needed once, but safe to run multiple times)
-        build_helm_dependencies
-
-        # Install chart with test-specific values
-        if ! install_chart "$values_files" "$wait_label"; then
-            log_error "Failed to install chart for ${test_name}, skipping test"
-            TEST_RESULTS+=("SKIP")
-            TEST_NAMES+=("$test_name")
-            ((FAILED_TESTS++))
-            continue
-        fi
-
-        # Run the test
-        run_test "$test_name" "$env_vars"
-        local test_exit_code=$?
-
-        log_debug "Test ${test_name} completed with exit code: ${test_exit_code}"
-    done
-
-    # Print summary
-    print_summary
-
-    # Exit with error if any tests failed
-    if [ ${FAILED_TESTS} -gt 0 ]; then
-        exit 1
-    fi
 }
 
 # Run main function

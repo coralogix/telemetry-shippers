@@ -21,9 +21,7 @@ jobs:
       - name: Extract image version
         id: New_version
         run: |
-          Chart_version=$(grep -E '^[[:space:]]*tag:[[:space:]]*v[0-9.]+' otel-ecs-ec2/values.yaml \
-            | head -n1 \
-            | sed -E 's/^[[:space:]]*tag:[[:space:]]*v([0-9.]+)/\1/')
+          Chart_version=$(yq -r '.opentelemetry-agent.image.tag | sub("^v"; "")' otel-ecs-ec2/values.yaml)
   
           if [ -z "$Chart_version" ]; then
             echo "Failed to extract collector version"
@@ -89,6 +87,8 @@ jobs:
           
           git checkout -b "$branch"
           git pull origin master
+          git fetch origin
+          git push origin $branch
           
           base_dir="integrations/otel-agent-aws-ecs-ec2/v${last_revision}"
           new_dir="integrations/otel-agent-aws-ecs-ec2/v${new_revision}"
@@ -111,8 +111,66 @@ jobs:
           EOF
           
           git add .
-          git commit -m "Add ECS-EC2 collector ${new_revision}"
-          git push origin "$branch"
+          
+          merged_pr_from_telemetry_shipper=$(curl -s \
+          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+          
+          if [ -z "$merged_pr_from_telemetry_shipper" ]; then
+            merged_pr_from_telemetry_shipper="Add ECS-EC2 collector ${new_revision}"
+          fi
+          
+          echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Commit change
+        if: env.exists == 'false'
+        uses: planetscale/ghcommit-action@v0.1.43
+        with:
+          commit_message: ${{env.commit_message}}
+          repo: coralogix/integration-definitions
+          branch: ${{ env.branch }}
+          file_pattern: '*.yaml *.md'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Fetch source PR metadata (latest merged/closed)
+        if: env.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          SOURCE_REPO="coralogix/telemetry-shippers"
+
+          pr_title=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].title // empty')
+
+          pr_url=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].html_url // empty')
+
+          pr_body=$(curl -s "https://api.github.com/repos/${SOURCE_REPO}/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].body // empty')
+
+          if [ -z "${pr_title}" ]; then
+            pr_title="ECS-EC2: add collector ${new_revision}"
+          fi
+          
+          if [ -z "$pr_body" ]; then
+            pr_body="This pull request syncs the changes from the telemetry-shippers repo to this repo. link to the original PR $pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
+          else
+            pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
+          fi
+          
+          {
+            echo "PR_TITLE<<EOF"
+            echo "${pr_title}"
+                    echo "EOF"
+            echo "PR_BODY<<EOF"
+            echo "${pr_body}"
+                    echo "EOF"
+          } >> "$GITHUB_ENV"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Create PR
         if: env.exists == 'false'
@@ -120,8 +178,45 @@ jobs:
           gh pr create \
             --base master \
             --head "$branch" \
-            --title "ECS-EC2: add collector ${new_revision}" \
-            --body "Automated sync for ECS-EC2 collector image v${{ needs.Get_version.outputs.Chart_version }}"
+            --title "${PR_TITLE}" \
+            --body "${PR_BODY}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Wait for PR checks
+        if: env.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          check_status() {
+            gh pr checks "$branch" --json state --jq 'all(.[]; .state == "SUCCESS")'
+          }
+
+          max_wait_time=$((10 * 60))
+          elapsed_time=0
+          sleep_interval=10
+
+          echo "Waiting for all status checks to pass for $branch..."
+          sleep 5
+
+          while true; do
+            status=$(check_status || echo "false")
+
+            if [ "$status" = "true" ]; then
+              echo "All status checks passed."
+              break
+            fi
+
+            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+              echo "Timeout reached: Status checks did not pass within 10 minutes."
+              gh pr checks "$branch" || true
+              exit 1
+            fi
+
+            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+            sleep "$sleep_interval"
+            elapsed_time=$((elapsed_time + sleep_interval))
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 

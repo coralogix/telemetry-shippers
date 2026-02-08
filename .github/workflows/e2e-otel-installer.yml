@@ -32,6 +32,12 @@ jobs:
         
       - name: Verify health check
         run: curl -sf http://127.0.0.1:13133/ || true
+      
+      - name: Verify capabilities NOT set (no discovery/process metrics)
+        run: |
+          if getcap /usr/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace"; then
+            echo "Capabilities should not be set without discovery/process metrics" && exit 1
+          fi
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
@@ -52,16 +58,29 @@ jobs:
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 
   standalone-linux-config:
-    name: Standalone - Linux Custom Config
+    name: Standalone - Linux Custom Config with Discovery
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Create test config with unique marker
+      - name: Create test config with discovery enabled
         run: |
           printf '%s\n' \
             '# CUSTOM_CONFIG_MARKER_E2E_TEST' \
+            'extensions:' \
+            '  host_observer:' \
+            '    refresh_interval: 10s' \
+            '  health_check:' \
+            '    endpoint: 127.0.0.1:13133' \
             'receivers:' \
+            '  receiver_creator/discovery:' \
+            '    watch_observers:' \
+            '      - host_observer' \
+            '    receivers:' \
+            '      nginx:' \
+            '        rule: type == "hostport" and command matches "(?i)nginx"' \
+            '        config:' \
+            '          endpoint: "http://`endpoint`/nginx_status"' \
             '  otlp:' \
             '    protocols:' \
             '      grpc:' \
@@ -69,6 +88,64 @@ jobs:
             'exporters:' \
             '  debug:' \
             '    verbosity: basic' \
+            'service:' \
+            '  extensions: [host_observer, health_check]' \
+            '  pipelines:' \
+            '    metrics:' \
+            '      receivers: [receiver_creator/discovery, otlp]' \
+            '      exporters: [debug]' \
+            > /tmp/test-config.yaml
+          
+      - name: Install with discovery config
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
+        
+      - name: Verify custom config loaded
+        run: |
+          sudo cat /etc/otelcol-contrib/config.yaml
+          sudo grep "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
+          sudo grep "host_observer" /etc/otelcol-contrib/config.yaml
+      
+      - name: Verify discovery.env file created
+        run: |
+          sudo test -f /etc/otelcol-contrib/discovery.env
+          sudo cat /etc/otelcol-contrib/discovery.env
+          sudo grep -q "POSTGRES" /etc/otelcol-contrib/discovery.env || true
+      
+      - name: Verify capabilities auto-enabled
+        run: |
+          getcap /usr/bin/otelcol-contrib | grep -q "cap_sys_ptrace" || (echo "CAP_SYS_PTRACE not set" && exit 1)
+          getcap /usr/bin/otelcol-contrib | grep -q "cap_dac_read_search" || (echo "CAP_DAC_READ_SEARCH not set" && exit 1)
+        
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+
+  standalone-linux-upgrade-with-config:
+    name: Standalone - Linux Upgrade with New Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install (default version with default config)
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
+        
+      - name: Verify default config exists
+        run: |
+          sudo cat /etc/otelcol-contrib/config.yaml
+          # Package default has otlp receiver
+          sudo grep "otlp:" /etc/otelcol-contrib/config.yaml
+        
+      - name: Create new custom config with marker
+        run: |
+          printf '%s\n' \
+            '# UPGRADED_CONFIG_MARKER_E2E_TEST' \
+            'receivers:' \
+            '  otlp:' \
+            '    protocols:' \
+            '      grpc:' \
+            '        endpoint: 0.0.0.0:4317' \
+            'exporters:' \
+            '  debug:' \
+            '    verbosity: detailed' \
             'extensions:' \
             '  health_check:' \
             '    endpoint: 127.0.0.1:13133' \
@@ -78,39 +155,18 @@ jobs:
             '    logs:' \
             '      receivers: [otlp]' \
             '      exporters: [debug]' \
-            > /tmp/test-config.yaml
-          
-      - name: Install with custom config
-        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/test-config.yaml
+            > /tmp/new-config.yaml
         
-      - name: Verify custom config loaded
+      - name: Upgrade with new config (auto-detects and replaces)
+        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -c /tmp/new-config.yaml
+        
+      - name: Verify new config loaded
         run: |
           sudo cat /etc/otelcol-contrib/config.yaml
-          sudo grep "CUSTOM_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
-          sudo grep "otlp:" /etc/otelcol-contrib/config.yaml
+          sudo grep "UPGRADED_CONFIG_MARKER_E2E_TEST" /etc/otelcol-contrib/config.yaml
+          sudo grep "verbosity: detailed" /etc/otelcol-contrib/config.yaml
         
-      - name: Uninstall
-        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
-
-  standalone-linux-upgrade:
-    name: Standalone - Linux Upgrade
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install (default version)
-        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh
-        
-      - name: Verify service running
-        run: sudo systemctl is-active otelcol-contrib
-        
-      - name: Get installed version
-        run: /usr/bin/otelcol-contrib --version
-        
-      - name: Run upgrade (same version - tests upgrade mechanism)
-        run: sudo CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/standalone/coralogix-otel-collector.sh -u
-        
-      - name: Verify service still running after upgrade
+      - name: Verify service still running
         run: sudo systemctl is-active otelcol-contrib
         
       - name: Uninstall
@@ -127,6 +183,16 @@ jobs:
         
       - name: Verify supervisor running
         run: sudo systemctl is-active opampsupervisor
+      
+      - name: Verify capabilities auto-enabled in supervisor mode
+        run: |
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_sys_ptrace" || (echo "CAP_SYS_PTRACE not set" && exit 1)
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_dac_read_search" || (echo "CAP_DAC_READ_SEARCH not set" && exit 1)
+      
+      - name: Verify opampsupervisor.conf exists
+        run: |
+          sudo test -f /etc/opampsupervisor/opampsupervisor.conf
+          sudo cat /etc/opampsupervisor/opampsupervisor.conf
         
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
@@ -145,7 +211,26 @@ jobs:
         
       - name: Verify supervisor running
         run: sudo systemctl is-active opampsupervisor
+      
+      - name: Verify capabilities auto-enabled in supervisor mode
+        run: |
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_sys_ptrace" || (echo "CAP_SYS_PTRACE not set" && exit 1)
+          getcap /usr/local/bin/otelcol-contrib | grep -q "cap_dac_read_search" || (echo "CAP_DAC_READ_SEARCH not set" && exit 1)
         
+      - name: Uninstall
+        run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
+      
+      - name: Install supervisor with --disable-capabilities
+        run: |
+          sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
+            bash ./otel-installer/standalone/coralogix-otel-collector.sh -s --disable-capabilities
+      
+      - name: Verify capabilities NOT set with --disable-capabilities in supervisor mode
+        run: |
+          if getcap /usr/local/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace"; then
+            echo "Capabilities should not be set with --disable-capabilities flag in supervisor mode" && exit 1
+          fi
+      
       - name: Uninstall
         run: sudo bash ./otel-installer/standalone/coralogix-otel-collector.sh --uninstall
 
@@ -303,3 +388,153 @@ jobs:
           
       - name: Uninstall
         run: bash ./otel-installer/docker/docker-install.sh --uninstall
+
+  #############################################
+  # Windows Script Tests
+  #############################################
+
+  standalone-windows-install:
+    name: Standalone - Windows Install
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install (default)
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1
+        
+      - name: Verify service running
+        shell: pwsh
+        run: |
+          if ((Get-Service -Name "otelcol-contrib").Status -ne 'Running') { exit 1 }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-version:
+    name: Standalone - Windows Specific Version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install specific version
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Version 0.140.1
+        
+      - name: Verify version
+        shell: pwsh
+        run: |
+          $versionOutput = & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version
+          $versionMatch = $versionOutput | Select-String -Pattern "0.140.1" -Quiet
+          if (-not $versionMatch) {
+            Write-Error "Version mismatch: Expected 0.140.1, but got: $versionOutput"
+            exit 1
+          }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-config:
+    name: Standalone - Windows Custom Config
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create test config with unique marker
+        shell: pwsh
+        run: |
+          @"
+          # CUSTOM_CONFIG_MARKER_E2E_TEST
+          receivers:
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: 0.0.0.0:4317
+          exporters:
+            debug:
+              verbosity: basic
+          extensions:
+            health_check:
+              endpoint: 127.0.0.1:13133
+          service:
+            extensions: [health_check]
+            pipelines:
+              logs:
+                receivers: [otlp]
+                exporters: [debug]
+          "@ | Out-File -FilePath "$env:TEMP\test-config.yaml" -Encoding utf8
+          
+      - name: Install with custom config
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Config "$env:TEMP\test-config.yaml"
+        
+      - name: Verify custom config loaded
+        shell: pwsh
+        run: |
+          $configPath = "${env:ProgramData}\OpenTelemetry\Collector\config.yaml"
+          Get-Content $configPath
+          if (-not (Select-String -Path $configPath -Pattern "CUSTOM_CONFIG_MARKER_E2E_TEST" -Quiet)) {
+            Write-Error "Custom config marker not found in $configPath"
+            exit 1
+          }
+          if (-not (Select-String -Path $configPath -Pattern "otlp:" -Quiet)) {
+            Write-Error "otlp: pattern not found in $configPath"
+            exit 1
+          }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-supervisor:
+    name: Standalone - Windows Supervisor Mode
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install supervisor mode
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          $env:CORALOGIX_DOMAIN = "${{ env.CORALOGIX_DOMAIN }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Supervisor
+        
+      - name: Verify supervisor running
+        shell: pwsh
+        run: |
+          if ((Get-Service -Name "opampsupervisor").Status -ne 'Running') { exit 1 }
+        
+      - name: Uninstall
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+  standalone-windows-purge:
+    name: Standalone - Windows Uninstall with Purge
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1
+        
+      - name: Uninstall with purge
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall -Purge
+        
+      - name: Verify config removed
+        shell: pwsh
+        run: |
+          if (Test-Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml") {
+            Write-Host "Config still exists!" ; exit 1
+          }

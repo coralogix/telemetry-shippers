@@ -1,8 +1,11 @@
 package e2e
 
 var expectedResourceMetricsSchemaURL = map[string]bool{
-	"https://opentelemetry.io/schemas/1.9.0":  false,
+	"":                                       false,
+	"https://opentelemetry.io/schemas/1.6.1": false,
+	"https://opentelemetry.io/schemas/1.9.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
+	"https://opentelemetry.io/schemas/1.38.0": false,
 }
 
 const expectedScopeVersion = ""
@@ -371,6 +374,10 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 var expectedMetrics map[string]bool = map[string]bool{
 	"db.calls":                                                  true,
 	"db.duration":                                               true,
+	"compact.calls":                                             true,
+	"compact.duration":                                          true,
+	"db_compact.calls":                                          true,
+	"db_compact.duration":                                       true,
 	"container.cpu.time":                                        false,
 	"container.cpu.utilization":                                 false,
 	"container.filesystem.available":                            false,
@@ -417,7 +424,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"k8s.pod.network.io":                                        false,
 	"otelcol_exporter_queue_capacity":                           false,
 	"otelcol_exporter_queue_size":                               false,
-	"otelcol_exporter_queue_batch_send_size":                    false,
 	"otelcol_exporter_send_failed_log_records":                  false,
 	"otelcol_exporter_send_failed_metric_points":                false,
 	"otelcol_exporter_send_failed_spans":                        false,
@@ -511,6 +517,10 @@ var optionalExpectedMetrics = map[string]bool{
 	"otelcol_deltatocumulative_datapoints":            false,
 	"delta_to_cumulative_e2e_counter":                 false,
 	"otelcol_processor_batch_batch_size_trigger_send": false,
+	// Exporter queue metrics are version/config dependent and may not be emitted.
+	"otelcol_exporter_queue_batch_send_size": false,
+	// Added in newer collector versions (0.145.0+): internal k8s pod association metric.
+	"otelcol_otelcol.k8s.pod.association": false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
@@ -523,6 +533,7 @@ var expectedTracesSchemaURL = map[string]bool{
 var expectedLogsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.6.1":  false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
+	"https://opentelemetry.io/schemas/1.38.0": false,
 }
 
 var expectedHostEntityAttributes = map[string]expectedValue{

@@ -4,12 +4,11 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.3"
+  version: "0.0.6"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
   enabled: true
-# provider: "aws | azure | gcp | on-prem | "" (empty = all"
   distribution: "standalone"
   presets:
     metadata:
@@ -47,6 +46,21 @@ opentelemetry-agent:
       enabled: true
       # Enables dynamic subsystem naming based on _SYSTEMD_UNIT or SYSLOG_IDENTIFIER
       dynamicSubsystemName: true
+      # units:
+      #   - docker.service
+      #   - sshd.service
+      # matches:
+      #   - _SYSTEMD_UNIT: nginx.service
+      #   - PRIORITY: "5"
+    
+    # Collects systemd unit state metrics
+    systemdReceiver:
+      enabled: true
+      collectionInterval: "30s"
+      scope: system  # system or user
+      # units:
+      #   - docker.service
+      #   - sshd.service
  
     collectorMetrics:
       enabled: true
@@ -54,6 +68,10 @@ opentelemetry-agent:
     
     otlpReceiver:
       enabled: true
+    
+    # Receives StatsD metrics on UDP port 8125
+    statsdReceiver:
+      enabled: false
     
     spanMetrics:
       enabled: true

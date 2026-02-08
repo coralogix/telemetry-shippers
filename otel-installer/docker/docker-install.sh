@@ -34,7 +34,7 @@ SUPERVISOR_BASE_CONFIG_PATH=""
 DETACHED=true
 
 MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
-LISTEN_INTERFACE="${LISTEN_INTERFACE:-127.0.0.1}"
+USER_SET_MEMORY_LIMIT=false
 
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
 
@@ -98,6 +98,12 @@ Options:
     --supervisor-version <ver>  Supervisor image version (supervisor mode)
     -c, --config <path>         Path to custom configuration file
     -s, --supervisor            Use supervisor mode (requires CORALOGIX_DOMAIN)
+    --memory-limit <MiB>        Total memory in MiB to allocate to the collector (default: 512)
+                                Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
+                                (ignored in supervisor mode)
+    --supervisor-base-config <path>  Path to base collector config for supervisor mode
+                                      Merged with remote config from Fleet Manager
+                                      (supervisor mode only)
     -f, --foreground            Run in foreground (default: detached)
     --uninstall                 Stop and remove the container
     -h, --help                  Show this help message
@@ -112,9 +118,7 @@ Environment Variables (Optional):
     HEALTH_CHECK_PORT       Host port for health check (default: 13133)
     MEMORY_LIMIT_MIB        Memory limit in MiB (default: 512)
                             Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
-    LISTEN_INTERFACE        Network interface for receivers (default: 127.0.0.1)
-                            Config must reference: \${env:OTEL_LISTEN_INTERFACE}
-                            Use 0.0.0.0 for all interfaces (gateway mode)
+                            (can also be set via --memory-limit flag)
 
 Examples:
     # Basic installation with custom config
@@ -124,7 +128,7 @@ Examples:
     CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" $0 -s
 
     # Gateway mode with custom memory and listen interface
-    MEMORY_LIMIT_MIB=2048 LISTEN_INTERFACE=0.0.0.0 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
+    CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --memory-limit 2048
 
     # Custom ports
     OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
@@ -154,19 +158,38 @@ parse_args() {
                 shift 2
                 ;;
             -c|--config)
+                if [ "$SUPERVISOR_MODE" = true ]; then
+                    fail "--config cannot be used with --supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
+                fi
+                if [ -f "$2" ]; then
                 CUSTOM_CONFIG_PATH="$(realpath "$2")"
+                else
+                    fail "Config file not found: $2"
+                fi
                 shift 2
                 ;;
             -s|--supervisor)
+                if [ -n "$CUSTOM_CONFIG_PATH" ]; then
+                    fail "--supervisor cannot be used with --config. Supervisor mode uses default config and receives configuration from the OpAMP server."
+                fi
                 SUPERVISOR_MODE=true
                 shift
+                ;;
+            --memory-limit)
+                MEMORY_LIMIT_MIB="$2"
+                USER_SET_MEMORY_LIMIT=true
+                shift 2
                 ;;
             -f|--foreground)
                 DETACHED=false
                 shift
                 ;;
             --supervisor-base-config)
+                if [ -f "$2" ]; then
                 SUPERVISOR_BASE_CONFIG_PATH="$(realpath "$2")"
+                else
+                    fail "Supervisor base config file not found: $2"
+                fi
                 shift 2
                 ;;
             --stop|--uninstall)
@@ -193,6 +216,30 @@ check_docker() {
     
     if ! docker info >/dev/null 2>&1; then
         fail "Docker daemon is not running or you don't have permission to access it."
+    fi
+}
+
+validate_config_env_vars() {
+    local config_file="$1"
+    
+    if [ "$SUPERVISOR_MODE" = true ]; then
+        if [ "$USER_SET_MEMORY_LIMIT" = true ]; then
+            warn "Note: --memory-limit is ignored in supervisor mode"
+            warn "Configuration is managed by the OpAMP server"
+        fi
+        return 0
+    fi
+    
+    if [ ! -f "$config_file" ] || [ ! -r "$config_file" ]; then
+        return 0
+    fi
+    
+    if [ "$USER_SET_MEMORY_LIMIT" = true ]; then
+        if ! grep -q "OTEL_MEMORY_LIMIT_MIB" "$config_file"; then
+            warn "You specified --memory-limit but the config doesn't reference \${env:OTEL_MEMORY_LIMIT_MIB}"
+            warn "The --memory-limit flag will have no effect."
+            warn "Update your config to use: limit_mib: \${env:OTEL_MEMORY_LIMIT_MIB}"
+        fi
     fi
 }
 
@@ -242,7 +289,7 @@ exporters:
 
 extensions:
   health_check:
-    endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
+    endpoint: 0.0.0.0:13133
 
 processors:
   memory_limiter:
@@ -303,7 +350,6 @@ run_regular_mode() {
         --restart unless-stopped
         -e "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
         -e "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
-        -e "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
         -p "${OTLP_GRPC_PORT}:4317"
         -p "${OTLP_HTTP_PORT}:4318"
@@ -365,7 +411,6 @@ agent:
   env:
     CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
     OTEL_MEMORY_LIMIT_MIB: "\${env:OTEL_MEMORY_LIMIT_MIB}"
-    OTEL_LISTEN_INTERFACE: "\${env:OTEL_LISTEN_INTERFACE}"
 
 storage:
   directory: /etc/otelcol-contrib/supervisor-data/
@@ -409,7 +454,6 @@ run_supervisor_mode() {
         --restart unless-stopped
         -e "CORALOGIX_PRIVATE_KEY=${CORALOGIX_PRIVATE_KEY}"
         -e "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
-        -e "OTEL_LISTEN_INTERFACE=${LISTEN_INTERFACE}"
         -v "${CONFIG_HOST_DIR}/supervisor.yaml:${CONFIG_CONTAINER_DIR}/supervisor.yaml:ro"
         -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
         -p "${OTLP_GRPC_PORT}:4317"
@@ -493,7 +537,7 @@ main() {
             fail "CORALOGIX_DOMAIN is required for supervisor mode"
         fi
         if [ -n "$CUSTOM_CONFIG_PATH" ]; then
-            warn "--config is ignored in supervisor mode (config is managed remotely)"
+            fail "--config cannot be used with --supervisor. Supervisor mode uses default config and receives configuration from the OpAMP server."
         fi
         if [ -n "$COLLECTOR_VERSION" ]; then
             warn "--collector-version is ignored in supervisor mode (collector is bundled in supervisor image)"
@@ -521,6 +565,13 @@ main() {
             fail "Supervisor base config cannot contain 'opamp' extension. The supervisor manages the OpAMP connection.
 Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH"
         fi
+    fi
+    
+    # Validate config references env vars if user set them
+    if [ -n "$CUSTOM_CONFIG_PATH" ]; then
+        validate_config_env_vars "$CUSTOM_CONFIG_PATH"
+    elif [ "$SUPERVISOR_MODE" = false ] && [ -f "${CONFIG_HOST_DIR}/config.yaml" ]; then
+        validate_config_env_vars "${CONFIG_HOST_DIR}/config.yaml"
     fi
     
     check_docker

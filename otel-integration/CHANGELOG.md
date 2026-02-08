@@ -2,6 +2,61 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.272 / 2026-02-06
+- [CHORE] Update Target Allocator image to v0.144.0.
+- [Feat] Add target allocator e2e test that validates ServiceMonitor metrics ingestion.
+
+### v0.0.271 / 2026-02-05
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.0 (collector image v0.145.0).
+- [Fix] Multiline stacktrace parsing fix (via upstream collector update).
+
+### v0.0.270 / 2026-02-04
+- [Fix] Use `collection_interval` for prometheus annotation discovery preset receivers (via base chart update).
+
+### v0.0.269 / 2026-02-03
+- [Feat] Add an option to disable the collector metrics Prometheus receiver and transform while keeping telemetry readers enabled.
+- [Feat] Add prometheus annotation discovery preset for cluster-collector with receiver_creator support for pod and service rules.
+- [Change] Enable `collectorMetrics` for the eBPF profiler with `disablePrometheusReceiver: true` by default.
+- [Chore] Bump chart dependency to opentelemetry-collector 0.128.18
+
+### v0.0.268 / 2026-01-22
+- [Fix] Use the configured `from` field for profiles k8sattributes service annotations.
+- [Fix] Fix `deltaToCumulative` preset producing `null` config when no options are set.
+- [Fix] Fix `reduceResourceAttributes` preset to only apply custom denylist when no provider is set (backward compatibility mode).
+
+### v0.0.267 / 2026-01-20
+- [Fix] Use `instrumentation_scope.name` to detect spanmetrics connector metrics when mapping `otel.status_code` back to `status.code`.
+- [Feat] Add Azure-specific transform to set `host.name` from `azure.vm.name` when `host.name` is empty, applied to all pipelines including `logs/resource_catalog` when provider is Azure.
+
+### v0.0.266 / 2026-01-15
+- [Fix] Remove unneeded `status_code="STATUS_CODE_UNSET"` label from non-span metrics such as hostmetrics or kubeletmetrics.
+
+### v0.0.265 / 2026-01-15
+- [Feat] Add cloud tags collection for Infra Explore by enabling `ec2.tags` and `azure.tags` in the `resourcedetection/entity` processor.
+- [Feat] Add Azure cloud support for Infra Explore by mapping `azure.vm.size` to `host.type` in the host entity events pipeline when provider is Azure.
+
+### v0.0.264 / 2026-01-13
+- [Fix] Apply `presets.spanMetrics.histogramBuckets` value to `dbMetrics`.
+
+### v0.0.263 / 2026-01-12
+- [Feat] Add collector-based eBPF profiler configuration and docs, including OTLP header support.
+
+### v0.0.262 / 2026-01-12
+- [Change] Bump OBI image to v0.4.1
+
+### v0.0.261 / 2026-01-08
+- [Feature] Ensure new behaviors from span metrics connector, defined behind +connector.spanmetrics.useSecondAsDefaultMetricsUnit, +connector.spanmetrics.excludeResourceMetrics, +spanmetrics.statusCodeConvention.useOtelPrefix feature gates don't break backward compatibility.
+
+1. Added add_resource_attributes: true to maintain resource attributes in span metrics
+2. Added histogram.unit: ms to maintain millisecond units for duration metrics
+3. Added OTTL transformations to convert new otel.status_code back to old status.code format with STATUS_CODE_* values
+
+- [Feat] Add an `ebpfProfiler` preset that switches to the otelcol-ebpf-profiler distribution, creates a profiles-only pipeline, and wires the profiling receiver. Allows to configure intervals, thresholds, off-CPU, verbosity, tracers.
+- [Feat] Add a `profilesK8sAttributes` preset to enrich profiles with Kubernetes attributes and map service.name from labels/metadata.
+- [Feat] Add an `otlpExporter` preset to configure an OTLP endpoint with optional headers, plus pipeline selection.
+
+- [Fix] Add missing field service.loadBalancerClass to support setups with AWS ALB Controller
+
 ### v0.0.260 / 2026-01-06
 - [Fix] Remove unused `k8s_observer` extension from `kubernetesExtraMetrics` preset to avoid unnecessary API server load.
 

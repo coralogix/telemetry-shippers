@@ -1,0 +1,17 @@
+# Overrides for Supervisor-based fleet manager E2E testing.
+
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+  clusterName: "global-cluster"
+
+opentelemetry-agent:
+  presets:
+    fleetManagement:
+      enabled: true
+      supervisor:
+        enabled: true
+        minimalCollectorConfig: true
+      clusterName: "supervisor-cluster"
+      customAttributes:
+        e2e.custom.attr: "supervisor"

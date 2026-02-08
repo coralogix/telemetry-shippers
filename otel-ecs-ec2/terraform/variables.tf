@@ -33,6 +33,12 @@ variable "max_size" {
   default     = 2
 }
 
+variable "ecs_ami_ssm_parameter" {
+  description = "SSM parameter path for the ECS-optimized AMI"
+  type        = string
+  default     = "/aws/service/ecs/optimized-ami/amazon-linux-2/kernel-5.10/recommended"
+}
+
 variable "tags" {
   description = "Base tags applied to supported resources"
   type        = map(string)
