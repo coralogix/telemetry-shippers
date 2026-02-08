@@ -2,6 +2,10 @@
 
 ## otel-linux-standalone
 
+### v0.0.7 / 2026-02-08
+
+- [Fix] Remove debug exporter from pipeline configs
+
 ### v0.0.6 / 2026-02-03
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.128.18

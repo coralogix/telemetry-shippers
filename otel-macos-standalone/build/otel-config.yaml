@@ -518,10 +518,9 @@ receivers:
     config:
       scrape_configs:
       - job_name: opentelemetry-collector
-        scrape_interval: '30s'
         static_configs:
         - targets:
-          - 0.0.0.0:8888
+          - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
 service:
   extensions:
   - health_check
@@ -531,7 +530,6 @@ service:
   pipelines:
     logs:
       exporters:
-      - debug
       - coralogix
       processors:
       - memory_limiter
@@ -554,7 +552,6 @@ service:
       - hostmetrics
     metrics:
       exporters:
-      - debug
       - coralogix
       processors:
       - memory_limiter
@@ -590,7 +587,6 @@ service:
       - spanmetrics/db_compact
     traces:
       exporters:
-      - debug
       - spanmetrics
       - forward/db
       - forward/compact
@@ -643,7 +639,7 @@ service:
       - pull:
           exporter:
             prometheus:
-              host: 0.0.0.0
+              host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
               port: 8888
     resource:
       service.name: opentelemetry-collector

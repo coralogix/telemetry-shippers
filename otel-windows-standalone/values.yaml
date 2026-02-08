@@ -1,5 +1,5 @@
 global:
-  domain: "eu2.coralogix.com"
+  domain: "coralogix.com"
   defaultApplicationName: "otel"
   defaultSubsystemName: "windows"
   logLevel: "info"
@@ -54,12 +54,15 @@ opentelemetry-agent:
 
     iisReceiver:
       enabled: true
-      collectionInterval: "10s"
 
     iisLogs:
       enabled: true
       # include:
       #   - "C:\\inetpub\\logs\\LogFiles\\W3SVC*\\*.log"
+      # Store checkpoints to resume reading after collector restart
+      storeCheckpoints: true
+      # Directory to store checkpoint files (must be writable by collector)
+      storagePath: "C:\\ProgramData\\OpenTelemetry\\Collector\\storage"
 
     # Disabled presets
     spanMetrics:
@@ -83,63 +86,44 @@ opentelemetry-agent:
   config:
     extensions:
       health_check:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:13133
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
       file_storage:
         directory: "C:\\ProgramData\\OpenTelemetry\\Collector\\storage"
-    exporters:
-      # Manually added for Host Catalog support
-      coralogix/resource_catalog:
-        application_name: "resource"
-        subsystem_name: "catalog"
-        domain: "{{.Values.global.domain}}"
-        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
-        timeout: 30s
-        logs:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-standalone/{{.Values.global.version}}"
-            x-coralogix-ingress: "metadata-as-otlp-logs/v1"
-
-    receivers:
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              scrape_interval: 30s
-              static_configs:
-                - targets: ["${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:8888"]
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4317
-          http:
-            endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4318
-
     processors:
       memory_limiter:
         check_interval: 5s
         limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-1024}
-
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+          http:
+            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: opentelemetry-collector
+              static_configs:
+                - targets:
+                    - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
     service:
       telemetry:
+        resource:
+          service.name: "opentelemetry-collector"
+        logs:
+          level: "info"
         metrics:
           readers:
             - pull:
                 exporter:
                   prometheus:
-                    host: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}
+                    host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
                     port: 8888
-      extensions: [health_check, file_storage, opamp, zpages, pprof]
       pipelines:
-        metrics:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [coralogix]
         logs:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [coralogix]
-        # Manually defined Host Catalog pipeline
-        logs/resource_catalog:
-          receivers: [hostmetrics]
-          processors: [memory_limiter, resourcedetection/region, resourcedetection/env, resource/metadata, resourcedetection/entity, transform/entity-event]
-          exporters: [coralogix/resource_catalog]
+          exporters: []
+        metrics:
+          exporters: []
+        traces:
+          exporters: []

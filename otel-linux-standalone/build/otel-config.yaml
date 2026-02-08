@@ -120,27 +120,27 @@ exporters:
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.6
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.6
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.6
     subsystem_name: linux
     subsystem_name_attributes:
     - service.name
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.6
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.5
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.6
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
@@ -590,10 +590,9 @@ receivers:
     config:
       scrape_configs:
       - job_name: opentelemetry-collector
-        scrape_interval: '30s'
         static_configs:
         - targets:
-          - 0.0.0.0:8888
+          - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
   systemd:
     collection_interval: 30s
     scope: system
@@ -606,7 +605,6 @@ service:
   pipelines:
     logs:
       exporters:
-      - debug
       - coralogix
       processors:
       - memory_limiter
@@ -632,7 +630,6 @@ service:
       - hostmetrics
     metrics:
       exporters:
-      - debug
       - coralogix
       processors:
       - memory_limiter
@@ -670,7 +667,6 @@ service:
       - spanmetrics/db_compact
     traces:
       exporters:
-      - debug
       - spanmetrics
       - forward/db
       - forward/compact
@@ -724,7 +720,7 @@ service:
       - pull:
           exporter:
             prometheus:
-              host: 0.0.0.0
+              host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
               port: 8888
     resource:
       service.name: opentelemetry-collector

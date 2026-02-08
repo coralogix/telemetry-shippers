@@ -3,7 +3,7 @@ exporters:
     application_name: otel
     application_name_attributes:
     - service.namespace
-    domain: eu2.coralogix.com
+    domain: coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
@@ -23,29 +23,30 @@ exporters:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
   coralogix/resource_catalog:
     application_name: resource
-    domain: 'eu2.coralogix.com'
+    domain: coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
         x-coralogix-ingress: metadata-as-otlp-logs/v1
-    private_key: ${env:CORALOGIX_PRIVATE_KEY}
+    private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
     timeout: 30s
   debug: {}
 extensions:
   file_storage:
+    create_directory: true
     directory: C:\ProgramData\OpenTelemetry\Collector\storage
   health_check:
-    endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:13133
+    endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
   opamp:
     agent_description:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.128.6
+        helm.chart.opentelemetry-agent.version: 0.128.17
     server:
       http:
-        endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+        endpoint: https://ingress.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
@@ -126,20 +127,20 @@ processors:
     log_statements:
     - context: log
       statements:
-      - set(attributes["http.client_ip"], attributes["c-ip"]) where attributes["c-ip"]
+      - set(attributes["client.address"], attributes["c-ip"]) where attributes["c-ip"]
         != nil
-      - set(attributes["http.method"], attributes["cs-method"]) where attributes["cs-method"]
+      - set(attributes["http.request.method"], attributes["cs-method"]) where attributes["cs-method"]
         != nil
-      - set(attributes["http.status_code"], attributes["sc-status"]) where attributes["sc-status"]
-        != nil
+      - set(attributes["http.response.status_code"], attributes["sc-status"]) where
+        attributes["sc-status"] != nil
       - set(attributes["user_agent.original"], attributes["cs(User-Agent)"]) where
         attributes["cs(User-Agent)"] != nil
       - set(attributes["url.path"], attributes["cs-uri-stem"]) where attributes["cs-uri-stem"]
         != nil
       - set(attributes["url.query"], attributes["cs-uri-query"]) where attributes["cs-uri-query"]
         != nil
-      - set(attributes["http.request.referrer"], attributes["cs(Referer)"]) where
-        attributes["cs(Referer)"] != nil
+      - set(attributes["http.request.header.referer"], attributes["cs(Referer)"])
+        where attributes["cs(Referer)"] != nil
       - set(attributes["http.server.request.duration_ms"], Int(attributes["time-taken"]))
         where attributes["time-taken"] != nil
       - delete_key(attributes, "c-ip")
@@ -260,22 +261,21 @@ receivers:
             enabled: true
         mute_process_all_errors: true
   iis:
-    collection_interval: 10s
+    collection_interval: 30s
   otlp:
     protocols:
       grpc:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4317
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
         max_recv_msg_size_mib: 20
       http:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:4318
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
   prometheus:
     config:
       scrape_configs:
       - job_name: opentelemetry-collector
-        scrape_interval: 30s
         static_configs:
         - targets:
-          - ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}:8888
+          - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
   windowseventlog/application:
     channel: Application
   windowseventlog/security:
@@ -285,8 +285,8 @@ receivers:
 service:
   extensions:
   - health_check
-  - file_storage
   - opamp
+  - file_storage
   - zpages
   - pprof
   pipelines:
@@ -301,20 +301,19 @@ service:
       - transform/iis
       - batch
       receivers:
-      - otlp
       - windowseventlog/system
       - windowseventlog/application
       - windowseventlog/security
       - filelog/iis
+      - otlp
     logs/resource_catalog:
       exporters:
       - coralogix/resource_catalog
       processors:
       - memory_limiter
-      - resourcedetection/region
-      - resourcedetection/env
       - resource/metadata
       - resourcedetection/entity
+      - resourcedetection/region
       - transform/entity-event
       receivers:
       - hostmetrics
@@ -329,13 +328,12 @@ service:
       - transform/prometheus
       - batch
       receivers:
-      - otlp
       - hostmetrics
       - prometheus
       - iis
+      - otlp
     traces:
       exporters:
-      - debug
       - coralogix
       processors:
       - memory_limiter
@@ -349,11 +347,14 @@ service:
   telemetry:
     logs:
       encoding: json
+      level: info
     metrics:
       readers:
       - pull:
           exporter:
             prometheus:
-              host: ${env:OTEL_LISTEN_INTERFACE:-0.0.0.0}
+              host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
               port: 8888
+    resource:
+      service.name: opentelemetry-collector
 

@@ -9,8 +9,8 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.128.8"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    version: "0.128.17"
+    repository: file:///tmp/local-otel-chart/opentelemetry-collector
     condition: opentelemetry-agent.enabled
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
