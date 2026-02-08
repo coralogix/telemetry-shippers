@@ -214,7 +214,9 @@ update_values_yaml() {
     return 0
   fi
 
-  yq -i ".global.version = \"$new_chart_version\"" "$values_yaml"
+  # Update only version within global: block (sed address range)
+  # /^global:/,/^[a-z]/ limits replacement to lines between global: and next top-level key
+  sed -i.bak '/^global:/,/^[a-z]/ s/version: "'"$current_global_version"'"/version: "'"$new_chart_version"'"/' "$values_yaml" && rm -f "${values_yaml}.bak"
 }
 
 update_changelog() {
