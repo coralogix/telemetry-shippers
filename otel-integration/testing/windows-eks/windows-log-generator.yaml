@@ -21,12 +21,7 @@ spec:
           image: mcr.microsoft.com/windows/servercore:ltsc2019
           imagePullPolicy: IfNotPresent
           command:
-            - powershell
-            - -Command
-            - |
-              $i = 0
-              while ($true) {
-                Write-Output "WINDOWS-OTEL-LOG-CHECK iteration=$i source=stdout"
-                $i = $i + 1
-                Start-Sleep -Seconds 5
-              }
+            - cmd
+            - /S
+            - /C
+            - for /L %i in (1,1,1000000) do @echo WINDOWS-OTEL-LOG-CHECK iteration=%i source=stdout && timeout /t 5 >nul

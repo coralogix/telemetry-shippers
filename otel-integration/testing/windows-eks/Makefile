@@ -10,6 +10,7 @@ EKS_WINDOWS_PROFILE ?= research
 EKS_WINDOWS_REGION ?= eu-west-1
 EKS_WINDOWS_CLUSTER ?= otel-integration-windows-cluster
 EKS_WINDOWS_CONFIG ?= eks-windows.yaml
+EKS_WINDOWS_CONFIG_RENDERED ?= /tmp/eks-windows-$(EKS_WINDOWS_CLUSTER)-$(EKS_WINDOWS_REGION).yaml
 EKS_WINDOWS_AWS_ENV := AWS_PROFILE=$(EKS_WINDOWS_PROFILE) AWS_REGION=$(EKS_WINDOWS_REGION) AWS_DEFAULT_REGION=$(EKS_WINDOWS_REGION)
 
 WINDOWS_NAMESPACE ?= coralogix-otel
@@ -17,7 +18,8 @@ WINDOWS_RELEASE ?= otel-windows
 WINDOWS_CHART ?= ../../k8s-helm
 WINDOWS_VALUES_BASE ?= ../../k8s-helm/values-windows.yaml
 WINDOWS_VALUES_DEBUG ?= values-windows-debug.yaml
-WINDOWS_AGENT_DAEMONSET ?= coralogix-opentelemetry-windows
+LINUX_AGENT_DAEMONSET ?= coralogix-opentelemetry-agent
+WINDOWS_AGENT_DAEMONSET ?= coralogix-opentelemetry-windows-agent
 WINDOWS_AGENT_CONFIGMAP ?= coralogix-opentelemetry-windows-agent
 CORALOGIX_SECRET_NAME ?= coralogix-keys
 CORALOGIX_DOMAIN ?= eu2.coralogix.com
@@ -49,7 +51,11 @@ help:
 
 create-windows-cluster:
 	@echo "Creating Windows EKS cluster..."
-	$(EKS_WINDOWS_AWS_ENV) eksctl create cluster -f $(EKS_WINDOWS_CONFIG)
+	sed \
+		-e "s/^\\(  name: \\).*/\\1$(EKS_WINDOWS_CLUSTER)/" \
+		-e "s/^\\(  region: \\).*/\\1$(EKS_WINDOWS_REGION)/" \
+		$(EKS_WINDOWS_CONFIG) > $(EKS_WINDOWS_CONFIG_RENDERED)
+	$(EKS_WINDOWS_AWS_ENV) eksctl create cluster -f $(EKS_WINDOWS_CONFIG_RENDERED)
 	@$(MAKE) write-kubeconfig
 	@echo "Windows EKS cluster created."
 
@@ -75,7 +81,7 @@ install-otel-integration-windows:
 		-f $(WINDOWS_VALUES_DEBUG) \
 		--set global.clusterName=$(EKS_WINDOWS_CLUSTER) \
 		--set global.domain=$(CORALOGIX_DOMAIN)
-	kubectl rollout status daemonset/coralogix-opentelemetry -n $(WINDOWS_NAMESPACE) --timeout=15m
+	kubectl rollout status daemonset/$(LINUX_AGENT_DAEMONSET) -n $(WINDOWS_NAMESPACE) --timeout=15m
 	kubectl rollout status daemonset/$(WINDOWS_AGENT_DAEMONSET) -n $(WINDOWS_NAMESPACE) --timeout=15m
 	kubectl rollout status deployment/coralogix-opentelemetry-collector -n $(WINDOWS_NAMESPACE) --timeout=15m
 	@echo "Windows-mode otel-integration installed."

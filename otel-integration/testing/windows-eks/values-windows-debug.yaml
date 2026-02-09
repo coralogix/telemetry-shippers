@@ -2,6 +2,12 @@ global:
   logLevel: "debug"
 
 opentelemetry-agent-windows:
+  podSecurityContext:
+    windowsOptions:
+      runAsUserName: "NT AUTHORITY\\SYSTEM"
+  securityContext:
+    windowsOptions:
+      runAsUserName: "NT AUTHORITY\\SYSTEM"
   config:
     exporters:
       debug:

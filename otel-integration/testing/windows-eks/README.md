@@ -23,6 +23,7 @@ Key files and what they do:
 - `otel-integration/testing/windows-eks/values-windows-debug.yaml`: overrides to enforce debug collector behavior:
   - `global.logLevel: debug`
   - `opentelemetry-agent-windows.config.exporters.debug.verbosity: detailed`
+  - `opentelemetry-agent-windows.[pod]securityContext.windowsOptions.runAsUserName: NT AUTHORITY\\SYSTEM`
 - `otel-integration/testing/windows-eks/windows-log-generator.yaml`: test Windows workload that emits a unique log marker.
 - `otel-integration/k8s-helm/values-windows.yaml`: base chart values for mixed OS installation.
 
