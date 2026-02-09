@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: windows-log-generator
+  labels:
+    app: windows-log-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: windows-log-generator
+  template:
+    metadata:
+      labels:
+        app: windows-log-generator
+    spec:
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+        - name: log-writer
+          image: mcr.microsoft.com/windows/servercore:ltsc2019
+          imagePullPolicy: IfNotPresent
+          command:
+            - cmd
+            - /S
+            - /C
+            - for /L %i in (1,1,1000000) do @echo WINDOWS-OTEL-LOG-CHECK iteration=%i source=stdout && timeout /t 5 >nul
