@@ -3,7 +3,7 @@ exporters:
     application_name: otel
     application_name_attributes:
     - service.namespace
-    domain: coralogix.com
+    domain: eu2.coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
@@ -23,7 +23,7 @@ exporters:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
   coralogix/resource_catalog:
     application_name: resource
-    domain: coralogix.com
+    domain: eu2.coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: helm-otel-standalone/0.0.1
@@ -43,10 +43,10 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.128.17
+        helm.chart.opentelemetry-agent.version: 0.128.18
     server:
       http:
-        endpoint: https://ingress.coralogix.com/opamp/v1
+        endpoint: https://ingress.eu2.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
@@ -139,7 +139,7 @@ processors:
         != nil
       - set(attributes["url.query"], attributes["cs-uri-query"]) where attributes["cs-uri-query"]
         != nil
-      - set(attributes["http.request.header.referer"], attributes["cs(Referer)"])
+      - set(attributes["http.request.header.referer"], [attributes["cs(Referer)"]])
         where attributes["cs(Referer)"] != nil
       - set(attributes["http.server.request.duration_ms"], Int(attributes["time-taken"]))
         where attributes["time-taken"] != nil
@@ -273,6 +273,7 @@ receivers:
     config:
       scrape_configs:
       - job_name: opentelemetry-collector
+        scrape_interval: '30s'
         static_configs:
         - targets:
           - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
@@ -347,7 +348,6 @@ service:
   telemetry:
     logs:
       encoding: json
-      level: info
     metrics:
       readers:
       - pull:
@@ -355,6 +355,4 @@ service:
             prometheus:
               host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
               port: 8888
-    resource:
-      service.name: opentelemetry-collector
 

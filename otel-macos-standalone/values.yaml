@@ -121,40 +121,11 @@ opentelemetry-agent:
       #       severity:
       #         parse_from: attributes.sev
   config:
-    extensions:
-      health_check:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
     processors:
       memory_limiter:
         check_interval: 5s
         limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
-          http:
-            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
-      prometheus:
-        config:
-          scrape_configs:
-            - job_name: opentelemetry-collector
-              static_configs:
-                - targets:
-                    - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
     service:
-      telemetry:
-        resource:
-          service.name: "opentelemetry-collector"
-        logs:
-          level: "info"
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
-                    port: 8888
       pipelines:
         logs:
           exporters: []

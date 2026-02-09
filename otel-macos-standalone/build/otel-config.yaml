@@ -518,6 +518,7 @@ receivers:
     config:
       scrape_configs:
       - job_name: opentelemetry-collector
+        scrape_interval: '30s'
         static_configs:
         - targets:
           - ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:8888
@@ -633,7 +634,6 @@ service:
   telemetry:
     logs:
       encoding: json
-      level: info
     metrics:
       readers:
       - pull:
@@ -641,6 +641,4 @@ service:
             prometheus:
               host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
               port: 8888
-    resource:
-      service.name: opentelemetry-collector
 
