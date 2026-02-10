@@ -1,11 +1,11 @@
 apiVersion: v2
-name: linux-standalone
-description: Standalone Linux OpenTelemetry Collector configuration
-version: 0.0.7
+name: windows-standalone
+description: Standalone Windows OpenTelemetry Collector configuration
+version: 0.0.1
 keywords:
   - OpenTelemetry Collector
   - Coralogix
-  - Linux
+  - Windows
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent

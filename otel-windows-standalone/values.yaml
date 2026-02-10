@@ -1,0 +1,98 @@
+global:
+  domain: "eu2.coralogix.com"
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "windows"
+  logLevel: "info"
+  collectionInterval: "30s"
+  version: "0.0.1"
+
+opentelemetry-agent:
+  enabled: true
+  distribution: "standalone"
+  isWindows: true
+
+  presets:
+    metadata:
+      enabled: true
+      integrationName: "coralogix-windows-standalone"
+    hostEntityEvents:
+      enabled: true
+    fleetManagement:
+      enabled: true
+      agentType: "agent"
+    hostMetrics:
+      enabled: true
+      process:
+        enabled: true
+    batch:
+      enabled: true
+    resourceDetection:
+      enabled: true
+      provider: ""
+    collectorMetrics:
+      enabled: true
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
+    otlpReceiver:
+      enabled: true
+    zpages:
+      enabled: true
+    pprof:
+      enabled: true
+    semconv:
+      enabled: true
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    # Windows-specific presets
+    windowsEventLog:
+      enabled: true
+      # channels:
+      #   - System
+      #   - Application
+      #   - Security
+
+    iisReceiver:
+      enabled: true
+
+    iisLogs:
+      enabled: true
+      # include:
+      #   - "C:\\inetpub\\logs\\LogFiles\\W3SVC*\\*.log"
+      # Store checkpoints to resume reading after collector restart
+      storeCheckpoints: true
+      # Directory to store checkpoint files (must be writable by collector)
+      storagePath: "C:\\ProgramData\\OpenTelemetry\\Collector\\storage"
+
+    # Disabled presets
+    spanMetrics:
+      enabled: false
+      collectionInterval: "{{.Values.global.collectionInterval}}"
+      metricsExpiration: 5m
+    transactions:
+      enabled: false
+      waitDuration: 30s
+    reduceResourceAttributes:
+      enabled: false
+      pipelines: ["all"]
+    prometheusMulti:
+      enabled: false
+      scrapeInterval: "15s"
+      targets: []
+    filelogMulti:
+      enabled: false
+      receivers: []
+
+  config:
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-1024}
+    service:
+      pipelines:
+        logs:
+          exporters: []
+        metrics:
+          exporters: []
+        traces:
+          exporters: []

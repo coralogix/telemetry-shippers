@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "macos"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.5"
+  version: "0.0.6"
 
 opentelemetry-agent:
   enabled: true
@@ -121,23 +121,15 @@ opentelemetry-agent:
       #       severity:
       #         parse_from: attributes.sev
   config:
-    extensions:
-      health_check:
-        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:13133
     processors:
       memory_limiter:
         check_interval: 5s
         limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
-          http:
-            endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4318
     service:
-      telemetry:
-        resource:
-          service.name: "opentelemetry-collector"
+      pipelines:
         logs:
-          level: "info"
+          exporters: []
+        metrics:
+          exporters: []
+        traces:
+          exporters: []
