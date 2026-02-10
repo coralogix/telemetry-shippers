@@ -84,9 +84,6 @@ opentelemetry-agent:
       receivers: []
 
   config:
-    extensions:
-      file_storage:
-        directory: "C:\\ProgramData\\OpenTelemetry\\Collector\\storage"
     processors:
       memory_limiter:
         check_interval: 5s
