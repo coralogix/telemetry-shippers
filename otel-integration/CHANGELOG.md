@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.274 / 2026-02-10
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.2
+
 ### v0.0.273 / 2026-02-06
 - [CHORE] Update Windows image to v0.145.0.
 
