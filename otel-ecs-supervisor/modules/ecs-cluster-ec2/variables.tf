@@ -24,22 +24,12 @@ variable "vpc_id" {
   description = "VPC ID for the EC2 container instances security group"
   type        = string
   default     = ""
-
-  validation {
-    condition     = !var.enable_capacity || var.vpc_id != ""
-    error_message = "vpc_id must be provided when enable_capacity is true."
-  }
 }
 
 variable "subnet_ids" {
   description = "Subnet IDs for the Auto Scaling Group"
   type        = list(string)
   default     = []
-
-  validation {
-    condition     = !var.enable_capacity || length(var.subnet_ids) > 0
-    error_message = "Provide at least one subnet when enable_capacity is true."
-  }
 }
 
 variable "allowed_cidr_blocks" {

@@ -44,7 +44,7 @@ health_check_start_period = 30
 health_check_interval     = 30
 health_check_timeout      = 5
 health_check_retries      = 3
-# health_check_command    = ["CMD-SHELL", "curl -f http://localhost:13133/ || exit 1"]
+# health_check_command    = ["CMD-SHELL", "wget -qO- http://localhost:13133/ >/dev/null || exit 1"]
 
 # Tags
 tags = {
