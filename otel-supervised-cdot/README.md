@@ -55,7 +55,7 @@ testing purposes and are not part of the released image.
 | Variable             | Description                            | Default                             |
 |----------------------|----------------------------------------|-------------------------------------|
 | `IMAGE_NAME`         | Container image name                   | `coralogix-otel-supervised-cdot`    |
-| `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)`     |
+| `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)`      |
 | `COLLECTOR_VERSION`  | Coralogix OTEL Collector version       | `$(cat CURRENT_COLLECTOR_VERSION)`  |
 | `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `$(cat CURRENT_SUPERVISOR_VERSION)` |
 | `REGISTRY`           | Container registry (optional)          | (empty)                             |
