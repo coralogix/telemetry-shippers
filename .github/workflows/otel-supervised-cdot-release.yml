@@ -58,10 +58,13 @@ jobs:
       - name: Set image versions
         id: set-image-versions
         run: |
+          image_version=$(cat ./otel-supervised-cdot/CURRENT_IMAGE_VERSION | tr -d '[:space:]')
           collector_version=$(cat ./otel-supervised-cdot/CURRENT_COLLECTOR_VERSION | tr -d '[:space:]')
           supervisor_version=$(cat ./otel-supervised-cdot/CURRENT_SUPERVISOR_VERSION | tr -d '[:space:]')
+          echo "image_version=${image_version}" >> "$GITHUB_OUTPUT"
           echo "collector_version=${collector_version}" >> "$GITHUB_OUTPUT"
           echo "supervisor_version=${supervisor_version}" >> "$GITHUB_OUTPUT"
+          echo "Detected image version: ${image_version}"
           echo "Detected collector version: ${collector_version}"
           echo "Detected supervisor version: ${supervisor_version}"
 
@@ -75,6 +78,6 @@ jobs:
             COLLECTOR_VERSION=${{ steps.set-image-versions.outputs.collector_version }}
             SUPERVISOR_VERSION=${{ steps.set-image-versions.outputs.supervisor_version }}
           tags: |
-            ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-versions.outputs.collector_version }}
+            ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-versions.outputs.image_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

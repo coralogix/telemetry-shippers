@@ -11,10 +11,10 @@ with OpAMP supervisor.
 ## Release
 
 The container image is built and pushed to registries via GitHub Actions.
-Images are tagged with the Coralogix collector version in the following format:
+Images are tagged with the supervised CDOT image version in the following format:
 
 ```
-coralogix-otel-supervised-cdot:v0.5.7
+coralogix-otel-supervised-cdot:v0.0.1
 ```
 
 ### Supported platforms
@@ -55,7 +55,7 @@ testing purposes and are not part of the released image.
 | Variable             | Description                            | Default                             |
 |----------------------|----------------------------------------|-------------------------------------|
 | `IMAGE_NAME`         | Container image name                   | `coralogix-otel-supervised-cdot`    |
-| `IMAGE_TAG`          | Container image tag                    | `latest`                            |
+| `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)`     |
 | `COLLECTOR_VERSION`  | Coralogix OTEL Collector version       | `$(cat CURRENT_COLLECTOR_VERSION)`  |
 | `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `$(cat CURRENT_SUPERVISOR_VERSION)` |
 | `REGISTRY`           | Container registry (optional)          | (empty)                             |

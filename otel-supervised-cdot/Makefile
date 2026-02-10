@@ -2,7 +2,7 @@
 
 # Default values
 IMAGE_NAME ?= coralogix-otel-supervised-cdot
-IMAGE_TAG ?= latest
+IMAGE_TAG ?= $(shell cat CURRENT_IMAGE_VERSION)
 SUPERVISOR_VERSION ?= $(shell cat CURRENT_SUPERVISOR_VERSION)
 COLLECTOR_VERSION ?= $(shell cat CURRENT_COLLECTOR_VERSION)
 PLATFORMS ?= linux/amd64,linux/arm64
@@ -48,7 +48,7 @@ help:
 	@echo ''
 	@echo 'Variables:'
 	@echo '  IMAGE_NAME             Docker image name (default: coralogix-otel-supervised-cdot)'
-	@echo '  IMAGE_TAG              Docker image tag (default: latest)'
+	@echo '  IMAGE_TAG              Docker image tag (default: contents of CURRENT_IMAGE_VERSION)'
 	@echo '  COLLECTOR_VERSION      Coralogix OTEL Collector version (default: contents of CURRENT_COLLECTOR_VERSION)'
 	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: contents of CURRENT_SUPERVISOR_VERSION)'
 	@echo '  PLATFORMS              Target platforms for multi-arch builds (default: linux/amd64,linux/arm64)'
