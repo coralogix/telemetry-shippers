@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.9 / 2026-02-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.3
+
+#### Changes from opentelemetry-collector 0.129.3:
+- [Fix] Apply stacktrace log recombination only to OTEL Collector stacktraces.
+
 ### v0.0.8 / 2026-02-10
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.2
