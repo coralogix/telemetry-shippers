@@ -44,12 +44,36 @@ jobs:
           if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
             VERSION="${{ github.event.client_payload.version }}"
             SOURCE_PR="${{ github.event.client_payload.pr_url }}"
+            CHANGELOG_B64="${{ github.event.client_payload.changelog_b64 }}"
           else
             VERSION="${{ inputs.version }}"
             SOURCE_PR=""
+            CHANGELOG_B64=""
           fi
           echo "value=$VERSION" >> $GITHUB_OUTPUT
           echo "source_pr=$SOURCE_PR" >> $GITHUB_OUTPUT
+          echo "changelog_b64=$CHANGELOG_B64" >> $GITHUB_OUTPUT
+
+      - name: Prepare changelog
+        id: changelog
+        run: |
+          CHANGELOG_B64="${{ steps.version.outputs.changelog_b64 }}"
+          
+          if [[ -n "$CHANGELOG_B64" ]]; then
+            if echo "$CHANGELOG_B64" | base64 -d > /tmp/changelog-entries.txt 2>/dev/null; then
+              echo "status=ok" >> $GITHUB_OUTPUT
+              echo "file=/tmp/changelog-entries.txt" >> $GITHUB_OUTPUT
+              echo "Changelog decoded successfully"
+            else
+              echo "status=failed" >> $GITHUB_OUTPUT
+              echo "file=" >> $GITHUB_OUTPUT
+              echo "Failed to decode changelog"
+            fi
+          else
+            echo "status=missing" >> $GITHUB_OUTPUT
+            echo "file=" >> $GITHUB_OUTPUT
+            echo "No changelog provided"
+          fi
 
       - name: Create branch
         run: |
@@ -73,8 +97,14 @@ jobs:
             [[ -n "$chart" ]] && SKIP_ARGS="$SKIP_ARGS --skip $chart"
           done
           
+          # Build changelog args
+          CHANGELOG_ARGS=""
+          if [[ -n "${{ steps.changelog.outputs.file }}" ]]; then
+            CHANGELOG_ARGS="--changelog-file ${{ steps.changelog.outputs.file }}"
+          fi
+          
           chmod +x ./scripts/bump-otel-collector-version.sh
-          ./scripts/bump-otel-collector-version.sh --version "${{ steps.version.outputs.value }}" $SKIP_ARGS
+          ./scripts/bump-otel-collector-version.sh --version "${{ steps.version.outputs.value }}" $SKIP_ARGS $CHANGELOG_ARGS
 
       - name: Commit and push
         run: |
@@ -98,6 +128,17 @@ jobs:
             echo "**Source:** ${{ steps.version.outputs.source_pr }}" >> /tmp/pr-body.md
             echo "" >> /tmp/pr-body.md
           fi
+          # Add changelog status warning if needed
+          case "${{ steps.changelog.outputs.status }}" in
+            missing)
+              echo "⚠️ **Changelog:** Not available from source - using default entry." >> /tmp/pr-body.md
+              echo "" >> /tmp/pr-body.md
+              ;;
+            failed)
+              echo "⚠️ **Changelog:** Failed to decode from source - using default entry." >> /tmp/pr-body.md
+              echo "" >> /tmp/pr-body.md
+              ;;
+          esac
           echo "---" >> /tmp/pr-body.md
           echo "**To skip a chart:** Remove its \`chart:*\` label → changes auto-revert." >> /tmp/pr-body.md
 
