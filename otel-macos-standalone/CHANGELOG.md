@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.8 / 2026-02-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.4
+
+#### Changes from opentelemetry-collector 0.129.4:
+- [Fix] Increase the `presets.loadBalancing.k8s.timeout` default to `1m` so Kubernetes resolver users get a longer resolver timeout by default.
+
 ### v0.0.7 / 2026-02-10
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.2
