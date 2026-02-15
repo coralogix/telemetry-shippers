@@ -1,0 +1,57 @@
+name: Sync ECS-EC2 OTEL Config to S3
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'otel-ecs-ec2/**'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: e2e-testing-result-bucket
+  S3_KEY: ecs-ec2/otel-config.yaml
+
+jobs:
+  sync-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install yq
+        run: sudo snap install yq
+
+      - name: Add Helm repos and build dependencies
+        run: |
+          helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+          helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+          helm dependency build ./otel-ecs-ec2/
+
+      - name: Generate OTEL config
+        run: |
+          cd otel-ecs-ec2
+          make otel-config
+          echo "Generated config:"
+          cat examples/otel-config.yaml
+
+      - name: Upload config to S3
+        run: |
+          aws s3 cp otel-ecs-ec2/examples/otel-config.yaml s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
+          echo "✓ Uploaded config to s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}"
+
