@@ -1,3 +1,5 @@
+<!-- split title=&#34;Windows Installation&#34; path=&#34;installation/windows/index.md&#34; -->
+
 # Windows Installation
 
 Install the OpenTelemetry Collector directly on Windows as a Windows Service.
@@ -396,6 +398,8 @@ The script requires administrator privileges. If you see permission errors:
 1. Right-click PowerShell
 2. Select **"Run as Administrator"**
 3. Run the script again
+
+<!-- /split -->
 
 ---
 
