@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "macos"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.8"
+  version: "0.0.9"
 
 opentelemetry-agent:
   enabled: true
