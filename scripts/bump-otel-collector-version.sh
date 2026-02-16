@@ -247,7 +247,7 @@ update_changelog() {
 
   if [[ -n "$CHANGELOG_FILE" && -f "$CHANGELOG_FILE" ]]; then
     echo "" >> "$entry_file"
-    echo "#### Changes from opentelemetry-collector ${NEW_VERSION}:" >> "$entry_file"
+    # Changelog file already contains version headers from workflow
     cat "$CHANGELOG_FILE" >> "$entry_file"
   fi
 
@@ -537,10 +537,10 @@ generate_markdown_summary() {
       done
     fi
     
-    # Changelog entries if provided
+    # Changelog entries if provided (already includes version headers)
     if [[ -n "$CHANGELOG_FILE" && -f "$CHANGELOG_FILE" ]]; then
       echo ""
-      echo "### Changes from opentelemetry-collector $NEW_VERSION"
+      echo "### Changelog"
       echo ""
       cat "$CHANGELOG_FILE"
     fi
