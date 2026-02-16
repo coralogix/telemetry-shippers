@@ -54,28 +54,116 @@ jobs:
           echo "source_pr=$SOURCE_PR" >> $GITHUB_OUTPUT
           echo "changelog_b64=$CHANGELOG_B64" >> $GITHUB_OUTPUT
 
-      - name: Prepare changelog
+      - name: Extract full changelog
         id: changelog
         run: |
-          CHANGELOG_B64="${{ steps.version.outputs.changelog_b64 }}"
+          TARGET_VERSION="${{ steps.version.outputs.value }}"
+          echo "Target version: $TARGET_VERSION"
           
-          if [[ -n "$CHANGELOG_B64" ]]; then
-            if echo "$CHANGELOG_B64" | base64 -d > /tmp/changelog-entries.txt 2>/dev/null; then
-              echo "status=ok" >> $GITHUB_OUTPUT
-              echo "file=/tmp/changelog-entries.txt" >> $GITHUB_OUTPUT
-              echo "Changelog decoded successfully"
-            else
-              echo "status=failed" >> $GITHUB_OUTPUT
-              echo "file=" >> $GITHUB_OUTPUT
-              echo "Failed to decode changelog"
+          # Get minimum dependency version across active charts
+          CHART_PATHS="otel-integration/k8s-helm otel-linux-standalone otel-macos-standalone otel-windows-standalone"
+          MIN_VERSION=""
+          for chart in $CHART_PATHS; do
+            # Extract chart name for skip check (handle otel-integration/k8s-helm -> otel-integration)
+            chart_name="${chart%%/*}"
+            
+            # Skip charts in SKIP_CHARTS
+            if echo "$SKIP_CHARTS" | tr ',' '\n' | grep -qw "$chart_name"; then
+              echo "  $chart: (skipped)"
+              continue
             fi
-          else
-            echo "status=missing" >> $GITHUB_OUTPUT
+            
+            if [[ -f "${chart}/Chart.yaml" ]]; then
+              VER=$(yq '.dependencies[] | select(.name == "opentelemetry-collector") | .version' "${chart}/Chart.yaml" 2>/dev/null | head -1 | tr -d '"')
+              if [[ -n "$VER" ]]; then
+                echo "  $chart: $VER"
+                if [[ -z "$MIN_VERSION" ]] || [[ "$(printf '%s\n' "$VER" "$MIN_VERSION" | sort -V | head -1)" == "$VER" ]]; then
+                  MIN_VERSION="$VER"
+                fi
+              fi
+            fi
+          done
+          
+          echo "Minimum version across charts: $MIN_VERSION"
+          
+          # Skip if minimum version is at or above target (all charts already up-to-date)
+          HIGHEST=$(printf '%s\n' "$MIN_VERSION" "$TARGET_VERSION" | sort -V | tail -1)
+          if [[ "$MIN_VERSION" == "$TARGET_VERSION" ]] || [[ "$HIGHEST" == "$MIN_VERSION" ]]; then
+            echo "All charts already at target version or newer (min=$MIN_VERSION >= target=$TARGET_VERSION)"
+            echo "status=skip" >> $GITHUB_OUTPUT
             echo "file=" >> $GITHUB_OUTPUT
-            echo "No changelog provided"
+            exit 0
           fi
+          
+          # Use MIN_VERSION as baseline for changelog extraction (captures all entries for lagging charts)
+          echo "Baseline for changelog: $MIN_VERSION"
+          
+          # Fetch CHANGELOG.md from helm-charts and extract all entries between versions
+          # Uses semver_cmp function for proper version comparison (handles 0.9.0 vs 0.10.0)
+          CHANGELOG=$(gh api repos/coralogix/opentelemetry-helm-charts/contents/charts/opentelemetry-collector/CHANGELOG.md \
+            --jq '.content' | base64 -d | awk -v current="$MIN_VERSION" -v target="$TARGET_VERSION" '
+            function semver_cmp(v1, v2,    a1, a2, i) {
+              split(v1, a1, "."); split(v2, a2, ".")
+              for (i = 1; i <= 3; i++) {
+                if (a1[i]+0 < a2[i]+0) return -1
+                if (a1[i]+0 > a2[i]+0) return 1
+              }
+              return 0
+            }
+            /^[[:space:]]*### v[0-9]/ {
+              match($0, /[0-9]+\.[0-9]+\.[0-9]+/)
+              ver = substr($0, RSTART, RLENGTH)
+              in_range = (semver_cmp(ver, current) > 0 && semver_cmp(ver, target) <= 0)
+              if (in_range) print "#### v" ver
+              next
+            }
+            in_range && /^[[:space:]]*-/ { print }
+          ')
+          
+          if [[ -n "$CHANGELOG" ]]; then
+            echo "$CHANGELOG" > /tmp/changelog-entries.txt
+            echo "status=ok" >> $GITHUB_OUTPUT
+            echo "file=/tmp/changelog-entries.txt" >> $GITHUB_OUTPUT
+            echo "Extracted changelog entries from $CURRENT_VERSION to $TARGET_VERSION"
+            echo "$CHANGELOG" | head -10
+          else
+            echo "status=empty" >> $GITHUB_OUTPUT
+            echo "file=" >> $GITHUB_OUTPUT
+            echo "No changelog entries found"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if update needed
+        if: steps.changelog.outputs.status == 'skip'
+        run: |
+          echo "::notice::Already at target version or newer - skipping"
+          exit 0
+
+      - name: Close stale bump PRs
+        if: steps.changelog.outputs.status != 'skip'
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          
+          # Find and close PRs for OLDER versions only (semver comparison)
+          gh pr list --label otel-collector-bump --state open --json number,title | jq -c '.[]' | while read -r row; do
+            PR_NUM=$(echo "$row" | jq -r '.number')
+            PR_VERSION=$(echo "$row" | jq -r '.title' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+$' || true)
+            
+            [[ -z "$PR_VERSION" || "$PR_VERSION" == "$VERSION" ]] && continue
+            
+            # Only close if PR version is older than target (semver-aware)
+            HIGHEST=$(printf '%s\n' "$PR_VERSION" "$VERSION" | sort -V | tail -1)
+            if [[ "$HIGHEST" == "$VERSION" && "$PR_VERSION" != "$VERSION" ]]; then
+              echo "Closing stale PR #$PR_NUM (v$PR_VERSION < v$VERSION)"
+              gh pr close $PR_NUM --comment "🔄 Superseded by v${VERSION}. All changelog entries included in new PR." || true
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create branch
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           branch_name="chore/bump-otel-collector-${{ steps.version.outputs.value }}"
           echo "branch_name=$branch_name" >> $GITHUB_ENV
@@ -90,6 +178,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run bump script
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           # Build skip args
           SKIP_ARGS=""
@@ -107,6 +196,7 @@ jobs:
           ./scripts/bump-otel-collector-version.sh --version "${{ steps.version.outputs.value }}" $SKIP_ARGS $CHANGELOG_ARGS
 
       - name: Commit and push
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           git add -A
           if git diff --staged --quiet; then
@@ -117,6 +207,7 @@ jobs:
           git push origin $branch_name
 
       - name: Build PR body
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           if [[ -f "/tmp/otel-bump-summary.md" ]]; then
             cat /tmp/otel-bump-summary.md > /tmp/pr-body.md
@@ -128,14 +219,14 @@ jobs:
             echo "**Source:** ${{ steps.version.outputs.source_pr }}" >> /tmp/pr-body.md
             echo "" >> /tmp/pr-body.md
           fi
-          # Add changelog status warning if needed
+          # Add changelog status info
           case "${{ steps.changelog.outputs.status }}" in
-            missing)
-              echo "⚠️ **Changelog:** Not available from source - using default entry." >> /tmp/pr-body.md
+            empty)
+              echo "⚠️ **Changelog:** No entries found between versions - using default entry." >> /tmp/pr-body.md
               echo "" >> /tmp/pr-body.md
               ;;
-            failed)
-              echo "⚠️ **Changelog:** Failed to decode from source - using default entry." >> /tmp/pr-body.md
+            ok)
+              echo "✅ **Changelog:** Includes all entries from current to target version." >> /tmp/pr-body.md
               echo "" >> /tmp/pr-body.md
               ;;
           esac
@@ -143,6 +234,7 @@ jobs:
           echo "**To skip a chart:** Remove its \`chart:*\` label → changes auto-revert." >> /tmp/pr-body.md
 
       - name: Ensure labels exist
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           for label in otel-collector-bump chart:otel-integration chart:otel-linux-standalone chart:otel-macos-standalone chart:otel-windows-standalone; do
             gh label create "$label" --description "Auto-created for otel-collector sync" --color "0E8A16" 2>/dev/null || true
@@ -151,6 +243,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build labels
+        if: steps.changelog.outputs.status != 'skip'
         id: labels
         run: |
           LABELS="otel-collector-bump"
@@ -162,6 +255,7 @@ jobs:
           echo "value=$LABELS" >> $GITHUB_OUTPUT
 
       - name: Create pull request
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           gh pr create \
             --base master \
