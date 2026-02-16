@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.7] - 2026-02-16
+
+### Changed
+- Doc sync: Windows installer README now included in automated documentation sync
+
 ## [0.1.6] - 2026-02-02
 
 ### Added
