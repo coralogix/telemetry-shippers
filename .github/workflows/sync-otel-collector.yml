@@ -145,15 +145,19 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.value }}"
           
-          # Find and close any older bump PRs
+          # Find and close PRs for OLDER versions only (semver comparison)
           gh pr list --label otel-collector-bump --state open --json number,title | jq -c '.[]' | while read -r row; do
             PR_NUM=$(echo "$row" | jq -r '.number')
             PR_VERSION=$(echo "$row" | jq -r '.title' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+$' || true)
             
             [[ -z "$PR_VERSION" || "$PR_VERSION" == "$VERSION" ]] && continue
             
-            echo "Closing stale PR #$PR_NUM (v$PR_VERSION)"
-            gh pr close $PR_NUM --comment "🔄 Superseded by v${VERSION}. All changelog entries included in new PR." || true
+            # Only close if PR version is older than target (semver-aware)
+            HIGHEST=$(printf '%s\n' "$PR_VERSION" "$VERSION" | sort -V | tail -1)
+            if [[ "$HIGHEST" == "$VERSION" && "$PR_VERSION" != "$VERSION" ]]; then
+              echo "Closing stale PR #$PR_NUM (v$PR_VERSION < v$VERSION)"
+              gh pr close $PR_NUM --comment "🔄 Superseded by v${VERSION}. All changelog entries included in new PR." || true
+            fi
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
