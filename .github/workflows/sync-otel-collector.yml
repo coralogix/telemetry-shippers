@@ -114,7 +114,7 @@ jobs:
               match($0, /[0-9]+\.[0-9]+\.[0-9]+/)
               ver = substr($0, RSTART, RLENGTH)
               in_range = (semver_cmp(ver, current) > 0 && semver_cmp(ver, target) <= 0)
-              if (in_range) print "#### v" ver
+              if (in_range) print "#### Changes from opentelemetry-collector " ver ":"
               next
             }
             in_range && /^[[:space:]]*-/ { print }
