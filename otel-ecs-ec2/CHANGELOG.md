@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.0.9 / 2026-02-17
+
+* [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.8` (aligned in Helm values, example manifest, Terraform `image_version` default, and Makefile `CDOT_IMAGE` default).
+
 ### 0.0.8 / 2026-01-16
 
 * [FEATURE] ECS attributes processor now supports spans and profiles.

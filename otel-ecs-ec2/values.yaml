@@ -14,7 +14,7 @@ opentelemetry-agent:
   mode: daemonset
   image:
     repository: coralogixrepo/coralogix-otel-collector
-    tag: v0.5.7
+    tag: v0.5.8
   # Extra config for the collector
   # This is used to add extra receivers, processors, exporters, and connectors
   # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
