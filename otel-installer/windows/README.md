@@ -13,8 +13,10 @@ This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Window
 - Administrator privileges
 - Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)
 
-!!! important "Configuration Required"
-A configuration file must be provided when installing the collector. Use the example configuration from the [`otel-windows-standalone/build`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-windows-standalone/build) folder. **Make sure to update the `domain` value** in the configuration file to match your [Coralogix domain](https://coralogix.com/docs/coralogix-domain/).
+> [!IMPORTANT]
+> **Configuration Required**
+>
+> A configuration file must be provided when installing the collector. Use the example configuration from the [`otel-windows-standalone/build`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-windows-standalone/build) folder. **Make sure to update the `domain` value** in the configuration file to match your [Coralogix domain](https://coralogix.com/docs/coralogix-domain/).
 
 ## Supported Platforms
 
