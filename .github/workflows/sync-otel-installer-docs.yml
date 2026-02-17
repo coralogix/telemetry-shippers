@@ -8,6 +8,7 @@ on:
     paths:
       - 'otel-installer/standalone/README.md'
       - 'otel-installer/docker/README.md'
+      - 'otel-installer/windows/README.md'
 
 permissions:
   contents: read
