@@ -12,7 +12,7 @@ on:
 
 env:
   # Charts to skip by default (not released yet)
-  SKIP_CHARTS: 'otel-windows-standalone'
+  SKIP_CHARTS: ''
 
 jobs:
   bump-version:
