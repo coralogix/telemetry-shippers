@@ -6,27 +6,27 @@ exporters:
     domain: eu2.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
     subsystem_name: windows
     subsystem_name_attributes:
     - service.name
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
   coralogix/resource_catalog:
     application_name: resource
     domain: eu2.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.1
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.2
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
