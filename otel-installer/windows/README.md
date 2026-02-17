@@ -13,32 +13,8 @@ This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Window
 - Administrator privileges
 - Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)
 
-## Quick Start
-
-Run the following command in PowerShell (as Administrator) to install the collector with default configuration:
-
-```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
-```
-
-Or download and run the script locally:
-
-```powershell
-# Download the script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1" -OutFile "coralogix-otel-collector.ps1"
-
-# Run with your private key
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1
-```
-
-## Environment Variables
-
-| Variable                | Required             | Description                                                                                 |
-|-------------------------|----------------------|---------------------------------------------------------------------------------------------|
-| `CORALOGIX_PRIVATE_KEY` | Yes                  | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
-| `CORALOGIX_DOMAIN`      | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/)                       |
+!!! important "Configuration Required"
+A configuration file must be provided when installing the collector. Use the example configuration from the [`otel-windows-standalone/build`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-windows-standalone/build) folder. **Make sure to update the `domain` value** in the configuration file to match your [Coralogix domain](https://coralogix.com/docs/coralogix-domain/).
 
 ## Supported Platforms
 
