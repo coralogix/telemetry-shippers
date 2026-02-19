@@ -4,7 +4,7 @@ Install the OpenTelemetry Collector directly on Windows as a Windows Service.
 
 ## Overview
 
-This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Windows Service. It supports both **regular mode** (local config) and **supervisor mode** (remote config via Fleet Management).
+This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Windows Service. It supports both **local configuration mode** (configuration file provided locally) and **supervisor mode** (remote configuration via Fleet Management).
 
 ## Prerequisites
 
@@ -79,7 +79,7 @@ This option:
 - Creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage`
 - Runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`
 
-> **Note:** This feature is only available in regular mode, not supervisor mode.
+> **Note:** This feature is only available in local configuration mode, not supervisor mode.
 
 ---
 
@@ -150,7 +150,7 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ## Installation Locations
 
-### Regular Mode
+### Local Configuration Mode
 
 | Component     | Location                                                       |
 |---------------|----------------------------------------------------------------|
@@ -175,7 +175,7 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ## Service Management
 
-### Regular Mode
+### Local Configuration Mode
 
 ```powershell
 # Check status
@@ -242,7 +242,7 @@ Remove the collector and all data:
 .\coralogix-otel-collector.ps1 -Uninstall -Purge
 ```
 
-> **Note:** For regular mode, the uninstall uses the Windows MSI uninstaller to properly remove the collector. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
+> **Note:** For local configuration mode, the uninstall uses the Windows MSI uninstaller to properly remove the collector. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
 
 ---
 
@@ -341,7 +341,7 @@ powershell -ExecutionPolicy Bypass -File .\coralogix-otel-collector.ps1
 
 ### Switching Between Modes
 
-Uninstall before switching between regular and supervisor modes:
+Uninstall before switching between local configuration and supervisor modes:
 
 ```powershell
 .\coralogix-otel-collector.ps1 -Uninstall -Purge
@@ -366,7 +366,7 @@ If `Get-Process otelcol-contrib` returns "Cannot find a process":
 2. **Check why it failed:**
 
    ```powershell
-   # For regular mode
+   # For local configuration mode
    Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
 
    # For supervisor mode

@@ -5,7 +5,7 @@ Deploy the OpenTelemetry Collector in Docker with Coralogix integration.
 ## Overview
 
 This script runs the Coralogix OpenTelemetry Collector as a Docker container, supporting:
-- **Regular mode**: Local configuration file
+- **Local configuration mode**: Configuration file provided locally
 - **Supervisor mode**: Remote configuration via Fleet Management
 
 ## Prerequisites
@@ -18,11 +18,11 @@ This script runs the Coralogix OpenTelemetry Collector as a Docker container, su
 > [!IMPORTANT]
 > **Configuration Required**
 >
-> A configuration file must be provided when installing the collector in regular mode.
+> A configuration file must be provided when installing the collector with a local configuration file.
 
 ## Quick Start
 
-### Regular Mode
+### Local Configuration Mode
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
@@ -109,10 +109,10 @@ extensions:
 
 ## Container Images
 
-| Mode       | Image                                     |
-|------------|-------------------------------------------|
-| Regular    | `otel/opentelemetry-collector-contrib`    |
-| Supervisor | `coralogixrepo/otel-supervised-collector` |
+| Mode                    | Image                                     |
+|-------------------------|-------------------------------------------|
+| Local Configuration     | `otel/opentelemetry-collector-contrib`    |
+| Supervisor              | `coralogixrepo/otel-supervised-collector` |
 
 ## Exposed Ports
 
@@ -246,7 +246,7 @@ docker stop coralogix-otel-collector && docker rm coralogix-otel-collector
 ## Notes
 
 - **Config storage**: Config files are stored in `~/.coralogix-otel-collector/` and persist across reboots
-- **Regular mode**: Requires a config file (`-c` or `--config`). A configuration file must be provided for the collector to function properly
+- **Local configuration mode**: Requires a config file (`-c` or `--config`). A configuration file must be provided for the collector to function properly
 - **Supervisor mode**: Config is managed remotely via Coralogix Fleet Management. The `-c`/`--config` flag is ignored in supervisor mode with a warning
 - **Port conflicts**: Script checks for port availability before starting and provides clear error messages
 - **Environment variables**: Configuration files should use environment variable substitution (e.g., `${env:OTEL_MEMORY_LIMIT_MIB}`) to leverage the script's environment variable support

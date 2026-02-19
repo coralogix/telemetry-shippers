@@ -8,7 +8,7 @@ This script deploys the Coralogix OpenTelemetry Collector as:
 - **Linux**: systemd service
 - **macOS**: LaunchDaemon (system-wide) or LaunchAgent (user-level)
 
-Both support **regular mode** (local config) and **supervisor mode** (remote config via Fleet Management).
+Both support **local configuration mode** (configuration file provided locally) and **supervisor mode** (remote configuration via Fleet Management).
 
 <!-- split title=&#34;Linux Installation&#34; path=&#34;installation/linux/index.md&#34; -->
 
@@ -134,7 +134,7 @@ Linux capabilities (`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) are required for:
 
 Capabilities are automatically enabled based on your installation mode:
 
-**Regular Mode:**
+**Local Configuration Mode:**
 - Capabilities are automatically enabled when:
   - Process metrics are detected in your configuration
 
@@ -187,7 +187,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ## Installation Locations
 
-### Regular Mode
+### Local Configuration Mode
 
 | Component            | Location                                        |
 |----------------------|-------------------------------------------------|
@@ -211,7 +211,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ## Service Management
 
-### Regular Mode
+### Local Configuration Mode
 
 ```bash
 # Check status
@@ -283,7 +283,7 @@ The installer will warn you if you specify `--memory-limit` or `--listen-interfa
 
 ### Switching between modes
 
-Uninstall before switching between regular and supervisor modes:
+Uninstall before switching between local configuration and supervisor modes:
 
 ```bash
 bash coralogix-otel-collector.sh --uninstall --purge
