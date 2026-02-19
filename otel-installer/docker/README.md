@@ -109,10 +109,10 @@ extensions:
 
 ## Container Images
 
-| Mode                    | Image                                     |
-|-------------------------|-------------------------------------------|
-| Local Configuration     | `otel/opentelemetry-collector-contrib`    |
-| Supervisor              | `coralogixrepo/otel-supervised-collector` |
+| Mode                | Image                                     |
+|---------------------|-------------------------------------------|
+| Local Configuration | `otel/opentelemetry-collector-contrib`    |
+| Supervisor          | `coralogixrepo/otel-supervised-collector` |
 
 ## Exposed Ports
 
