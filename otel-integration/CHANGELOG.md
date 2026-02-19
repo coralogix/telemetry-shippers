@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.279 / 2026-02-25
+
+- [Change] Bump OBI image to v0.5.0
+
 ### v0.0.278 / 2026-02-24
 
 - [Fix] Add default `CORALOGIX_PRIVATE_KEY` secret mapping for `opentelemetry-ebpf-profiler`.
