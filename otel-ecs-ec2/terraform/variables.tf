@@ -54,7 +54,7 @@ variable "image" {
 variable "image_version" {
   description = "OpenTelemetry Collector image tag"
   type        = string
-  default     = "v0.5.7"
+  default     = "v0.5.8"
 }
 
 variable "memory" {
