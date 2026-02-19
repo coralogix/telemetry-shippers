@@ -2,7 +2,7 @@
 # Coralogix OpenTelemetry Collector - Docker Installation Script
 #
 # One-line installation:
-#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)"
+#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- -c /path/to/config.yaml
 #
 # Supervisor mode:
 #   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor
@@ -127,14 +127,14 @@ Examples:
     # Supervisor mode (config managed remotely)
     CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" $0 -s
 
-    # Gateway mode with custom memory and listen interface
+    # Gateway mode with custom memory
     CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --memory-limit 2048
 
     # Custom ports
     OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
 
-    # Quick start with placeholder config (testing only)
-    CORALOGIX_PRIVATE_KEY="your-key" $0
+    # Install specific version
+    CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --version 0.140.1
 
     # Stop the container
     $0 --stop

@@ -23,14 +23,10 @@ Install the OpenTelemetry Collector as a systemd service on Linux.
 - Root/sudo access
 - Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)
 
-## Quick Start
-
-Run the following command to install the collector with default configuration:
-
-```bash
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
-```
+> [!IMPORTANT]
+> **Configuration Required**
+>
+> A configuration file must be provided when installing the collector. Use the example configuration from the [`otel-linux-standalone/build/otel-config.yaml`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-linux-standalone/build/otel-config.yaml) file. **Make sure to update the `domain` value** in the configuration file to match your [Coralogix domain](https://coralogix.com/docs/coralogix-domain/).
 
 ## Environment Variables
 
@@ -86,7 +82,7 @@ To install with your own configuration file:
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --config /path/to/config.yaml
+  -- -c /path/to/config.yaml
 ```
 
 ## Install Specific Version
@@ -94,7 +90,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --version 0.140.1
+  -- -c /path/to/config.yaml --version 0.140.1
 ```
 
 ## Install with Custom Memory Limit
@@ -104,7 +100,7 @@ Allocate more memory to the collector (useful for high-volume environments):
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --memory-limit 2048
+  -- -c /path/to/config.yaml --memory-limit 2048
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
@@ -116,7 +112,7 @@ By default, the collector listens only on `127.0.0.1` (localhost). To accept con
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --listen-interface 0.0.0.0
+  -- -c /path/to/config.yaml --listen-interface 0.0.0.0
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
@@ -126,59 +122,12 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --memory-limit 2048 --listen-interface 0.0.0.0
-```
-
-## Service Discovery
-
-The installer supports automatic service discovery for databases and services (PostgreSQL, MySQL, Redis, MongoDB, NGINX, Apache, RabbitMQ, Memcached, Elasticsearch, Kafka, and Cassandra).
-
-When discovery is enabled in your configuration, the installer will:
-- Create a credentials file template (`/etc/otelcol-contrib/discovery.env`)
-- Automatically enable Linux capabilities (required for discovery to work)
-
-### Configure Discovery Credentials
-
-After installation, edit the credentials file:
-
-```bash
-sudo nano /etc/otelcol-contrib/discovery.env
-```
-
-Uncomment and set your credentials:
-
-```bash
-# PostgreSQL
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=postgres
-
-# MySQL
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password
-
-# Redis
-REDIS_PASSWORD=your_password
-```
-
-Then restart the service:
-
-```bash
-sudo systemctl restart otelcol-contrib
-```
-
-Alternatively, set environment variables before installation:
-
-```bash
-POSTGRES_PASSWORD="your_password" \
-CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+  -- -c /path/to/config.yaml --memory-limit 2048 --listen-interface 0.0.0.0
 ```
 
 ## Linux Capabilities
 
 Linux capabilities (`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) are required for:
-- **Service discovery**: To identify processes on listening ports
 - **Process metrics**: To read detailed process information (CPU, memory, disk I/O)
 
 ### Automatic Enablement
@@ -187,7 +136,6 @@ Capabilities are automatically enabled based on your installation mode:
 
 **Regular Mode:**
 - Capabilities are automatically enabled when:
-  - Service discovery is detected in your configuration
   - Process metrics are detected in your configuration
 
 **Supervisor Mode:**
@@ -214,8 +162,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Supervisor Mode Features
 
-- **Automatic capabilities**: Linux capabilities are enabled by default to support service discovery and process metrics when added via Fleet Manager (use `--disable-capabilities` to opt-out)
-- **Discovery credentials**: Configure credentials in `/etc/opampsupervisor/opampsupervisor.conf` for discovered services
+- **Automatic capabilities**: Linux capabilities are enabled by default to support process metrics when added via Fleet Manager (use `--disable-capabilities` to opt-out)
 - **Installation summary**: View installation details and useful commands in `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt`
 
 ## Script Options
@@ -246,7 +193,6 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 |-----------------------|-------------------------------------------------|
 | Binary                | `/usr/bin/otelcol-contrib`                      |
 | Configuration         | `/etc/otelcol-contrib/config.yaml`              |
-| Discovery Credentials | `/etc/otelcol-contrib/discovery.env`            |
 | Installation Summary  | `/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt` |
 | Service               | `otelcol-contrib.service` (systemd)             |
 | Logs                  | `journalctl -u otelcol-contrib`                 |
@@ -259,7 +205,6 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | Supervisor Config     | `/etc/opampsupervisor/config.yaml`              |
 | Collector Config      | `/etc/opampsupervisor/collector.yaml`           |
 | Effective Config      | `/var/lib/opampsupervisor/effective.yaml`       |
-| Discovery Credentials | `/etc/opampsupervisor/opampsupervisor.conf`     |
 | Installation Summary  | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
 | Service               | `opampsupervisor.service` (systemd)             |
 | Logs                  | `/var/log/opampsupervisor/opampsupervisor.log`  |
@@ -362,11 +307,12 @@ Install the OpenTelemetry Collector on macOS as a LaunchDaemon (system-wide) or 
 
 ## Quick Start
 
-Run the following command to install the collector with default configuration:
+Run the following command to install the collector with a configuration file:
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- -c /path/to/config.yaml
 ```
 
 ## Environment Variables
@@ -409,7 +355,8 @@ Install as a user-level agent that runs at login (instead of system-wide at boot
 
 ```bash
 CORALOGIX_MACOS_USER_AGENT="true" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+  bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
+  -- -c /path/to/config.yaml
 ```
 
 ## Install with Custom Configuration
@@ -419,7 +366,7 @@ To install with your own configuration file:
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --config /path/to/config.yaml
+  -- -c /path/to/config.yaml
 ```
 
 ## Install Specific Version
@@ -427,7 +374,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --version 0.140.1
+  -- -c /path/to/config.yaml --version 0.140.1
 ```
 
 ## Install with Custom Memory Limit
@@ -435,7 +382,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --memory-limit 2048
+  -- -c /path/to/config.yaml --memory-limit 2048
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
@@ -445,7 +392,7 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --listen-interface 0.0.0.0
+  -- -c /path/to/config.yaml --listen-interface 0.0.0.0
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
