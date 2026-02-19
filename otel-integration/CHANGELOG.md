@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.276 / 2026-02-19
+
+- [Change] Bump OBI image to v0.5.0
+
 ### v0.0.275 / 2026-02-13
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.4
