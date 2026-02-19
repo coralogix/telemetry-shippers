@@ -66,17 +66,17 @@
     Show help message
     
 .EXAMPLE
-    # One-line installation (recommended)
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+    # One-line installation (download and execute with config)
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; $script = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'); & ([scriptblock]::Create($script)) -Config C:\path\to\config.yaml
 
 .EXAMPLE
     # One-line installation for Windows Server 2016 / 2012 R2 and older Windows 10
     # (enables TLS 1.2, required when fails with an SSL/TLS error)
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $script = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'); & ([scriptblock]::Create($script)) -Config C:\path\to\config.yaml
     
 .EXAMPLE
     # Install specific version
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Version 0.140.1
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -Version 0.140.1
     
 .EXAMPLE
     # Install with custom config
@@ -96,19 +96,19 @@
     
 .EXAMPLE
     # Install with custom memory limit
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -MemoryLimit 2048
 
 .EXAMPLE
     # Install with external network access (gateway mode - listen on all interfaces)
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -ListenInterface 0.0.0.0
 
 .EXAMPLE
     # Install with custom memory limit and external access
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -MemoryLimit 2048 -ListenInterface 0.0.0.0
 
 .EXAMPLE
     # Install with dynamic metadata parsing for IIS logs
-    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -EnableDynamicIISParsing
 
 .EXAMPLE
     # Uninstall (keep config/logs)
@@ -279,15 +279,15 @@ Environment Variables:
     CORALOGIX_DOMAIN        Coralogix domain (required for supervisor mode)
 
 Examples:
-    # One-line installation (recommended)
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+    # One-line installation (download and execute with config)
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; `$script = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'); & ([scriptblock]::Create(`$script)) -Config C:\path\to\config.yaml
 
     # One-line installation for Windows Server 2016 / 2012 R2 and older Windows 10
     # (enables TLS 1.2, required when fails with an SSL/TLS error)
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; `$script = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'); & ([scriptblock]::Create(`$script)) -Config C:\path\to\config.yaml
 
     # Install specific version
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Version 0.140.1
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -Version 0.140.1
 
     # Install with custom config
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml
@@ -305,16 +305,16 @@ Examples:
     `$env:CORALOGIX_DOMAIN="your-domain"; `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Supervisor -SupervisorCollectorBaseConfig C:\path\to\collector.yaml
 
     # Install with custom memory limit
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -MemoryLimit 2048
 
     # Install with external network access (gateway mode - listen on all interfaces)
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -ListenInterface 0.0.0.0
 
     # Install with custom memory limit and external access
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -MemoryLimit 2048 -ListenInterface 0.0.0.0
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -MemoryLimit 2048 -ListenInterface 0.0.0.0
 
     # Install with dynamic metadata parsing for IIS logs
-    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -EnableDynamicIISParsing
 
     # Uninstall (keep config/logs)
     .\coralogix-otel-collector.ps1 -Uninstall

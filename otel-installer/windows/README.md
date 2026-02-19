@@ -46,21 +46,21 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Version 0.144.0
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -Version 0.144.0
 ```
 
 ### Install with Custom Memory Limit
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -MemoryLimit 2048
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -MemoryLimit 2048
 ```
 
 ### Install with External Network Access (Gateway Mode)
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -ListenInterface 0.0.0.0
 ```
 
 ---
@@ -71,7 +71,7 @@ Enable dynamic metadata parsing for file-based logs, such as IIS logs with heade
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -EnableDynamicIISParsing
 ```
 
 This option:
@@ -309,7 +309,7 @@ If you get "Cannot start service otelcol-contrib":
 
    # Reinstall (will auto-detect and upgrade)
    $env:CORALOGIX_PRIVATE_KEY="<your-key>"
-   .\coralogix-otel-collector.ps1
+   .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml
    ```
 
 ### SSL/TLS Connection Error (Windows Server 2016 and older)
@@ -321,7 +321,8 @@ If you encounter "The request was aborted: Could not create SSL/TLS secure chann
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+$script = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1')
+& ([scriptblock]::Create($script)) -Config C:\path\to\config.yaml
 ```
 
 ### Script Execution Policy
