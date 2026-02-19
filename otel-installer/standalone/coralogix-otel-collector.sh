@@ -4,10 +4,7 @@
 # Supports Linux and macOS
 #
 # One-line installation (sudo is handled automatically):
-#   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
-#
-# Or with options:
-#   curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh | bash -s -- [OPTIONS]
+#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml
 #
 # Note: The script will automatically use sudo when needed. You can run it as root or as a regular user.
 #
@@ -256,10 +253,10 @@ Environment Variables:
 
 Examples:
     # One-line installation (recommended)
-    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml
 
     # Install specific version
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -v 0.140.1
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml -v 0.140.1
 
     # Install with custom config
     CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml
@@ -271,16 +268,16 @@ Examples:
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
 
     # Install with external network access (gateway mode - listen on all interfaces)
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --listen-interface 0.0.0.0
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml --listen-interface 0.0.0.0
 
     # Install with custom memory limit and external access
-    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --memory-limit 2048 --listen-interface 0.0.0.0
+    CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml --memory-limit 2048 --listen-interface 0.0.0.0
 
     # Supervisor mode: capabilities enabled by default (use --disable-capabilities to disable)
     # Regular mode: capabilities auto-enabled based on config (process metrics or discovery)
 
     # Install as user-level LaunchAgent on macOS (runs at login, logs to user directory)
-    CORALOGIX_MACOS_USER_AGENT=true bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)"
+    CORALOGIX_MACOS_USER_AGENT=true CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -c /path/to/config.yaml
 
     # Uninstall (keep config/logs)
     bash coralogix-otel-collector.sh --uninstall

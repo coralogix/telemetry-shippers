@@ -4,7 +4,7 @@ Install the OpenTelemetry Collector directly on Windows as a Windows Service.
 
 ## Overview
 
-This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Windows Service. It supports both **regular mode** (local config) and **supervisor mode** (remote config via Fleet Management).
+This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Windows Service. It supports both **local configuration mode** (configuration file provided locally) and **supervisor mode** (remote configuration via Fleet Management).
 
 ## Prerequisites
 
@@ -46,21 +46,21 @@ $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Version 0.144.0
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -Version 0.144.0
 ```
 
 ### Install with Custom Memory Limit
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -MemoryLimit 2048
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -MemoryLimit 2048
 ```
 
 ### Install with External Network Access (Gateway Mode)
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -ListenInterface 0.0.0.0
 ```
 
 ---
@@ -71,7 +71,7 @@ Enable dynamic metadata parsing for file-based logs, such as IIS logs with heade
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
+.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml -EnableDynamicIISParsing
 ```
 
 This option:
@@ -79,7 +79,7 @@ This option:
 - Creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage`
 - Runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`
 
-> **Note:** This feature is only available in regular mode, not supervisor mode.
+> **Note:** This feature is only available in local configuration mode, not supervisor mode.
 
 ---
 
@@ -150,7 +150,7 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ## Installation Locations
 
-### Regular Mode
+### Local Configuration Mode
 
 | Component     | Location                                                       |
 |---------------|----------------------------------------------------------------|
@@ -175,7 +175,7 @@ The base config is merged with remote configuration from Fleet Manager.
 
 ## Service Management
 
-### Regular Mode
+### Local Configuration Mode
 
 ```powershell
 # Check status
@@ -242,7 +242,7 @@ Remove the collector and all data:
 .\coralogix-otel-collector.ps1 -Uninstall -Purge
 ```
 
-> **Note:** For regular mode, the uninstall uses the Windows MSI uninstaller to properly remove the collector. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
+> **Note:** For local configuration mode, the uninstall uses the Windows MSI uninstaller to properly remove the collector. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
 
 ---
 
@@ -309,7 +309,7 @@ If you get "Cannot start service otelcol-contrib":
 
    # Reinstall (will auto-detect and upgrade)
    $env:CORALOGIX_PRIVATE_KEY="<your-key>"
-   .\coralogix-otel-collector.ps1
+   .\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml
    ```
 
 ### SSL/TLS Connection Error (Windows Server 2016 and older)
@@ -321,7 +321,8 @@ If you encounter "The request was aborted: Could not create SSL/TLS secure chann
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+$script = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1')
+& ([scriptblock]::Create($script)) -Config C:\path\to\config.yaml
 ```
 
 ### Script Execution Policy
@@ -340,7 +341,7 @@ powershell -ExecutionPolicy Bypass -File .\coralogix-otel-collector.ps1
 
 ### Switching Between Modes
 
-Uninstall before switching between regular and supervisor modes:
+Uninstall before switching between local configuration and supervisor modes:
 
 ```powershell
 .\coralogix-otel-collector.ps1 -Uninstall -Purge
@@ -365,7 +366,7 @@ If `Get-Process otelcol-contrib` returns "Cannot find a process":
 2. **Check why it failed:**
 
    ```powershell
-   # For regular mode
+   # For local configuration mode
    Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
 
    # For supervisor mode
