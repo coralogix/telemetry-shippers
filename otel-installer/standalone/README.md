@@ -189,25 +189,25 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Regular Mode
 
-| Component             | Location                                        |
-|-----------------------|-------------------------------------------------|
-| Binary                | `/usr/bin/otelcol-contrib`                      |
-| Configuration         | `/etc/otelcol-contrib/config.yaml`              |
-| Installation Summary  | `/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt` |
-| Service               | `otelcol-contrib.service` (systemd)             |
-| Logs                  | `journalctl -u otelcol-contrib`                 |
+| Component            | Location                                        |
+|----------------------|-------------------------------------------------|
+| Binary               | `/usr/bin/otelcol-contrib`                      |
+| Configuration        | `/etc/otelcol-contrib/config.yaml`              |
+| Installation Summary | `/etc/otelcol-contrib/INSTALLATION_SUMMARY.txt` |
+| Service              | `otelcol-contrib.service` (systemd)             |
+| Logs                 | `journalctl -u otelcol-contrib`                 |
 
 ### Supervisor Mode
 
-| Component             | Location                                        |
-|-----------------------|-------------------------------------------------|
-| Collector Binary      | `/usr/local/bin/otelcol-contrib`                |
-| Supervisor Config     | `/etc/opampsupervisor/config.yaml`              |
-| Collector Config      | `/etc/opampsupervisor/collector.yaml`           |
-| Effective Config      | `/var/lib/opampsupervisor/effective.yaml`       |
-| Installation Summary  | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
-| Service               | `opampsupervisor.service` (systemd)             |
-| Logs                  | `/var/log/opampsupervisor/opampsupervisor.log`  |
+| Component            | Location                                        |
+|----------------------|-------------------------------------------------|
+| Collector Binary     | `/usr/local/bin/otelcol-contrib`                |
+| Supervisor Config    | `/etc/opampsupervisor/config.yaml`              |
+| Collector Config     | `/etc/opampsupervisor/collector.yaml`           |
+| Effective Config     | `/var/lib/opampsupervisor/effective.yaml`       |
+| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
+| Service              | `opampsupervisor.service` (systemd)             |
+| Logs                 | `/var/log/opampsupervisor/opampsupervisor.log`  |
 
 ## Service Management
 
