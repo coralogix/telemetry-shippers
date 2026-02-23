@@ -2,11 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.277 / 2026-02-23
+
+- [Chore] Bump coralogix-operator to 2.1.0
+
 ### v0.0.276 / 2026-02-16
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.5
 
 #### Changes from opentelemetry-collector 0.129.5:
+
 #### v0.129.5
 - [Fix] Use `aws.ecs.cluster.name` instead of `aws.ecs.cluster` for ECS distribution `application_name_attributes` to match the attribute name used by the `awsecscontainermetricsd` receiver.
 
