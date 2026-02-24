@@ -18,6 +18,50 @@ This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Window
 >
 > A configuration file must be provided when installing the collector. Use the example configuration from the [`otel-windows-standalone/build`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-windows-standalone/build) folder. **Make sure to update the `domain` value** in the configuration file to match your [Coralogix domain](https://coralogix.com/docs/coralogix-domain/).
 
+## Quick Start
+
+Run the following command in an elevated PowerShell (Run as Administrator) to download the installer from GitHub and install with your config file:
+
+```powershell
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\your\config.yaml'
+```
+
+Replace `<your-private-key>` with your [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) and `C:\path\to\your\config.yaml` with the path to your config file. Ensure the config file exists on the machine before running (e.g. create it in Notepad and save as `C:\otel\config.yaml`). **Copy the command as a single line;** the key must be in single quotes with a closing quote before the semicolon (e.g. `'your-key'; & $f`).
+
+> **Note:** On **Windows Server 2016 or older**, prepend `[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; ` to the command so the download from GitHub succeeds (GitHub requires TLS 1.2+).
+
+## Environment Variables
+
+### Required Variables
+
+| Variable              | Required             | Description                                                                                 |
+|-----------------------|----------------------|---------------------------------------------------------------------------------------------|
+| CORALOGIX_PRIVATE_KEY | Yes                  | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
+| CORALOGIX_DOMAIN      | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/)                       |
+
+### Automatically Set Variables
+
+The installer automatically sets these environment variables for the collector service:
+
+| Variable              | Default   | Description                                                            |
+|-----------------------|-----------|------------------------------------------------------------------------|
+| OTEL_MEMORY_LIMIT_MIB | 512       | Memory limit in MiB (set via `-MemoryLimit` parameter)                 |
+| OTEL_LISTEN_INTERFACE | 127.0.0.1 | Network interface for receivers (set via `-ListenInterface` parameter) |
+
+To use these in your configuration file:
+
+```yaml
+processors:
+  memory_limiter:
+    limit_mib: ${env:OTEL_MEMORY_LIMIT_MIB:-512}
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
+```
+
 ## Supported Platforms
 
 ### Windows Versions
@@ -31,101 +75,81 @@ This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Window
 - x64 (amd64)
 - ARM64
 
----
+## Install with Custom Configuration
 
-## Installation Options
-
-### Install with Custom Configuration
+To install with your own configuration file (script is downloaded from GitHub and run from temp):
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Config C:\path\to\config.yaml
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\config.yaml'
 ```
 
-### Install Specific Version
+## Install Specific Version
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Version 0.144.0
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Version 0.144.0
 ```
 
-### Install with Custom Memory Limit
+## Install with Custom Memory Limit
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -MemoryLimit 2048
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -MemoryLimit 2048
 ```
 
-### Install with External Network Access (Gateway Mode)
+> **Note:** Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
+
+## Install as Gateway (Listen on All Interfaces)
+
+By default, the collector listens only on `127.0.0.1`. To accept connections from other hosts (gateway mode):
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -ListenInterface 0.0.0.0
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -ListenInterface 0.0.0.0
 ```
 
----
+> **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
 
 ## Dynamic Metadata Parsing (IIS Logs)
 
 Enable dynamic metadata parsing for file-based logs, such as IIS logs with header-based format detection:
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -EnableDynamicIISParsing
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -EnableDynamicIISParsing
 ```
 
-This option:
+This option creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage` and runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`. Only available in regular mode, not supervisor mode.
 
-- Creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage`
-- Runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`
-
-> **Note:** This feature is only available in regular mode, not supervisor mode.
-
----
+> **Note:** If your configuration file uses the `file_storage` extension (e.g. for checkpoint state), you must also pass `-EnableDynamicIISParsing` so the installer creates the required storage directory. Without it, the service will fail to start with an error about the storage directory not existing.
 
 ## Supervisor Mode
 
-Supervisor mode enables remote configuration management through Coralogix Fleet Management.
+Supervisor mode enables remote configuration management through Coralogix [Fleet Management](https://coralogix.com/docs/user-guides/fleet-management/overview/).
 
 ### Basic Installation
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor
 ```
 
-> **Note:** Supervisor mode requires version **0.144.0 or higher** because the Windows MSI installer is only available from this version onwards. If the detected version is lower, the script will automatically use 0.144.0.
+> **Note:** Supervisor mode requires version **0.144.0 or higher** (Windows MSI is available from this version). If the detected version is lower, the script will automatically use 0.144.0.
 
 ### With Specific Versions
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor -SupervisorVersion 0.144.0 -CollectorVersion 0.144.0
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorVersion 0.144.0 -CollectorVersion 0.144.0
 ```
 
 ### With Local MSI File
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor -SupervisorMsi C:\path\to\opampsupervisor.msi
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorMsi 'C:\path\to\opampsupervisor.msi'
 ```
 
 ### With Custom Base Collector Config
 
 ```powershell
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor -SupervisorCollectorBaseConfig C:\path\to\collector.yaml
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorCollectorBaseConfig 'C:\path\to\collector.yaml'
 ```
 
-The base config is merged with remote configuration from Fleet Manager.
-
-> **Note:** The config cannot contain the `opamp` extension as the supervisor manages the OpAMP connection.
-
----
+The base config is merged with remote configuration from Fleet Manager. The config cannot contain the `opamp` extension (the supervisor manages the OpAMP connection).
 
 ## Script Parameters
 
@@ -145,8 +169,6 @@ The base config is merged with remote configuration from Fleet Manager.
 | `-Uninstall`                            | Remove the collector (keeps config)                              |
 | `-Uninstall -Purge`                     | Remove the collector and all configuration                       |
 | `-Help`                                 | Show help message                                                |
-
----
 
 ## Installation Locations
 
@@ -170,8 +192,6 @@ The base config is merged with remote configuration from Fleet Manager.
 | Effective Config  | `C:\ProgramData\opampsupervisor\state\effective.yaml`                 |
 | Service           | `opampsupervisor` (Windows Service)                                   |
 | Logs              | Windows Event Log (Application) - Source: `opampsupervisor`           |
-
----
 
 ## Service Management
 
@@ -214,37 +234,25 @@ Get-Process otelcol-contrib -ErrorAction SilentlyContinue
 ### Viewing Configuration Files (Supervisor Mode)
 
 ```powershell
-# View supervisor config
-Get-Content "C:\Program Files\OpenTelemetry OpAMP Supervisor\config.yaml"
-
-# View base collector config (merged with remote config)
-Get-Content "C:\Program Files\OpenTelemetry OpAMP Supervisor\collector.yaml"
-
 # View effective config (actual config after merge with Fleet Management)
 Get-Content "C:\ProgramData\opampsupervisor\state\effective.yaml"
 ```
 
-> **Note:** The `effective.yaml` contains the final merged configuration that the collector is actually using. This file is generated by the supervisor after merging the base config with remote configuration from Fleet Management.
-
----
-
 ## Uninstall
 
-Remove the collector while keeping configuration and logs:
+Remove the collector while keeping configuration and logs (script is downloaded from GitHub and run):
 
 ```powershell
-.\coralogix-otel-collector.ps1 -Uninstall
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; & $f -Uninstall
 ```
 
 Remove the collector and all data:
 
 ```powershell
-.\coralogix-otel-collector.ps1 -Uninstall -Purge
+$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; & $f -Uninstall -Purge
 ```
 
-> **Note:** For regular mode, the uninstall uses the Windows MSI uninstaller to properly remove the collector. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
-
----
+> **Note:** For regular mode, uninstall uses the Windows MSI uninstaller. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
 
 ## Configuration Behavior
 
@@ -256,61 +264,22 @@ Remove the collector and all data:
 | Auto-upgrade    | Preserves existing config         |
 | Supervisor mode | Config managed remotely via OpAMP |
 
----
-
 ## Troubleshooting
 
 ### Service Fails to Start
 
-If you get "Cannot start service otelcol-contrib":
+If the installer reports that the service failed to start, it will print recent errors from the Application Event Log. You can also run:
 
-1. **Check service status and configuration:**
+```powershell
+Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
+```
 
-   ```powershell
-   Get-Service otelcol-contrib
-   Get-CimInstance Win32_Service -Filter "Name='otelcol-contrib'" | Select-Object Name, State, StartMode, PathName
-   ```
+Common causes:
 
-2. **Check Windows Event Log for detailed errors:**
-
-   ```powershell
-   # Check System Event Log for service errors
-   Get-EventLog -LogName System -Source "Service Control Manager" -Newest 20 | Where-Object {$_.Message -like "*otelcol*"}
-
-   # Check Application Event Log
-   Get-EventLog -LogName Application -Newest 50 | Where-Object {$_.Source -like "*otel*" -or $_.Message -like "*otel*"}
-   ```
-
-3. **Verify all required files exist:**
-
-   ```powershell
-   Test-Path "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe"
-   Test-Path "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
-   ```
-
-4. **Validate the configuration file:**
-
-   ```powershell
-   & "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
-   ```
-
-5. **Test running the collector manually (run as Administrator):**
-
-   ```powershell
-   $env:CORALOGIX_PRIVATE_KEY="<your-key>"
-   & "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"
-   ```
-
-6. **If all else fails, recreate the service:**
-
-   ```powershell
-   Stop-Service otelcol-contrib -ErrorAction SilentlyContinue
-   & sc.exe delete otelcol-contrib
-
-   # Reinstall (will auto-detect and upgrade)
-   $env:CORALOGIX_PRIVATE_KEY="<your-key>"
-   .\coralogix-otel-collector.ps1
-   ```
+- **IIS receiver in config but IIS not installed:** Remove the `iis` receiver (and its use in pipelines) from your config if the machine does not have the IIS role, or install the Web Server (IIS) role.
+- **`file_storage` extension but storage directory missing:** Your config references `file_storage` but the storage directory does not exist. Re-run the installer with `-EnableDynamicIISParsing` to create `C:\ProgramData\OpenTelemetry\Collector\storage` automatically. The installer will detect and report this error specifically if the service fails to start.
+- **Invalid config:** Run: `& "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"`
+- **Missing env var:** Ensure `CORALOGIX_PRIVATE_KEY` is set for the service (the installer sets it; if you reconfigure manually, set it in the service’s environment).
 
 ### SSL/TLS Connection Error (Windows Server 2016 and older)
 
@@ -326,68 +295,21 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ### Script Execution Policy
 
-If you encounter execution policy errors:
+If you get execution policy errors:
 
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-Or run the script with bypass:
+Or run with bypass:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\coralogix-otel-collector.ps1
+powershell -ExecutionPolicy Bypass -Command { $u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\otel\config.yaml' }
 ```
-
-### Switching Between Modes
-
-Uninstall before switching between regular and supervisor modes:
-
-```powershell
-.\coralogix-otel-collector.ps1 -Uninstall -Purge
-
-$env:CORALOGIX_DOMAIN="<your-domain>"
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-.\coralogix-otel-collector.ps1 -Supervisor
-```
-
-### Process Not Found
-
-If `Get-Process otelcol-contrib` returns "Cannot find a process":
-
-1. **Check if the service is running:**
-
-   ```powershell
-   Get-Service otelcol-contrib
-   # or for supervisor mode:
-   Get-Service opampsupervisor
-   ```
-
-2. **Check why it failed:**
-
-   ```powershell
-   # For regular mode
-   Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
-
-   # For supervisor mode
-   Get-EventLog -LogName Application -Source opampsupervisor -Newest 50 | Format-List
-   ```
-
-3. **Try starting the service manually:**
-
-   ```powershell
-   Start-Service otelcol-contrib
-   Get-Service otelcol-contrib
-   ```
 
 ### Administrator Privileges
 
-The script requires administrator privileges. If you see permission errors:
-
-1. Right-click PowerShell
-2. Select **"Run as Administrator"**
-3. Run the script again
-
----
+The script requires administrator privileges. Right-click PowerShell and choose **Run as Administrator**, then run the install command again.
 
 ## Additional Resources
 
@@ -395,8 +317,6 @@ The script requires administrator privileges. If you see permission errors:
 |-----------------------------|--------------------------------------------------------------------------------------------------|
 | GitHub Repository           | [telemetry-shippers](https://github.com/coralogix/telemetry-shippers/tree/master/otel-installer) |
 | OpenTelemetry Documentation | [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)                              |
-
----
 
 ## Support
 
