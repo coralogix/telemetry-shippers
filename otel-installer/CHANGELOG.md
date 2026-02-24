@@ -2,6 +2,12 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.1.7] - 2026-02-22
+
+### Added
+- Windows: On service start failure, installer now prints recent collector errors from the Application Event Log (source `otelcol-contrib`) so users see the actual failure (e.g. IIS receiver, config errors) before generic troubleshooting steps
+
+
 ## [0.1.6] - 2026-02-02
 
 ### Added

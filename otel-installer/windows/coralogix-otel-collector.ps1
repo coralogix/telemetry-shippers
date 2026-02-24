@@ -1333,7 +1333,31 @@ function New-WindowsService {
     catch {
         Write-Warn "Failed to start service: $($_.Exception.Message)"
         Write-Host ""
-        
+
+        # Show actual failure reason from Application Event Log (collector writes errors there before exiting)
+        Write-Host "Recent collector errors (Application Event Log):" -ForegroundColor Yellow
+        try {
+            $recentErrors = Get-EventLog -LogName Application -Newest 50 -ErrorAction SilentlyContinue |
+                Where-Object { $_.Source -eq 'otelcol-contrib' } |
+                Select-Object -First 5
+            if ($recentErrors) {
+                foreach ($e in $recentErrors) {
+                    Write-Host ""
+                    Write-Host "  [$($e.TimeGenerated)] $($e.Source)" -ForegroundColor Cyan
+                    Write-Host "  $($e.Message)" -ForegroundColor Red
+                }
+                Write-Host ""
+            }
+            else {
+                Write-Host "  (No collector entries found in Application log. The service may have exited before writing.)"
+                Write-Host ""
+            }
+        }
+        catch {
+            Write-Host "  (Could not read Event Log: $($_.Exception.Message))"
+            Write-Host ""
+        }
+
         # Try to get the actual error by running the collector directly
         Write-Host "Checking for configuration errors..."
         $validateOutput = & "$BINARY_PATH" validate --config "$CONFIG_FILE" 2>&1 | Out-String
@@ -1352,14 +1376,16 @@ function New-WindowsService {
             Write-Host ""
         }
         else {
-            Write-Host "Validation output:"
-            Write-Host $validateOutput
-            Write-Host ""
+            if ($validateOutput.Trim()) {
+                Write-Host "Validation output:"
+                Write-Host $validateOutput
+                Write-Host ""
+            }
             Write-Host "Troubleshooting steps:"
             Write-Host "1. Check if binary exists: Test-Path '$BINARY_PATH'"
             Write-Host "2. Check if config exists: Test-Path '$CONFIG_FILE'"
             Write-Host "3. Validate config: & '$BINARY_PATH' validate --config '$CONFIG_FILE'"
-            Write-Host "4. Check Event Log: Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 20"
+            Write-Host "4. Check Application Event Log: Get-EventLog -LogName Application -Source 'otelcol-contrib' -Newest 20"
             Write-Host "5. Check service path: Get-CimInstance Win32_Service -Filter \"Name='$SERVICE_NAME'\" | Select-Object PathName"
             Write-Host ""
         }
