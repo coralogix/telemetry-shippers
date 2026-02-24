@@ -43,9 +43,9 @@ Replace `<your-private-key>` with your [Send-Your-Data API key](https://coralogi
 
 The installer automatically sets these environment variables for the collector service:
 
-| Variable              | Default   | Description                                                         |
-|-----------------------|-----------|---------------------------------------------------------------------|
-| OTEL_MEMORY_LIMIT_MIB | 512       | Memory limit in MiB (set via `-MemoryLimit` parameter)             |
+| Variable              | Default   | Description                                                            |
+|-----------------------|-----------|------------------------------------------------------------------------|
+| OTEL_MEMORY_LIMIT_MIB | 512       | Memory limit in MiB (set via `-MemoryLimit` parameter)                 |
 | OTEL_LISTEN_INTERFACE | 127.0.0.1 | Network interface for receivers (set via `-ListenInterface` parameter) |
 
 To use these in your configuration file:
@@ -154,7 +154,7 @@ The base config is merged with remote configuration from Fleet Manager. The conf
 | Parameter                               | Description                                                      |
 |-----------------------------------------|------------------------------------------------------------------|
 | `-Version <version>`                    | Install specific collector version                               |
-| `-Config <path>`                        | Path to custom configuration file                                 |
+| `-Config <path>`                        | Path to custom configuration file                                |
 | `-MemoryLimit <MiB>`                    | Total memory in MiB to allocate (default: 512)                   |
 | `-ListenInterface <ip>`                 | Network interface for receivers (default: 127.0.0.1)             |
 | `-Supervisor`                           | Install with OpAMP Supervisor mode                               |
@@ -300,7 +300,7 @@ The script requires administrator privileges. Right-click PowerShell and choose 
 
 | Resource                    | Link                                                                                             |
 |-----------------------------|--------------------------------------------------------------------------------------------------|
-| GitHub Repository           | [telemetry-shippers](https://github.com/coralogix/telemetry-shippers/tree/master/otel-installer)  |
+| GitHub Repository           | [telemetry-shippers](https://github.com/coralogix/telemetry-shippers/tree/master/otel-installer) |
 | OpenTelemetry Documentation | [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)                              |
 
 ## Support
