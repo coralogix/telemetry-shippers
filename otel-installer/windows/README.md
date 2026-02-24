@@ -117,6 +117,8 @@ $u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-i
 
 This option creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage` and runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`. Only available in regular mode, not supervisor mode.
 
+> **Note:** If your configuration file uses the `file_storage` extension (e.g. for checkpoint state), you must also pass `-EnableDynamicIISParsing` so the installer creates the required storage directory. Without it, the service will fail to start with an error about the storage directory not existing.
+
 ## Supervisor Mode
 
 Supervisor mode enables remote configuration management through Coralogix [Fleet Management](https://coralogix.com/docs/user-guides/fleet-management/overview/).
@@ -275,6 +277,7 @@ Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
 Common causes:
 
 - **IIS receiver in config but IIS not installed:** Remove the `iis` receiver (and its use in pipelines) from your config if the machine does not have the IIS role, or install the Web Server (IIS) role.
+- **`file_storage` extension but storage directory missing:** Your config references `file_storage` but the storage directory does not exist. Re-run the installer with `-EnableDynamicIISParsing` to create `C:\ProgramData\OpenTelemetry\Collector\storage` automatically. The installer will detect and report this error specifically if the service fails to start.
 - **Invalid config:** Run: `& "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"`
 - **Missing env var:** Ensure `CORALOGIX_PRIVATE_KEY` is set for the service (the installer sets it; if you reconfigure manually, set it in the service’s environment).
 
