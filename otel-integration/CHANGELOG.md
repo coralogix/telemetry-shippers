@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.278 / 2026-02-24
+
+- [Fix] Add default `CORALOGIX_PRIVATE_KEY` secret mapping for `opentelemetry-ebpf-profiler` and simplify the EKS eBPF test override.
+
 ### v0.0.277 / 2026-02-23
 
 - [Chore] Bump coralogix-operator to 2.1.0
