@@ -68,6 +68,11 @@
 .EXAMPLE
     # One-line installation (recommended)
     $env:CORALOGIX_PRIVATE_KEY="your-key"; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+
+.EXAMPLE
+    # One-line installation for Windows Server 2016 / 2012 R2 and older Windows 10
+    # (enables TLS 1.2, required when fails with an SSL/TLS error)
+    $env:CORALOGIX_PRIVATE_KEY="your-key"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
     
 .EXAMPLE
     # Install specific version
@@ -276,6 +281,10 @@ Environment Variables:
 Examples:
     # One-line installation (recommended)
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+
+    # One-line installation for Windows Server 2016 / 2012 R2 and older Windows 10
+    # (enables TLS 1.2, required when fails with an SSL/TLS error)
+    `$env:CORALOGIX_PRIVATE_KEY="your-key"; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
 
     # Install specific version
     `$env:CORALOGIX_PRIVATE_KEY="your-key"; .\coralogix-otel-collector.ps1 -Version 0.140.1

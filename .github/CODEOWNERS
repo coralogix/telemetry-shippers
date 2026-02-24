@@ -4,3 +4,4 @@
 otel-integration/k8s-helm/README.md @coralogix/team-technical-writers
 otel-installer/standalone/README.md @coralogix/team-technical-writers
 otel-installer/docker/README.md @coralogix/team-technical-writers
+otel-installer/windows/README.md @coralogix/team-technical-writers

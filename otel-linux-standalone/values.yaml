@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.9"
+  version: "0.0.10"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:

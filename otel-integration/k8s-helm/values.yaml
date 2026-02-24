@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.275"
+  version: "0.0.278"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -859,6 +859,12 @@ coralogix-ebpf-profiler:
 opentelemetry-ebpf-profiler:
   enabled: false
   mode: daemonset
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/path: "/metrics"

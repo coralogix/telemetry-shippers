@@ -281,6 +281,18 @@ Common causes:
 - **Invalid config:** Run: `& "C:\Program Files\OpenTelemetry Collector\otelcol-contrib.exe" validate --config "C:\ProgramData\OpenTelemetry\Collector\config.yaml"`
 - **Missing env var:** Ensure `CORALOGIX_PRIVATE_KEY` is set for the service (the installer sets it; if you reconfigure manually, set it in the service’s environment).
 
+### SSL/TLS Connection Error (Windows Server 2016 and older)
+
+If you encounter "The request was aborted: Could not create SSL/TLS secure channel" when running the installation script, your system may be defaulting to TLS 1.0. GitHub requires TLS 1.2.
+
+**Optional fix for affected versions:** On Windows Server 2016, Windows Server 2012 R2, or older Windows 10, use this one-liner instead—it enables TLS 1.2 before downloading:
+
+```powershell
+$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+```
+
 ### Script Execution Policy
 
 If you get execution policy errors:
