@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.12 / 2026-02-25
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.7
+
+#### Changes from opentelemetry-collector 0.129.7:
+- [Feat] Extend `ecsAttributesContainerLogs` with `profilesServiceName.enabled` to map profiles `service.name` from ECS resource attributes with fallback order `aws.ecs.task.definition.family` then `aws.ecs.container.name`, wiring the transform only into existing profiles pipelines.
+
 ### v0.0.11 / 2026-02-25
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.6
