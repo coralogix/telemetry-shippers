@@ -1,7 +1,7 @@
 apiVersion: v2
 name: windows-standalone
 description: Standalone Windows OpenTelemetry Collector configuration
-version: 0.0.2
+version: 0.0.3
 keywords:
   - OpenTelemetry Collector
   - Coralogix
@@ -9,7 +9,7 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.129.4"
+    version: "0.129.6"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
 sources:
