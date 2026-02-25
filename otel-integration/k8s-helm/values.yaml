@@ -16,11 +16,11 @@ global:
 # - openshift
 # - eks/fargate
 # - gke/autopilot
-
 distribution: ""
 opentelemetry-agent:
   enabled: true
   mode: daemonset
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry
   # extraVolumes: []
   # extraVolumeMounts: []
@@ -368,6 +368,7 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry-collector
   clusterRole:
     name: "coralogix-opentelemetry-collector"
@@ -574,6 +575,7 @@ opentelemetry-agent-windows:
 opentelemetry-gateway:
   enabled: false
   mode: deployment
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry-gateway
   service:
     enabled: true
@@ -715,6 +717,7 @@ opentelemetry-gateway:
 opentelemetry-receiver:
   enabled: false
   mode: deployment
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry-receiver
   service:
     enabled: true
