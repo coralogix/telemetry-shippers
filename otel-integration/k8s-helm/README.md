@@ -1428,63 +1428,54 @@ The `ebpfProfiler` and `profilesK8sAttributes` presets are intended for the eBPF
 To find your Coralogix OTLP endpoint, see [Identify your Coralogix domain](https://coralogix.com/docs/integrations/coralogix-endpoints/#1-identify-your-coralogix-domain).
 For OTLP over gRPC, use port `443` on the ingress endpoint (for example, `ingress.eu1.coralogix.com:443`).
 
-The legacy `coralogix-ebpf-profiler` chart configuration is still available for compatibility. See `k8s-helm/values-ebpf-profiler.yaml` for the legacy setup and `k8s-helm/values-ebpf-profiler-collector.yaml` for the new collector-based configuration.
+The legacy `coralogix-ebpf-profiler` chart configuration is still available for compatibility. See `k8s-helm/values-ebpf-profiler.yaml` for the legacy setup and `testing/ebpf-profiler-eks/values-ebpf-profiler.yaml` for the collector-based setup used in EKS testing.
 
-Example configuration:
+Example configuration (only overrides; default values from `k8s-helm/values.yaml` are omitted):
 
 ```yaml
+global:
+  clusterName: "otel-integration-ebpf-profiler"
+  deploymentEnvironmentName: "ebpf-eks"
+  domain: "eu2.coralogix.com"
+
 opentelemetry-ebpf-profiler:
   enabled: true
-  mode: daemonset
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/path: "/metrics"
-    prometheus.io/port: "8888"
-  ports:
-    metrics:
-      enabled: true
 
   presets:
-    ebpfProfiler:
+    resourceDetection:
       enabled: true
     profilesK8sAttributes:
-      enabled: true
-    metadata:
-      enabled: true
-      clusterName: "test-cluster"
-      integrationName: "coralogix-integration-helm"
+      serviceLabels:
+        - tag_name: service.label
+          key: app.kubernetes.io/name
+          from: pod
+      serviceAnnotations:
+        - tag_name: service.annotation
+          key: app.coralogix.com/service
+          from: pod
     otlpExporter:
       enabled: true
       endpoint: "ingress.eu1.coralogix.com:443"
       headers:
         Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
-    otlpReceiver:
-      enabled: false
-    collectorMetrics:
-      enabled: true
-      disablePrometheusReceiver: true
+        CX-Application-Name: "otel"
+        CX-Subsystem-Name: "integration"
 
-  config:
-    exporters:
-      debug:
-        verbosity: detailed
-    service:
-      telemetry:
-        resource:
-          service.name: "opentelemetry-collector"
-          cx.agent.type: "ebpf-profiler"
-        logs:
-          level: "debug"
-      pipelines:
-        profiles:
-          exporters:
-            - otlp
-            - debug
-          processors:
-            - memory_limiter
+opentelemetry-cluster-collector:
+  enabled: true
+  presets:
+    prometheusAnnotationDiscovery:
+      enabled: true
+      scrapeInterval: "30s"
+      observePods: true
+      observeServices: false
+      enableServiceRule: false
+
+opentelemetry-agent:
+  enabled: true
 ```
 
-See `k8s-helm/values-ebpf-profiler-collector.yaml` for a full example and the base [opentelemetry-collector chart](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) for additional values.
+See `testing/ebpf-profiler-eks/values-ebpf-profiler.yaml` for a full example and the base [opentelemetry-collector chart](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) for additional values.
 
 ### eBPF profiler metrics scrape via cluster-collector annotation discovery
 
