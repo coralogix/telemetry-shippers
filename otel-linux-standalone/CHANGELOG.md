@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.13 / 2026-02-26
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.9
+
+#### Changes from opentelemetry-collector 0.129.9:
+- [Fix] Ensure `service.profilesSupport` is auto-injected for direct collector runs whenever `profilesCollection` or `ebpfProfiler` presets are enabled, including when fleet management is enabled without supervisor mode, while still avoiding duplicate gates when already provided in `command.extraArgs` or injected by supervisor.
+
 ### v0.0.12 / 2026-02-25
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.8
