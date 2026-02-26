@@ -2,6 +2,16 @@
 
 ## otel-windows-standalone
 
+### v0.0.4 / 2026-02-25
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.8
+
+#### Changes from opentelemetry-collector 0.129.8:
+- [Fix] Ensure `service.profilesSupport` is automatically enabled for both `profilesCollection` and `ebpfProfiler` presets in both direct collector and supervisor modes, while avoiding duplicate feature-gate arguments when already set via `command.extraArgs`.
+
+#### Changes from opentelemetry-collector 0.129.7:
+- [Feat] Extend `ecsAttributesContainerLogs` with `profilesServiceName.enabled` to map profiles `service.name` from ECS resource attributes with fallback order `aws.ecs.task.definition.family` then `aws.ecs.container.name`, wiring the transform only into existing profiles pipelines.
+
 ### v0.0.3 / 2026-02-25
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.129.6
