@@ -18,6 +18,37 @@ jobs:
         path: .mdoxcache
         key: mdoxcache
     - run: make check-docs
+
+  validate-otel-changelog-format:
+    runs-on: ubuntu-latest
+    name: Validate OTEL changelog format
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          otel-changelog-validation:
+            - 'otel-integration/CHANGELOG.md'
+            - 'otel-linux-standalone/CHANGELOG.md'
+            - 'otel-macos-standalone/CHANGELOG.md'
+            - 'otel-windows-standalone/CHANGELOG.md'
+            - 'cmd/helmlog/**'
+    - uses: actions/setup-go@v4
+      if: steps.filter.outputs.otel-changelog-validation == 'true'
+      with:
+        go-version-file: 'go.mod'
+    - name: Validate changelog format
+      if: steps.filter.outputs.otel-changelog-validation == 'true'
+      run: |
+        go run ./cmd/helmlog validate \
+          otel-integration/CHANGELOG.md \
+          otel-linux-standalone/CHANGELOG.md \
+          otel-macos-standalone/CHANGELOG.md \
+          otel-windows-standalone/CHANGELOG.md
+
   check-changelog-updates:
     if: github.event.label.name != 'skip changelog'
     runs-on: ubuntu-latest
