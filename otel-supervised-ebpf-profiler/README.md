@@ -59,8 +59,8 @@ testing and are not part of the released image.
 |----------------------|----------------------------------------|-------------------------------------------|
 | `IMAGE_NAME`         | Container image name                   | `coralogix-otel-supervised-ebpf-profiler` |
 | `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)`            |
-| `COLLECTOR_VERSION`  | eBPF Profiler version                  | `$(cat CURRENT_VERSION)`                  |
-| `SUPERVISOR_VERSION` | OpAMP Supervisor version               | Same as `COLLECTOR_VERSION`               |
+| `COLLECTOR_VERSION`  | eBPF Profiler version                  | `$(cat CURRENT_COLLECTOR_VERSION)`        |
+| `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `$(cat CURRENT_SUPERVISOR_VERSION)`       |
 | `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`                 |
 
 ### Available targets
