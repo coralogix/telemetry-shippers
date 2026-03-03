@@ -3,8 +3,8 @@
 # Default values
 IMAGE_NAME ?= coralogix-otel-supervised-ebpf-profiler
 IMAGE_TAG ?= $(shell cat CURRENT_IMAGE_VERSION)
-SUPERVISOR_VERSION ?= $(shell cat CURRENT_VERSION)
-COLLECTOR_VERSION ?= $(SUPERVISOR_VERSION)
+SUPERVISOR_VERSION ?= $(shell cat CURRENT_SUPERVISOR_VERSION)
+COLLECTOR_VERSION ?= $(shell cat CURRENT_COLLECTOR_VERSION)
 PLATFORMS ?= linux/amd64,linux/arm64
 
 # Docker build arguments
