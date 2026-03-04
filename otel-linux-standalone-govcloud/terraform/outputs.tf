@@ -20,12 +20,12 @@ output "iam_role_arn" {
 
 output "ssh_command" {
   description = "SSH command to connect to the instance (only useful when a public IP and key pair are configured)."
-  value       = local.create_key_pair ? "ssh -i ${var.ssh_private_key_path} ubuntu@${aws_instance.otel.public_ip}" : "No key pair configured — use SSM Session Manager: aws ssm start-session --target ${aws_instance.otel.id} --region ${var.aws_region}"
+  value       = local.create_key_pair ? "ssh -i ${var.ssh_private_key_path} ubuntu@${aws_instance.otel.public_ip}" : "No key pair configured — use SSM Session Manager: aws ssm start-session --target ${aws_instance.otel.id} --profile ${var.aws_profile} --region ${var.aws_region}"
 }
 
 output "ssm_session_command" {
   description = "SSM Session Manager command to open a shell on the instance."
-  value       = "aws ssm start-session --target ${aws_instance.otel.id} --region ${var.aws_region}"
+  value       = "aws ssm start-session --target ${aws_instance.otel.id} --profile ${var.aws_profile} --region ${var.aws_region}"
 }
 
 output "systemd_check_command" {

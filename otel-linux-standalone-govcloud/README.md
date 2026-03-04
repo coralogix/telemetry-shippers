@@ -241,6 +241,10 @@ The IAM role attached to the instance includes `AmazonSSMManagedInstanceCore`. N
 aws ssm start-session --target <instance-id> --profile gov --region us-gov-east-1
 ```
 
+> **Note:** Always use `--profile` explicitly rather than relying on exported environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`). In GovCloud, SSM Session Manager is known to fail authentication silently when credentials are sourced from environment variables, even when other AWS CLI commands work. Using `--profile` directly resolves this.
+
+The `terraform output ssm_session_command` will emit the correct command with `--profile` included.
+
 To use SSH instead, provide key variables in your tfvars:
 
 ```hcl
