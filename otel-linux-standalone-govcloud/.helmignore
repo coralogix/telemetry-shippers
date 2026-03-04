@@ -1,0 +1,6 @@
+# Exclude non-chart assets
+terraform/
+terraform-telemetrygen/
+.terraform/
+build/
+README.md
