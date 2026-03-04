@@ -100,7 +100,7 @@ make deploy
 To use a custom tfvars file:
 
 ```bash
-make deploy VAR_FILE=terraform/terraform.tfvars
+make deploy VAR_FILE=terraform.tfvars
 ```
 
 ### Step 3 — Verify
@@ -317,7 +317,7 @@ make terraform-output   # show terraform outputs
 make terraform-apply    # terraform apply only (skips config render)
 
 # Override var file
-make deploy VAR_FILE=terraform/prod.tfvars
+make deploy VAR_FILE=prod.tfvars
 
 # Override AWS profile
 make deploy AWS_PROFILE=my-gov-profile

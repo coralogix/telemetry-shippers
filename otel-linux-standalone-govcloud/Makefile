@@ -9,7 +9,7 @@ TERRAFORM_DIR ?= $(CHART_PATH)/terraform
 
 AWS_PROFILE ?= gov
 AWS_REGION ?= us-gov-east-1
-VAR_FILE ?= $(TERRAFORM_DIR)/dev.tfvars
+VAR_FILE ?= dev.tfvars
 INSTANCE_TYPE ?= t3.small
 ENABLE_TELEMETRYGEN ?= false
 TELEMETRYGEN_ENDPOINT ?= 127.0.0.1:4317
@@ -54,11 +54,11 @@ terraform-init:
 
 terraform-apply: terraform-init
 	@[ -f $(OTEL_CONFIG_FILE) ] || { echo "Error: $(OTEL_CONFIG_FILE) not found. Run 'make otel-config' first."; exit 1; }
-	@[ -f $(VAR_FILE) ] || { echo "Error: var file $(VAR_FILE) not found."; exit 1; }
+	@[ -f $(TERRAFORM_DIR)/$(VAR_FILE) ] || { echo "Error: var file $(TERRAFORM_DIR)/$(VAR_FILE) not found."; exit 1; }
 	@AWS_PROFILE=$(AWS_PROFILE) AWS_SDK_LOAD_CONFIG=1 $(TF) -chdir=$(TERRAFORM_DIR) apply -auto-approve -no-color $(TF_VAR_FILE_FLAG) $(TF_VARS)
 
 terraform-destroy: terraform-init
-	@[ -f $(VAR_FILE) ] || { echo "Error: var file $(VAR_FILE) not found."; exit 1; }
+	@[ -f $(TERRAFORM_DIR)/$(VAR_FILE) ] || { echo "Error: var file $(TERRAFORM_DIR)/$(VAR_FILE) not found."; exit 1; }
 	@AWS_PROFILE=$(AWS_PROFILE) AWS_SDK_LOAD_CONFIG=1 $(TF) -chdir=$(TERRAFORM_DIR) destroy -auto-approve -no-color $(TF_VAR_FILE_FLAG) $(TF_VARS)
 
 terraform-output:
