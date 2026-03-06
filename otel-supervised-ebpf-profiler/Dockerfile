@@ -1,12 +1,12 @@
 # Version args default to repo-pinned versions (override via build args)
-ARG COLLECTOR_VERSION=0.146.0
-ARG SUPERVISOR_VERSION=0.146.0
+ARG COLLECTOR_VERSION=0.147.0
+ARG SUPERVISOR_VERSION=0.147.0
 
 FROM alpine:3.22 AS certs
 RUN apk --update add ca-certificates
 RUN mkdir -p /etc/otelcol-contrib/supervisor-data
 
-FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
+FROM cgx.jfrog.io/coralogix-docker-images/cx-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
 
 FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:${COLLECTOR_VERSION}
 
