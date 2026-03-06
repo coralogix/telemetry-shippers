@@ -23,12 +23,14 @@ This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Window
 Run the following command in an elevated PowerShell (Run as Administrator) to download the installer from GitHub and install with your config file:
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\your\config.yaml'
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\your\config.yaml'
 ```
 
 Replace `<your-private-key>` with your [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) and `C:\path\to\your\config.yaml` with the path to your config file. Ensure the config file exists on the machine before running (e.g. create it in Notepad and save as `C:\otel\config.yaml`). **Copy the command as a single line;** the key must be in single quotes with a closing quote before the semicolon (e.g. `'your-key'; & $f`).
 
 > **Note:** On **Windows Server 2016 or older**, prepend `[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; ` to the command so the download from GitHub succeeds (GitHub requires TLS 1.2+).
+>
+> **Note:** For specific versions, see [releases](https://github.com/coralogix/telemetry-shippers/releases) (look for `otel-installer-v*` tags).
 
 ## Environment Variables
 
@@ -80,19 +82,19 @@ receivers:
 To install with your own configuration file (script is downloaded from GitHub and run from temp):
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\config.yaml'
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\config.yaml'
 ```
 
 ## Install Specific Version
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Version 0.144.0
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Version 0.144.0
 ```
 
 ## Install with Custom Memory Limit
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -MemoryLimit 2048
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -MemoryLimit 2048
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_MEMORY_LIMIT_MIB}` for this to take effect.
@@ -102,7 +104,7 @@ $u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-i
 By default, the collector listens only on `127.0.0.1`. To accept connections from other hosts (gateway mode):
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -ListenInterface 0.0.0.0
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -ListenInterface 0.0.0.0
 ```
 
 > **Note:** Your configuration must reference `${env:OTEL_LISTEN_INTERFACE}` for this to take effect.
@@ -112,7 +114,7 @@ $u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-i
 Enable dynamic metadata parsing for file-based logs, such as IIS logs with header-based format detection:
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -EnableDynamicIISParsing
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -EnableDynamicIISParsing
 ```
 
 This option creates a storage directory at `C:\ProgramData\OpenTelemetry\Collector\storage` and runs the collector with `--feature-gates=filelog.allowHeaderMetadataParsing`. Only available in regular mode, not supervisor mode.
@@ -126,7 +128,7 @@ Supervisor mode enables remote configuration management through Coralogix [Fleet
 ### Basic Installation
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor
 ```
 
 > **Note:** Supervisor mode requires version **0.144.0 or higher** (Windows MSI is available from this version). If the detected version is lower, the script will automatically use 0.144.0.
@@ -134,19 +136,19 @@ $u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-i
 ### With Specific Versions
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorVersion 0.144.0 -CollectorVersion 0.144.0
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorVersion 0.144.0 -CollectorVersion 0.144.0
 ```
 
 ### With Local MSI File
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorMsi 'C:\path\to\opampsupervisor.msi'
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorMsi 'C:\path\to\opampsupervisor.msi'
 ```
 
 ### With Custom Base Collector Config
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorCollectorBaseConfig 'C:\path\to\collector.yaml'
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorCollectorBaseConfig 'C:\path\to\collector.yaml'
 ```
 
 The base config is merged with remote configuration from Fleet Manager. The config cannot contain the `opamp` extension (the supervisor manages the OpAMP connection).
@@ -243,13 +245,13 @@ Get-Content "C:\ProgramData\opampsupervisor\state\effective.yaml"
 Remove the collector while keeping configuration and logs (script is downloaded from GitHub and run):
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; & $f -Uninstall
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; & $f -Uninstall
 ```
 
 Remove the collector and all data:
 
 ```powershell
-$u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; & $f -Uninstall -Purge
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; & $f -Uninstall -Purge
 ```
 
 > **Note:** For regular mode, uninstall uses the Windows MSI uninstaller. You can also uninstall manually via **Windows Settings > Apps > "OpenTelemetry Collector"**.
@@ -285,12 +287,11 @@ Common causes:
 
 If you encounter "The request was aborted: Could not create SSL/TLS secure channel" when running the installation script, your system may be defaulting to TLS 1.0. GitHub requires TLS 1.2.
 
-**Optional fix for affected versions:** On Windows Server 2016, Windows Server 2012 R2, or older Windows 10, use this one-liner instead—it enables TLS 1.2 before downloading:
+**Optional fix for affected versions:** On Windows Server 2016, Windows Server 2012 R2, or older Windows 10, enable TLS 1.2 before downloading:
 
 ```powershell
-$env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\path\to\config.yaml'
 ```
 
 ### Script Execution Policy
@@ -304,7 +305,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Or run with bypass:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command { $u='https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\otel\config.yaml' }
+powershell -ExecutionPolicy Bypass -Command { $u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\otel\config.yaml' }
 ```
 
 ### Administrator Privileges
