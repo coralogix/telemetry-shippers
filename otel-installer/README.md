@@ -4,11 +4,11 @@ Deploy the OpenTelemetry Collector with Coralogix integration.
 
 ## Installation Methods
 
-| Method         | Platform           | Documentation                                  |
-|----------------|--------------------|------------------------------------------------|
-| **Standalone** | Linux, macOS       | [standalone/README.md](./standalone/README.md) |
-| **Docker**     | Any                | [docker/README.md](./docker/README.md)         |
-| **Windows**    | Windows 10/11, Server | [windows/README.md](./windows/README.md)    |
+| Method         | Platform              | Documentation                                  |
+|----------------|-----------------------|------------------------------------------------|
+| **Standalone** | Linux, macOS          | [standalone/README.md](./standalone/README.md) |
+| **Docker**     | Any                   | [docker/README.md](./docker/README.md)         |
+| **Windows**    | Windows 10/11, Server | [windows/README.md](./windows/README.md)       |
 
 ## Quick Start
 
