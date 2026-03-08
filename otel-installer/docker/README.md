@@ -121,7 +121,7 @@ If ports conflict with existing services, override them:
 
 ```bash
 OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --config config.yaml
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml
 ```
 
 ## Examples
@@ -130,19 +130,24 @@ OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="<your-private-k
 
 ```bash
 # With custom config (recommended)
-CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config /path/to/config.yaml
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config /path/to/config.yaml
 
 # With custom memory limit
-CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --memory-limit 2048
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml --memory-limit 2048
 
 # Specific version
-CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --version 0.140.1
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml --version 0.140.1
 
 # Supervisor mode
-CORALOGIX_DOMAIN="eu2.coralogix.com" CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --supervisor
+CORALOGIX_DOMAIN="eu2.coralogix.com" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor
 
 # Run in foreground
-CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --foreground
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml --foreground
 ```
 
 ### Gateway Mode with Custom Memory
@@ -150,30 +155,27 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.y
 ```bash
 # Gateway mode with 2GB memory limit (using flag)
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --config gateway-config.yaml --memory-limit 2048
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config gateway-config.yaml --memory-limit 2048
 
 # Alternative: using environment variable
-MEMORY_LIMIT_MIB=2048 \
-  CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --config gateway-config.yaml
+MEMORY_LIMIT_MIB=2048 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config gateway-config.yaml
 ```
 
 ### Custom Ports
 
 ```bash
 # Use non-default ports to avoid conflicts
-OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 \
-  CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --config config.yaml
+OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml
 ```
 
 ### Supervisor Mode with Custom Settings
 
 ```bash
 # Supervisor mode (memory limit is ignored, managed by OpAMP server)
-  CORALOGIX_DOMAIN="eu2.coralogix.com" \
-  CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --supervisor
+CORALOGIX_DOMAIN="eu2.coralogix.com" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor
 ```
 
 **Note:** `--memory-limit` and `MEMORY_LIMIT_MIB` are ignored in supervisor mode as configuration is managed remotely by the OpAMP server.
@@ -182,7 +184,7 @@ OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 \
 
 ```bash
 # Stop and remove
-./docker-install.sh --uninstall
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --uninstall
 ```
 
 ## Container Management
@@ -210,18 +212,20 @@ Running the script again automatically replaces the existing container with the 
 
 ```bash
 # Upgrade to latest
-CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml
 
 # Upgrade to specific version
-CORALOGIX_PRIVATE_KEY="<your-private-key>" ./docker-install.sh --config config.yaml --version 0.141.0
+CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml --version 0.141.0
 
 # Upgrade and change memory limit (using flag)
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --config config.yaml --memory-limit 2048
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml --memory-limit 2048
 
 # Alternative: using environment variable
 MEMORY_LIMIT_MIB=2048 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  ./docker-install.sh --config config.yaml
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --config config.yaml
 ```
 
 **Note:** You can change the memory limit during an upgrade by using the `--memory-limit` flag or setting the `MEMORY_LIMIT_MIB` environment variable when running the script again.
@@ -229,7 +233,7 @@ MEMORY_LIMIT_MIB=2048 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ## Uninstall
 
 ```bash
-./docker-install.sh --uninstall
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --uninstall
 ```
 
 Or manually:

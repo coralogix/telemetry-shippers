@@ -301,13 +301,13 @@ sudo systemctl restart opampsupervisor
 Remove the collector while keeping configuration and logs:
 
 ```bash
-bash coralogix-otel-collector.sh --uninstall
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --uninstall
 ```
 
 Remove the collector and all data:
 
 ```bash
-bash coralogix-otel-collector.sh --uninstall --purge
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --uninstall --purge
 ```
 
 ## Configuration Behavior
@@ -341,8 +341,9 @@ The installer will warn you if you specify `--memory-limit` or `--listen-interfa
 Uninstall before switching between regular and supervisor modes:
 
 ```bash
-bash coralogix-otel-collector.sh --uninstall --purge
-CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" bash coralogix-otel-collector.sh --supervisor
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --uninstall --purge
+CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --supervisor
 ```
 
 <!-- /split -->
@@ -510,13 +511,13 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coralogix.otelcol.pl
 Remove the collector while keeping configuration and logs:
 
 ```bash
-bash coralogix-otel-collector.sh --uninstall
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --uninstall
 ```
 
 Remove the collector and all data:
 
 ```bash
-bash coralogix-otel-collector.sh --uninstall --purge
+bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- --uninstall --purge
 ```
 
 ## Configuration Behavior
