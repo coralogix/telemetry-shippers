@@ -521,7 +521,7 @@ var optionalExpectedMetrics = map[string]bool{
 	// Exporter queue metrics are version/config dependent and may not be emitted.
 	"otelcol_exporter_queue_batch_send_size": false,
 	// Added in newer collector versions (0.145.0+): internal k8s pod association metric.
-	"otelcol_otelcol.k8s.pod.association": false,
+	"otelcol.k8s.pod.association": false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
