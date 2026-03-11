@@ -1,18 +1,14 @@
 # OTEL ECS Fargate container
 
-### Note: Previous versions of this integration used an ADOT (AWS Distribution for OpenTelemetry) collector image. If you are upgrading an existing deployment, make sure you upgrade both the configuration and the task definition.
-
-### Note: Previous versions of this integration required logs to be processed using fluentbit logrouter. This is no longer necessary and logs can be collected by OTEL along with the metrics and traces.
-
 The OpenTelemetry collector offers a vendor-agnostic implementation of how to receive, process and export telemetry data.
 
-In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Task Definitions. We use the standard Opentelemetry Collector Contrib distribution but leverage the envprovider to generate the configuration from an AWS SSM Parameter Store. There is an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
+In this document, we'll explain how to add the OTEL collector as a sidecar agent to your ECS Fargate Task Definitions. We use the standard Opentelemetry Collector Contrib distribution but leverage the envprovider to load the configuration from an AWS S3 bucket. There is an example cloudformation template for review [here](https://github.com/coralogix/cloudformation-coralogix-aws/tree/master/aws-integrations/ecs-fargate)
 
-The envprovider is used for loading of the OpenTelemetry configuration via Systems Manager Parameter Stores. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
+The envprovider is used for loading of the OpenTelemetry configuration via S3. This makes adjusting your configuration more convenient and more dynamic than baking a static configuration into your container image.
 
-Our config.yaml file includes a standard configuration that'll ensure proper ingestion of logs, metrics and traces by our backend. Make sure to create this parameter store in the same region as your ECS cluster. We've included a sample cloudformation template to deploy this parameter store to simplify this process.
+Our config.yaml file includes an example configuration that'll ensure proper ingestion of logs, metrics and traces by our backend. Upload this configuration to an S3 bucket accessible by your ecs services.
 
-Once the Parameter Store has been created, you'll need to add the OTEL container to your existing Task Definition(s).
+Once the configuration has been uploaded to S3, you'll need to add the OTEL container to your existing Task Definition(s). In the container definition, make sure to adjust the command, CORALOGIX_PRIVATE_KEY and CORALOGIX_DOMAIN. The s3: reference needs to be the Object URI of the S3 object, but replace the https: prefix with s3:
 
 Example container declaration within a Task Definition:
 
@@ -43,11 +39,11 @@ Example container declaration within a Task Definition:
             "essential": false,
             "command": [
                 "--config",
-                "env:SSM_CONFIG"
+                "s3://example-bucket.s3.us-east-1.amazonaws.com/example_config.yaml"
             ],
             "environment": [
                 {
-                    "name": "PRIVATE_KEY",
+                    "name": "CORALOGIX_PRIVATE_KEY",
                     "value": "<Coralogix PrivateKey>"
                 },
                 {
@@ -57,12 +53,6 @@ Example container declaration within a Task Definition:
             ],
             "mountPoints": [],
             "volumesFrom": [],
-            "secrets": [
-                {
-                    "name": "SSM_CONFIG",
-                    "valueFrom": "CX_OTEL_ECS_Fargate_config.yaml"
-                }
-            ],
             "user": "0",
             "logConfiguration": {
                 "logDriver": "awsfirelens",
@@ -91,24 +81,29 @@ In the example above, you'll need to set `<Coralogix PrivateKey>` and `<Coralogi
 
 After adding the above container to your existing Task Definition, your applications can submit their traces and metrics exports to http://localhost:4318/v1/traces and /v1/metrics. It will also collect container metrics from all containers in the Task Definition.
 
-## Granting permissions for parameter store access
+## Granting permissions for S3 configuration file access
 
-In order to allow container access to the Systems Manager Parameter Store, you'll need to provide the ssm:GetParameters action permissions to the task execution role:
+In order to allow container access to the S3 configuration, you'll need to provide s3 permissions to your task role:
 
 ```
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ssm:GetParameters"
-      ],
-      "Resource": [
-        "arn:aws:ssm:region:aws_account_id:parameter/parameter_name"
-      ]
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "arn:aws:s3:::example-bucket"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::example-bucket/example_config.yaml"
+        }
+    ]
 }
 ```
 
@@ -130,23 +125,19 @@ If you don't want all containers to submit their logs to Coralogix, you can set 
 
 ## Using Secrets Manager for your private key
 
-If you prefer to store your Coralogix private key in AWS Secrets Manager, remove the `"PRIVATE_KEY"` config from the `"environment"` section and instead add it to `"secrets"`, referencing the Secret's ARN.
+If you prefer to store your Coralogix private key in AWS Secrets Manager, remove the `"CORALOGIX_PRIVATE_KEY"` config from the `"environment"` section and instead add it to `"secrets"`, referencing the Secret's ARN.
 
 ```json
 "secrets": [
     {
-        "name": "SSM_CONFIG",
-        "valueFrom": "CX_OTEL_ECS_Fargate_config.yaml"
-    },
-    {
-        "name": "PRIVATE_KEY",
+        "name": "CORALOGIX_PRIVATE_KEY",
         "valueFrom": "arn:aws:secretsmanager:region:aws_account_id:secret:secret_name-AbCdEf"
     }
 ],
 
 ```
 
-Create the Secret as "Plaintext" with only the API key with no quotation marks. You will also need to add the `secretsmanager:GetSecretValue` permission to your ECS Task Execution Role.
+Create the Secret as "Plaintext" with only the API key with no quotation marks. You will also need to add the `secretsmanager:GetSecretValue` permission to your ECS Task Execution Role. The Secret should also be stored in the same region as your ECS cluster.
 
 ## Granting permissions for Secrets Manager Secret access
 
