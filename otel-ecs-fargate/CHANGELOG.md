@@ -7,6 +7,7 @@
 <!-- ### version / full date -->
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
+
 ### 1.0.0 / 2026-03-11
 
 * [UPDATE] Changed from Parameter Store to S3 for configuration
