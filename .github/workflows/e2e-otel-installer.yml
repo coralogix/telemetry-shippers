@@ -15,11 +15,69 @@ env:
 
 jobs:
   #############################################
+  # Detect changed paths (skip if only README; run relevant tests only)
+  #############################################
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      standalone: ${{ steps.set-outputs.outputs.standalone }}
+      docker: ${{ steps.set-outputs.outputs.docker }}
+      windows: ${{ steps.set-outputs.outputs.windows }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check if only README changed
+        id: readme-check
+        if: github.event_name == 'pull_request'
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' || true)
+          if [ -z "$CHANGED" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          NON_README=$(echo "$CHANGED" | grep -v -iE 'README\.md$' || true)
+          if [ -z "$NON_README" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request' && steps.readme-check.outputs.skip != 'true'
+        with:
+          filters: |
+            standalone:
+              - 'otel-installer/standalone/**'
+            docker:
+              - 'otel-installer/docker/**'
+            windows:
+              - 'otel-installer/windows/**'
+      - id: set-outputs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "standalone=true" >> $GITHUB_OUTPUT
+            echo "docker=true" >> $GITHUB_OUTPUT
+            echo "windows=true" >> $GITHUB_OUTPUT
+          elif [ "${{ steps.readme-check.outputs.skip }}" = "true" ]; then
+            echo "standalone=false" >> $GITHUB_OUTPUT
+            echo "docker=false" >> $GITHUB_OUTPUT
+            echo "windows=false" >> $GITHUB_OUTPUT
+          else
+            echo "standalone=${{ steps.filter.outputs.standalone || 'false' }}" >> $GITHUB_OUTPUT
+            echo "docker=${{ steps.filter.outputs.docker || 'false' }}" >> $GITHUB_OUTPUT
+            echo "windows=${{ steps.filter.outputs.windows || 'false' }}" >> $GITHUB_OUTPUT
+          fi
+
+  #############################################
   # Standalone Script Tests
   #############################################
 
   standalone-linux-install:
     name: Standalone - Linux Install
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +102,8 @@ jobs:
 
   standalone-linux-version:
     name: Standalone - Linux Specific Version
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +119,8 @@ jobs:
 
   standalone-linux-config:
     name: Standalone - Linux Custom Config with Discovery
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -121,6 +183,8 @@ jobs:
 
   standalone-linux-upgrade-with-config:
     name: Standalone - Linux Upgrade with New Config
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -174,6 +238,8 @@ jobs:
 
   standalone-linux-supervisor:
     name: Standalone - Linux Supervisor Mode
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -199,6 +265,8 @@ jobs:
 
   standalone-linux-supervisor-versions:
     name: Standalone - Linux Supervisor Custom Versions
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -236,6 +304,8 @@ jobs:
 
   standalone-linux-purge:
     name: Standalone - Linux Uninstall with Purge
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -254,6 +324,8 @@ jobs:
 
   standalone-macos:
     name: Standalone - macOS LaunchDaemon
+    needs: changes
+    if: needs.changes.outputs.standalone == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -280,6 +352,8 @@ jobs:
 
   docker-install:
     name: Docker - Regular Install
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -297,6 +371,8 @@ jobs:
 
   docker-version:
     name: Docker - Specific Version
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -314,6 +390,8 @@ jobs:
 
   docker-config:
     name: Docker - Custom Config
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -370,6 +448,8 @@ jobs:
 
   docker-supervisor:
     name: Docker - Supervisor Mode
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -395,6 +475,8 @@ jobs:
 
   standalone-windows-install:
     name: Standalone - Windows Install
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -416,6 +498,8 @@ jobs:
 
   standalone-windows-version:
     name: Standalone - Windows Specific Version
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -442,6 +526,8 @@ jobs:
 
   standalone-windows-config:
     name: Standalone - Windows Custom Config
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -496,6 +582,8 @@ jobs:
 
   standalone-windows-supervisor:
     name: Standalone - Windows Supervisor Mode
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -518,6 +606,8 @@ jobs:
 
   standalone-windows-purge:
     name: Standalone - Windows Uninstall with Purge
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

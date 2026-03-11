@@ -6,6 +6,7 @@ var expectedResourceMetricsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
+	"https://opentelemetry.io/schemas/1.39.0": false,
 }
 
 const expectedScopeVersion = ""
@@ -87,7 +88,7 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"azure.vm.scaleset.name":      "",
 	"azure.vm.size":               "",
 	"cloud.account.id":            "",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.provider":              "azure",
 	"cloud.region":                "",
 	"cx.otel_integration.name":    "coralogix-integration-helm",
@@ -132,7 +133,7 @@ var expectedResourceAttributesK8sattributesprocessor = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -165,7 +166,7 @@ var expectedResourceAttributesService = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -200,7 +201,7 @@ var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -245,7 +246,7 @@ var expectedResourceAttributesSpanmetricsconnector = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -267,7 +268,7 @@ var expectedResourceAttributesLoadscraper = map[string]string{
 	"host.id":                     "",
 	"k8s.node.name":               "otel-integration-agent-e2e-control-plane",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -328,7 +329,7 @@ var expectedResourceAttributesProcessscraper = map[string]string{
 	"host.id":                     "",
 	"k8s.node.name":               "otel-integration-agent-e2e-control-plane",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -361,7 +362,7 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -520,7 +521,7 @@ var optionalExpectedMetrics = map[string]bool{
 	// Exporter queue metrics are version/config dependent and may not be emitted.
 	"otelcol_exporter_queue_batch_send_size": false,
 	// Added in newer collector versions (0.145.0+): internal k8s pod association metric.
-	"otelcol_otelcol.k8s.pod.association": false,
+	"otelcol.k8s.pod.association": false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
@@ -528,12 +529,14 @@ var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.25.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
+	"https://opentelemetry.io/schemas/1.39.0": false,
 }
 
 var expectedLogsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.6.1":  false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
+	"https://opentelemetry.io/schemas/1.39.0": false,
 }
 
 var expectedHostEntityAttributes = map[string]expectedValue{

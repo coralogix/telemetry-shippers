@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "windows"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.5"
+  version: "0.0.6"
 
 opentelemetry-agent:
   enabled: true
