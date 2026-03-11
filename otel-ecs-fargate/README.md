@@ -57,7 +57,7 @@ Example container declaration within a Task Definition:
             "logConfiguration": {
                 "logDriver": "awsfirelens",
                 "options": {
-                    "Name": "OpenTelemetry"
+                    "Name": "otel-collector"
                 }
             },
             "systemControls": [],
@@ -68,13 +68,13 @@ Example container declaration within a Task Definition:
     ]
 ```
 
-In the example above, you'll need to set `<Coralogix PrivateKey>` and `<Coralogix Domain>`. The logConfiguration section included in the example will forward OTEL logs to the Coralogix platform. Make sure you set all your existing containers' logConfiguration to the same.
+Make sure you set all your existing containers' logConfiguration to the same.
 
 ```
 "logConfiguration": {
     "logDriver": "awsfirelens",
     "options": {
-        "Name": "OpenTelemetry"
+        "Name": "otel-collector"
     }
 },
 ```
