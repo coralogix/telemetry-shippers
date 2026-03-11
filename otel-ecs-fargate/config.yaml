@@ -207,11 +207,7 @@ processors:
     detectors:
     - system
     - env
-    - ec2
     - ecs
-    ec2:
-      tags:
-      - .*
     override: false
     system:
       resource_attributes:
@@ -228,7 +224,7 @@ processors:
         host.cpu.vendor.id:
           enabled: true
         host.id:
-          enabled: true
+          enabled: false
         host.ip:
           enabled: true
         host.mac:
@@ -244,11 +240,11 @@ processors:
     system:
       resource_attributes:
         host.id:
-          enabled: true
+          enabled: false
     timeout: 2s
   resourcedetection/region:
     detectors:
-    - ec2
+    - ecs
     override: true
     timeout: 2s
   transform/firelens:
