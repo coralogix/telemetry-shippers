@@ -5,6 +5,7 @@
 ### v0.0.283 / 2026-03-09
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.0
+- [Breaking] The resource attribute `cloud.platform` for Azure VMs changed from `azure_vm` to `azure.vm` and for Azure AKS changed from `azure_aks` to `azure.aks`. Any dashboards, alerts, or other places where these values are used will need to be updated.
 
 #### Changes from opentelemetry-collector 0.130.0:
 - [Feat] Bump OpenTelemetry Collector image to v0.147.0.
