@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.285 / 2026-03-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.1
+
+#### Changes from opentelemetry-collector 0.130.1:
+- [Feat] Add optional `presets.ebpfProfiler.samplesPerSecond` support that maps to `receivers.profiling.samples_per_second` only when set.
+
 ### v0.0.284 / 2026-03-12
 
 - [Chore] Update Target Allocator image to v0.146.0
