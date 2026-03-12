@@ -147,7 +147,7 @@ data:
         application_name_attributes:
         - aws.ecs.cluster
         - aws.ecs.task.definition.family
-        domain: eu2.coralogix.com
+        domain: coralogix.com
         logs:
           headers:
             X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
@@ -169,7 +169,7 @@ data:
             X-Coralogix-Distribution: helm-otel-integration/0.0.2
       coralogix/resource_catalog:
         application_name: resource
-        domain: eu2.coralogix.com
+        domain: coralogix.com
         logs:
           headers:
             X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
@@ -190,7 +190,7 @@ data:
             helm.chart.opentelemetry-agent.version: 0.128.11
         server:
           http:
-            endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+            endpoint: https://ingress.coralogix.com/opamp/v1
             headers:
               Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
             polling_interval: 2m
@@ -864,7 +864,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c477a5b373e25beb4760fa1b157270060078b5d7ad1ee6b54f67d55afded47e0
+        checksum/config: 81cee42e0151eb87a5ee1a462285a43b5499fbbd67f861ee15d0d0af75555d77
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
