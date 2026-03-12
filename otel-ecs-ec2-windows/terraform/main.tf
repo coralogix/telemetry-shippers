@@ -64,31 +64,6 @@ resource "aws_route_table_association" "ecs_nat" {
   route_table_id = aws_route_table.ecs_nat.id
 }
 
-# ECR repository for the Windows telemetrygen image. ECS pulls using the task execution role.
-resource "aws_ecr_repository" "telemetrygen" {
-  count                = var.enable_telemetrygen ? 1 : 0
-  name                 = "${var.cluster_name}/telemetrygen-windows"
-  image_tag_mutability = "MUTABLE"
-  tags                 = merge({ Name = "${var.cluster_name}-telemetrygen" }, local.default_tags)
-}
-
-resource "aws_ecr_lifecycle_policy" "telemetrygen" {
-  count      = var.enable_telemetrygen ? 1 : 0
-  repository = aws_ecr_repository.telemetrygen[0].name
-  policy     = jsonencode({
-    rules = [{
-      rulePriority = 1
-      description  = "Keep last 5 images"
-      selection = {
-        tagStatus   = "any"
-        countType   = "imageCountMoreThan"
-        countNumber = 5
-      }
-      action = { type = "expire" }
-    }]
-  })
-}
-
 data "aws_ssm_parameter" "ecs_ami" {
   name = "/aws/service/ami-windows-latest/Windows_Server-2022-English-Core-ECS_Optimized"
 }
@@ -100,8 +75,7 @@ locals {
   agent_name         = "coralogix-otel-agent"
   otel_config        = file("${path.module}/../examples/otel-config.yaml")
   agent_suffix       = random_string.agent_suffix.result
-  agent_image        = "coralogixrepo/opentelemetry-collector-contrib-windows:0.121.0-windows2022"
-  telemetrygen_image_effective = var.enable_telemetrygen ? (var.telemetrygen_image != null ? var.telemetrygen_image : "${aws_ecr_repository.telemetrygen[0].repository_url}:${var.telemetrygen_image_tag}") : ""
+  agent_image  = "coralogixrepo/opentelemetry-collector-contrib-windows:0.121.0-windows2022"
 
   agent_volumes = [
     { name = "hostfs", host_path = "C:\\" },
@@ -153,28 +127,6 @@ locals {
     timeout     = var.health_check_timeout
     retries     = var.health_check_retries
   } : null
-
-  telemetrygen_container = {
-    name      = "telemetrygen"
-    image     = local.telemetrygen_image_effective
-    essential = false
-    command = [
-      "traces",
-      "--otlp-endpoint=localhost:4317",
-      "--otlp-insecure",
-      "--rate=${var.telemetrygen_rate}",
-      "--duration=${var.telemetrygen_duration}",
-      "--service=${var.telemetrygen_service_name}"
-    ]
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.otel_agent.name
-        "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "telemetrygen"
-      }
-    }
-  }
 }
 
 resource "aws_security_group" "ecs_instances" {
@@ -352,18 +304,15 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
     cpu_architecture        = "X86_64"
   }
 
-  container_definitions = jsonencode(concat(
-    [
-      merge(
-        local.agent_common,
-        {
-          mountPoints = local.agent_mounts
-          healthCheck = local.agent_healthcheck
-        }
-      )
-    ],
-    var.enable_telemetrygen ? [local.telemetrygen_container] : []
-  ))
+  container_definitions = jsonencode([
+    merge(
+      local.agent_common,
+      {
+        mountPoints = local.agent_mounts
+        healthCheck = local.agent_healthcheck
+      }
+    )
+  ])
 
   tags = merge({
     Name = "${local.agent_name}-${local.agent_suffix}"
