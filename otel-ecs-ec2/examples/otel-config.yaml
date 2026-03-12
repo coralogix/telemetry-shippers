@@ -118,7 +118,7 @@ exporters:
     application_name_attributes:
     - aws.ecs.cluster
     - aws.ecs.task.definition.family
-    domain: eu2.coralogix.com
+    domain: coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
@@ -140,7 +140,7 @@ exporters:
         X-Coralogix-Distribution: helm-otel-integration/0.0.2
   coralogix/resource_catalog:
     application_name: resource
-    domain: eu2.coralogix.com
+    domain: coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
@@ -161,7 +161,7 @@ extensions:
         helm.chart.opentelemetry-agent.version: 0.128.11
     server:
       http:
-        endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+        endpoint: https://ingress.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
