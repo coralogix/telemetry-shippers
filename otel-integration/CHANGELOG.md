@@ -2,9 +2,32 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.287 / 2026-03-13
+
+- [Chore] Update Windows image to v0.147.0
+
+### v0.0.286 / 2026-03-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.2
+
+#### Changes from opentelemetry-collector 0.130.2:
+- [Fix] Pass `command.extraArgs` to the managed Collector through the supervisor `agent.args` configuration instead of appending them to the `opampsupervisor` container command.
+
+### v0.0.285 / 2026-03-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.1
+
+#### Changes from opentelemetry-collector 0.130.1:
+- [Feat] Add optional `presets.ebpfProfiler.samplesPerSecond` support that maps to `receivers.profiling.samples_per_second` only when set.
+
+### v0.0.284 / 2026-03-12
+
+- [Chore] Update Target Allocator image to v0.146.0
+
 ### v0.0.283 / 2026-03-09
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.0
+- [Breaking] The resource attribute `cloud.platform` for Azure VMs changed from `azure_vm` to `azure.vm` and for Azure AKS changed from `azure_aks` to `azure.aks`. Any dashboards, alerts, or other places where these values are used will need to be updated.
 
 #### Changes from opentelemetry-collector 0.130.0:
 - [Feat] Bump OpenTelemetry Collector image to v0.147.0.

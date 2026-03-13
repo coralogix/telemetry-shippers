@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.3 - 2026-03-12
+
+- [change] Bump CDOT version to 0.5.9
+
 ## v0.0.2 - 2026-02-17
 
 - [change] Bump CDOT version to 0.5.8

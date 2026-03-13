@@ -2,6 +2,20 @@
 
 ## otel-linux-standalone
 
+### v0.0.16 / 2026-03-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.2
+
+#### Changes from opentelemetry-collector 0.130.2:
+- [Fix] Pass `command.extraArgs` to the managed Collector through the supervisor `agent.args` configuration instead of appending them to the `opampsupervisor` container command.
+
+### v0.0.15 / 2026-03-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.1
+
+#### Changes from opentelemetry-collector 0.130.1:
+- [Feat] Add optional `presets.ebpfProfiler.samplesPerSecond` support that maps to `receivers.profiling.samples_per_second` only when set.
+
 ### v0.0.14 / 2026-03-06
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.0
