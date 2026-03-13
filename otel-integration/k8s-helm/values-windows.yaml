@@ -22,8 +22,8 @@ opentelemetry-agent-windows:
     # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
     repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     pullPolicy: Always
-    # Overrides the image tag whose default is the chart appVersion.A
-    tag: "0.145.0-windows-2019-amd64"
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "0.147.0-windows-2019-amd64"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
 
@@ -123,7 +123,7 @@ opentelemetry-agent-windows:
         enabled: false
       nodeFilter:
         enabled: true
-    
+
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
@@ -143,7 +143,7 @@ opentelemetry-agent-windows:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
-    
+
     # Configures the collector to export span metrics with different histogram bucket options
     # for different applications. Applications are selected and routed to different pipelines
     # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
@@ -176,7 +176,7 @@ opentelemetry-agent-windows:
       enabled: true
       # Scrape interval for collector metrics
       scrapeInterval: "{{.Values.global.collectionInterval}}"
-    
+
     # Configures the collector to export data to Coralogix.
     coralogixExporter:
       enabled: true
@@ -259,7 +259,7 @@ opentelemetry-agent-windows:
     limits:
       cpu: 1
       memory: 2G
-  
+
   # In order to enable podMonitor, following part must be enabled in order to expose the required port:
   # ports:
   #   metrics:
