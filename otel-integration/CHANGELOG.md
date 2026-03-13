@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.286 / 2026-03-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.2
+
+#### Changes from opentelemetry-collector 0.130.2:
+- [Fix] Pass `command.extraArgs` to the managed Collector through the supervisor `agent.args` configuration instead of appending them to the `opampsupervisor` container command.
+
 ### v0.0.285 / 2026-03-12
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.1
