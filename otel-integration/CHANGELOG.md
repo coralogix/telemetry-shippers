@@ -3,7 +3,8 @@
 ## OpenTelemetry-Integration
 
 ###v0.0.287 / 2026-03-13
-- [CHORE] Update Windows image to v0.147.0
+
+- [Chore] Update Windows image to v0.147.0
 
 ### v0.0.286 / 2026-03-13
 
