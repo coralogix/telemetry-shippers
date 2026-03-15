@@ -50,6 +50,14 @@ jobs:
           echo "Generated config:"
           cat examples/otel-config.yaml
 
+      - name: Patch config for e2e compatibility
+        run: |
+          # Replace static application_name with env var for e2e testing
+          # Production deployments can set CX_APPLICATION_NAME env var, otherwise defaults to 'otel'
+          yq -i '.exporters.coralogix.application_name = "${env:CX_APPLICATION_NAME:-otel}"' \
+            otel-ecs-ec2/examples/otel-config.yaml
+          echo "✓ Patched application_name to use env var with 'otel' default"
+
       - name: Upload config to S3
         run: |
           aws s3 cp otel-ecs-ec2/examples/otel-config.yaml s3://${{ env.S3_BUCKET }}/${{ env.S3_KEY }}
