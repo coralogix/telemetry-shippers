@@ -126,7 +126,7 @@ exporters:
     - aws.ecs.container.name
     - aws.ecs.docker.name
     - docker.name
-    timeout: 30s
+    timeout: 60s
     traces:
       headers:
         X-Coralogix-Distribution: helm-otel-integration/0.0.2
@@ -137,9 +137,9 @@ exporters:
       headers:
         X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
         x-coralogix-ingress: metadata-as-otlp-logs/v1
-    private_key: ${CORALOGIX_PRIVATE_KEY}
+    private_key: ${env:CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
-    timeout: 30s
+    timeout: 60s
   debug: {}
 extensions:
   health_check:
@@ -174,6 +174,12 @@ processors:
     traces:
       span:
       - attributes["db.system"] == nil
+  # Drop resource_catalog logs with no host identity so Coralogix does not reject them.
+  # log_record is an array of OTTL conditions; records matching any condition are dropped.
+  filter/resource_catalog_valid:
+    logs:
+      log_record:
+        - 'resource.attributes["host.id"] == nil and resource.attributes["host.name"] == nil'
   memory_limiter:
     check_interval: 5s
     limit_percentage: 80
@@ -185,38 +191,16 @@ processors:
     - action: upsert
       key: cx.otel_integration.name
       value: coralogix-integration-ecs-ec2
+  # Entity uses env+ec2 only (no system) to avoid Windows cpuinfo timeout; ec2 provides host.id/host.name.
   resourcedetection/entity:
     detectors:
-    - system
     - env
     - ec2
     ec2:
       tags:
       - .*
     override: false
-    system:
-      resource_attributes:
-        host.cpu.cache.l2.size:
-          enabled: true
-        host.cpu.family:
-          enabled: true
-        host.cpu.model.id:
-          enabled: true
-        host.cpu.model.name:
-          enabled: true
-        host.cpu.stepping:
-          enabled: true
-        host.cpu.vendor.id:
-          enabled: true
-        host.id:
-          enabled: true
-        host.ip:
-          enabled: true
-        host.mac:
-          enabled: true
-        os.description:
-          enabled: true
-    timeout: 15s
+    timeout: 30s
   resourcedetection/env:
     detectors:
     - system
@@ -655,6 +639,7 @@ service:
       - resourcedetection/entity
       - resourcedetection/region
       - transform/entity-event
+      - filter/resource_catalog_valid
       receivers:
       - hostmetrics
     metrics:
