@@ -56,7 +56,14 @@ jobs:
           # Production deployments can set CX_APPLICATION_NAME env var, otherwise defaults to 'otel'
           yq -i '.exporters.coralogix.application_name = "${env:CX_APPLICATION_NAME:-otel}"' \
             otel-ecs-ec2/examples/otel-config.yaml
+          
+          # Remove application_name_attributes so env var takes effect
+          # (attributes override application_name when present on data)
+          yq -i 'del(.exporters.coralogix.application_name_attributes)' \
+            otel-ecs-ec2/examples/otel-config.yaml
+          
           echo "✓ Patched application_name to use env var with 'otel' default"
+          echo "✓ Removed application_name_attributes to allow env var control"
 
       - name: Upload config to S3
         run: |
