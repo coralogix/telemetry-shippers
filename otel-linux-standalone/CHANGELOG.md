@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.17 / 2026-03-16
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.3
+
+#### Changes from opentelemetry-collector 0.130.3:
+- [Fix] Preserve `telemetry.sdk.*` resource attributes on traces when `reduceResourceAttributes` is enabled in provider-based mode, while continuing to remove them for logs and metrics.
+
 ### v0.0.16 / 2026-03-13
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.2
