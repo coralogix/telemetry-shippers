@@ -1,7 +1,7 @@
 # OpenTelemetry Supervised Collector Makefile
 
 # Default values
-IMAGE_NAME ?= otel-supervised-collector
+IMAGE_NAME ?= coralogix-otel-supervised-collector
 IMAGE_TAG ?= latest
 SUPERVISOR_VERSION ?= $(shell cat CURRENT_VERSION)
 COLLECTOR_VERSION ?= $(SUPERVISOR_VERSION)
