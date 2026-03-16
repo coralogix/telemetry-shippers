@@ -24,7 +24,7 @@ on:
           - cgx.jfrog.io/coralogix-docker-images
           - docker.io/coralogixrepo
 env:
-  IMAGE_NAME: ${{ github.event.inputs.image_name || 'coralogix-otel-supervised-collector }}
+  IMAGE_NAME: ${{ github.event.inputs.image_name || 'coralogix-otel-supervised-collector' }}
   REGISTRY_ORG: ${{ github.event.inputs.registry_org || 'docker.io/coralogixrepo' }}
 
 jobs:
