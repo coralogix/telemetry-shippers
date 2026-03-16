@@ -1,13 +1,9 @@
 # Changelog
 
-## v0.0.3 - 2026-03-12
+## v0.0.2 - 2026-03-12
 
-- [change] Bump CDOT version to 0.5.9
+- [Chore] Bump Supervisor version to 0.147.0.
 
-## v0.0.2 - 2026-02-17
+## v0.0.1 - 2026-03-12
 
-- [change] Bump CDOT version to 0.5.8
-
-## v0.0.1 - 2026-02-10
-
-- [feat] Create container with CDOT version 0.5.7 and 0.142.0 supervisor versions.
+- [feat] Create container with CDOT version 0.5.9 and 0.142.0 supervisor versions.
