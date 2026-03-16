@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.3 - 2026-03-16
+## v0.3.0 - 2026-03-16
 
 - [feat] Use Coralogix' Supervisor fork with support for fallback configuration.
 
