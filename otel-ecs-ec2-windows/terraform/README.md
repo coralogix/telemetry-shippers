@@ -4,6 +4,9 @@ This Terraform configuration provisions a **Windows-only** EC2-backed Amazon ECS
 
 - An ECS cluster with Auto Scaling Group capacity (Windows Server 2022 Core ECS-optimized AMI).
 - A daemon-style OpenTelemetry Collector task (`coralogix-otel-agent`) that runs on every ECS host and ships data using `../examples/otel-config.yaml`.
+- A **telemetrygen-windows** ECS service (separate from the agent), sending logs and traces to the OTEL agent via AWS Cloud Map discovery (`agent.otel.local:4317`).
+- A **public ECR** repository for the telemetrygen-windows image (created in us-east-1).
+- **Service discovery**: agent tasks register in a private DNS namespace (`otel.local`) so telemetrygen can resolve and connect to an agent instance.
 - NAT Gateway and a private subnet so both the instance and task ENIs can reach Coralogix (and Session Manager works via outbound SSM).
 
 Random suffixes are attached to task definitions and services to avoid name collisions across multiple applies.
@@ -42,6 +45,43 @@ See `variables.tf` for all options (instance sizing, task CPU/memory, health che
 - `ecs_cluster_arn` – ECS cluster ARN.
 - `autoscaling_group_name` – Auto Scaling Group for Windows container instances.
 - `coralogix_otel_agent_task_definition_arn` / `coralogix_otel_agent_service_id` – collector task and service.
+- `ecr_telemetrygen_windows_repository_uri` – public ECR repo URI for telemetrygen-windows.
+- `ecr_telemetrygen_windows_registry_id` – registry ID (account ID) for the public ECR repo.
+- `telemetrygen_service_id` / `telemetrygen_task_definition_arn` – telemetrygen ECS service and task definition.
+
+## Pushing the telemetrygen-windows image to your public ECR repo
+
+After `terraform apply`, build the Windows image (from the repo root or `telemetrygen-windows-image/`) and push it to the new public ECR repository.
+
+1. **Get the repo URI** (from Terraform output):
+   ```bash
+   terraform output -raw ecr_telemetrygen_windows_repository_uri
+   ```
+
+2. **Log in to Amazon ECR Public** (public ECR is in us-east-1):
+   ```bash
+   aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+   ```
+
+3. **Build the image** (from your workstation; requires Docker buildx and a Windows-capable builder):
+   ```bash
+   cd telemetrygen-windows-image   # from repo root
+   make win2022
+   ```
+
+4. **Tag and push** (run from repo root; `REPO_URI` is from step 1, e.g. `public.ecr.aws/123456789012/telemetrygen-windows`):
+   ```bash
+   cd telemetrygen-windows-image
+   REPO_URI=$(cd ../otel-ecs-ec2-windows/terraform && terraform output -raw ecr_telemetrygen_windows_repository_uri)
+   docker tag telemetrygen-windows:win2022 $REPO_URI:win2022
+   docker push $REPO_URI:win2022
+   ```
+
+5. **Redeploy the telemetrygen ECS service** so it pulls the new image (optional; only if you already had tasks running before the first push):
+   ```bash
+   aws ecs update-service --cluster CLUSTER_NAME --service telemetrygen-windows-SUFFIX --force-new-deployment
+   ```
+   Use the cluster name and service name from your Terraform output `telemetrygen_service_id`.
 
 ## Customization
 

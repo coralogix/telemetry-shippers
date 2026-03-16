@@ -10,9 +10,9 @@ variable "cluster_name" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type for Windows ECS capacity. Use t3.large or larger for Windows containers."
+  description = "EC2 instance type for Windows ECS capacity. Use t3.xlarge or larger when running both the OTEL agent and telemetrygen (separate services), so the instance has enough ENIs (4+); t3.large has only 3 ENIs and can hit 'Timeout waiting for network interface provisioning'."
   type        = string
-  default     = "t3.large"
+  default     = "t3.xlarge"
 }
 
 variable "desired_capacity" {
@@ -110,4 +110,54 @@ variable "health_check_start_period" {
   description = "Grace period before health checking starts"
   type        = number
   default     = 10
+}
+
+# --- telemetrygen-windows (sidecar) ---
+
+variable "telemetrygen_ecr_repository_name" {
+  description = "Name of the public ECR repository for the telemetrygen-windows image"
+  type        = string
+  default     = "telemetrygen-windows"
+}
+
+variable "telemetrygen_image" {
+  description = "Full image URI for telemetrygen-windows (e.g. public.ecr.aws/ACCOUNT/telemetrygen-windows:win2022). If null, uses the created public ECR repo with tag :win2022"
+  type        = string
+  default     = null
+}
+
+variable "telemetrygen_cpu" {
+  description = "CPU units for the telemetrygen container (256 = 0.25 vCPU)"
+  type        = number
+  default     = 256
+}
+
+variable "telemetrygen_memory" {
+  description = "Memory (MiB) for the telemetrygen container"
+  type        = number
+  default     = 512
+}
+
+variable "telemetrygen_rate" {
+  description = "Telemetry generation rate (e.g. spans/logs per second)"
+  type        = number
+  default     = 1
+}
+
+variable "telemetrygen_duration" {
+  description = "Telemetrygen run duration (Go duration, e.g. 60s, 5m, 8760h for ~1 year). Use a large value like 8760h for effectively infinite."
+  type        = string
+  default     = "8760h"
+}
+
+variable "telemetrygen_service_name" {
+  description = "Service name set in generated telemetry"
+  type        = string
+  default     = "telemetrygen-windows"
+}
+
+variable "telemetrygen_desired_count" {
+  description = "Desired number of telemetrygen tasks (separate ECS service)"
+  type        = number
+  default     = 1
 }

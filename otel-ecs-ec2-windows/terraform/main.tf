@@ -18,6 +18,12 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Public ECR is only available in us-east-1
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 data "aws_vpc" "default" {
   default = true
 }
@@ -75,7 +81,8 @@ locals {
   agent_name         = "coralogix-otel-agent"
   otel_config        = file("${path.module}/../examples/otel-config.yaml")
   agent_suffix       = random_string.agent_suffix.result
-  agent_image  = "coralogixrepo/opentelemetry-collector-contrib-windows:0.121.0-windows2022"
+  agent_image        = "coralogixrepo/opentelemetry-collector-contrib-windows:0.121.0-windows2022"
+  telemetrygen_image = coalesce(var.telemetrygen_image, "${aws_ecrpublic_repository.telemetrygen_windows.repository_uri}:win2022")
 
   agent_volumes = [
     { name = "hostfs", host_path = "C:\\" },
@@ -85,6 +92,8 @@ locals {
   agent_common = {
     name       = local.agent_name
     image      = local.agent_image
+    cpu        = var.task_cpu
+    memory     = var.task_memory
     essential  = true
     privileged = false
     portMappings = [
@@ -127,6 +136,11 @@ locals {
     timeout     = var.health_check_timeout
     retries     = var.health_check_retries
   } : null
+
+  telemetrygen_name   = "telemetrygen-windows"
+  telemetrygen_suffix = random_string.agent_suffix.result
+  # Telemetrygen reaches the agent via Cloud Map DNS (resolves to any agent task)
+  otel_agent_endpoint = "${aws_service_discovery_service.agent.name}.${aws_service_discovery_private_dns_namespace.otel.name}:4317"
 }
 
 resource "aws_security_group" "ecs_instances" {
@@ -144,6 +158,17 @@ resource "aws_security_group" "ecs_instances" {
   tags = merge({
     Name = "${var.cluster_name}-ecs-sg"
   }, local.default_tags)
+}
+
+# Allow telemetrygen tasks to reach agent tasks on OTLP gRPC port (separate rule to avoid SG replacement)
+resource "aws_security_group_rule" "ecs_otlp_from_self" {
+  type              = "ingress"
+  from_port         = 4317
+  to_port           = 4317
+  protocol          = "tcp"
+  self              = true
+  security_group_id = aws_security_group.ecs_instances.id
+  description       = "OTLP gRPC from telemetrygen to agent"
 }
 
 resource "aws_iam_role" "ecs_instance" {
@@ -275,10 +300,56 @@ resource "random_string" "agent_suffix" {
   special = false
 }
 
+# Public ECR repository for telemetrygen-windows image (us-east-1 only)
+resource "aws_ecrpublic_repository" "telemetrygen_windows" {
+  provider = aws.us_east_1
+
+  repository_name = var.telemetrygen_ecr_repository_name
+
+  catalog_data {
+    description   = "Telemetrygen Windows image (logs + traces) for OpenTelemetry testing"
+    architectures = ["AMD64"]
+    operating_systems = ["WINDOWS"]
+  }
+
+  tags = merge({
+    Name = var.telemetrygen_ecr_repository_name
+  }, local.default_tags)
+}
+
 resource "aws_cloudwatch_log_group" "otel_agent" {
   name              = "/ecs/${local.agent_name}-${local.agent_suffix}"
   retention_in_days = 7
   tags              = local.default_tags
+}
+
+resource "aws_cloudwatch_log_group" "telemetrygen" {
+  name              = "/ecs/telemetrygen-windows-${local.agent_suffix}"
+  retention_in_days = 7
+  tags              = local.default_tags
+}
+
+# Service discovery: agent tasks register so telemetrygen can resolve agent.otel.local:4317
+resource "aws_service_discovery_private_dns_namespace" "otel" {
+  name        = "otel.local"
+  description = "Private DNS namespace for OTEL agent discovery"
+  vpc         = data.aws_vpc.default.id
+  tags        = merge({ Name = "${var.cluster_name}-otel-discovery" }, local.default_tags)
+}
+
+resource "aws_service_discovery_service" "agent" {
+  name = "agent"
+
+  dns_config {
+    namespace_id   = aws_service_discovery_private_dns_namespace.otel.id
+    routing_policy = "MULTIVALUE"
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+  }
+
+  tags = merge({ Name = "${var.cluster_name}-agent-discovery" }, local.default_tags)
 }
 
 resource "aws_ecs_task_definition" "coralogix_otel_agent" {
@@ -346,9 +417,85 @@ resource "aws_ecs_service" "coralogix_otel_agent" {
     security_groups = [aws_security_group.ecs_instances.id]
   }
 
+  service_registries {
+    registry_arn   = aws_service_discovery_service.agent.arn
+    container_name = local.agent_name
+  }
+
   enable_ecs_managed_tags = true
 
   tags = merge({
     Name = "${local.agent_name}-${local.agent_suffix}"
+  }, local.default_tags)
+}
+
+# --- Telemetrygen as a separate ECS service ---
+
+resource "aws_ecs_task_definition" "telemetrygen" {
+  family                   = "${local.telemetrygen_name}-${local.telemetrygen_suffix}"
+  cpu                      = var.telemetrygen_cpu
+  memory                   = var.telemetrygen_memory
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["EC2"]
+  execution_role_arn       = var.task_execution_role_arn != null ? var.task_execution_role_arn : aws_iam_role.ecs_task_execution[0].arn
+
+  runtime_platform {
+    operating_system_family = "WINDOWS_SERVER_2022_CORE"
+    cpu_architecture        = "X86_64"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name              = local.telemetrygen_name
+      image             = local.telemetrygen_image
+      imagePullPolicy   = "ALWAYS"
+      cpu               = var.telemetrygen_cpu
+      memory            = var.telemetrygen_memory
+      essential         = true
+      environment = [
+        { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = local.otel_agent_endpoint },
+        { name = "OTEL_INSECURE", value = "true" },
+        { name = "TELEMETRYGEN_RATE", value = tostring(var.telemetrygen_rate) },
+        { name = "TELEMETRYGEN_DURATION", value = var.telemetrygen_duration },
+        { name = "TELEMETRYGEN_SERVICE", value = var.telemetrygen_service_name }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.telemetrygen.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+
+  tags = merge({
+    Name = "${local.telemetrygen_name}-${local.telemetrygen_suffix}"
+  }, local.default_tags)
+}
+
+resource "aws_ecs_service" "telemetrygen" {
+  name                               = "${local.telemetrygen_name}-${local.telemetrygen_suffix}"
+  cluster                            = aws_ecs_cluster.this.id
+  launch_type                        = "EC2"
+  task_definition                    = aws_ecs_task_definition.telemetrygen.arn
+  desired_count                      = var.telemetrygen_desired_count
+  deployment_maximum_percent         = 100
+  deployment_minimum_healthy_percent = 0
+
+  deployment_controller {
+    type = "ECS"
+  }
+
+  network_configuration {
+    subnets         = [local.cluster_subnet_ids[1]]
+    security_groups = [aws_security_group.ecs_instances.id]
+  }
+
+  enable_ecs_managed_tags = true
+
+  tags = merge({
+    Name = "${local.telemetrygen_name}-${local.telemetrygen_suffix}"
   }, local.default_tags)
 }
