@@ -2,9 +2,7 @@ name: Telemetrygen-Windows
 
 on:
   push:
-    branches:
-      - master
-      - cds-840-follow-up
+    branches: master
     paths:
       - "telemetrygen-windows-image/Dockerfile"
       - ".github/workflows/telemetrygen-windows-image.yml"
@@ -63,11 +61,3 @@ jobs:
             WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2022
           tags: |
             ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-version.outputs.version }}-windows2022
-
-      # Verify image is reachable
-      - name: Verify image on JFrog
-        run: |
-          echo "Checking ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:latest..."
-          docker pull --platform windows/amd64 ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:latest
-          echo "Checking ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-version.outputs.version }}-windows2022..."
-          docker pull --platform windows/amd64 ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-version.outputs.version }}-windows2022
