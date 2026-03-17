@@ -18,16 +18,6 @@ output "coralogix_otel_agent_service_id" {
   value       = aws_ecs_service.coralogix_otel_agent.id
 }
 
-output "ecr_telemetrygen_windows_repository_uri" {
-  description = "URI of the public ECR repository for telemetrygen-windows (use this to push and pull)"
-  value       = aws_ecrpublic_repository.telemetrygen_windows.repository_uri
-}
-
-output "ecr_telemetrygen_windows_registry_id" {
-  description = "Registry ID (account ID) of the public ECR repository"
-  value       = aws_ecrpublic_repository.telemetrygen_windows.registry_id
-}
-
 output "telemetrygen_service_id" {
   description = "ID of the telemetrygen-windows ECS service"
   value       = aws_ecs_service.telemetrygen.id

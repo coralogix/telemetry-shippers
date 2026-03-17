@@ -114,16 +114,10 @@ variable "health_check_start_period" {
 
 # --- telemetrygen-windows (sidecar) ---
 
-variable "telemetrygen_ecr_repository_name" {
-  description = "Name of the public ECR repository for the telemetrygen-windows image"
-  type        = string
-  default     = "telemetrygen-windows"
-}
-
 variable "telemetrygen_image" {
-  description = "Full image URI for telemetrygen-windows (e.g. public.ecr.aws/ACCOUNT/telemetrygen-windows:win2022). If null, uses the created public ECR repo with tag :win2022"
+  description = "Full image URI for telemetrygen-windows (e.g. cgx.jfrog.io/coralogix-docker-images/telemetrygen-windows:0.147.0-windows2022)"
   type        = string
-  default     = null
+  default     = "cgx.jfrog.io/coralogix-docker-images/telemetrygen-windows:0.147.0-windows2022"
 }
 
 variable "telemetrygen_cpu" {

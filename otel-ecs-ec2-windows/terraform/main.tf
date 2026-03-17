@@ -18,12 +18,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Public ECR is only available in us-east-1
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
 data "aws_vpc" "default" {
   default = true
 }
@@ -81,9 +75,8 @@ locals {
   agent_name         = "coralogix-otel-agent"
   otel_config        = file("${path.module}/../examples/otel-config.yaml")
   agent_suffix       = random_string.agent_suffix.result
-  agent_image        = "coralogixrepo/coralogix-otel-collector:0.0.0-win-2022-windowsserver-2022"
-  # TODO: Remove ECR fallback once telemetrygen-windows-image is published to Docker Hub (coralogixrepo/telemetrygen-windows); then default to that image.
-  telemetrygen_image = coalesce(var.telemetrygen_image, "${aws_ecrpublic_repository.telemetrygen_windows.repository_uri}:v0.147.0-win2022")
+  agent_image        = "coralogixrepo/coralogix-otel-collector:v0.5.10-windowsserver-2022"
+  telemetrygen_image = "cgx.jfrog.io/coralogix-docker-images/telemetrygen-windows:0.147.0-windows2022"
 
   agent_volumes = [
     { name = "hostfs", host_path = "C:\\" },
@@ -200,7 +193,7 @@ resource "aws_iam_instance_profile" "ecs_instance" {
   role = aws_iam_role.ecs_instance.name
 }
 
-# Task execution role: used by ECS to pull images (ECR) and write logs. Created only when not provided.
+# Task execution role: used by ECS to pull images and write logs. Created only when not provided.
 resource "aws_iam_role" "ecs_task_execution" {
   count = var.task_execution_role_arn == null ? 1 : 0
 
@@ -299,24 +292,6 @@ resource "random_string" "agent_suffix" {
   numeric = true
   upper   = false
   special = false
-}
-
-# Public ECR repository for telemetrygen-windows image (us-east-1 only).
-# TODO: Remove this resource (and switch telemetrygen_image default to Docker Hub) once telemetrygen-windows-image is published to Docker Hub.
-resource "aws_ecrpublic_repository" "telemetrygen_windows" {
-  provider = aws.us_east_1
-
-  repository_name = var.telemetrygen_ecr_repository_name
-
-  catalog_data {
-    description       = "Telemetrygen Windows image (logs + traces) for OpenTelemetry testing"
-    architectures     = ["AMD64"]
-    operating_systems = ["WINDOWS"]
-  }
-
-  tags = merge({
-    Name = var.telemetrygen_ecr_repository_name
-  }, local.default_tags)
 }
 
 resource "aws_cloudwatch_log_group" "otel_agent" {
