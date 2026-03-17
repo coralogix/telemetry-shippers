@@ -7,6 +7,9 @@ on:
       - "telemetrygen-windows-image/Dockerfile"
       - ".github/workflows/telemetrygen-windows-image.yml"
 
+permissions:
+  contents: read
+
 env:
   DOCKERHUB_REGISTRY: coralogixrepo/telemetrygen-windows
 
