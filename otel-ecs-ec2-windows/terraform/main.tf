@@ -307,8 +307,8 @@ resource "aws_ecrpublic_repository" "telemetrygen_windows" {
   repository_name = var.telemetrygen_ecr_repository_name
 
   catalog_data {
-    description   = "Telemetrygen Windows image (logs + traces) for OpenTelemetry testing"
-    architectures = ["AMD64"]
+    description       = "Telemetrygen Windows image (logs + traces) for OpenTelemetry testing"
+    architectures     = ["AMD64"]
     operating_systems = ["WINDOWS"]
   }
 
@@ -446,12 +446,12 @@ resource "aws_ecs_task_definition" "telemetrygen" {
 
   container_definitions = jsonencode([
     {
-      name              = local.telemetrygen_name
-      image             = local.telemetrygen_image
-      imagePullPolicy   = "ALWAYS"
-      cpu               = var.telemetrygen_cpu
-      memory            = var.telemetrygen_memory
-      essential         = true
+      name            = local.telemetrygen_name
+      image           = local.telemetrygen_image
+      imagePullPolicy = "ALWAYS"
+      cpu             = var.telemetrygen_cpu
+      memory          = var.telemetrygen_memory
+      essential       = true
       environment = [
         { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = local.otel_agent_endpoint },
         { name = "OTEL_INSECURE", value = "true" },
