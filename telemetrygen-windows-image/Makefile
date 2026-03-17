@@ -1,7 +1,7 @@
 IMAGE_REPOSITORY ?= telemetrygen-windows
 IMAGE_TAG ?=
 # Telemetrygen version (opentelemetry-collector-contrib tag) to build
-TELEMETRYGEN_VERSION ?= v0.130.0
+TELEMETRYGEN_VERSION ?= v0.147.0
 # A Windows version to build for. Supported values are `2019` and `2022`.
 WIN_VERSION ?=
 # This can be `--load` to just build the image and do nothing.

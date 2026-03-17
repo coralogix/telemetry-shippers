@@ -5,7 +5,7 @@ ARG TELEMETRYGEN_VERSION=v0.147.0
 ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 
 # Build stage: cross-compile telemetrygen for Windows
-FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
 RUN apk add --no-cache git
 ARG TELEMETRYGEN_VERSION
 WORKDIR /src
