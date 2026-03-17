@@ -145,6 +145,7 @@ extensions:
   health_check:
     endpoint: ${env:MY_POD_IP}:13133
   # Opamp disabled on Windows: extension fails getting host info ("getting host ID: The system cannot find the file specified."). Re-enable when collector supports Windows host ID in opamp.
+  # bug: https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/46965
   # opamp:
   #   agent_description:
   #     non_identifying_attributes:
