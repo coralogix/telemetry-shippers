@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.4 - 2026-03-17
+
+- [change] Bump CDOT version to 0.5.10
+
 ## v0.0.3 - 2026-03-16
 
 - [feat] Use Coralogix' Supervisor fork with support for fallback configuration.
