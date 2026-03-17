@@ -81,7 +81,7 @@ locals {
   agent_name         = "coralogix-otel-agent"
   otel_config        = file("${path.module}/../examples/otel-config.yaml")
   agent_suffix       = random_string.agent_suffix.result
-  agent_image        = "coralogixrepo/coralogix-otel-collector:0.0.0-win-2022-windowsserver-2022"
+  agent_image        = "coralogixrepo/coralogix-otel-collector:v0.5.10-windowsserver-2022"
   # TODO: Remove ECR fallback once telemetrygen-windows-image is published to Docker Hub (coralogixrepo/telemetrygen-windows); then default to that image.
   telemetrygen_image = coalesce(var.telemetrygen_image, "${aws_ecrpublic_repository.telemetrygen_windows.repository_uri}:v0.147.0-win2022")
 
