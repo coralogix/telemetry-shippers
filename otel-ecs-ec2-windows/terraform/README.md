@@ -11,6 +11,34 @@ This Terraform configuration provisions a **Windows-only** EC2-backed Amazon ECS
 
 Random suffixes are attached to task definitions and services to avoid name collisions across multiple applies.
 
+## Comparison: otel-ecs-ec2-windows vs otel-ecs-ec2 (Linux)
+
+### Terraform / infrastructure
+
+| Aspect | otel-ecs-ec2 (Linux) | otel-ecs-ec2-windows |
+|--------|----------------------|------------------------|
+| **OS / AMI** | Amazon Linux 2 (SSM: ECS-optimized AL2) | Windows Server 2022 Core (SSM: ECS-optimized Windows 2022) |
+| **Networking** | Default VPC subnets; no NAT Gateway | Private subnet + NAT Gateway (outbound via NAT, Session Manager) |
+| **Agent network mode** | `host` (shared with instance) | `awsvpc` (task gets its own ENI) |
+| **Agent task** | `pid_mode = host`, privileged, host mounts (`/var/lib/docker`, `/proc`, `/sys/fs/bpf`, etc.) | No pid_mode, not privileged; mounts `C:\`, `C:\ProgramData\Amazon\ECS` |
+| **Agent image** | Configurable (`image` / `image_version`), default Coralogix collector | Fixed: `opentelemetry-collector-contrib-windows:0.121.0-windows2022` |
+| **Telemetrygen** | Same task network as host → `localhost:4317`; **traces only**; image from Docker Hub (e.g. `ghcr.io/.../telemetrygen`) | Separate ECS service → `agent.otel.local:4317` via **Cloud Map**; **logs + traces**; image from **public ECR** (repo created by Terraform) |
+| **Telemetrygen connectivity** | Host network → OTLP endpoint variable (default `localhost:4317`) | AWS Cloud Map (private DNS `otel.local`, service `agent`); SG rule TCP 4317 from self |
+| **Extra resources** | — | Public ECR repo (us-east-1), Service Discovery namespace + service, `imagePullPolicy: ALWAYS` for telemetrygen |
+| **Default instance type** | `t3.micro` | `t3.xlarge` (needs 4+ ENIs for agent + telemetrygen tasks) |
+
+### OTEL config (examples/otel-config.yaml)
+
+| Aspect | otel-ecs-ec2 (Linux) | otel-ecs-ec2-windows |
+|--------|----------------------|------------------------|
+| **Logs receivers** | `filelog` (Docker container logs under `/hostfs/var/lib/docker/containers/`) + `otlp` | `otlp` only (no filelog; Windows containers don’t expose logs as host files like Linux Docker) |
+| **Logs pipeline** | `filelog` + `otlp` → processors include `ecsattributes/container-logs` | `otlp` only; no `ecsattributes/container-logs` |
+| **ECS container metrics** | `awsecscontainermetricsd` | `awsecscontainermetrics` (different receiver name for Windows) |
+| **Metrics (resource catalog)** | `logs/resource_catalog` uses `hostmetrics` | `logs/resource_catalog` uses `hostmetrics` (same idea) |
+| **hostmetrics** | `root_path: /` (Linux paths) | No `root_path`; Windows-specific filesystem exclusions |
+| **spanmetrics** | Includes `aggregation_cardinality_limit`, `add_resource_attributes` | Same connectors; Windows config may omit some options (e.g. cardinality limit) depending on collector version |
+| **Agent feature gate** | Not set | `--feature-gates=service.profilesSupport` |
+
 ## Prerequisites
 
 - Terraform 1.5.7 or newer.
@@ -36,7 +64,7 @@ terraform apply \
   -var="api_key=xxxxxxx"
 ```
 
-**Makefile variables:** `CLUSTER_NAME`, `AWS_REGION`, `API_KEY`, `INSTANCE_TYPE` (default `t3.large`), `TASK_CPU` (default 1024), `TASK_MEMORY` (default 2048), `ECS_CONTAINER_START_TIMEOUT` (default 15m).
+**Makefile variables:** `CLUSTER_NAME`, `AWS_REGION`, `API_KEY`, `INSTANCE_TYPE` (default `t3.xlarge`), `TASK_CPU` (default 1024), `TASK_MEMORY` (default 2048), `ECS_CONTAINER_START_TIMEOUT` (default 15m).
 
 See `variables.tf` for all options (instance sizing, task CPU/memory, health checks, execution role).
 
