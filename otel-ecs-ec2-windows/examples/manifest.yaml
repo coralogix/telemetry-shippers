@@ -580,7 +580,8 @@ data:
             == nil and attributes["span.name"] != nil and (attributes["otel.status_code"]
             == "UNSET" or attributes["otel.status_code"] == nil)
     receivers:
-      awsecscontainermetricsd: {}
+      awsecscontainermetricsd:
+        sidecar: true
       filelog:
         force_flush_period: 0
         include:

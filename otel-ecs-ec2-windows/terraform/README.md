@@ -21,7 +21,7 @@ Random suffixes are attached to task definitions and services to avoid name coll
 | **Networking** | Default VPC subnets; no NAT Gateway | Private subnet + NAT Gateway (outbound via NAT, Session Manager) |
 | **Agent network mode** | `host` (shared with instance) | `awsvpc` (task gets its own ENI) |
 | **Agent task** | `pid_mode = host`, privileged, host mounts (`/var/lib/docker`, `/proc`, `/sys/fs/bpf`, etc.) | No pid_mode, not privileged; mounts `C:\`, `C:\ProgramData\Amazon\ECS` |
-| **Agent image** | Configurable (`image` / `image_version`), default Coralogix collector | Fixed: `opentelemetry-collector-contrib-windows:0.121.0-windows2022` |
+| **Agent image** | Configurable (`image` / `image_version`), default Coralogix collector | `coralogixrepo/coralogix-otel-collector:0.0.0-win-2022-windowsserver-2022` |
 | **Telemetrygen** | Same task network as host → `localhost:4317`; **traces only**; image from Docker Hub (e.g. `ghcr.io/.../telemetrygen`) | Separate ECS service → `agent.otel.local:4317` via **Cloud Map**; **logs + traces**; image from **public ECR** (repo created by Terraform) |
 | **Telemetrygen connectivity** | Host network → OTLP endpoint variable (default `localhost:4317`) | AWS Cloud Map (private DNS `otel.local`, service `agent`); SG rule TCP 4317 from self |
 | **Extra resources** | — | Public ECR repo (us-east-1), Service Discovery namespace + service, `imagePullPolicy: ALWAYS` for telemetrygen |
@@ -32,11 +32,11 @@ Random suffixes are attached to task definitions and services to avoid name coll
 | Aspect | otel-ecs-ec2 (Linux) | otel-ecs-ec2-windows |
 |--------|----------------------|------------------------|
 | **Logs receivers** | `filelog` (Docker container logs under `/hostfs/var/lib/docker/containers/`) + `otlp` | `otlp` only (no filelog; Windows containers don’t expose logs as host files like Linux Docker) |
-| **Logs pipeline** | `filelog` + `otlp` → processors include `ecsattributes/container-logs` | `otlp` only; no `ecsattributes/container-logs` |
-| **ECS container metrics** | `awsecscontainermetricsd` | `awsecscontainermetrics` (different receiver name for Windows) |
-| **Metrics (resource catalog)** | `logs/resource_catalog` uses `hostmetrics` | `logs/resource_catalog` uses `hostmetrics` (same idea) |
+| **Logs pipeline** | `filelog` + `otlp` → processors include `ecsattributes/container-logs` | `otlp` only (no filelog). **ecsattributes/container-logs** is disabled on Windows (no Docker daemon). Re-enable once the collector supports ECS Task Metadata fallback. |
+| **ECS container metrics** | `awsecscontainermetricsd` (daemon mode: Docker API + ECS metadata) | `awsecscontainermetricsd` with **`sidecar: true`** (ECS Task Metadata only; no Docker daemon on Windows) |
 | **hostmetrics** | `root_path: /` (Linux paths) | No `root_path`; Windows-specific filesystem exclusions |
-| **spanmetrics** | Includes `aggregation_cardinality_limit`, `add_resource_attributes` | Same connectors; Windows config may omit some options (e.g. cardinality limit) depending on collector version |
+| **resourcedetection/env** | `system` + `env` (host.id from OS) | `env` only (system detector fails in Windows container: "file specified" / host ID). `host.id` / `host.name` still come from the ec2 detector in resourcedetection/region and resourcedetection/entity (instance metadata). |
+| **opamp** | Enabled (Fleet Management) | Disabled (extension fails getting host info on Windows container) |
 | **Agent feature gate** | Not set | `--feature-gates=service.profilesSupport` |
 
 ## Prerequisites
