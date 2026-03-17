@@ -19,24 +19,19 @@ Run the following command in PowerShell (as Administrator) to install the collec
 
 ```powershell
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
-# Enable TLS 1.2 (required for GitHub on Windows Server 2016 and older)
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1'))
 ```
 
-Or download and run the script locally (recommended if you see SSL/TLS errors):
+Or download and run the script locally:
 
 ```powershell
-# Enable TLS 1.2 first (required on Windows Server 2016 and older)
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 # Download the script
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-installer/windows/coralogix-otel-collector.ps1" -OutFile "coralogix-otel-collector.ps1"
+
 # Run with your private key
 $env:CORALOGIX_PRIVATE_KEY="<your-private-key>"
 .\coralogix-otel-collector.ps1
 ```
-
-Alternatively, download `coralogix-otel-collector.ps1` from the repo in a browser (or copy from another machine), save it on the VM, then run it—no HTTPS from PowerShell is needed in that case.
 
 ## Environment Variables
 
@@ -44,20 +39,6 @@ Alternatively, download `coralogix-otel-collector.ps1` from the repo in a browse
 |-------------------------|----------------------|---------------------------------------------------------------------------------------------|
 | `CORALOGIX_PRIVATE_KEY` | Yes                  | Your Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/) |
 | `CORALOGIX_DOMAIN`      | Supervisor mode only | Your Coralogix [domain](https://coralogix.com/docs/coralogix-domain/)                       |
-
-## Troubleshooting
-
-### "Could not create SSL/TLS secure channel" when downloading the script
-
-**Cause:** On Windows Server 2016 and some older or locked-down systems, .NET uses TLS 1.0 by default. GitHub only accepts TLS 1.2 or higher, so the download fails before the script runs.
-
-**Fix:** Run this once in the same PowerShell session before the one-liner or `Invoke-WebRequest`:
-
-```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-```
-
-The Quick Start commands above already include this line. If you prefer not to use PowerShell for the download, download `coralogix-otel-collector.ps1` in a browser (or copy it from another machine), save it on the VM, then run `.\coralogix-otel-collector.ps1`—the script enables TLS 1.2 for its own HTTPS calls.
 
 ## Supported Platforms
 
