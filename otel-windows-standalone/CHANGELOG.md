@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.10 / 2026-03-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.4
+
+#### Changes from opentelemetry-collector 0.130.4:
+- [Feat] Use Coralogix' custom Supervised Collector image when `presets.fleetManagement.supervisor` is enabled. For now this custom image includes fallback configuration support (local file and S3).
+
 ### v0.0.9 / 2026-03-16
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.3
