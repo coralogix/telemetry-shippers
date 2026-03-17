@@ -27,7 +27,7 @@ Optional overrides:
 
 - `IMAGE_REPOSITORY` – image name (default: `telemetrygen-windows`)
 - `IMAGE_TAG` – tag (default: `win2019` or `win2022` from targets)
-- `TELEMETRYGEN_VERSION` – contrib tag to build (default: `v0.130.0`)
+- `TELEMETRYGEN_VERSION` – contrib tag to build
 - `POST_BUILD=--push` – push after build
 
 ## Running the image
