@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.2"
+  version: "0.0.1"
   deploymentEnvironmentName: ""
 
 # For Windows ECS EC2: disable ebpfProfiler (Linux-only), and consider disabling
@@ -64,7 +64,7 @@ opentelemetry-agent:
     metadata:
       enabled: true
       clusterName: ""
-      integrationName: "coralogix-integration-ecs-ec2"
+      integrationName: "ecs-ec2-windows-integration"
     fleetManagement:
       enabled: true
       agentType: "agent"

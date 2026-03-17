@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 # Configuration
-RELEASE ?= ecs-ec2-example
+RELEASE ?= ecs-ec2-windows-example
 CHART_PATH ?= .
 VALUES_FILE ?= $(CHART_PATH)/values.yaml
 OUTPUT_DIR ?= $(CHART_PATH)/examples

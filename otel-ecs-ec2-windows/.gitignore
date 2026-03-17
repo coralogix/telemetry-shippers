@@ -11,6 +11,10 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 .terraform.lock.hcl
+
+# Helm
+Chart.lock
+
 # OS/Editor
 .DS_Store
 .idea/

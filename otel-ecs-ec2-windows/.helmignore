@@ -1,2 +1,16 @@
+# Terraform (not part of chart)
 .terraform/
+terraform/
 terraform-agent
+
+# Examples and generated outputs (source of truth is otel-config.yaml; not packaged)
+examples/
+
+# Version control and lockfile
+.git/
+Chart.lock
+
+# OS/Editor
+.DS_Store
+.idea/
+.vscode/
