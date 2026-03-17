@@ -82,6 +82,7 @@ locals {
   otel_config        = file("${path.module}/../examples/otel-config.yaml")
   agent_suffix       = random_string.agent_suffix.result
   agent_image        = "coralogixrepo/opentelemetry-collector-contrib-windows:0.121.0-windows2022"
+  # TODO: Remove ECR fallback once telemetrygen-windows-image is published to Docker Hub (coralogixrepo/telemetrygen-windows); then default to that image.
   telemetrygen_image = coalesce(var.telemetrygen_image, "${aws_ecrpublic_repository.telemetrygen_windows.repository_uri}:win2022")
 
   agent_volumes = [
@@ -300,7 +301,8 @@ resource "random_string" "agent_suffix" {
   special = false
 }
 
-# Public ECR repository for telemetrygen-windows image (us-east-1 only)
+# Public ECR repository for telemetrygen-windows image (us-east-1 only).
+# TODO: Remove this resource (and switch telemetrygen_image default to Docker Hub) once telemetrygen-windows-image is published to Docker Hub.
 resource "aws_ecrpublic_repository" "telemetrygen_windows" {
   provider = aws.us_east_1
 

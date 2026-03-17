@@ -1,7 +1,7 @@
 # escape=`
 # Multi-stage build: compile telemetrygen for Windows on Linux, then run on Windows servercore.
 # For Windows 2022, use `mcr.microsoft.com/windows/servercore:ltsc2022`
-ARG TELEMETRYGEN_VERSION=v0.130.0
+ARG TELEMETRYGEN_VERSION=v0.147.0
 ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 
 # Build stage: cross-compile telemetrygen for Windows
