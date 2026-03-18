@@ -30,13 +30,14 @@ DRY_RUN=false
 SKIP_CHARTS=""
 SUMMARY_FILE="/tmp/otel-bump-summary.md"
 
-ALL_CHARTS="otel-integration otel-linux-standalone otel-macos-standalone otel-windows-standalone"
+ALL_CHARTS="otel-ecs-ec2 otel-integration otel-linux-standalone otel-macos-standalone otel-windows-standalone"
 
 CHART_STATUS=""
 CHART_WARNINGS=""
 
 get_chart_path() {
   case "$1" in
+    otel-ecs-ec2) echo "otel-ecs-ec2" ;;
     otel-integration) echo "otel-integration/k8s-helm" ;;
     otel-linux-standalone) echo "otel-linux-standalone" ;;
     otel-macos-standalone) echo "otel-macos-standalone" ;;
@@ -47,6 +48,7 @@ get_chart_path() {
 
 get_changelog_path() {
   case "$1" in
+    otel-ecs-ec2) echo "otel-ecs-ec2/CHANGELOG.md" ;;
     otel-integration) echo "otel-integration/CHANGELOG.md" ;;
     otel-linux-standalone) echo "otel-linux-standalone/CHANGELOG.md" ;;
     otel-macos-standalone) echo "otel-macos-standalone/CHANGELOG.md" ;;
@@ -240,10 +242,18 @@ update_changelog() {
   # Build changelog entry in a temp file
   local entry_file
   entry_file=$(mktemp)
+
+  local header_version="v${new_chart_version}"
+  local change_line="- [Chore] Bump chart dependency to opentelemetry-collector ${NEW_VERSION}"
+
+  if [[ "$chart" == "otel-ecs-ec2" ]]; then
+    header_version="${new_chart_version}"
+    change_line="* [CHANGE] Update Helm dependency \`opentelemetry-agent\` to chart version \`${NEW_VERSION}\`."
+  fi
   
-  echo "### v${new_chart_version} / ${today}" > "$entry_file"
+  echo "### ${header_version} / ${today}" > "$entry_file"
   echo "" >> "$entry_file"
-  echo "- [Chore] Bump chart dependency to opentelemetry-collector ${NEW_VERSION}" >> "$entry_file"
+  echo "$change_line" >> "$entry_file"
 
   if [[ -n "$CHANGELOG_FILE" && -f "$CHANGELOG_FILE" ]]; then
     echo "" >> "$entry_file"
@@ -255,7 +265,7 @@ update_changelog() {
 
   # Find first version header line number and insert before it
   local first_version_line
-  first_version_line=$(grep -n "^### v[0-9]" "$changelog_path" | head -1 | cut -d: -f1)
+  first_version_line=$(grep -En "^### v?[0-9]" "$changelog_path" | head -1 | cut -d: -f1)
 
   if [[ -n "$first_version_line" ]]; then
     # Insert entry before the first version header
@@ -286,6 +296,8 @@ run_post_commands() {
   if [[ "$DRY_RUN" == "true" ]]; then
     if [[ "$chart" == "otel-integration" ]]; then
       log_info "  Would run: helm dependency update"
+    elif [[ "$chart" == "otel-ecs-ec2" ]]; then
+      log_info "  Would run: helm dependency update && make all"
     else
       log_info "  Would run: helm dependency update && make otel-config"
     fi
@@ -314,13 +326,18 @@ run_post_commands() {
     
     local makefile="$REPO_ROOT/${chart}/Makefile"
     if [[ -f "$makefile" ]]; then
-      log_info "  Running make otel-config..."
-      cmd_output=$(cd "$REPO_ROOT/$chart" && make otel-config 2>&1) && cmd_exit=0 || cmd_exit=$?
+      local make_target="otel-config"
+      if [[ "$chart" == "otel-ecs-ec2" ]]; then
+        make_target="all"
+      fi
+
+      log_info "  Running make ${make_target}..."
+      cmd_output=$(cd "$REPO_ROOT/$chart" && make "$make_target" 2>&1) && cmd_exit=0 || cmd_exit=$?
       # Check for helm errors in output even if exit code is 0
       if [[ $cmd_exit -ne 0 ]] || echo "$cmd_output" | grep -qi "^error:"; then
         echo "$cmd_output" >&2
-        log_error "  Failed: make otel-config (exit code: $cmd_exit)"
-        add_chart_warning "$chart" "make otel-config failed - check helm template errors"
+        log_error "  Failed: make ${make_target} (exit code: $cmd_exit)"
+        add_chart_warning "$chart" "make ${make_target} failed - check helm template errors"
         has_warning=true
       else
         # Show just the "Wrote" line on success

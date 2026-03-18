@@ -61,7 +61,7 @@ jobs:
           echo "Target version: $TARGET_VERSION"
           
           # Get minimum dependency version across active charts
-          CHART_PATHS="otel-integration/k8s-helm otel-linux-standalone otel-macos-standalone otel-windows-standalone"
+          CHART_PATHS="otel-ecs-ec2 otel-integration/k8s-helm otel-linux-standalone otel-macos-standalone otel-windows-standalone"
           MIN_VERSION=""
           for chart in $CHART_PATHS; do
             # Extract chart name for skip check (handle otel-integration/k8s-helm -> otel-integration)
@@ -240,7 +240,7 @@ jobs:
       - name: Ensure labels exist
         if: steps.changelog.outputs.status != 'skip'
         run: |
-          for label in otel-collector-bump chart:otel-integration chart:otel-linux-standalone chart:otel-macos-standalone chart:otel-windows-standalone; do
+          for label in otel-collector-bump chart:otel-ecs-ec2 chart:otel-integration chart:otel-linux-standalone chart:otel-macos-standalone chart:otel-windows-standalone; do
             gh label create "$label" --description "Auto-created for otel-collector sync" --color "0E8A16" 2>/dev/null || true
           done
         env:
@@ -251,7 +251,7 @@ jobs:
         id: labels
         run: |
           LABELS="otel-collector-bump"
-          for chart in otel-integration otel-linux-standalone otel-macos-standalone otel-windows-standalone; do
+          for chart in otel-ecs-ec2 otel-integration otel-linux-standalone otel-macos-standalone otel-windows-standalone; do
             if ! echo "$SKIP_CHARTS" | tr ',' '\n' | grep -qw "$chart"; then
               LABELS="$LABELS,chart:$chart"
             fi
