@@ -334,3 +334,46 @@ opentelemetry-agent:
           processors:
             - memory_limiter
           # receivers: []
+
+opentelemetry-ebpf-profiler:
+  enabled: false
+  distribution: "ecs"
+  mode: daemonset
+  presets:
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-ecs-ec2"
+    fleetManagement:
+      enabled: true
+      agentType: "agent"
+      clusterName: "{{.Values.global.clusterName}}"
+
+    ebpfProfiler:
+      enabled: true
+      reporterInterval: "{{.Values.global.collectionInterval}}"
+
+    collectorMetrics:
+      enabled: false
+
+    otlpReceiver:
+      enabled: false
+
+    ecsAttributesContainerLogs:
+      enabled: true
+      profilesServiceName:
+        enabled: true
+
+    reduceResourceAttributes:
+      enabled: false
+
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    resourceDetection:
+      enabled: true
+
+  config:
+    exporters:
+      debug: null
