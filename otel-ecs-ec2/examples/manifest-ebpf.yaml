@@ -6,7 +6,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.130.1
+    helm.sh/chart: opentelemetry-agent-0.130.4
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.147.0"
@@ -32,7 +32,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.130.1
+    helm.sh/chart: opentelemetry-agent-0.130.4
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.147.0"
@@ -200,7 +200,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.130.1
+            helm.chart.opentelemetry-agent.version: 0.130.4
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -459,9 +459,6 @@ data:
           - delete_key(resource.attributes, "container.id")
           - delete_key(resource.attributes, "telemetry.distro.name")
           - delete_key(resource.attributes, "telemetry.distro.version")
-          - delete_key(resource.attributes, "telemetry.sdk.language")
-          - delete_key(resource.attributes, "telemetry.sdk.name")
-          - delete_key(resource.attributes, "telemetry.sdk.version")
           - delete_key(resource.attributes, "cx.otel_integration.name")
           - delete_key(resource.attributes, "cloud.account.id")
           - delete_key(resource.attributes, "cloud.availability_zone")
@@ -877,6 +874,7 @@ data:
         probabilistic_interval: 1m
         probabilistic_threshold: 100
         reporter_interval: '30s'
+        samples_per_second: 20
         tracers: all
         verbose_mode: false
     service:
@@ -949,7 +947,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.130.1
+    helm.sh/chart: opentelemetry-agent-0.130.4
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.147.0"
@@ -966,7 +964,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ad3064d863f23818adbc0085c82d4a4fd5796a8dcae4c3f0e67b2e5e8cbc389d
+        checksum/config: 8e72dbd143cbf7140694190b96913ba8c59e90831628c17f1d668d91f584224c
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -1102,7 +1100,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 0ce00e37b0d620b8c7b00ba4d708928670b6ac55551d305e49e6d7bb3e1eab92
+        checksum/config: 855a48e3637913509ae540b02a121419515c0c9dbd32330becd16731e8986ff1
         
       labels:
         app.kubernetes.io/name: opentelemetry-ebpf-profiler
@@ -1119,7 +1117,7 @@ spec:
           command:
             - /otelcol-ebpf-profiler
             - --config=/conf/relay.yaml
-            - "--feature-gates=+service.profilesSupport"
+            - --feature-gates=+service.profilesSupport
           securityContext:
             runAsUser: 0
             runAsGroup: 0
