@@ -1,0 +1,844 @@
+connectors:
+  forward/compact: {}
+  forward/db: {}
+  forward/db_compact: {}
+  spanmetrics:
+    add_resource_attributes: true
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: http.method
+    - name: cgx.transaction
+    - name: cgx.transaction.root
+    - name: status_code
+    - name: db.namespace
+    - name: db.operation.name
+    - name: db.collection.name
+    - name: db.system
+    - name: http.response.status_code
+    - name: rpc.grpc.status_code
+    - name: service.version
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+      unit: ms
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: ""
+  spanmetrics/compact:
+    add_resource_attributes: true
+    aggregation_cardinality_limit: 100000
+    exclude_dimensions:
+    - span.name
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+      unit: ms
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: compact
+  spanmetrics/db:
+    add_resource_attributes: true
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: db.namespace
+    - name: db.operation.name
+    - name: db.collection.name
+    - name: db.system
+    - name: service.version
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+      unit: ms
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: db
+  spanmetrics/db_compact:
+    add_resource_attributes: true
+    aggregation_cardinality_limit: 100000
+    dimensions:
+    - name: db.namespace
+    - name: db.system
+    exclude_dimensions:
+    - span.name
+    - span.kind
+    histogram:
+      explicit:
+        buckets:
+        - 1ms
+        - 4ms
+        - 10ms
+        - 20ms
+        - 50ms
+        - 100ms
+        - 200ms
+        - 500ms
+        - 1s
+        - 2s
+        - 5s
+      unit: ms
+    metrics_expiration: 5m
+    metrics_flush_interval: '30s'
+    namespace: db_compact
+exporters:
+  coralogix:
+    application_name: otel
+    application_name_attributes:
+    - aws.ecs.cluster.name
+    - aws.ecs.task.definition.family
+    domain: coralogix.com
+    logs:
+      headers:
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
+    metrics:
+      headers:
+        X-Coralogix-Distribution: helm-otel-integration/0.0.2
+    private_key: ${env:CORALOGIX_PRIVATE_KEY}
+    profiles:
+      headers:
+        X-Coralogix-Distribution: helm-otel-integration/0.0.2
+    subsystem_name: integration
+    subsystem_name_attributes:
+    - aws.ecs.container.name
+    - aws.ecs.docker.name
+    - docker.name
+    timeout: 30s
+    traces:
+      headers:
+        X-Coralogix-Distribution: helm-otel-integration/0.0.2
+  coralogix/resource_catalog:
+    application_name: resource
+    domain: coralogix.com
+    logs:
+      headers:
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
+        x-coralogix-ingress: metadata-as-otlp-logs/v1
+    private_key: ${CORALOGIX_PRIVATE_KEY}
+    subsystem_name: catalog
+    timeout: 30s
+  debug: {}
+extensions:
+  health_check:
+    endpoint: ${env:MY_POD_IP}:13133
+  opamp:
+    agent_description:
+      include_resource_attributes: true
+      non_identifying_attributes:
+        cx.agent.type: agent
+        cx.cluster.name: ''
+        helm.chart.opentelemetry-agent.version: 0.130.1
+    server:
+      http:
+        endpoint: https://ingress.coralogix.com/opamp/v1
+        headers:
+          Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+        polling_interval: 2m
+  pprof:
+    endpoint: localhost:1777
+  zpages:
+    endpoint: localhost:55679
+processors:
+  batch:
+    send_batch_max_size: 2048
+    send_batch_size: 1024
+    timeout: 1s
+  ecsattributes/container-logs:
+    container_id:
+      sources:
+      - log.file.path
+      - container.id
+  filter/db_compact_spanmetrics:
+    traces:
+      span:
+      - kind != SPAN_KIND_CLIENT or attributes["db.namespace"] == nil or attributes["db.system"]
+        == nil
+  filter/db_spanmetrics:
+    traces:
+      span:
+      - attributes["db.system"] == nil
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  redaction/spanname:
+    allow_all_keys: true
+    db_sanitizer: null
+    url_sanitizer:
+      enabled: true
+  resource/metadata:
+    attributes:
+    - action: upsert
+      key: cx.otel_integration.name
+      value: coralogix-integration-ecs-ec2
+  resourcedetection/entity:
+    detectors:
+    - system
+    - env
+    - ec2
+    ec2:
+      tags:
+      - .*
+    override: false
+    system:
+      resource_attributes:
+        host.cpu.cache.l2.size:
+          enabled: true
+        host.cpu.family:
+          enabled: true
+        host.cpu.model.id:
+          enabled: true
+        host.cpu.model.name:
+          enabled: true
+        host.cpu.stepping:
+          enabled: true
+        host.cpu.vendor.id:
+          enabled: true
+        host.id:
+          enabled: true
+        host.ip:
+          enabled: true
+        host.mac:
+          enabled: true
+        os.description:
+          enabled: true
+    timeout: 2s
+  resourcedetection/env:
+    detectors:
+    - system
+    - env
+    override: false
+    system:
+      resource_attributes:
+        host.id:
+          enabled: true
+    timeout: 2s
+  resourcedetection/region:
+    detectors:
+    - ec2
+    override: true
+    timeout: 2s
+  transform/compact:
+    trace_statements:
+    - context: resource
+      statements:
+      - keep_keys(attributes, ["service.name", "k8s.cluster.name", "host.name", "deployment.environment.name"])
+  transform/db_compact:
+    trace_statements:
+    - context: resource
+      statements:
+      - keep_keys(attributes, ["service.name", "k8s.cluster.name", "host.name", "deployment.environment.name"])
+    - context: span
+      statements:
+      - keep_keys(attributes, ["db.namespace", "db.system"])
+  transform/entity-event:
+    error_mode: silent
+    log_statements:
+    - context: log
+      statements:
+      - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+      - merge_maps(attributes, resource.attributes, "insert")
+    - context: resource
+      statements:
+      - keep_keys(attributes, [""])
+  transform/prometheus:
+    error_mode: ignore
+    metric_statements:
+    - context: metric
+      statements:
+      - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+        "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+        "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+        "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
+        "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+        "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+    - context: resource
+      statements:
+      - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
+        == "opentelemetry-collector"
+      - delete_key(attributes, "service_name") where attributes["service.name"] ==
+        "opentelemetry-collector"
+    - context: datapoint
+      statements:
+      - delete_key(attributes, "service_name") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
+        == "opentelemetry-collector"
+  transform/reduce:
+    error_mode: silent
+    log_statements:
+    - context: log
+      statements:
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "cloud.account.id")
+      - delete_key(resource.attributes, "cloud.availability_zone")
+      - delete_key(resource.attributes, "cloud.platform")
+      - delete_key(resource.attributes, "cloud.provider")
+      - delete_key(resource.attributes, "cloud.region")
+      - delete_key(resource.attributes, "host.image.id")
+      - delete_key(resource.attributes, "host.type")
+      - delete_key(resource.attributes, "faas.id")
+      - delete_key(resource.attributes, "faas.instance")
+      - delete_key(resource.attributes, "faas.name")
+      - delete_key(resource.attributes, "faas.version")
+      - delete_key(resource.attributes, "aws.ecs.task.definition.version")
+      - delete_key(resource.attributes, "aws.ecs.task.known.status")
+      - delete_key(resource.attributes, "process.command")
+      - delete_key(resource.attributes, "process.command_line")
+      - delete_key(resource.attributes, "process.command_args")
+      - delete_key(resource.attributes, "process.executable.name")
+      - delete_key(resource.attributes, "process.executable.path")
+      - delete_key(resource.attributes, "process.owner")
+      - delete_key(resource.attributes, "process.pid")
+      - delete_key(resource.attributes, "process.parent_pid")
+      - delete_key(resource.attributes, "process.runtime.description")
+      - delete_key(resource.attributes, "process.runtime.name")
+      - delete_key(resource.attributes, "process.runtime.version")
+    metric_statements:
+    - context: metric
+      statements:
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "cloud.account.id")
+      - delete_key(resource.attributes, "cloud.availability_zone")
+      - delete_key(resource.attributes, "cloud.platform")
+      - delete_key(resource.attributes, "cloud.provider")
+      - delete_key(resource.attributes, "cloud.region")
+      - delete_key(resource.attributes, "host.image.id")
+      - delete_key(resource.attributes, "host.type")
+      - delete_key(resource.attributes, "faas.id")
+      - delete_key(resource.attributes, "faas.instance")
+      - delete_key(resource.attributes, "faas.name")
+      - delete_key(resource.attributes, "faas.version")
+      - delete_key(resource.attributes, "aws.ecs.task.definition.version")
+      - delete_key(resource.attributes, "aws.ecs.task.known.status")
+      - delete_key(resource.attributes, "process.command") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.command_line") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.command_args") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.executable.name") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.executable.path") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.owner") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.pid") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.parent_pid") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.description") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.name") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "process.runtime.version") where not IsMatch(metric.name,
+        "^process\\.")
+      - delete_key(resource.attributes, "net.host.name")
+      - delete_key(resource.attributes, "net.host.port")
+    trace_statements:
+    - context: span
+      statements:
+      - delete_key(resource.attributes, "os.type")
+      - delete_key(resource.attributes, "os.version")
+      - delete_key(resource.attributes, "container.id")
+      - delete_key(resource.attributes, "telemetry.distro.name")
+      - delete_key(resource.attributes, "telemetry.distro.version")
+      - delete_key(resource.attributes, "telemetry.sdk.language")
+      - delete_key(resource.attributes, "telemetry.sdk.name")
+      - delete_key(resource.attributes, "telemetry.sdk.version")
+      - delete_key(resource.attributes, "cx.otel_integration.name")
+      - delete_key(resource.attributes, "cloud.account.id")
+      - delete_key(resource.attributes, "cloud.availability_zone")
+      - delete_key(resource.attributes, "cloud.platform")
+      - delete_key(resource.attributes, "cloud.provider")
+      - delete_key(resource.attributes, "cloud.region")
+      - delete_key(resource.attributes, "host.image.id")
+      - delete_key(resource.attributes, "host.type")
+      - delete_key(resource.attributes, "faas.id")
+      - delete_key(resource.attributes, "faas.instance")
+      - delete_key(resource.attributes, "faas.name")
+      - delete_key(resource.attributes, "faas.version")
+      - delete_key(resource.attributes, "aws.ecs.task.definition.version")
+      - delete_key(resource.attributes, "aws.ecs.task.known.status")
+      - delete_key(resource.attributes, "process.command")
+      - delete_key(resource.attributes, "process.command_line")
+      - delete_key(resource.attributes, "process.command_args")
+      - delete_key(resource.attributes, "process.executable.name")
+      - delete_key(resource.attributes, "process.executable.path")
+      - delete_key(resource.attributes, "process.owner")
+      - delete_key(resource.attributes, "process.pid")
+      - delete_key(resource.attributes, "process.parent_pid")
+      - delete_key(resource.attributes, "process.runtime.description")
+      - delete_key(resource.attributes, "process.runtime.name")
+      - delete_key(resource.attributes, "process.runtime.version")
+  transform/semconv:
+    error_mode: ignore
+    trace_statements:
+    - context: span
+      statements:
+      - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
+        != nil
+  transform/spanmetrics:
+    error_mode: silent
+    metric_statements:
+    - context: datapoint
+      statements:
+      - set(attributes["status.code"], "STATUS_CODE_ERROR") where attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+        == "ERROR"
+      - set(attributes["status.code"], "STATUS_CODE_OK") where attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+        == "OK"
+      - set(attributes["status.code"], "STATUS_CODE_UNSET") where attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and (attributes["otel.status_code"]
+        == "UNSET" or attributes["otel.status_code"] == nil)
+receivers:
+  awsecscontainermetricsd: {}
+  filelog:
+    force_flush_period: 0
+    include:
+    - /hostfs/var/lib/docker/containers/*/*.log
+    include_file_name: false
+    include_file_path: true
+    operators:
+    - default: move_log_file_path
+      id: docker_log_json_parser
+      routes:
+      - expr: body matches "^\\{\"log\".*\\}"
+        output: json_parser
+      type: router
+    - output: recombine
+      parse_from: body
+      parse_to: body
+      timestamp:
+        layout: '%Y-%m-%dT%H:%M:%S.%fZ'
+        parse_from: body.time
+      type: json_parser
+    - combine_field: body.log
+      combine_with: ""
+      force_flush_period: 10s
+      id: recombine
+      is_last_entry: body.log endsWith "\n"
+      on_error: send
+      output: move_log_file_path
+      source_identifier: attributes["log.file.path"]
+      type: recombine
+    - from: attributes["log.file.path"]
+      id: move_log_file_path
+      to: resource["log.file.path"]
+      type: move
+    start_at: end
+  hostmetrics:
+    collection_interval: '30s'
+    root_path: /
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk: null
+      filesystem:
+        exclude_fs_types:
+          fs_types:
+          - autofs
+          - binfmt_misc
+          - bpf
+          - cgroup2
+          - configfs
+          - debugfs
+          - devpts
+          - devtmpfs
+          - fusectl
+          - hugetlbfs
+          - iso9660
+          - mqueue
+          - nsfs
+          - overlay
+          - proc
+          - procfs
+          - pstore
+          - rpc_pipefs
+          - securityfs
+          - selinuxfs
+          - squashfs
+          - sysfs
+          - tracefs
+          match_type: strict
+        exclude_mount_points:
+          match_type: regexp
+          mount_points:
+          - /dev/*
+          - /proc/*
+          - /sys/*
+          - /run/k3s/containerd/*
+          - /run/containerd/runc/*
+          - /var/lib/docker/*
+          - /var/lib/kubelet/*
+          - /snap/*
+      load: null
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network: null
+      process:
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+          process.threads:
+            enabled: true
+        mute_process_exe_error: true
+        mute_process_name_error: true
+        mute_process_user_error: true
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:14250
+      thrift_binary:
+        endpoint: 0.0.0.0:6832
+      thrift_compact:
+        endpoint: 0.0.0.0:6831
+      thrift_http:
+        endpoint: 0.0.0.0:14268
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 20
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: opentelemetry-collector
+        scrape_interval: '30s'
+        static_configs:
+        - targets:
+          - 0.0.0.0:8888
+  statsd:
+    endpoint: 0.0.0.0:8125
+  zipkin:
+    endpoint: 0.0.0.0:9411
+service:
+  extensions:
+  - health_check
+  - opamp
+  - zpages
+  - pprof
+  pipelines:
+    logs:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - ecsattributes/container-logs
+      - resource/metadata
+      - transform/reduce
+      - batch
+      receivers:
+      - filelog
+      - otlp
+    logs/resource_catalog:
+      exporters:
+      - coralogix/resource_catalog
+      processors:
+      - memory_limiter
+      - resource/metadata
+      - resourcedetection/entity
+      - resourcedetection/region
+      - transform/entity-event
+      receivers:
+      - hostmetrics
+    metrics:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - resource/metadata
+      - transform/spanmetrics
+      - transform/reduce
+      - transform/prometheus
+      - batch
+      receivers:
+      - hostmetrics
+      - spanmetrics
+      - spanmetrics/db
+      - prometheus
+      - awsecscontainermetricsd
+      - otlp
+      - statsd
+    metrics/compact:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - transform/spanmetrics
+      - batch
+      receivers:
+      - spanmetrics/compact
+    metrics/db_compact:
+      exporters:
+      - coralogix
+      processors:
+      - memory_limiter
+      - transform/spanmetrics
+      - batch
+      receivers:
+      - spanmetrics/db_compact
+    traces:
+      exporters:
+      - spanmetrics
+      - forward/db
+      - forward/compact
+      - forward/db_compact
+      - coralogix
+      processors:
+      - memory_limiter
+      - resourcedetection/region
+      - resourcedetection/env
+      - ecsattributes/container-logs
+      - resource/metadata
+      - transform/spanmetrics
+      - redaction/spanname
+      - transform/reduce
+      - transform/semconv
+      - batch
+      receivers:
+      - jaeger
+      - zipkin
+      - otlp
+    traces/compact:
+      exporters:
+      - spanmetrics/compact
+      processors:
+      - transform/compact
+      - batch
+      receivers:
+      - forward/compact
+    traces/db:
+      exporters:
+      - spanmetrics/db
+      processors:
+      - filter/db_spanmetrics
+      - batch
+      receivers:
+      - forward/db
+    traces/db_compact:
+      exporters:
+      - spanmetrics/db_compact
+      processors:
+      - filter/db_compact_spanmetrics
+      - transform/db_compact
+      - batch
+      receivers:
+      - forward/db_compact
+  telemetry:
+    logs:
+      encoding: json
+      level: 'info'
+    metrics:
+      readers:
+      - pull:
+          exporter:
+            prometheus:
+              host: 0.0.0.0
+              port: 8888
+    resource:
+      cx.agent.type: agent
+      service.name: opentelemetry-collector
+
+---
+exporters:
+  coralogix:
+    application_name: otel
+    application_name_attributes:
+    - aws.ecs.cluster.name
+    - aws.ecs.task.definition.family
+    domain: coralogix.com
+    logs:
+      headers:
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.2
+    metrics:
+      headers:
+        X-Coralogix-Distribution: helm-otel-integration/0.0.2
+    private_key: ${env:CORALOGIX_PRIVATE_KEY}
+    profiles:
+      headers:
+        X-Coralogix-Distribution: helm-otel-integration/0.0.2
+    subsystem_name: integration
+    subsystem_name_attributes:
+    - aws.ecs.container.name
+    - aws.ecs.docker.name
+    - docker.name
+    timeout: 30s
+    traces:
+      headers:
+        X-Coralogix-Distribution: helm-otel-integration/0.0.2
+extensions:
+  health_check:
+    endpoint: ${env:MY_POD_IP}:13133
+  opamp:
+    agent_description:
+      include_resource_attributes: true
+      non_identifying_attributes:
+        cx.agent.type: agent
+        cx.cluster.name: ''
+        helm.chart.opentelemetry-ebpf-profiler.version: 0.130.4
+    server:
+      http:
+        endpoint: https://ingress.coralogix.com/opamp/v1
+        headers:
+          Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+        polling_interval: 2m
+processors:
+  ecsattributes/container-logs:
+    container_id:
+      sources:
+      - log.file.path
+      - container.id
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  resource/metadata:
+    attributes:
+    - action: upsert
+      key: k8s.cluster.name
+      value: ''
+    - action: upsert
+      key: cx.otel_integration.name
+      value: coralogix-integration-ecs-ec2
+  resourcedetection/env:
+    detectors:
+    - system
+    - env
+    override: false
+    system:
+      resource_attributes:
+        host.id:
+          enabled: true
+    timeout: 2s
+  resourcedetection/region:
+    detectors:
+    - ec2
+    override: true
+    timeout: 2s
+  transform/profiles-ecs-service-name:
+    profile_statements:
+    - context: resource
+      statements:
+      - set(resource.attributes["service.name"], resource.attributes["aws.ecs.task.definition.family"])
+        where (resource.attributes["service.name"] == nil or resource.attributes["service.name"]
+        == "") and resource.attributes["aws.ecs.task.definition.family"] != nil and
+        resource.attributes["aws.ecs.task.definition.family"] != ""
+      - set(resource.attributes["service.name"], resource.attributes["aws.ecs.container.name"])
+        where (resource.attributes["service.name"] == nil or resource.attributes["service.name"]
+        == "") and resource.attributes["aws.ecs.container.name"] != nil and resource.attributes["aws.ecs.container.name"]
+        != ""
+receivers:
+  profiling:
+    off_cpu_threshold: 0
+    probabilistic_interval: 1m
+    probabilistic_threshold: 100
+    reporter_interval: '30s'
+    tracers: all
+    verbose_mode: false
+service:
+  extensions:
+  - health_check
+  - opamp
+  pipelines:
+    profiles:
+      exporters:
+      - coralogix
+      processors:
+      - resourcedetection/region
+      - resourcedetection/env
+      - ecsattributes/container-logs
+      - transform/profiles-ecs-service-name
+      receivers:
+      - profiling
+  telemetry:
+    logs:
+      encoding: json
+

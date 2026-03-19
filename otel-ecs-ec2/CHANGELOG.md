@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.0.12 / 2026-03-19
+
+* [CHANGE] Enable Coralogix exporter for `opentelemetry-ebpf-profiler`. This is used to generate another configuration for profiling in the form of a ConfigMap.
+
 ### 0.0.11 / 2026-03-12
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.1`.

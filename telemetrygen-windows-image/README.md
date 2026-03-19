@@ -36,13 +36,13 @@ Default behavior: send both logs and traces to the OTLP endpoint.
 
 **Environment variables:**
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint (host:port) | `localhost:4317` |
-| `OTEL_INSECURE` | Set to `true` or `1` for plaintext gRPC | `false` |
-| `TELEMETRYGEN_RATE` | Rate (e.g. spans/logs per second) | `1` |
-| `TELEMETRYGEN_DURATION` | Run duration (Go duration, e.g. `60s`, `5m`, `8760h`) | `8760h` |
-| `TELEMETRYGEN_SERVICE` | Service name in generated telemetry | `telemetrygen-windows` |
+| Variable                      | Description                                           | Default                |
+|-------------------------------|-------------------------------------------------------|------------------------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint (host:port)                        | `localhost:4317`       |
+| `OTEL_INSECURE`               | Set to `true` or `1` for plaintext gRPC               | `false`                |
+| `TELEMETRYGEN_RATE`           | Rate (e.g. spans/logs per second)                     | `1`                    |
+| `TELEMETRYGEN_DURATION`       | Run duration (Go duration, e.g. `60s`, `5m`, `8760h`) | `8760h`                |
+| `TELEMETRYGEN_SERVICE`        | Service name in generated telemetry                   | `telemetrygen-windows` |
 
 **Example (insecure, custom endpoint):**
 
