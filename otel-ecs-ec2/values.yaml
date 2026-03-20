@@ -352,6 +352,7 @@ opentelemetry-ebpf-profiler:
     ebpfProfiler:
       enabled: true
       reporterInterval: "{{.Values.global.collectionInterval}}"
+      samplesPerSecond: 20
 
     collectorMetrics:
       enabled: false

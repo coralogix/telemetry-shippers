@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.0.13 / 2026-03-20
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.4`.
+* [CHANGE] Add `samplesPerSecond` to values.yaml with `20` by default
+
 ### 0.0.12 / 2026-03-19
 
 * [CHANGE] Enable Coralogix exporter for `opentelemetry-ebpf-profiler`. This is used to generate another configuration for profiling in the form of a ConfigMap.
