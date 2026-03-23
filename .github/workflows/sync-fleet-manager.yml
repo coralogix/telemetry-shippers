@@ -7,8 +7,11 @@ on:
     paths:
       - otel-integration/k8s-helm/Chart.yaml
       - otel-integration/CHANGELOG.md
+      - otel-linux-standalone/Chart.yaml
       - otel-linux-standalone/CHANGELOG.md
+      - otel-macos-standalone/Chart.yaml
       - otel-macos-standalone/CHANGELOG.md
+      - otel-windows-standalone/Chart.yaml
       - otel-windows-standalone/CHANGELOG.md
   workflow_dispatch:
     inputs:
@@ -131,10 +134,13 @@ jobs:
       - name: Generate changelog artifacts (json)
         run: |
           set -euo pipefail
-          go run ./cmd/helmlog generate --output "$RUNNER_TEMP/otel_integration_changelog.json" otel-integration/CHANGELOG.md
-          go run ./cmd/helmlog generate --output "$RUNNER_TEMP/otel_linux_standalone_changelog.json" otel-linux-standalone/CHANGELOG.md
-          go run ./cmd/helmlog generate --output "$RUNNER_TEMP/otel_macos_standalone_changelog.json" otel-macos-standalone/CHANGELOG.md
-          go run ./cmd/helmlog generate --output "$RUNNER_TEMP/otel_windows_standalone_changelog.json" otel-windows-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_integration_changelog.json"                 otel-integration/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_linux_standalone_changelog.json"            otel-linux-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_macos_standalone_changelog.json"            otel-macos-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_windows_standalone_changelog.json"          otel-windows-standalone/CHANGELOG.md
+          go run ./cmd/helmlog os-mapping --output "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json"   --os linux
+          go run ./cmd/helmlog os-mapping --output "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json" --os windows
+          go run ./cmd/helmlog os-mapping --output "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json"   --os macos
 
       - name: Set up Helm
         if: steps.detect.outputs.bumped == 'true'
@@ -212,6 +218,9 @@ jobs:
             "otel_linux_standalone_changelog.json:pkg/helm/data/otel_linux_standalone_changelog.json"
             "otel_macos_standalone_changelog.json:pkg/helm/data/otel_macos_standalone_changelog.json"
             "otel_windows_standalone_changelog.json:pkg/helm/data/otel_windows_standalone_changelog.json"
+            "otel_linux_standalone_chart_versions_map.json:pkg/helm/data/otel_linux_standalone_chart_versions_map.json"
+            "otel_windows_standalone_chart_versions_map.json:pkg/helm/data/otel_windows_standalone_chart_versions_map.json"
+            "otel_macos_standalone_chart_versions_map.json:pkg/helm/data/otel_macos_standalone_chart_versions_map.json"
           )
 
           changed_files=()
@@ -302,7 +311,7 @@ jobs:
           fi
 
           git -C "$repo_dir" commit -m "Sync Fleet Manager artifacts from telemetry-shippers"
-          git -C "$repo_dir" push -u origin "$branch"
+          git -C "$repo_dir" push --force-with-lease -u origin "$branch"
 
           existing_pr="$(gh pr list -R "$FLEET_MANAGER_REPO" --head "$branch" --state open --json number --jq '.[0].number')"
           if [ -n "$existing_pr" ]; then
