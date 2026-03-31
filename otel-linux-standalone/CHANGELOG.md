@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.19 / 2026-03-31
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.5
+
+#### Changes from opentelemetry-collector 0.130.5:
+- [Feat] For `distribution` `standalone` and `macos`, prepend `cx.application.name` and `cx.subsystem.name` to Coralogix exporter `application_name_attributes` and `subsystem_name_attributes` (before `service.namespace` / `service.name`) so presets such as `filelogMulti` and `prometheusMulti` drive Application/Subsystem when set.
+
 ### v0.0.18 / 2026-03-17
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.4
