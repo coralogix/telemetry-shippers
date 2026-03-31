@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.14 / 2026-03-31
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.5`.
+
+#### Changes from opentelemetry-collector 0.130.5:
+- [Feat] For `distribution` `standalone` and `macos`, prepend `cx.application.name` and `cx.subsystem.name` to Coralogix exporter `application_name_attributes` and `subsystem_name_attributes` (before `service.namespace` / `service.name`) so presets such as `filelogMulti` and `prometheusMulti` drive Application/Subsystem when set.
+
 ### 0.0.13 / 2026-03-20
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.4`.
