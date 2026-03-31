@@ -2,6 +2,10 @@
 
 ## otel-macos-standalone
 
+### v0.0.19 / 2026-03-31
+
+- [Chore] Align MAc chart version with linux-standalone (0.0.19)
+
 ### v0.0.18 / 2026-03-31
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.5

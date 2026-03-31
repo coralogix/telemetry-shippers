@@ -1,7 +1,7 @@
 apiVersion: v2
 name: macos-standalone
 description: Standalone macOS OpenTelemetry Collector configuration
-version: 0.0.18
+version: 0.0.19
 keywords:
   - OpenTelemetry Collector
   - Coralogix
