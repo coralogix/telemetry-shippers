@@ -450,7 +450,7 @@ get_supervisor_release_url_prefix() {
     if use_coralogix_supervisor_release "$version"; then
         printf '%s' "${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${version}"
     else
-        printf '%s' "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/cmd%%2Fopampsupervisor%%2Fv${version}"
+        printf '%s' "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${version}"
     fi
 }
 
