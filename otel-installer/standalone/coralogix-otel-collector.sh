@@ -59,6 +59,7 @@ OTEL_COLLECTOR_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetr
 OTEL_SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-collector-releases/releases"
 OTEL_COLLECTOR_CHECKSUMS_FILE="opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
 OTEL_SUPERVISOR_CHECKSUMS_FILE="checksums.txt"
+OTEL_SUPERVISOR_CORALOGIX_MIN_VERSION="0.146.0"
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
 
 LAUNCHD_PLIST_DAEMON="/Library/LaunchDaemons/com.coralogix.otelcol.plist"
@@ -413,6 +414,46 @@ validate_version() {
     return 0
 }
 
+version_at_least() {
+    local version minimum
+    version=${1#v}
+    minimum=${2#v}
+
+    awk -v version="$version" -v minimum="$minimum" '
+        BEGIN {
+            split(version, version_parts, ".")
+            split(minimum, minimum_parts, ".")
+            max_parts = length(version_parts) > length(minimum_parts) ? length(version_parts) : length(minimum_parts)
+            for (i = 1; i <= max_parts; i++) {
+                version_component = version_parts[i] + 0
+                minimum_component = minimum_parts[i] + 0
+                if (version_component > minimum_component) {
+                    exit 0
+                }
+                if (version_component < minimum_component) {
+                    exit 1
+                }
+            }
+            exit 0
+        }
+    '
+}
+
+use_coralogix_supervisor_release() {
+    version_at_least "$1" "$OTEL_SUPERVISOR_CORALOGIX_MIN_VERSION"
+}
+
+get_supervisor_release_url_prefix() {
+    local version
+    version=${1#v}
+
+    if use_coralogix_supervisor_release "$version"; then
+        printf '%s' "${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${version}"
+    else
+        printf '%s' "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/cmd%%2Fopampsupervisor%%2Fv${version}"
+    fi
+}
+
 get_version() {
     local version
     
@@ -506,7 +547,8 @@ get_otel_checksum() {
 get_supervisor_checksum() {
     local version="$1"
     local filename="$2"
-    local checksums_url="${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    local checksums_url
+    checksums_url="$(get_supervisor_release_url_prefix "$version")/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
     local checksum
     
     checksum=$(curl -fsSL "$checksums_url" 2>/dev/null | grep "  ${filename}$" | awk '{print $1}')
@@ -1336,7 +1378,7 @@ install_supervisor() {
             ;;
     esac
     
-    pkg_url="${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${supervisor_ver}/${pkg_name}"
+    pkg_url="$(get_supervisor_release_url_prefix "$supervisor_ver")/${pkg_name}"
     
     local supervisor_checksum
     supervisor_checksum=$(get_supervisor_checksum "$supervisor_ver" "$pkg_name")
@@ -2057,8 +2099,6 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
         local supervisor_ver="${SUPERVISOR_VERSION_FLAG:-$version}"
         local collector_ver="${COLLECTOR_VERSION_FLAG:-$version}"
         
-        # Note: Supervisor version is not validated here as it has a different release path
-        # Invalid supervisor versions will fail at download time
         if [ -n "$COLLECTOR_VERSION_FLAG" ] && [ "$collector_ver" != "$version" ]; then
             log "Validating collector version: $collector_ver"
             if ! validate_version "$collector_ver"; then

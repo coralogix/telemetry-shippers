@@ -4,7 +4,9 @@ set -eu
 DEFAULT_VERSION=""
 SUPERVISOR_VERSION=""
 COLLECTOR_VERSION=""
+OTEL_COLLECTOR_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
 SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-collector-releases/releases"
+SUPERVISOR_CORALOGIX_MIN_VERSION="0.146.0"
 
 ARCH=$(uname -m)
 # if arch is aarch64, change to arm64
@@ -26,6 +28,44 @@ fail() {
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     fail "Missing required command: $1"
+  fi
+}
+
+version_at_least() {
+  version=${1#v}
+  minimum=${2#v}
+
+  awk -v version="$version" -v minimum="$minimum" '
+    BEGIN {
+      split(version, version_parts, ".")
+      split(minimum, minimum_parts, ".")
+      max_parts = length(version_parts) > length(minimum_parts) ? length(version_parts) : length(minimum_parts)
+      for (i = 1; i <= max_parts; i++) {
+        version_component = version_parts[i] + 0
+        minimum_component = minimum_parts[i] + 0
+        if (version_component > minimum_component) {
+          exit 0
+        }
+        if (version_component < minimum_component) {
+          exit 1
+        }
+      }
+      exit 0
+    }
+  '
+}
+
+use_coralogix_supervisor_release() {
+  version_at_least "$1" "$SUPERVISOR_CORALOGIX_MIN_VERSION"
+}
+
+get_supervisor_release_url_prefix() {
+  version=${1#v}
+
+  if use_coralogix_supervisor_release "$version"; then
+    printf "%s" "${SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${version}"
+  else
+    printf "%s" "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/cmd%%2Fopampsupervisor%%2Fv${version}"
   fi
 }
 
@@ -78,11 +118,11 @@ install_supervisor() {
   case "$pkg_type" in
     deb)
       pkg_name="opampsupervisor_${SUPERVISOR_VERSION}_linux_${ARCH}.deb"
-      pkg_url="${SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${SUPERVISOR_VERSION}/${pkg_name}"
+      pkg_url="$(get_supervisor_release_url_prefix "$SUPERVISOR_VERSION")/${pkg_name}"
       ;;
     rpm)
       pkg_name="opampsupervisor_${SUPERVISOR_VERSION}_linux_${ARCH}.rpm"
-      pkg_url="${SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${SUPERVISOR_VERSION}/${pkg_name}"
+      pkg_url="$(get_supervisor_release_url_prefix "$SUPERVISOR_VERSION")/${pkg_name}"
       ;;
     *) fail "Unknown package type: $pkg_type" ;;
   esac
@@ -254,6 +294,7 @@ main() {
   require_cmd uname
   require_cmd tar
   require_cmd curl
+  require_cmd awk
 
   DEFAULT_VERSION="${VERSION:-$(fetch_default_version)}"
   SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_VERSION}"
