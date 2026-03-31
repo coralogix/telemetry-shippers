@@ -4,6 +4,7 @@ set -eu
 DEFAULT_VERSION=""
 SUPERVISOR_VERSION=""
 COLLECTOR_VERSION=""
+SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-collector-releases/releases"
 
 ARCH=$(uname -m)
 # if arch is aarch64, change to arm64
@@ -77,11 +78,11 @@ install_supervisor() {
   case "$pkg_type" in
     deb)
       pkg_name="opampsupervisor_${SUPERVISOR_VERSION}_linux_${ARCH}.deb"
-      pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SUPERVISOR_VERSION}/${pkg_name}"
+      pkg_url="${SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${SUPERVISOR_VERSION}/${pkg_name}"
       ;;
     rpm)
       pkg_name="opampsupervisor_${SUPERVISOR_VERSION}_linux_${ARCH}.rpm"
-      pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SUPERVISOR_VERSION}/${pkg_name}"
+      pkg_url="${SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${SUPERVISOR_VERSION}/${pkg_name}"
       ;;
     *) fail "Unknown package type: $pkg_type" ;;
   esac

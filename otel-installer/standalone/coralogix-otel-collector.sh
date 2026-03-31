@@ -55,7 +55,8 @@ CONFIG_DIR="/etc/otelcol-contrib"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 LOG_DIR="/var/log/otel-collector"
 
-OTEL_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+OTEL_COLLECTOR_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+OTEL_SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-collector-releases/releases"
 OTEL_COLLECTOR_CHECKSUMS_FILE="opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
 OTEL_SUPERVISOR_CHECKSUMS_FILE="checksums.txt"
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
@@ -392,7 +393,7 @@ fetch_default_version() {
 
 validate_version() {
     local version="$1"
-    local release_url="${OTEL_RELEASES_BASE_URL}/tag/v${version}"
+    local release_url="${OTEL_COLLECTOR_RELEASES_BASE_URL}/tag/v${version}"
     local http_code
     
     http_code=$(curl -fsSL -o /dev/null -w "%{http_code}" "$release_url" 2>/dev/null || echo "000")
@@ -404,7 +405,7 @@ validate_version() {
         echo "  ${release_url}"
         echo ""
         echo "You can find available versions at:"
-        echo "  ${OTEL_RELEASES_BASE_URL}"
+        echo "  ${OTEL_COLLECTOR_RELEASES_BASE_URL}"
         echo ""
         return 1
     fi
@@ -495,7 +496,7 @@ The downloaded file may be corrupted or tampered with."
 get_otel_checksum() {
     local version="$1"
     local filename="$2"
-    local checksums_url="${OTEL_RELEASES_BASE_URL}/download/v${version}/${OTEL_COLLECTOR_CHECKSUMS_FILE}"
+    local checksums_url="${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/v${version}/${OTEL_COLLECTOR_CHECKSUMS_FILE}"
     local checksum
     
     checksum=$(curl -fsSL "$checksums_url" 2>/dev/null | grep "  ${filename}$" | awk '{print $1}')
@@ -505,7 +506,7 @@ get_otel_checksum() {
 get_supervisor_checksum() {
     local version="$1"
     local filename="$2"
-    local checksums_url="${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    local checksums_url="${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
     local checksum
     
     checksum=$(curl -fsSL "$checksums_url" 2>/dev/null | grep "  ${filename}$" | awk '{print $1}')
@@ -1090,7 +1091,7 @@ install_collector_linux() {
             ;;
     esac
     
-    pkg_url="${OTEL_RELEASES_BASE_URL}/download/v${version}/${pkg_name}"
+    pkg_url="${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/v${version}/${pkg_name}"
     
     log "Downloading OpenTelemetry Collector ${version} (${pkg_type})..."
     local checksum
@@ -1181,7 +1182,7 @@ install_collector_darwin() {
     esac
     
     local tar_name="${BINARY_NAME}_${version}_${darwin_arch}.tar.gz"
-    local tar_url="${OTEL_RELEASES_BASE_URL}/download/v${version}/${tar_name}"
+    local tar_url="${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/v${version}/${tar_name}"
     
     local checksum
     checksum=$(get_otel_checksum "$version" "$tar_name")
@@ -1286,7 +1287,7 @@ install_supervisor() {
     
     log "Installing OpenTelemetry Collector binary (required for supervisor)..."
     local tar_name="otelcol-contrib_${collector_ver}_linux_${arch}.tar.gz"
-    local tar_url="${OTEL_RELEASES_BASE_URL}/download/v${collector_ver}/${tar_name}"
+    local tar_url="${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/v${collector_ver}/${tar_name}"
     
     log "Downloading OpenTelemetry Collector ${collector_ver}..."
     local checksum
@@ -1335,7 +1336,7 @@ install_supervisor() {
             ;;
     esac
     
-    pkg_url="${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${supervisor_ver}/${pkg_name}"
+    pkg_url="${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${supervisor_ver}/${pkg_name}"
     
     local supervisor_checksum
     supervisor_checksum=$(get_supervisor_checksum "$supervisor_ver" "$pkg_name")
@@ -2353,4 +2354,3 @@ EOF
 }
 
 main "$@"
-
