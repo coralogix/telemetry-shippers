@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.2.0] - 2026-03-31
+
+### Changed
+- Supervisor mode now uses version-gated OpAMP Supervisor artifact sources: versions `0.145.0` and earlier are downloaded from OpenTelemetry releases, while versions `0.146.0` and later are downloaded from Coralogix's forked Supervisor ([coralogix/opentelemetry-collector-contrib](https://github.com/coralogix/opentelemetry-collector-contrib)). Coralogix-backed versions support fallback configuration via the `fallback_configs` option in the Supervisor configuration file, which is used until the Supervisor can establish an OpAMP connection successfully.
+
 ## [0.1.7] - 2026-02-22
 
 ### Added
