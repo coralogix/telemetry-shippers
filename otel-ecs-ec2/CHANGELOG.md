@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.15 / 2026-04-01
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.6`.
+
+#### Changes from opentelemetry-collector 0.130.6:
+- [Feat] Add target allocator `allocationFallbackStrategy`, `probeSelector`, and `probeNamespaceSelector` chart values for Prometheus CR rendering.
+
 ### 0.0.14 / 2026-03-31
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.5`.

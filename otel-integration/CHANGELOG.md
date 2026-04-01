@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.291 / 2026-04-01
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.6
+
+#### Changes from opentelemetry-collector 0.130.6:
+- [Feat] Add target allocator `allocationFallbackStrategy`, `probeSelector`, and `probeNamespaceSelector` chart values for Prometheus CR rendering.
+
 ### v0.0.290 / 2026-03-31
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.5
