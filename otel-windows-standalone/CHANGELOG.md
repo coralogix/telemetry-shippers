@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.20 / 2026-04-01
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.6
+
+#### Changes from opentelemetry-collector 0.130.6:
+- [Feat] Add target allocator `allocationFallbackStrategy`, `probeSelector`, and `probeNamespaceSelector` chart values for Prometheus CR rendering.
+
 ### v0.0.19 / 2026-03-31
 
 - [Chore] Align Windows chart version with linux-standalone (0.0.19)
