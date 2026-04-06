@@ -46,12 +46,9 @@ jobs:
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
       -
         name: Update DockerHub description
-        run: |
-          TOKEN=$(curl -s -H "Content-Type: application/json" \
-            -d '{"username":"${{ secrets.DOCKERHUB_USERNAME }}","password":"${{ secrets.DOCKERHUB_TOKEN }}"}' \
-            https://hub.docker.com/v2/users/login/ | jq -r .token)
-          curl -s -X PATCH \
-            -H "Authorization: JWT ${TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{\"full_description\": $(jq -Rs . < ./logs/fluentd/aws-ecs/readme.md)}" \
-            https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_REGISTRY }}/
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKERHUB_REGISTRY }}
+          readme-filepath: ./logs/fluentd/aws-ecs/readme.md
