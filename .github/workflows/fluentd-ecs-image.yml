@@ -6,6 +6,7 @@ on:
     branches: master
     paths:
     - 'logs/fluentd/aws-ecs/image/**'
+    - 'logs/fluentd/aws-ecs/readme.md'
   workflow_dispatch:
 
 env:
@@ -43,3 +44,14 @@ jobs:
           push: true
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
+      -
+        name: Update DockerHub description
+        run: |
+          TOKEN=$(curl -s -H "Content-Type: application/json" \
+            -d '{"username":"${{ secrets.DOCKERHUB_USERNAME }}","password":"${{ secrets.DOCKERHUB_TOKEN }}"}' \
+            https://hub.docker.com/v2/users/login/ | jq -r .token)
+          curl -s -X PATCH \
+            -H "Authorization: JWT ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"full_description\": $(jq -Rs . < ./logs/fluentd/aws-ecs/readme.md)}" \
+            https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_REGISTRY }}/
