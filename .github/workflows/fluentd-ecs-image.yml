@@ -6,7 +6,6 @@ on:
     branches: master
     paths:
     - 'logs/fluentd/aws-ecs/image/**'
-    - 'logs/fluentd/aws-ecs/readme.md'
   workflow_dispatch:
 
 env:
@@ -44,11 +43,3 @@ jobs:
           push: true
           tags: |
             ${{ env.DOCKERHUB_REGISTRY }}:${{ steps.get-fluentd-version.outputs.version }}
-      -
-        name: Update DockerHub description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ env.DOCKERHUB_REGISTRY }}
-          readme-filepath: ./logs/fluentd/aws-ecs/readme.md
