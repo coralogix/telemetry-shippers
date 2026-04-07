@@ -1,3 +1,11 @@
+> [!WARNING]
+> **This integration is deprecated and no longer maintained.**
+> The `fluentd-coralogix-ecs` image uses legacy Coralogix endpoints and will stop working once those endpoints are shut down.
+>
+> **Please migrate to the OpenTelemetry Collector:**
+> - **ECS Fargate** → [`otel-ecs-fargate`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-ecs-fargate)
+> - **ECS EC2** → [`otel-ecs-ec2`](https://github.com/coralogix/telemetry-shippers/tree/master/otel-ecs-ec2)
+
 *Coralogix* provides integration to collect and send your `ECS` cluster logs straight to *Coralogix*.
 
 ## General
