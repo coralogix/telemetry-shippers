@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.293 / 2026-04-08
+
+- [Change] Remove unused ports on `opentelemetry-ebpf-profiler` since OTLP receiver is not enabled.
+
 ### v0.0.292 / 2026-04-05
 
 - [Change] Bump OBI image to v0.7.0
