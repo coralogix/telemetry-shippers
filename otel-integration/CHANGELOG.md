@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.295 / 2026-04-09
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.7
+
+#### Changes from opentelemetry-collector 0.130.7:
+- [Feat] Add support for fallback configuration for the Supervisor.
+
 ### v0.0.294 / 2026-04-09
 
 - [Change] Bump OBI image to v0.7.1

@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.21 / 2026-04-09
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.7
+
+#### Changes from opentelemetry-collector 0.130.7:
+- [Feat] Add support for fallback configuration for the Supervisor.
+
 ### v0.0.20 / 2026-04-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.6

@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.16 / 2026-04-09
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.7`.
+
+#### Changes from opentelemetry-collector 0.130.7:
+- [Feat] Add support for fallback configuration for the Supervisor.
+
 ### 0.0.15 / 2026-04-01
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.6`.
