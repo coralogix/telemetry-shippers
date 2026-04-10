@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.296 / 2026-04-10
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.8
+
+#### Changes from opentelemetry-collector 0.130.8:
+- [Fix] Add `IsMap()` guards to `transform/kube-events` processor to prevent `INVALID_ARGUMENT` when a Kubernetes event log body is a plain string (CDS-2869)
+
 ### v0.0.295 / 2026-04-09
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.7
