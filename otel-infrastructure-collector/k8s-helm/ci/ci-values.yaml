@@ -96,7 +96,7 @@ opentelemetry-collector:
         log_statements:
           - context: log
             statements:
-              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"]) where IsMap(body)
       resource/kube-events:
         attributes:
           - key: service.name
