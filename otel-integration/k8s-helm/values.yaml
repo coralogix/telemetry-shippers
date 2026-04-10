@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.291"
+  version: "0.0.295"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -873,6 +873,10 @@ opentelemetry-ebpf-profiler:
     prometheus.io/path: "/metrics"
     prometheus.io/port: "8888"
   ports:
+    otlp:
+      enabled: false
+    otlp-http:
+      enabled: false
     metrics:
       enabled: true
 

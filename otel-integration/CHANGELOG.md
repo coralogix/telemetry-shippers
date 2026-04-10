@@ -2,6 +2,25 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.295 / 2026-04-09
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.7
+
+#### Changes from opentelemetry-collector 0.130.7:
+- [Feat] Add support for fallback configuration for the Supervisor.
+
+### v0.0.294 / 2026-04-09
+
+- [Change] Bump OBI image to v0.7.1
+
+### v0.0.293 / 2026-04-08
+
+- [Change] Remove unused ports on `opentelemetry-ebpf-profiler` since OTLP receiver is not enabled.
+
+### v0.0.292 / 2026-04-05
+
+- [Change] Bump OBI image to v0.7.0
+
 ### v0.0.291 / 2026-04-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.6
