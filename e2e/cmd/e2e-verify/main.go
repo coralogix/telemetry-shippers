@@ -45,6 +45,7 @@ func main() {
 		logsFilter    = flag.String("logs-filter", "", "Override DataPrime filter clause for logs (use {{run_id}} placeholder)")
 		tracesFilter  = flag.String("traces-filter", "", "Override DataPrime filter clause for traces (use {{run_id}} placeholder)")
 		metricsFilter = flag.String("metrics-filter", "", "Override PromQL selector for metrics (use {{run_id}} placeholder)")
+		expectations  = flag.String("expectations", "", "Path to expectations YAML. When set, runs structured expectation checks instead of --check flags.")
 	)
 	var checks stringSlice
 	flag.Var(&checks, "check", "Signal to verify: logs, traces, or metrics. Repeat for multiple. [required]")
@@ -75,8 +76,8 @@ func main() {
 	if *runID == "" {
 		missing = append(missing, "--run-id")
 	}
-	if len(checks) == 0 {
-		missing = append(missing, "--check (one of: logs, traces, metrics)")
+	if len(checks) == 0 && *expectations == "" {
+		missing = append(missing, "--check (one of: logs, traces, metrics) OR --expectations <file>")
 	}
 	if len(missing) > 0 {
 		fmt.Fprintf(os.Stderr, "ERROR: missing required flags: %s\n\n", strings.Join(missing, ", "))
@@ -120,11 +121,36 @@ func main() {
 		MetricsFilter: *metricsFilter,
 	}
 
-	fmt.Fprintf(os.Stderr, "e2e-verify: domain=%s run_id=%s since=%s timeout=%s checks=%v\n",
-		*domain, *runID, sinceTime.Format(time.RFC3339), *timeout, checks)
-
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout+30*time.Second)
 	defer cancel()
+
+	// --expectations mode: run structured checks from a YAML file.
+	if *expectations != "" {
+		exp, err := verify.LoadExpectations(*expectations)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+			os.Exit(2)
+		}
+		fmt.Fprintf(os.Stderr, "e2e-verify: domain=%s run_id=%s since=%s timeout=%s expectations=%s\n",
+			*domain, *runID, sinceTime.Format(time.RFC3339), *timeout, *expectations)
+
+		result := verify.VerifyExpectations(ctx, cfg, exp)
+
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(result)
+
+		if !result.Pass {
+			fmt.Fprintf(os.Stderr, "FAIL: expectations not met:\n%s", result.FailureSummary())
+			os.Exit(1)
+		}
+		fmt.Fprintln(os.Stderr, "OK: all expectations met")
+		return
+	}
+
+	// --check mode: existence-only checks (legacy / debugging).
+	fmt.Fprintf(os.Stderr, "e2e-verify: domain=%s run_id=%s since=%s timeout=%s checks=%v\n",
+		*domain, *runID, sinceTime.Format(time.RFC3339), *timeout, checks)
 
 	results := verify.VerifyAll(ctx, cfg, signals)
 

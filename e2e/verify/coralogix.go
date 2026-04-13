@@ -42,11 +42,42 @@ type dataprimeMetadata struct {
 
 // DataPrimeResult is a partial decode of the DataPrime response. The API
 // returns a stream of newline-delimited JSON objects; we count "result" entries
-// and capture the first row as a sample for debugging.
+// and capture the rows for downstream attribute inspection.
 type DataPrimeResult struct {
-	Count  int    // number of result rows returned
-	Sample string // first result row as a JSON string (for debugging)
-	Raw    string // full raw response (for debugging on error)
+	Count  int            // number of result rows returned
+	Rows   []DataPrimeRow // parsed rows (resource attributes accessible via Rows[i].ResourceAttributes())
+	Sample string         // first result row as a JSON string (for debugging)
+	Raw    string         // full raw response (for debugging on error)
+}
+
+// DataPrimeRow is one row from a DataPrime query.
+type DataPrimeRow struct {
+	Metadata []KV   `json:"metadata"`
+	Labels   []KV   `json:"labels"`
+	UserData string `json:"userData"` // JSON-encoded string, parse separately
+}
+
+// KV is a single metadata/label entry.
+type KV struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// ResourceAttributes parses the userData JSON and returns the
+// resource.attributes map, or nil if the row has no parseable resource section.
+func (r DataPrimeRow) ResourceAttributes() map[string]interface{} {
+	if r.UserData == "" {
+		return nil
+	}
+	var doc struct {
+		Resource struct {
+			Attributes map[string]interface{} `json:"attributes"`
+		} `json:"resource"`
+	}
+	if err := json.Unmarshal([]byte(r.UserData), &doc); err != nil {
+		return nil
+	}
+	return doc.Resource.Attributes
 }
 
 // QueryDataPrime executes a DataPrime query against logs or spans.
@@ -94,7 +125,8 @@ func (c *Client) QueryDataPrime(ctx context.Context, query string, since time.Ti
 
 // parseDataPrime parses the NDJSON response. DataPrime returns a stream of
 // JSON objects, one per line. Each object has a "result" key with rows, or
-// "queryId"/"warning"/"error" keys. We count rows across all "result" objects.
+// "queryId"/"warning"/"error" keys. We count rows across all "result" objects
+// and parse each into DataPrimeRow.
 func parseDataPrime(body string) *DataPrimeResult {
 	res := &DataPrimeResult{Raw: body}
 
@@ -111,9 +143,13 @@ func parseDataPrime(body string) *DataPrimeResult {
 		if obj.Result == nil {
 			continue
 		}
-		for _, row := range obj.Result.Results {
+		for _, raw := range obj.Result.Results {
 			if res.Sample == "" {
-				res.Sample = string(row)
+				res.Sample = string(raw)
+			}
+			var row DataPrimeRow
+			if err := json.Unmarshal(raw, &row); err == nil {
+				res.Rows = append(res.Rows, row)
 			}
 			res.Count++
 		}
@@ -123,9 +159,32 @@ func parseDataPrime(body string) *DataPrimeResult {
 
 // PromQLResult is a partial decode of the PromQL query response.
 type PromQLResult struct {
-	Count  int    // number of series returned
-	Sample string // first series as a JSON string
+	Count  int           // number of series returned
+	Series []PromQLSeries // parsed series with labels accessible
+	Sample string         // first series as a JSON string
 	Raw    string
+}
+
+// PromQLSeries is one series from a PromQL response. We only care about the
+// metric labels for verification (not the value).
+type PromQLSeries struct {
+	Metric map[string]string `json:"metric"`
+	Value  []interface{}     `json:"value,omitempty"` // [timestamp, "value"]
+}
+
+// MetricValue returns the numeric value of an instant query result, or 0 if
+// the response shape is unexpected. Used by collector_health checks.
+func (s PromQLSeries) MetricValue() float64 {
+	if len(s.Value) < 2 {
+		return 0
+	}
+	str, ok := s.Value[1].(string)
+	if !ok {
+		return 0
+	}
+	var f float64
+	fmt.Sscanf(str, "%f", &f)
+	return f
 }
 
 // promQLResponse matches Coralogix's PromQL response shape:
@@ -183,6 +242,12 @@ func (c *Client) QueryPromQL(ctx context.Context, query string) (*PromQLResult, 
 	res := &PromQLResult{Raw: string(raw), Count: len(parsed.Data.Result)}
 	if len(parsed.Data.Result) > 0 {
 		res.Sample = string(parsed.Data.Result[0])
+	}
+	for _, raw := range parsed.Data.Result {
+		var s PromQLSeries
+		if err := json.Unmarshal(raw, &s); err == nil {
+			res.Series = append(res.Series, s)
+		}
 	}
 	return res, nil
 }
