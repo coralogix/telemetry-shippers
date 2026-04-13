@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.17 / 2026-04-10
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.8`.
+
+#### Changes from opentelemetry-collector 0.130.8:
+- [Fix] Add `IsMap()` guards to `transform/kube-events` processor to prevent `INVALID_ARGUMENT` when a Kubernetes event log body is a plain string (CDS-2869)
+
 ### 0.0.16 / 2026-04-09
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.7`.
