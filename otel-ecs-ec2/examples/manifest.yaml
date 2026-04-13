@@ -6,7 +6,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.130.8
+    helm.sh/chart: opentelemetry-agent-0.130.10
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.147.0"
@@ -19,7 +19,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.130.8
+    helm.sh/chart: opentelemetry-agent-0.130.10
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.147.0"
@@ -150,14 +150,14 @@ data:
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.17
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.18
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.17
+            X-Coralogix-Distribution: helm-otel-integration/0.0.18
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.17
+            X-Coralogix-Distribution: helm-otel-integration/0.0.18
         subsystem_name: integration
         subsystem_name_attributes:
         - aws.ecs.container.name
@@ -166,15 +166,24 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.17
+            X-Coralogix-Distribution: helm-otel-integration/0.0.18
       coralogix/resource_catalog:
         application_name: resource
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.17
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.18
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
         subsystem_name: catalog
         timeout: 30s
       debug: {}
@@ -187,7 +196,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.130.8
+            helm.chart.opentelemetry-agent.version: 0.130.10
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -760,7 +769,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.130.8
+    helm.sh/chart: opentelemetry-agent-0.130.10
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.147.0"
@@ -777,7 +786,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 1c077bac02b732f36eab7e12f8736ddc06182bb99d39647183fab9081b2813cb
+        checksum/config: 54903877c8b9954e9fc8ddacbc6132a01ab1f590de57970f8ba471f9788aa878
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
