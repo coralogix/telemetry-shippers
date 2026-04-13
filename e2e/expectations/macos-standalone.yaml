@@ -12,6 +12,11 @@ logs:
     - service.name
     - e2e.run_id
 
+traces:
+  min_count: 1
+  required_attributes:
+    - service.name
+    - e2e.run_id
 
 metrics:
   min_count: 1
