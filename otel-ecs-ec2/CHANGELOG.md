@@ -1,5 +1,13 @@
 # Changelog
 
+### 0.0.18 / 2026-04-13
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.10`.
+
+#### Changes from opentelemetry-collector 0.130.9:
+- [Fix] Enable byte-sized Coralogix resource catalog exporter queue batching by default.
+- [Fix] Bump queue size from 50mib to 200mib in batch queue for resource catalog exporter.
+
 ### 0.0.17 / 2026-04-10
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.8`.

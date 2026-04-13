@@ -2,6 +2,14 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.297 / 2026-04-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.10
+
+#### Changes from opentelemetry-collector 0.130.9:
+- [Fix] Enable byte-sized Coralogix resource catalog exporter queue batching by default.
+- [Fix] Bump queue size from 50mib to 200mib in batch queue for resource catalog exporter.
+
 ### v0.0.296 / 2026-04-10
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.8
