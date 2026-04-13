@@ -6,7 +6,7 @@
 //
 //	e2e-verify \
 //	  --domain coralogix.com \
-//	  --api-key $E2E_CX_API_KEY \
+//	  --api-key $E2E_CX_LOGS_QUERY_KEY \
 //	  --run-id 12345-linux \
 //	  --since 2026-04-13T10:00:00Z \
 //	  --check logs --check traces --check metrics \
@@ -35,8 +35,8 @@ func (s *stringSlice) Set(v string) error { *s = append(*s, v); return nil }
 
 func main() {
 	var (
-		domain        = flag.String("domain", "", "Coralogix domain (e.g. eu2.coralogix.com) [required]")
-		apiKey        = flag.String("api-key", "", "Coralogix API key with query permissions [required, or env E2E_CX_API_KEY]")
+		domain        = flag.String("domain", "", "Coralogix domain (e.g. coralogix.com) [required]")
+		apiKey        = flag.String("api-key", "", "Coralogix Logs Query Key (NOT the Send-Your-Data key) [required, or env E2E_CX_LOGS_QUERY_KEY]")
 		runID         = flag.String("run-id", "", "Unique E2E run identifier [required]")
 		since         = flag.String("since", "", "Earliest data timestamp (RFC3339, e.g. 2026-04-13T10:00:00Z). Overrides --window if set.")
 		window        = flag.Duration("window", 24*time.Hour, "Look back this far for data (relative to now). Ignored if --since is set.")
@@ -57,9 +57,11 @@ func main() {
 	}
 	flag.Parse()
 
-	// Resolve api-key from env if flag empty
+	// Resolve api-key from env if flag empty.
+	// Note: the Coralogix Send-Your-Data key (used by the collector to send data
+	// INTO CX) does NOT have query permissions. We need a separate Logs Query Key.
 	if *apiKey == "" {
-		*apiKey = os.Getenv("E2E_CX_API_KEY")
+		*apiKey = os.Getenv("E2E_CX_LOGS_QUERY_KEY")
 	}
 
 	// Validate required flags
@@ -68,7 +70,7 @@ func main() {
 		missing = append(missing, "--domain")
 	}
 	if *apiKey == "" {
-		missing = append(missing, "--api-key (or E2E_CX_API_KEY env var)")
+		missing = append(missing, "--api-key (or E2E_CX_LOGS_QUERY_KEY env var)")
 	}
 	if *runID == "" {
 		missing = append(missing, "--run-id")
