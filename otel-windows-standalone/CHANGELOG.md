@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.24 / 2026-04-14
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.11
+
+#### Changes from opentelemetry-collector 0.130.11:
+- [Fix] Use the dedicated supervised eBPF profiler image and managed collector executable when `presets.ebpfProfiler` and `presets.fleetManagement.supervisor` are both enabled.
+
 ### v0.0.23 / 2026-04-13
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.10
