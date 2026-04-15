@@ -1,0 +1,45 @@
+name: Standalone Charts Render Check
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'otel-linux-standalone/**'
+      - 'otel-windows-standalone/**'
+      - 'otel-macos-standalone/**'
+
+env:
+  ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
+  ARTIFACTORY_USERNAME: integrations-actions
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        chart:
+          - otel-linux-standalone
+          - otel-windows-standalone
+          - otel-macos-standalone
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Setup Helm repos
+        run: |
+          helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
+          helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+
+      - name: Build dependencies
+        run: helm dependency build ./${{ matrix.chart }}/
+
+      - name: Lint
+        run: helm lint ./${{ matrix.chart }}/
+
+      - name: Render default values
+        run: helm template render-check ./${{ matrix.chart }}/ > /dev/null

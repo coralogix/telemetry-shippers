@@ -80,3 +80,21 @@ before you submit your code:
 - CLA,
 - passing CI
 - resolved discussions
+
+## Standalone chart versioning (linux / windows / macos)
+
+The three standalone charts (`otel-linux-standalone`, `otel-windows-standalone`,
+`otel-macos-standalone`) are released together in lockstep and share the same
+`.version` in `Chart.yaml`. CI enforces this:
+
+- **Auto-sync**: if you bump the version in only one chart, a bot commits the
+  matching bumps to your PR branch.
+- **Version check**: PRs fail if the three `.version` values diverge.
+- **Atomic release**: on merge to `master`, all three charts are packaged and
+  published together - if any chart fails to render, nothing publishes.
+
+Source-only changes (e.g., editing `values.yaml` without a version bump) do NOT
+trigger an automatic bump - you decide when a release is warranted.
+
+The upstream `opentelemetry-collector` dependency version MAY diverge between
+the three charts - this is allowed to handle OS-specific upstream regressions.

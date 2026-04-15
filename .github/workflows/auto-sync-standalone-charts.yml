@@ -1,0 +1,55 @@
+name: Auto-sync Standalone Chart Versions
+permissions:
+  contents: write
+
+on:
+  pull_request:
+    paths:
+      - 'otel-linux-standalone/Chart.yaml'
+      - 'otel-windows-standalone/Chart.yaml'
+      - 'otel-macos-standalone/Chart.yaml'
+
+jobs:
+  auto-sync:
+    # Skip for forked-repo PRs (cannot push to forks).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Sync chart versions to highest
+        run: |
+          LINUX=$(yq '.version' otel-linux-standalone/Chart.yaml)
+          WIN=$(yq '.version' otel-windows-standalone/Chart.yaml)
+          MAC=$(yq '.version' otel-macos-standalone/Chart.yaml)
+          echo "linux=$LINUX windows=$WIN macos=$MAC"
+
+          if [[ "$LINUX" == "$WIN" && "$LINUX" == "$MAC" ]]; then
+            echo "All charts already at $LINUX - no sync needed"
+            exit 0
+          fi
+
+          HIGHEST=$(printf '%s\n%s\n%s\n' "$LINUX" "$WIN" "$MAC" | sort -V | tail -1)
+          echo "Syncing all standalone charts to $HIGHEST"
+          for chart in otel-linux-standalone otel-windows-standalone otel-macos-standalone; do
+            yq -i ".version = \"$HIGHEST\"" "$chart/Chart.yaml"
+          done
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add otel-linux-standalone/Chart.yaml otel-windows-standalone/Chart.yaml otel-macos-standalone/Chart.yaml
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore: auto-sync standalone chart versions to $HIGHEST"
+          git push

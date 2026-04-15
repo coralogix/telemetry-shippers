@@ -30,23 +30,14 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      - name: Verify all chart versions match
-        id: verify
-        run: |
-          LINUX=$(yq '.version' otel-linux-standalone/Chart.yaml)
-          WIN=$(yq '.version' otel-windows-standalone/Chart.yaml)
-          MAC=$(yq '.version' otel-macos-standalone/Chart.yaml)
-          echo "linux=$LINUX windows=$WIN macos=$MAC"
-          if [[ "$LINUX" != "$WIN" || "$LINUX" != "$MAC" ]]; then
-            echo "::error::Standalone chart versions diverge. Got linux=$LINUX windows=$WIN macos=$MAC. All three .version fields must match."
-            exit 1
-          fi
-          echo "version=$LINUX" >> $GITHUB_OUTPUT
+      - name: Read shared chart version
+        id: version
+        run: echo "value=$(yq '.version' otel-linux-standalone/Chart.yaml)" >> $GITHUB_OUTPUT
 
       - name: Check if version already published
         id: check
         run: |
-          VERSION="${{ steps.verify.outputs.version }}"
+          VERSION="${{ steps.version.outputs.value }}"
           ALL_PUBLISHED=true
           for chart_name in linux-standalone windows-standalone macos-standalone; do
             url="${{ env.ARTIFACTORY_URL }}coralogix-charts/${chart_name}-${VERSION}.tgz"
@@ -71,24 +62,13 @@ jobs:
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
-      - name: Render check (lint + template) for all charts
-        if: steps.check.outputs.skip != 'true'
-        run: |
-          set -e
-          for chart in $CHARTS; do
-            echo "::group::Render check: $chart"
-            helm dependency build ./$chart/
-            helm lint ./$chart/
-            helm template release-check ./$chart/ > /dev/null
-            echo "::endgroup::"
-          done
-
       - name: Package all charts
         if: steps.check.outputs.skip != 'true'
         run: |
           set -e
           for chart in $CHARTS; do
             echo "::group::Package: $chart"
+            helm dependency build ./$chart/
             (cd $chart && helm package .)
             echo "::endgroup::"
           done
