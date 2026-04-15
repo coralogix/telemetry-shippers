@@ -9,6 +9,7 @@ on:
       - 'otel-linux-standalone/**'
       - 'otel-windows-standalone/**'
       - 'otel-macos-standalone/**'
+  workflow_dispatch:
 
 env:
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
@@ -30,9 +31,18 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      - name: Read shared chart version
+      - name: Verify all chart versions match
         id: version
-        run: echo "value=$(yq '.version' otel-linux-standalone/Chart.yaml)" >> $GITHUB_OUTPUT
+        run: |
+          LINUX=$(yq '.version' otel-linux-standalone/Chart.yaml)
+          WIN=$(yq '.version' otel-windows-standalone/Chart.yaml)
+          MAC=$(yq '.version' otel-macos-standalone/Chart.yaml)
+          echo "linux=$LINUX windows=$WIN macos=$MAC"
+          if [[ "$LINUX" != "$WIN" || "$LINUX" != "$MAC" ]]; then
+            echo "::error::Standalone chart versions diverge. Got linux=$LINUX windows=$WIN macos=$MAC. All three .version fields must match before release. PR checks should have caught this - investigate how it reached master."
+            exit 1
+          fi
+          echo "value=$LINUX" >> $GITHUB_OUTPUT
 
       - name: Check if version already published
         id: check
