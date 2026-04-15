@@ -1,0 +1,111 @@
+permissions:
+  contents: read
+name: OpenTelemetry-Standalone-Charts-Release
+
+on:
+  push:
+    branches: master
+    paths:
+      - 'otel-linux-standalone/**'
+      - 'otel-windows-standalone/**'
+      - 'otel-macos-standalone/**'
+
+env:
+  ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
+  ARTIFACTORY_USERNAME: integrations-actions
+  CHARTS: otel-linux-standalone otel-windows-standalone otel-macos-standalone
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Verify all chart versions match
+        id: verify
+        run: |
+          LINUX=$(yq '.version' otel-linux-standalone/Chart.yaml)
+          WIN=$(yq '.version' otel-windows-standalone/Chart.yaml)
+          MAC=$(yq '.version' otel-macos-standalone/Chart.yaml)
+          echo "linux=$LINUX windows=$WIN macos=$MAC"
+          if [[ "$LINUX" != "$WIN" || "$LINUX" != "$MAC" ]]; then
+            echo "::error::Standalone chart versions diverge. Got linux=$LINUX windows=$WIN macos=$MAC. All three .version fields must match."
+            exit 1
+          fi
+          echo "version=$LINUX" >> $GITHUB_OUTPUT
+
+      - name: Check if version already published
+        id: check
+        run: |
+          VERSION="${{ steps.verify.outputs.version }}"
+          ALL_PUBLISHED=true
+          for chart_name in linux-standalone windows-standalone macos-standalone; do
+            url="${{ env.ARTIFACTORY_URL }}coralogix-charts/${chart_name}-${VERSION}.tgz"
+            if ! curl -sfI -u "${{ env.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}" "$url" > /dev/null; then
+              echo "Not published: ${chart_name}-${VERSION}.tgz"
+              ALL_PUBLISHED=false
+              break
+            fi
+            echo "Already published: ${chart_name}-${VERSION}.tgz"
+          done
+          if [[ "$ALL_PUBLISHED" == "true" ]]; then
+            echo "::notice::All standalone charts already published at version $VERSION - skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Helm repos
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
+          helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+
+      - name: Render check (lint + template) for all charts
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -e
+          for chart in $CHARTS; do
+            echo "::group::Render check: $chart"
+            helm dependency build ./$chart/
+            helm lint ./$chart/
+            helm template release-check ./$chart/ > /dev/null
+            echo "::endgroup::"
+          done
+
+      - name: Package all charts
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -e
+          for chart in $CHARTS; do
+            echo "::group::Package: $chart"
+            (cd $chart && helm package .)
+            echo "::endgroup::"
+          done
+
+      - name: Setup JFrog CLI
+        if: steps.check.outputs.skip != 'true'
+        uses: jfrog/setup-jfrog-cli@v2.1.0
+        with:
+          version: 2.12.1
+
+      - name: Upload all charts to Artifactory
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -e
+          for chart in $CHARTS; do
+            chart_name="${chart#otel-}"
+            echo "::group::Upload: ${chart_name}"
+            (cd $chart && jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${chart_name}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }})
+            echo "::endgroup::"
+          done
