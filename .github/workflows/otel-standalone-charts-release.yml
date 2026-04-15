@@ -72,13 +72,24 @@ jobs:
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
+      - name: Render check (lint + template) for all charts
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -e
+          for chart in $CHARTS; do
+            echo "::group::Render check: $chart"
+            helm dependency build ./$chart/
+            helm lint ./$chart/
+            helm template release-check ./$chart/ > /dev/null
+            echo "::endgroup::"
+          done
+
       - name: Package all charts
         if: steps.check.outputs.skip != 'true'
         run: |
           set -e
           for chart in $CHARTS; do
             echo "::group::Package: $chart"
-            helm dependency build ./$chart/
             (cd $chart && helm package .)
             echo "::endgroup::"
           done
@@ -90,12 +101,37 @@ jobs:
           version: 2.12.1
 
       - name: Upload all charts to Artifactory
+        id: upload
         if: steps.check.outputs.skip != 'true'
         run: |
           set -e
+          UPLOADED=""
           for chart in $CHARTS; do
             chart_name="${chart#otel-}"
             echo "::group::Upload: ${chart_name}"
             (cd $chart && jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${chart_name}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }})
+            UPLOADED="${UPLOADED} ${chart_name}"
+            echo "uploaded=${UPLOADED}" >> $GITHUB_OUTPUT
             echo "::endgroup::"
           done
+
+      - name: Rollback partial publish on upload failure
+        # Only runs if the upload step started but failed mid-way through.
+        # Deletes any chart-version artifacts that were already uploaded so
+        # Artifactory doesn't end up with a partial release.
+        if: failure() && steps.upload.conclusion == 'failure' && steps.upload.outputs.uploaded != ''
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          UPLOADED="${{ steps.upload.outputs.uploaded }}"
+          echo "::warning::Upload failed mid-way. Rolling back already-uploaded charts: ${UPLOADED}"
+          for chart_name in $UPLOADED; do
+            artifact_path="coralogix-charts/${chart_name}-${VERSION}.tgz"
+            echo "::group::Delete: ${artifact_path}"
+            jfrog rt delete \
+              --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} \
+              --url ${{ env.ARTIFACTORY_URL }} \
+              --quiet \
+              "${artifact_path}" || echo "::warning::Failed to delete ${artifact_path} - manual cleanup may be required"
+            echo "::endgroup::"
+          done
+          echo "::error::Upload failed and rollback was attempted. Verify Artifactory state before re-running."
