@@ -167,12 +167,13 @@ processors:
     send_batch_max_size: 2048
     send_batch_size: 1024
     timeout: 1s
-  # ecsattributes/container-logs disabled on Windows: processor requires Docker API; use ECS fallback in collector to re-enable.
-  # ecsattributes/container-logs:
-  #   container_id:
-  #     sources:
-  #     - log.file.path
-  #     - container.id
+  # ECS enrichment for OTLP logs/traces (container.id → metadata). This image's ecsattributes processor does
+  # not accept a `sidecar` config key. On Windows ECS without Docker API, enrichment may be limited; clients
+  # can set OTEL_RESOURCE_ATTRIBUTES with container.id from ECS_CONTAINER_METADATA_URI_V4 when needed.
+  ecsattributes/container-logs:
+    container_id:
+      sources:
+      - container.id
   filter/db_compact_spanmetrics:
     traces:
       span:
@@ -630,6 +631,7 @@ service:
       - memory_limiter
       - resourcedetection/region
       - resourcedetection/env
+      - ecsattributes/container-logs
       - resource/metadata
       - transform/reduce
       - batch
@@ -696,6 +698,7 @@ service:
       - memory_limiter
       - resourcedetection/region
       - resourcedetection/env
+      - ecsattributes/container-logs
       - resource/metadata
       - transform/spanmetrics
       - redaction/spanname

@@ -75,7 +75,7 @@ locals {
   agent_name         = "coralogix-otel-agent"
   otel_config        = file("${path.module}/../examples/otel-config.yaml")
   agent_suffix       = random_string.agent_suffix.result
-  agent_image        = "coralogixrepo/coralogix-otel-collector:v0.5.10-windowsserver-2022"
+  agent_image        = "coralogixrepo/coralogix-otel-collector:v0.5.11-windowsserver-2022"
   telemetrygen_image = "cgx.jfrog.io/coralogix-docker-images/telemetrygen-windows:0.147.0-windows2022"
 
   agent_volumes = [
@@ -213,6 +213,13 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   count      = var.task_execution_role_arn == null ? 1 : 0
   role       = aws_iam_role.ecs_task_execution[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Required for images on public.ecr.aws (ecr-public API + sts:GetServiceBearerToken). Not included in AmazonECSTaskExecutionRolePolicy.
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_ecr_public" {
+  count      = var.task_execution_role_arn == null ? 1 : 0
+  role       = aws_iam_role.ecs_task_execution[0].name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonElasticContainerRegistryPublicReadOnly"
 }
 
 resource "aws_launch_template" "ecs" {

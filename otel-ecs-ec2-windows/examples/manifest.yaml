@@ -206,7 +206,6 @@ data:
       ecsattributes/container-logs:
         container_id:
           sources:
-          - log.file.path
           - container.id
       filter/db_compact_spanmetrics:
         traces:
