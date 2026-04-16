@@ -1,6 +1,4 @@
 name: Standalone Charts Render Check
-permissions:
-  contents: read
 
 on:
   pull_request:
@@ -15,6 +13,8 @@ env:
 
 jobs:
   render:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

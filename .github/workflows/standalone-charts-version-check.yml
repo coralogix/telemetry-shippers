@@ -1,6 +1,4 @@
 name: Standalone Charts Version Check
-permissions:
-  contents: read
 
 on:
   pull_request:
@@ -12,6 +10,8 @@ on:
 jobs:
   check-versions:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 

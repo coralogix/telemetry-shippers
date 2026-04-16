@@ -1,6 +1,4 @@
 name: Auto-sync Standalone Chart Versions
-permissions:
-  contents: write
 
 on:
   pull_request:
@@ -13,6 +11,8 @@ jobs:
   auto-sync:
     # Skip for forked-repo PRs (cannot push to forks).
     if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
