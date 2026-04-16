@@ -58,7 +58,7 @@ variable "tags" {
 }
 
 variable "task_execution_role_arn" {
-  description = "ARN of the task execution role for the OTEL agent (pull images, CloudWatch Logs). If null, a role with ECR and logs permissions is created."
+  description = "ARN of the task execution role for the OTEL agent (pull images, CloudWatch Logs). If null, a role with private ECR, ECR Public (public.ecr.aws), and logs permissions is created. If you pass your own role and use public.ecr.aws images, attach AWS managed policy AmazonElasticContainerRegistryPublicReadOnly (or equivalent) to that role."
   type        = string
   default     = null
 }
