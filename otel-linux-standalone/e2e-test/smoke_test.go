@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -28,9 +29,10 @@ func TestRenderedConfigShipsTracesMetricsAndLogs(t *testing.T) {
 	repoRoot := filepath.Clean(filepath.Join(testDir(t), ".."))
 	workDir := tempWorkDir(t, repoRoot)
 	valuesPath := filepath.Join(workDir, "values-smoke.yaml")
+	hostEndpoint := resolveHostEndpoint(t, repoRoot)
 
 	sinks := startMockSinks(t)
-	renderedConfig := renderSmokeConfig(t, repoRoot, workDir, sinks)
+	renderedConfig := renderSmokeConfig(t, repoRoot, workDir, hostEndpoint, sinks)
 	collectorImage := renderedCollectorImage(t, repoRoot, valuesPath)
 
 	validateRenderedConfig(t, repoRoot, collectorImage, renderedConfig)
@@ -41,16 +43,16 @@ func TestRenderedConfigShipsTracesMetricsAndLogs(t *testing.T) {
 
 	waitForPort(t, "127.0.0.1:4317")
 
-	runTelemetrygen(t, repoRoot, "traces", "--traces=2", "--service=smoke-traces")
-	runTelemetrygen(t, repoRoot, "metrics", "--metrics=2", "--service=smoke-metrics", "--otlp-metric-name=smoke_metric")
-	runTelemetrygen(t, repoRoot, "logs", "--logs=2", "--service=smoke-logs", "--body=smoke-log-line")
+	runTelemetrygen(t, repoRoot, hostEndpoint, "traces", "--traces=2", "--service=smoke-traces")
+	runTelemetrygen(t, repoRoot, hostEndpoint, "metrics", "--metrics=2", "--service=smoke-metrics", "--otlp-metric-name=smoke_metric")
+	runTelemetrygen(t, repoRoot, hostEndpoint, "logs", "--logs=2", "--service=smoke-logs", "--body=smoke-log-line")
 
 	require.Eventually(t, func() bool { return len(sinks.Traces.Consumer.AllTraces()) > 0 }, 30*time.Second, 500*time.Millisecond)
 	require.Eventually(t, func() bool { return len(sinks.Metrics.Consumer.AllMetrics()) > 0 }, 30*time.Second, 500*time.Millisecond)
 	require.Eventually(t, func() bool { return len(sinks.Logs.Consumer.AllLogs()) > 0 }, 30*time.Second, 500*time.Millisecond)
 }
 
-func renderSmokeConfig(t *testing.T, repoRoot, workDir string, sinks intege2e.ReceiverSinks) string {
+func renderSmokeConfig(t *testing.T, repoRoot, workDir, hostEndpoint string, sinks intege2e.ReceiverSinks) string {
 	t.Helper()
 
 	valuesPath := filepath.Join(repoRoot, "values.yaml")
@@ -58,7 +60,7 @@ func renderSmokeConfig(t *testing.T, repoRoot, workDir string, sinks intege2e.Re
 	configOutputDir := filepath.Join(workDir, "rendered")
 	configPath := filepath.Join(configOutputDir, "otel-config.yaml")
 
-	writeSmokeValuesFromBase(t, valuesPath, patchedValuesPath, sinks)
+	writeSmokeValuesFromBase(t, valuesPath, patchedValuesPath, hostEndpoint, sinks)
 
 	runCmd(t, repoRoot, nil,
 		"make", "otel-config",
@@ -101,7 +103,7 @@ func renderedCollectorImage(t *testing.T, repoRoot, valuesPath string) string {
 	return ""
 }
 
-func writeSmokeValuesFromBase(t *testing.T, basePath, outPath string, sinks intege2e.ReceiverSinks) {
+func writeSmokeValuesFromBase(t *testing.T, basePath, outPath, hostEndpoint string, sinks intege2e.ReceiverSinks) {
 	t.Helper()
 
 	raw, err := os.ReadFile(basePath)
@@ -114,13 +116,13 @@ func writeSmokeValuesFromBase(t *testing.T, basePath, outPath string, sinks inte
 	set(values, []string{"opentelemetry-agent", "presets", "journaldReceiver", "enabled"}, false)
 	set(values, []string{"opentelemetry-agent", "presets", "systemdReceiver", "enabled"}, false)
 
-	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "traces", "endpoint"}, hostEndpoint(sinks.Traces.Ports.Grpc))
+	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "traces", "endpoint"}, formatHostEndpoint(hostEndpoint, sinks.Traces.Ports.Grpc))
 	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "traces", "tls", "insecure"}, true)
-	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "metrics", "endpoint"}, hostEndpoint(sinks.Metrics.Ports.Grpc))
+	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "metrics", "endpoint"}, formatHostEndpoint(hostEndpoint, sinks.Metrics.Ports.Grpc))
 	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "metrics", "tls", "insecure"}, true)
-	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "logs", "endpoint"}, hostEndpoint(sinks.Logs.Ports.Grpc))
+	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "logs", "endpoint"}, formatHostEndpoint(hostEndpoint, sinks.Logs.Ports.Grpc))
 	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix", "logs", "tls", "insecure"}, true)
-	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix/resource_catalog", "logs", "endpoint"}, hostEndpoint(sinks.Logs.Ports.Grpc))
+	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix/resource_catalog", "logs", "endpoint"}, formatHostEndpoint(hostEndpoint, sinks.Logs.Ports.Grpc))
 	set(values, []string{"opentelemetry-agent", "config", "exporters", "coralogix/resource_catalog", "logs", "tls", "insecure"}, true)
 
 	encoded, err := yaml.Marshal(values)
@@ -186,14 +188,14 @@ func startCollector(t *testing.T, repoRoot, collectorImage, containerName, confi
 	)
 }
 
-func runTelemetrygen(t *testing.T, repoRoot, signal string, extraArgs ...string) {
+func runTelemetrygen(t *testing.T, repoRoot, hostEndpoint, signal string, extraArgs ...string) {
 	t.Helper()
 
 	args := []string{
 		"run", "--rm",
 		telemetrygenImage,
 		signal,
-		"--otlp-endpoint=host.docker.internal:4317",
+		"--otlp-endpoint=" + formatHostEndpoint(hostEndpoint, collectorPort),
 		"--otlp-insecure",
 		"--duration=3s",
 		"--rate=1",
@@ -267,8 +269,26 @@ func set(root map[string]any, path []string, value any) {
 	current[path[len(path)-1]] = value
 }
 
-func hostEndpoint(port int) string {
-	return fmt.Sprintf("host.docker.internal:%d", port)
+func resolveHostEndpoint(t *testing.T, repoRoot string) string {
+	t.Helper()
+
+	if runtime.GOOS == "darwin" {
+		return "host.docker.internal"
+	}
+
+	gateway := strings.TrimSpace(runCmd(
+		t,
+		repoRoot,
+		nil,
+		"docker", "network", "inspect", "bridge",
+		"--format", "{{range .IPAM.Config}}{{if .Gateway}}{{.Gateway}}{{end}}{{end}}",
+	))
+	require.NotEmpty(t, gateway, "failed to resolve docker bridge gateway")
+	return gateway
+}
+
+func formatHostEndpoint(host string, port int) string {
+	return fmt.Sprintf("%s:%d", host, port)
 }
 
 func nestedString(root map[string]any, path ...string) string {
