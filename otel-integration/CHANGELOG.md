@@ -2,6 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.299 / 2026-04-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.12
+
+#### Changes from opentelemetry-collector 0.130.12:
+- [Feat] Add optional `presets.coralogixExporter.keepalive` support so the chart only renders shared Coralogix exporter gRPC keepalive settings when explicitly configured.
+
+#### Changes from opentelemetry-collector 0.130.11:
+- [Fix] Use the dedicated supervised eBPF profiler image and managed collector executable when `presets.ebpfProfiler` and `presets.fleetManagement.supervisor` are both enabled.
+
 ### v0.0.298 / 2026-04-14
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.11
