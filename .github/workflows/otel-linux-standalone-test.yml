@@ -1,0 +1,55 @@
+permissions:
+  contents: read
+
+name: OpenTelemetry-Linux-Standalone-Test
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/otel-linux-standalone-test.yml"
+      - "otel-linux-standalone/**"
+      - "otel-integration/k8s-helm/e2e-test/**"
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/otel-linux-standalone-test.yml"
+      - "otel-linux-standalone/**"
+      - "otel-integration/k8s-helm/e2e-test/**"
+
+env:
+  ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.0"
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Setup yq
+        run: |
+          sudo wget -q https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Setup Helm Repo
+        run: |
+          helm repo add coralogix-charts-virtual "${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual"
+          helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+
+      - name: Validate Rendered Config
+        working-directory: otel-linux-standalone
+        run: make validate-config
+
+      - name: Run Smoke Test
+        working-directory: otel-linux-standalone
+        run: make test
