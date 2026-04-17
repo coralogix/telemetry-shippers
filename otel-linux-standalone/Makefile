@@ -54,7 +54,7 @@ TELEMETRYGEN_TF_VARS ?= \
 	-var="instance_type=$(TELEMETRYGEN_INSTANCE_TYPE)" \
 	-var="collector_endpoint=$(COLLECTOR_ENDPOINT)"
 
-.PHONY: all otel-config helm-template terraform-init terraform-apply terraform-destroy terraform-output deploy destroy clean telemetrygen-init telemetrygen-apply telemetrygen-destroy telemetrygen-output
+.PHONY: all otel-config validate-config test helm-template terraform-init terraform-apply terraform-destroy terraform-output deploy destroy clean telemetrygen-init telemetrygen-apply telemetrygen-destroy telemetrygen-output
 
 all: deploy
 
@@ -67,6 +67,23 @@ otel-config:
 	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) \
 		| $(YQ) eval -r 'select(.kind == "ConfigMap") | .data.relay' - > $(OTEL_CONFIG_FILE)
 	@echo "Wrote $(OTEL_CONFIG_FILE)"
+
+validate-config: otel-config
+	@collector_image="$$( \
+		$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) \
+			| $(YQ) eval -r 'select(.kind == "DaemonSet" or .kind == "Deployment" or .kind == "StatefulSet") | .spec.template.spec.containers[].image' - \
+			| head -n 1 \
+	)"; \
+	[ -n "$$collector_image" ] || { echo "Error: failed to resolve collector image from rendered chart" >&2; exit 1; }; \
+	docker run --rm \
+		-e CORALOGIX_PRIVATE_KEY=validate-config-key \
+		-v "$(OTEL_CONFIG_FILE):/cfg/otel-config.yaml:ro" \
+		"$$collector_image" \
+		validate \
+		--config=file:/cfg/otel-config.yaml
+
+test:
+	@cd e2e-test && go test -v ./...
 
 # Convenience target to inspect rendered manifests
 helm-template:
