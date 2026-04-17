@@ -19,7 +19,6 @@ on:
 
 env:
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
-  ARTIFACTORY_USERNAME: integrations-actions
 
 jobs:
   test:
@@ -43,9 +42,7 @@ jobs:
 
       - name: Setup Helm Repo
         run: |
-          helm repo add coralogix-charts-virtual "${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual" \
-            --username "${{ env.ARTIFACTORY_USERNAME }}" \
-            --password "${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}"
+          helm repo add coralogix-charts-virtual "${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual"
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
