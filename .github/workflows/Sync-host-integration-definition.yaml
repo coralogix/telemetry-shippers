@@ -90,11 +90,12 @@ jobs:
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_version.outputs.Chart_version }}
-          binary_version=${{ needs.Get_version.outputs.Binary_version }}
+          # TODO: Remove fake version after test — using 0.999.0 to verify sed replacement
+          binary_version="0.999.0" # ${{ needs.Get_version.outputs.Binary_version }}
+          # TODO: Restore non-testing filter after test
           last_version=$(
             awk '
-              /^[[:space:]]*-[[:space:]]+revision:/ { if (rev && !testing) last=rev; rev=$NF; testing=0 }
-              /[[:space:]]testing:[[:space:]]*true/  { testing=1 }
+              /^[[:space:]]*-[[:space:]]+revision:/ { last=$NF }
               END { if (rev && !testing) last=rev; if (last) print last; else exit 1 }
             ' ./integrations/otel-agent-host/manifest.yaml
           )
