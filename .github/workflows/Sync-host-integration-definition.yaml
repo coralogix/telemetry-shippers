@@ -4,6 +4,10 @@ on:
     workflows: ["OpenTelemetry-Standalone-Charts-Release"]
     types: [completed]
   workflow_dispatch:
+  # TODO: Remove before merging — temporary trigger for testing
+  push:
+    branches: [chore/sync-host-integration-definition]
+    paths: ['.github/workflows/Sync-host-integration-definition.yaml']
 
 jobs:
   Get_version:
