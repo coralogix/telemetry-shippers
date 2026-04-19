@@ -1,0 +1,209 @@
+name: Sync host with integration-definitions
+on:
+  workflow_run:
+    workflows: ["OpenTelemetry-Standalone-Charts-Release"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  Get_version:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    name: Get the new version
+    outputs:
+      Chart_version: "${{ steps.New_version.outputs.Chart_version }}"
+      Binary_version: "${{ steps.New_version.outputs.Binary_version }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Get the new version
+        id: New_version
+        run: |
+          Chart_version=$(cat ./otel-linux-standalone/Chart.yaml | grep "^version" | grep -oE '[^ ]+$')
+          echo "Chart_version=$Chart_version" >> $GITHUB_OUTPUT
+
+          # Get collector/supervisor binary version from the subchart's appVersion
+          # Both collector and supervisor use the same version (from the same otel-collector release)
+          dep_version=$(yq '.dependencies[] | select(.name == "opentelemetry-collector") | .version' ./otel-linux-standalone/Chart.yaml | tr -d '"')
+          Binary_version=$(curl -sL "https://cgx.jfrog.io/artifactory/coralogix-charts-virtual/opentelemetry-collector-${dep_version}.tgz" | tar xzf - --to-stdout opentelemetry-collector/Chart.yaml | grep "^appVersion" | grep -oE '[^ ]+$')
+          if [ -z "$Binary_version" ]; then
+            echo "::error::Failed to extract appVersion from subchart version $dep_version"
+            exit 1
+          fi
+          echo "Binary_version=$Binary_version" >> $GITHUB_OUTPUT
+
+          echo "Chart=$Chart_version Dep=$dep_version Binary=$Binary_version"
+
+  commit_changes:
+    runs-on: ubuntu-latest
+    needs: Get_version
+    steps:
+      - name: Checkout destination repository
+        uses: actions/checkout@v4
+        with:
+          repository: coralogix/integration-definitions
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Check if version exists
+        id: version_exist
+        run: |
+          git fetch origin
+          template_version=${{ needs.Get_version.outputs.Chart_version }}
+          if [ -d "./integrations/otel-agent-host/v$template_version" ]; then
+            echo "version exist"
+            echo "new_version_exist=true" >> $GITHUB_ENV
+          else
+            echo "new_version_exist=false" >> $GITHUB_ENV
+            echo "version Not exist"
+          fi
+
+      - name: Create files for the new version
+        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        run: |
+          branch_name="sync-host-standalone-$(date +"%m-%d-%H-%M")"
+          echo "branch_name=$branch_name" >> $GITHUB_ENV
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout -b $branch_name
+          git pull origin master
+          git fetch origin
+          git push origin $branch_name
+
+          current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          template_version=${{ needs.Get_version.outputs.Chart_version }}
+          binary_version=${{ needs.Get_version.outputs.Binary_version }}
+          last_version=$(
+            awk '
+              /^[[:space:]]*-[[:space:]]+revision:/ { if (rev && !testing) last=rev; rev=$NF; testing=0 }
+              /[[:space:]]testing:[[:space:]]*true/  { testing=1 }
+              END { if (rev && !testing) last=rev; if (last) print last; else exit 1 }
+            ' ./integrations/otel-agent-host/manifest.yaml
+          )
+          integration_version=$(echo $last_version | sed 's/+.*//')
+          new_dir="integrations/otel-agent-host/v${integration_version}+${template_version}"
+          mkdir -p "$new_dir"
+          cp integrations/otel-agent-host/v$last_version/commands.yaml "$new_dir/"
+          cp integrations/otel-agent-host/v$last_version/fields.yaml "$new_dir/"
+
+          # Update binary versions in commands.yaml
+          new_commands="$new_dir/commands.yaml"
+          old_binary_version=$(grep -o 'otelcol-contrib_[0-9.]*' "$new_commands" | head -1 | sed 's/otelcol-contrib_//')
+          if [ -n "$old_binary_version" ] && [ "$old_binary_version" != "$binary_version" ]; then
+            echo "Updating binary version: $old_binary_version -> $binary_version"
+            sed -i "s/${old_binary_version}/${binary_version}/g" "$new_commands"
+          else
+            echo "Binary version unchanged ($old_binary_version)"
+          fi
+
+          # Verify commands.yaml is still valid YAML
+          yq '.' "$new_commands" > /dev/null || { echo "::error::YAML validation failed after version replacement"; exit 1; }
+
+          if [ -f ./integrations/otel-agent-host/manifest.yaml ]; then
+            echo "  - revision: ${integration_version}+${template_version}
+              template:
+                type: HelmChart
+                commands: v${integration_version}+${template_version}/commands.yaml
+              field_definitions: v${integration_version}+${template_version}/fields.yaml
+              published_at: $current_time" >> integrations/otel-agent-host/manifest.yaml
+          fi
+          git add .
+
+          merged_pr_from_telemetry_shipper=$(curl -s \
+          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+          if [ "${{ github.event_name }}" == 'workflow_dispatch' ] || [ -z "$merged_pr_from_telemetry_shipper" ]; then
+            merged_pr_from_telemetry_shipper="sync-from-telemetry-shippers"
+          fi
+          echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: commit change
+        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        uses: planetscale/ghcommit-action@v0.1.43
+        with:
+          commit_message: ${{env.commit_message}}
+          repo: coralogix/integration-definitions
+          branch: ${{ env.branch_name }}
+          file_pattern: '*.yaml *.md'
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+
+      - name: Create pull request
+        if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
+        run: |
+          Pr_name=$(curl -s "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+          | jq -r '.[0].title')
+
+          if [ -z "$Pr_name" ]; then
+            Pr_name="sync-from-telemetry-shippers"
+          fi
+
+          pr_url=$(curl -s \
+            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].html_url')
+
+          pr_body=$(curl -s \
+            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
+            | jq -r '.[0].body')
+
+          if [ -z "$pr_body" ]; then
+            pr_body="This pull request syncs the host standalone chart changes from the telemetry-shippers repo. Link to the original PR $pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
+          else
+            pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
+          fi
+
+          gh pr create --base master --head "${{ env.branch_name }}" --title "${Pr_name}" --body "$pr_body"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Merge pull request
+        # TODO: Re-enable auto-merge after testing
+        if: false # "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        run: |
+          check_status() {
+            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+          }
+
+          max_wait_time=$((10 * 60))
+          elapsed_time=0
+          sleep_interval=10
+
+          echo "Waiting for all status checks to pass..."
+          sleep 5
+          while true; do
+            status=$(check_status)
+
+            if [ "$status" == "true" ]; then
+              echo "All status checks passed. Merging the pull request..."
+              break
+            fi
+
+            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+              echo "Timeout reached: Status checks did not pass within 10 minutes."
+              exit 1
+            fi
+
+            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+            sleep $sleep_interval
+            elapsed_time=$((elapsed_time + sleep_interval))
+          done
+
+          gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
