@@ -4,17 +4,12 @@ on:
     workflows: ["OpenTelemetry-Standalone-Charts-Release"]
     types: [completed]
   workflow_dispatch:
-  # TODO: Remove before merging — temporary trigger for testing
-  push:
-    branches: [chore/sync-host-integration-definition]
-    paths: ['.github/workflows/Sync-host-integration-definition.yaml']
 
 jobs:
   Get_version:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'push' ||
       github.event.workflow_run.conclusion == 'success'
     name: Get the new version
     outputs:
@@ -90,12 +85,11 @@ jobs:
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_version.outputs.Chart_version }}
-          # TODO: Remove fake version after test — using 0.999.0 to verify sed replacement
-          binary_version="0.999.0" # ${{ needs.Get_version.outputs.Binary_version }}
-          # TODO: Restore non-testing filter after test
+          binary_version=${{ needs.Get_version.outputs.Binary_version }}
           last_version=$(
             awk '
-              /^[[:space:]]*-[[:space:]]+revision:/ { last=$NF }
+              /^[[:space:]]*-[[:space:]]+revision:/ { if (rev && !testing) last=rev; rev=$NF; testing=0 }
+              /[[:space:]]testing:[[:space:]]*true/  { testing=1 }
               END { if (rev && !testing) last=rev; if (last) print last; else exit 1 }
             ' ./integrations/otel-agent-host/manifest.yaml
           )
@@ -178,8 +172,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Merge pull request
-        # TODO: Re-enable auto-merge after testing
-        if: false # "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
         run: |
           check_status() {
             gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
