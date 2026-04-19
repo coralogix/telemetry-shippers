@@ -5,6 +5,10 @@ on:
     types: [completed]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   Get_version:
     runs-on: ubuntu-latest
