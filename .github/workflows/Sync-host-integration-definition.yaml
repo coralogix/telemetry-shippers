@@ -67,12 +67,23 @@ jobs:
         run: |
           git fetch origin
           template_version=${{ needs.Get_version.outputs.Chart_version }}
-          if [ -d "./integrations/otel-agent-host/v$template_version" ]; then
-            echo "version exist"
+          last_version=$(
+            awk '
+              /^[[:space:]]*-[[:space:]]+revision:/ { if (rev && !testing) last=rev; rev=$NF; testing=0 }
+              /[[:space:]]testing:[[:space:]]*true/  { testing=1 }
+              END { if (rev && !testing) last=rev; if (last) print last; else exit 1 }
+            ' ./integrations/otel-agent-host/manifest.yaml
+          )
+          integration_version=$(echo $last_version | sed 's/+.*//')
+          full_version="v${integration_version}+${template_version}"
+          echo "integration_version=$integration_version" >> $GITHUB_ENV
+          echo "last_version=$last_version" >> $GITHUB_ENV
+          if [ -d "./integrations/otel-agent-host/$full_version" ]; then
+            echo "version $full_version already exists"
             echo "new_version_exist=true" >> $GITHUB_ENV
           else
             echo "new_version_exist=false" >> $GITHUB_ENV
-            echo "version Not exist"
+            echo "version $full_version does not exist"
           fi
 
       - name: Create files for the new version
@@ -90,14 +101,8 @@ jobs:
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           template_version=${{ needs.Get_version.outputs.Chart_version }}
           binary_version=${{ needs.Get_version.outputs.Binary_version }}
-          last_version=$(
-            awk '
-              /^[[:space:]]*-[[:space:]]+revision:/ { if (rev && !testing) last=rev; rev=$NF; testing=0 }
-              /[[:space:]]testing:[[:space:]]*true/  { testing=1 }
-              END { if (rev && !testing) last=rev; if (last) print last; else exit 1 }
-            ' ./integrations/otel-agent-host/manifest.yaml
-          )
-          integration_version=$(echo $last_version | sed 's/+.*//')
+          integration_version=${{ env.integration_version }}
+          last_version=${{ env.last_version }}
           new_dir="integrations/otel-agent-host/v${integration_version}+${template_version}"
           mkdir -p "$new_dir"
           cp integrations/otel-agent-host/v$last_version/commands.yaml "$new_dir/"
