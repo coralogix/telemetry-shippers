@@ -1,0 +1,33 @@
+name: Standalone Charts Version Check
+
+on:
+  pull_request:
+    paths:
+      - 'otel-linux-standalone/**'
+      - 'otel-windows-standalone/**'
+      - 'otel-macos-standalone/**'
+
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Verify all standalone chart versions match
+        run: |
+          LINUX=$(yq '.version' otel-linux-standalone/Chart.yaml)
+          WIN=$(yq '.version' otel-windows-standalone/Chart.yaml)
+          MAC=$(yq '.version' otel-macos-standalone/Chart.yaml)
+          echo "linux=$LINUX windows=$WIN macos=$MAC"
+          if [[ "$LINUX" != "$WIN" || "$LINUX" != "$MAC" ]]; then
+            echo "::error::Standalone chart versions diverge. Got linux=$LINUX windows=$WIN macos=$MAC. All three .version fields must match. The upstream opentelemetry-collector dep version is NOT checked - it may diverge per OS."
+            exit 1
+          fi
+          echo "All standalone charts at $LINUX ✓"
