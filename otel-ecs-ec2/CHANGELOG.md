@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.20 / 2026-04-22
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.13`.
+
+#### Changes from opentelemetry-collector 0.130.13:
+- [Fix] On-prem Kubernetes (`provider: on-prem` with a K8s distribution) now defaults `resourcedetection/resource_catalog` detectors to `[k8snode]` and `resourcedetection/env` detectors to `[env, k8snode, system]`, restoring the Coralogix Infra Catalog node/pod relationships that broke after the provider-aware change in v0.129.2 (CDS-2925).
+
 ### 0.0.19 / 2026-04-17
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.12`.

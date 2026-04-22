@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.300 / 2026-04-22
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.13
+
+#### Changes from opentelemetry-collector 0.130.13:
+- [Fix] On-prem Kubernetes (`provider: on-prem` with a K8s distribution) now defaults `resourcedetection/resource_catalog` detectors to `[k8snode]` and `resourcedetection/env` detectors to `[env, k8snode, system]`, restoring the Coralogix Infra Catalog node/pod relationships that broke after the provider-aware change in v0.129.2 (CDS-2925).
+
 ### v0.0.299 / 2026-04-17
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.12
