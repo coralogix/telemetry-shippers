@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.21 / 2026-04-23
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.15`.
+
+#### Changes from opentelemetry-collector 0.130.15:
+- [Fix] Use `syslog_parser` for macOS system log parsing logic.
+
 ### 0.0.20 / 2026-04-22
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.14`.

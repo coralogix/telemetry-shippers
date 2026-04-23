@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.26 / 2026-04-23
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.15
+
+#### Changes from opentelemetry-collector 0.130.15:
+- [Fix] Use `syslog_parser` for macOS system log parsing logic.
+
 ### v0.0.25 / 2026-04-22
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.14
