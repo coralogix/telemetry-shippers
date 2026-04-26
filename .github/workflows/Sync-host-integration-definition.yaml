@@ -160,17 +160,13 @@ jobs:
       - name: Create pull request
         if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
         run: |
-          pr_title="${{ env.commit_message }}"
-          pr_url="${{ env.source_pr_url }}"
-          pr_body="${{ env.source_pr_body }}"
-
-          if [ -z "$pr_body" ]; then
-            pr_body="This pull request syncs the host standalone chart changes from the telemetry-shippers repo. Link to the original PR $pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
+          if [ -z "$source_pr_body" ]; then
+            pr_body="This pull request syncs the host standalone chart changes from the telemetry-shippers repo. Link to the original PR $source_pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
           else
-            pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
+            pr_body="Link to the original PR: $source_pr_url $source_pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
           fi
 
-          gh pr create --base master --head "${{ env.branch_name }}" --title "${pr_title}" --body "$pr_body"
+          gh pr create --base master --head "$branch_name" --title "$commit_message" --body "$pr_body"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
