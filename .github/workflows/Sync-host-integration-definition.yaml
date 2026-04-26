@@ -131,13 +131,18 @@ jobs:
           fi
           git add .
 
-          merged_pr_from_telemetry_shipper=$(curl -s \
-          "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
-          | jq -r '.[0].title')
-          if [ "${{ github.event_name }}" == 'workflow_dispatch' ] || [ -z "$merged_pr_from_telemetry_shipper" ]; then
-            merged_pr_from_telemetry_shipper="sync-from-telemetry-shippers"
+          pr_json=$(curl -s "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc&per_page=1")
+          source_pr_title=$(echo "$pr_json" | jq -r '.[0].title // empty')
+          source_pr_url=$(echo "$pr_json" | jq -r '.[0].html_url // empty')
+          source_pr_body=$(echo "$pr_json" | jq -r '.[0].body // empty')
+          if [ "${{ github.event_name }}" == 'workflow_dispatch' ] || [ -z "$source_pr_title" ]; then
+            source_pr_title="sync-from-telemetry-shippers"
           fi
-          echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
+          echo "commit_message=$source_pr_title" >> $GITHUB_ENV
+          echo "source_pr_url=$source_pr_url" >> $GITHUB_ENV
+          echo "source_pr_body<<EOF_PR_BODY" >> $GITHUB_ENV
+          echo "$source_pr_body" >> $GITHUB_ENV
+          echo "EOF_PR_BODY" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
@@ -155,20 +160,9 @@ jobs:
       - name: Create pull request
         if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
         run: |
-          Pr_name=$(curl -s "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
-          | jq -r '.[0].title')
-
-          if [ -z "$Pr_name" ]; then
-            Pr_name="sync-from-telemetry-shippers"
-          fi
-
-          pr_url=$(curl -s \
-            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
-            | jq -r '.[0].html_url')
-
-          pr_body=$(curl -s \
-            "https://api.github.com/repos/coralogix/telemetry-shippers/pulls?state=closed&base=master&sort=updated&direction=desc" \
-            | jq -r '.[0].body')
+          pr_title="${{ env.commit_message }}"
+          pr_url="${{ env.source_pr_url }}"
+          pr_body="${{ env.source_pr_body }}"
 
           if [ -z "$pr_body" ]; then
             pr_body="This pull request syncs the host standalone chart changes from the telemetry-shippers repo. Link to the original PR $pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
@@ -176,42 +170,43 @@ jobs:
             pr_body="Link to the original PR: $pr_url $pr_body  **dummy ticket to pass ticket validate[CDS-1708]**"
           fi
 
-          gh pr create --base master --head "${{ env.branch_name }}" --title "${Pr_name}" --body "$pr_body"
+          gh pr create --base master --head "${{ env.branch_name }}" --title "${pr_title}" --body "$pr_body"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Merge pull request
-        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
-        run: |
-          check_status() {
-            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
-          }
-
-          max_wait_time=$((10 * 60))
-          elapsed_time=0
-          sleep_interval=10
-
-          echo "Waiting for all status checks to pass..."
-          sleep 5
-          while true; do
-            status=$(check_status)
-
-            if [ "$status" == "true" ]; then
-              echo "All status checks passed. Merging the pull request..."
-              break
-            fi
-
-            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
-              echo "Timeout reached: Status checks did not pass within 10 minutes."
-              exit 1
-            fi
-
-            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
-            sleep $sleep_interval
-            elapsed_time=$((elapsed_time + sleep_interval))
-          done
-
-          gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      # TEMP: auto-merge disabled for test run — RESTORE before merging to master
+      # - name: Merge pull request
+      #   if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+      #   run: |
+      #     check_status() {
+      #       gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+      #     }
+      #
+      #     max_wait_time=$((10 * 60))
+      #     elapsed_time=0
+      #     sleep_interval=10
+      #
+      #     echo "Waiting for all status checks to pass..."
+      #     sleep 5
+      #     while true; do
+      #       status=$(check_status)
+      #
+      #       if [ "$status" == "true" ]; then
+      #         echo "All status checks passed. Merging the pull request..."
+      #         break
+      #       fi
+      #
+      #       if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+      #         echo "Timeout reached: Status checks did not pass within 10 minutes."
+      #         exit 1
+      #       fi
+      #
+      #       echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+      #       sleep $sleep_interval
+      #       elapsed_time=$((elapsed_time + sleep_interval))
+      #     done
+      #
+      #     gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
+      #
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
