@@ -87,7 +87,7 @@ jobs:
           fi
 
       - name: Create files for the new version
-        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        if: "${{ env.new_version_exist == 'false' }}"
         run: |
           branch_name="sync-host-standalone-$(date +"%m-%d-%H-%M")"
           echo "branch_name=$branch_name" >> $GITHUB_ENV
@@ -147,7 +147,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: commit change
-        if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
+        if: "${{ env.new_version_exist == 'false' }}"
         uses: planetscale/ghcommit-action@v0.1.43
         with:
           commit_message: ${{env.commit_message}}
@@ -158,7 +158,7 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
       - name: Create pull request
-        if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
+        if: "${{ env.new_version_exist == 'false' }}"
         run: |
           if [ -z "$source_pr_body" ]; then
             pr_body="This pull request syncs the host standalone chart changes from the telemetry-shippers repo. Link to the original PR $source_pr_url  **dummy ticket to pass ticket validate[CDS-1708]**"
@@ -170,39 +170,38 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      # TEMP: auto-merge disabled for test run — RESTORE before merging to master
-      # - name: Merge pull request
-      #   if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
-      #   run: |
-      #     check_status() {
-      #       gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
-      #     }
-      #
-      #     max_wait_time=$((10 * 60))
-      #     elapsed_time=0
-      #     sleep_interval=10
-      #
-      #     echo "Waiting for all status checks to pass..."
-      #     sleep 5
-      #     while true; do
-      #       status=$(check_status)
-      #
-      #       if [ "$status" == "true" ]; then
-      #         echo "All status checks passed. Merging the pull request..."
-      #         break
-      #       fi
-      #
-      #       if [ "$elapsed_time" -ge "$max_wait_time" ]; then
-      #         echo "Timeout reached: Status checks did not pass within 10 minutes."
-      #         exit 1
-      #       fi
-      #
-      #       echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
-      #       sleep $sleep_interval
-      #       elapsed_time=$((elapsed_time + sleep_interval))
-      #     done
-      #
-      #     gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
-      #
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Merge pull request
+        if: "${{ env.new_version_exist == 'false' }}"
+        run: |
+          check_status() {
+            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+          }
+
+          max_wait_time=$((10 * 60))
+          elapsed_time=0
+          sleep_interval=10
+
+          echo "Waiting for all status checks to pass..."
+          sleep 5
+          while true; do
+            status=$(check_status)
+
+            if [ "$status" == "true" ]; then
+              echo "All status checks passed. Merging the pull request..."
+              break
+            fi
+
+            if [ "$elapsed_time" -ge "$max_wait_time" ]; then
+              echo "Timeout reached: Status checks did not pass within 10 minutes."
+              exit 1
+            fi
+
+            echo "Not all checks passed yet. Waiting for $sleep_interval seconds..."
+            sleep $sleep_interval
+            elapsed_time=$((elapsed_time + sleep_interval))
+          done
+
+          gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
