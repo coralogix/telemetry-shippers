@@ -52,6 +52,8 @@ permissions:
 jobs:
   sync-fleet-manager:
     runs-on: ubuntu-latest
+    env:
+      FLEET_MANAGER_HELM_DATA_DESTINATION_DIR: integration_releases
     steps:
       - name: Checkout telemetry-shippers
         uses: actions/checkout@v4
@@ -174,6 +176,33 @@ jobs:
             git -C "$repo_dir" checkout -b "$branch"
           fi
 
+      - name: Checkout Fleet Manager Helm Data
+        uses: actions/checkout@v4
+        with:
+          repository: coralogix/fleet-manager-helm-data
+          ref: master
+          path: fleet-manager-helm-data
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Prepare Fleet Manager Helm Data branch
+        run: |
+          set -euo pipefail
+          repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
+          base_branch="master"
+          branch="bot/sync-fleet-manager-artifacts"
+
+          git -C "$repo_dir" config user.name "github-actions[bot]"
+          git -C "$repo_dir" config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git -C "$repo_dir" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git -C "$repo_dir" fetch origin "$branch"
+            git -C "$repo_dir" checkout "$branch"
+            git -C "$repo_dir" rebase "origin/$base_branch"
+          else
+            git -C "$repo_dir" checkout -b "$branch"
+          fi
+
       - name: Update Fleet Manager collector chart mapping
         id: update_map
         if: steps.detect.outputs.bumped == 'true'
@@ -229,6 +258,54 @@ jobs:
             dst_name="${mapping##*:}"
             src="$RUNNER_TEMP/$src_name"
             dst="$GITHUB_WORKSPACE/fleet-manager/$dst_name"
+
+            if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+              continue
+            fi
+
+            mkdir -p "$(dirname "$dst")"
+            cp "$src" "$dst"
+            changed_files+=("$dst_name")
+          done
+
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            echo "changed_files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+          printf 'changed_files=%s\n' "${changed_files[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Copy artifacts to Fleet Manager Helm Data
+        id: update_helm_data
+        run: |
+          set -euo pipefail
+
+          destination_dir="${FLEET_MANAGER_HELM_DATA_DESTINATION_DIR#/}"
+          destination_dir="${destination_dir%/}"
+          if [ -z "$destination_dir" ]; then
+            echo "Fleet Manager Helm data destination directory cannot be empty." >&2
+            exit 1
+          fi
+
+          mappings=(
+            "$GITHUB_WORKSPACE/fleet-manager/pkg/helm/data/collector_chart_versions_map.json:$destination_dir/collector_chart_versions_map.json"
+            "$GITHUB_WORKSPACE/fleet-manager/pkg/helm/data/otel_integration_chart_versions_map.json:$destination_dir/otel_integration_chart_versions_map.json"
+            "$RUNNER_TEMP/otel_integration_changelog.json:$destination_dir/otel_integration_changelog.json"
+            "$RUNNER_TEMP/otel_linux_standalone_changelog.json:$destination_dir/otel_linux_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_macos_standalone_changelog.json:$destination_dir/otel_macos_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_windows_standalone_changelog.json:$destination_dir/otel_windows_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json:$destination_dir/otel_linux_standalone_chart_versions_map.json"
+            "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json:$destination_dir/otel_windows_standalone_chart_versions_map.json"
+            "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json:$destination_dir/otel_macos_standalone_chart_versions_map.json"
+          )
+
+          changed_files=()
+          for mapping in "${mappings[@]}"; do
+            src="${mapping%%:*}"
+            dst_name="${mapping#*:}"
+            dst="$GITHUB_WORKSPACE/fleet-manager-helm-data/$dst_name"
 
             if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
               continue
@@ -341,4 +418,77 @@ jobs:
             --base "$FLEET_MANAGER_REF" \
             --head "$branch" \
             --title "Sync Fleet Manager artifacts from telemetry-shippers" \
+            --body-file "$pr_body"
+
+      - name: Commit, push, and create/update Fleet Manager Helm Data PR
+        if: steps.update_helm_data.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CREATE_PR: ${{ github.event_name != 'workflow_dispatch' || inputs.create_pr }}
+          FLEET_MANAGER_HELM_DATA_REPO: coralogix/fleet-manager-helm-data
+          FLEET_MANAGER_HELM_DATA_REF: master
+          INTEGRATION_CHART_VERSION: ${{ steps.detect.outputs.integration_chart_version }}
+          COLLECTOR_CHART_VERSION: ${{ steps.detect.outputs.collector_chart_version }}
+        run: |
+          set -euo pipefail
+
+          repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
+          branch="bot/sync-fleet-manager-artifacts"
+          changed_files="${{ steps.update_helm_data.outputs.changed_files }}"
+          destination_dir="${FLEET_MANAGER_HELM_DATA_DESTINATION_DIR#/}"
+          destination_dir="${destination_dir%/}"
+
+          read -r -a files <<< "$changed_files"
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No files to stage."
+            exit 0
+          fi
+
+          git -C "$repo_dir" add "${files[@]}"
+          if git -C "$repo_dir" diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          if [ "${CREATE_PR:-false}" != "true" ]; then
+            echo "CREATE_PR is false; skipping commit/push/PR. (Dry run complete.)"
+            echo ""
+            echo "Changed files in Fleet Manager Helm Data:"
+            git -C "$repo_dir" --no-pager diff --cached --stat
+            echo ""
+            echo "Full staged diff:"
+            git -C "$repo_dir" --no-pager diff --cached
+            exit 0
+          fi
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Missing GH_TOKEN secret"
+            exit 1
+          fi
+
+          git -C "$repo_dir" commit -m "Sync Fleet Manager artifacts from telemetry-shippers"
+          git -C "$repo_dir" push --force-with-lease -u origin "$branch"
+
+          existing_pr="$(gh pr list -R "$FLEET_MANAGER_HELM_DATA_REPO" --head "$branch" --state open --json number --jq '.[0].number')"
+          if [ -n "$existing_pr" ]; then
+            echo "PR already exists: #$existing_pr"
+            exit 0
+          fi
+
+          pr_body="$RUNNER_TEMP/fleet-manager-helm-data-sync-pr-body.md"
+          {
+            echo "Automated synchronization from telemetry-shippers."
+            echo ""
+            echo "## Helm data artifacts"
+            printf -- "- Destination directory: \`%s\`\n" "$destination_dir"
+            printf -- "- otel-integration chart: \`%s\`\n" "$INTEGRATION_CHART_VERSION"
+            printf -- "- opentelemetry-collector chart: \`%s\`\n" "$COLLECTOR_CHART_VERSION"
+            echo ""
+          } > "$pr_body"
+
+          gh pr create \
+            -R "$FLEET_MANAGER_HELM_DATA_REPO" \
+            --base "$FLEET_MANAGER_HELM_DATA_REF" \
+            --head "$branch" \
+            --title "Sync Fleet Manager Helm data from telemetry-shippers" \
             --body-file "$pr_body"
