@@ -2,6 +2,16 @@
 
 ## otel-macos-standalone
 
+### v0.0.26 / 2026-04-27
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.16
+
+#### Changes from opentelemetry-collector 0.130.16:
+- [Feat] Use `connection` pod association for profiling k8sattributes processor
+
+#### Changes from opentelemetry-collector 0.130.15:
+- [Fix] Use `syslog_parser` for macOS system log parsing logic.
+
 ### v0.0.25 / 2026-04-22
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.14

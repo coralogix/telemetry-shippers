@@ -121,14 +121,14 @@ exporters:
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.25
+        X-Coralogix-Distribution: helm-otel-macos/0.0.26
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.25
+        X-Coralogix-Distribution: helm-otel-macos/0.0.26
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.25
+        X-Coralogix-Distribution: helm-otel-macos/0.0.26
     subsystem_name: macos
     subsystem_name_attributes:
     - cx.subsystem.name
@@ -136,13 +136,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.25
+        X-Coralogix-Distribution: helm-otel-macos/0.0.26
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.25
+        X-Coralogix-Distribution: helm-otel-macos/0.0.26
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -166,7 +166,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.130.14
+        helm.chart.opentelemetry-agent.version: 0.130.16
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -429,29 +429,22 @@ receivers:
     multiline:
       line_start_pattern: ^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}
     operators:
-    - regex: ^(?P<timestamp>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>[^\s]+)\s+(?P<app>[A-Za-z0-9._-]+)(?:\[(?P<pid>\d+)\])?:\s+(?P<msg>[\s\S]*)$
-      type: regex_parser
-    - layout: Jan _2 15:04:05
-      layout_type: gotime
-      parse_from: attributes.timestamp
-      type: time_parser
-    - from: attributes.host
+    - allow_skip_pri_header: true
+      location: Local
+      protocol: rfc3164
+      type: syslog_parser
+    - from: attributes.message
+      to: body
+      type: move
+    - from: attributes.hostname
       to: resource["host.name"]
       type: move
-    - from: attributes.app
+    - from: attributes.appname
       to: resource["app"]
       type: move
     - from: resource["app"]
       to: resource["service.name"]
       type: copy
-    - from: attributes.pid
-      to: resource["process.pid"]
-      type: move
-    - field: attributes.timestamp
-      type: remove
-    - from: attributes.msg
-      to: body
-      type: move
     start_at: beginning
   hostmetrics:
     collection_interval: '30s'
