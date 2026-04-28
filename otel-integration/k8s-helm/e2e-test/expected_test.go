@@ -530,6 +530,7 @@ var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
 	"https://opentelemetry.io/schemas/1.39.0": false,
+	"https://opentelemetry.io/schemas/1.40.0": false,
 }
 
 var expectedLogsSchemaURL = map[string]bool{
