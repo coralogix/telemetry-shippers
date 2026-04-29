@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.302 / 2026-04-29
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.17
+
+#### Changes from opentelemetry-collector 0.130.17:
+- [Fix] Convert `supervisor.collector` wrapped collector logs into first-class log records when `presets.logsCollection.includeCollectorLogs` is enabled, preserving the nested collector severity, body, component attributes, and resource attributes instead of leaving them embedded in the outer `msg` string.
+
 ### v0.0.301 / 2026-04-27
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.16

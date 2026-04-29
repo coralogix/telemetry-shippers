@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.22 / 2026-04-29
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.17`.
+
+#### Changes from opentelemetry-collector 0.130.17:
+- [Fix] Convert `supervisor.collector` wrapped collector logs into first-class log records when `presets.logsCollection.includeCollectorLogs` is enabled, preserving the nested collector severity, body, component attributes, and resource attributes instead of leaving them embedded in the outer `msg` string.
+
 ### 0.0.21 / 2026-04-27
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.16`.
