@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.29 / 2026-04-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.0
+
+#### Changes from opentelemetry-collector 0.131.0:
+- [Feat] Bump OpenTelemetry Collector image to v0.151.0.
+
 ### v0.0.28 / 2026-04-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.18
