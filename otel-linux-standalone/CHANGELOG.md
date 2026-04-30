@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.28 / 2026-04-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.18
+
+#### Changes from opentelemetry-collector 0.130.18:
+- [Fix] Exclude `BOOKMARK` and `ERROR` watch event types from the `k8sobjects/resource_catalog` watch receivers used by the Kubernetes resource catalog presets, reducing non-actionable watch stream noise while preserving normal watch recovery behavior.
+
 ### v0.0.27 / 2026-04-29
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.17

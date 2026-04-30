@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.0.23 / 2026-04-30
+
+* [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.18`.
+
+#### Changes from opentelemetry-collector 0.130.18:
+- [Fix] Exclude `BOOKMARK` and `ERROR` watch event types from the `k8sobjects/resource_catalog` watch receivers used by the Kubernetes resource catalog presets, reducing non-actionable watch stream noise while preserving normal watch recovery behavior.
+
 ### 0.0.22 / 2026-04-29
 
 * [CHANGE] Update Helm dependency `opentelemetry-agent` to chart version `0.130.17`.
