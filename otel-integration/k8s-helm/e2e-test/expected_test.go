@@ -23,20 +23,19 @@ func cloneAndOverrideStringMap(src map[string]string, overrides map[string]strin
 }
 
 var expectedResourceScopeNames = map[string]bool{
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":        false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper":       false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper": false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper":       false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper":     false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper":    false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper":    false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver":                                   false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                     false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer":                                         false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor":                                false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor":                                       false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor":                                 false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor":                            false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":     false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper":    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper":    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper":  false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper": false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper": false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver":                                false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                  false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer":                                      false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor":                             false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor":                                    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor":                              false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor":                         false,
 	"spanmetricsconnector": false,
 
 	"go.opentelemetry.io/collector/exporter/exporterhelper":          false,
@@ -52,6 +51,7 @@ var (
 	unwantedScopeNames = map[string]struct{}{}
 	optionalScopeNames = map[string]struct{}{
 		"delta-to-cumulative-e2e": {},
+		"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper": {},
 	}
 )
 
