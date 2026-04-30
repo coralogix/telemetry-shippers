@@ -54,6 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLEET_MANAGER_HELM_DATA_DESTINATION_DIR: integration_releases
+      FLEET_MANAGER_HELM_DATA_DIR: ${{ github.workspace }}/fleet-manager-helm-data/integration_releases
     steps:
       - name: Checkout telemetry-shippers
         uses: actions/checkout@v4
@@ -213,10 +214,8 @@ jobs:
 
           if [ "${MAPPING_UPDATED:-false}" = "true" ]; then
             echo "updated=true" >> "$GITHUB_OUTPUT"
-            echo "changed_files=pkg/helm/data/collector_chart_versions_map.json pkg/helm/data/otel_integration_chart_versions_map.json" >> "$GITHUB_OUTPUT"
           else
             echo "updated=false" >> "$GITHUB_OUTPUT"
-            echo "changed_files=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Copy artifacts to Fleet Manager Helm Data
@@ -232,8 +231,6 @@ jobs:
           fi
 
           mappings=(
-            "$GITHUB_WORKSPACE/fleet-manager/pkg/helm/data/collector_chart_versions_map.json:$destination_dir/collector_chart_versions_map.json"
-            "$GITHUB_WORKSPACE/fleet-manager/pkg/helm/data/otel_integration_chart_versions_map.json:$destination_dir/otel_integration_chart_versions_map.json"
             "$RUNNER_TEMP/otel_integration_changelog.json:$destination_dir/otel_integration_changelog.json"
             "$RUNNER_TEMP/otel_linux_standalone_changelog.json:$destination_dir/otel_linux_standalone_changelog.json"
             "$RUNNER_TEMP/otel_macos_standalone_changelog.json:$destination_dir/otel_macos_standalone_changelog.json"
@@ -255,8 +252,9 @@ jobs:
 
             mkdir -p "$(dirname "$dst")"
             cp "$src" "$dst"
-            changed_files+=("$dst_name")
           done
+
+          read -r -a changed_files <<< "$(git -C "$GITHUB_WORKSPACE/fleet-manager-helm-data" diff --name-only -- "$destination_dir" | tr '\n' ' ')"
 
           if [ "${#changed_files[@]}" -eq 0 ]; then
             echo "updated=false" >> "$GITHUB_OUTPUT"

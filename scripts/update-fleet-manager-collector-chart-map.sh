@@ -185,13 +185,15 @@ fi
 
 add_mapping_script="$fleet_manager_dir/scripts/add-chart-version-mapping.sh"
 mapping_updated="false"
+map_dir="${FLEET_MANAGER_HELM_DATA_DIR:-pkg/helm/data}"
+map_dir="${map_dir%/}"
 
 # Helper: call add-chart-version-mapping.sh and handle "already exists" gracefully.
 # Runs from inside the fleet-manager dir so relative paths resolve correctly.
 run_add_mapping() {
-  local map_type="$1" from_version="$2" to_version="$3"
+  local map_type="$1" map_file="$2" from_version="$3" to_version="$4"
   set +e
-  output="$(cd "$fleet_manager_dir" && "$add_mapping_script" --map "$map_type" "$from_version" "$to_version" 2>&1)"
+  output="$(cd "$fleet_manager_dir" && "$add_mapping_script" --map "$map_type" "$map_file" "$from_version" "$to_version" 2>&1)"
   status=$?
   set -e
 
@@ -210,11 +212,11 @@ run_add_mapping() {
 
 # ── otel-integration mapping ───────────────────────────────────────────
 echo "--- otel-integration mapping: $integration_chart_version -> $chart_version ---"
-run_add_mapping otel-integration "$integration_chart_version" "$chart_version"
+run_add_mapping otel-integration "$map_dir/otel_integration_chart_versions_map.json" "$integration_chart_version" "$chart_version"
 
 # ── collector mapping ──────────────────────────────────────────────────
 echo "--- collector mapping: $chart_version -> $app_version ---"
-run_add_mapping collector "$chart_version" "$app_version"
+run_add_mapping collector "$map_dir/collector_chart_versions_map.json" "$chart_version" "$app_version"
 
 # ── summary ────────────────────────────────────────────────────────────
 echo "Fleet Manager working dir: $fleet_manager_dir"
