@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0 - 2026-03-30
+
+- [chore] Bump Collector and Supervisor to version 0.151.0.
+
 ## v0.3.0 - 2026-03-16
 
 - [feat] Use Coralogix' Supervisor fork with support for fallback configuration.
