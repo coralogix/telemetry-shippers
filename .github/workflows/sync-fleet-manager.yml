@@ -264,6 +264,18 @@ jobs:
           destination_dir="${FLEET_MANAGER_HELM_DATA_DESTINATION_DIR#/}"
           destination_dir="${destination_dir%/}"
 
+          enable_auto_merge() {
+            local pr_number="$1"
+            local head_sha="$2"
+
+            echo "Enabling auto-merge with squash strategy for PR #$pr_number"
+            gh pr merge "$pr_number" \
+              -R "$FLEET_MANAGER_HELM_DATA_REPO" \
+              --auto \
+              --match-head-commit "$head_sha" \
+              --squash
+          }
+
           read -r -a files <<< "$changed_files"
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No files to stage."
@@ -294,10 +306,12 @@ jobs:
 
           git -C "$repo_dir" commit -m "Sync Fleet Manager artifacts from telemetry-shippers"
           git -C "$repo_dir" push --force-with-lease -u origin "$branch"
+          pushed_head_sha="$(git -C "$repo_dir" rev-parse HEAD)"
 
           existing_pr="$(gh pr list -R "$FLEET_MANAGER_HELM_DATA_REPO" --head "$branch" --state open --json number --jq '.[0].number')"
           if [ -n "$existing_pr" ]; then
             echo "PR already exists: #$existing_pr"
+            enable_auto_merge "$existing_pr" "$pushed_head_sha"
             exit 0
           fi
 
@@ -313,9 +327,11 @@ jobs:
             echo "Dumb ticket reference to pass build: CX-39963."
           } > "$pr_body"
 
-          gh pr create \
+          created_pr_url="$(gh pr create \
             -R "$FLEET_MANAGER_HELM_DATA_REPO" \
             --base "$FLEET_MANAGER_HELM_DATA_REF" \
             --head "$branch" \
             --title "Sync Fleet Manager Helm data from telemetry-shippers" \
-            --body-file "$pr_body"
+            --body-file "$pr_body")"
+
+          enable_auto_merge "$created_pr_url" "$pushed_head_sha"
