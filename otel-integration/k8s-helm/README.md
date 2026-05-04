@@ -1440,7 +1440,7 @@ opentelemetry-ebpf-profiler:
 
   presets:
     resourceDetection:
-      enabled: true
+      enabled: false
     ebpfProfiler:
       enabled: true
     otlpExporter:

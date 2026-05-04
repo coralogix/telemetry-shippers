@@ -6,6 +6,7 @@
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.1
 - [Breaking] eBPF profiler profiles are now sent through the node-local agent `profilesCollection` pipeline for Kubernetes enrichment and Coralogix export. Previously, the profiler sent profiles directly to Coralogix, so installations that customize the profiler or agent profile pipeline should update their configuration to route profiles through the agent.
+- [Fix] Keep the eBPF profiler resource detection preset disabled; forwarded profiles are enriched by the node-local agent instead.
 
 #### Changes from opentelemetry-collector 0.131.1:
 - [Feat] Support forwarding eBPF profiler profiles to the node-local agent with the `otlpExporter` preset.
