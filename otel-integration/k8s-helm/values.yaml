@@ -874,6 +874,7 @@ coralogix-ebpf-profiler:
 opentelemetry-ebpf-profiler:
   enabled: false
   mode: daemonset
+  fullnameOverride: coralogix-opentelemetry-ebpf-profiler
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
       valueFrom:
@@ -893,6 +894,8 @@ opentelemetry-ebpf-profiler:
       enabled: true
 
   presets:
+    resourceDetection:
+      enabled: false
     ebpfProfiler:
       enabled: true
     fleetManagement:
