@@ -179,7 +179,6 @@ jobs:
           output_env="$RUNNER_TEMP/fleet-manager-output.env"
           args=(
             --chart-file otel-integration/k8s-helm/Chart.yaml
-            --fleet-manager-dir "$GITHUB_WORKSPACE/fleet-manager"
             --output-env "$output_env"
             --integration-chart-version "$INTEGRATION_CHART_VERSION"
             --chart-version "$COLLECTOR_CHART_VERSION"
