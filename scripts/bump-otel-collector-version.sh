@@ -247,8 +247,7 @@ update_changelog() {
   local change_line="- [Chore] Bump chart dependency to opentelemetry-collector ${NEW_VERSION}"
 
   if [[ "$chart" == "otel-ecs-ec2" ]]; then
-    header_version="${new_chart_version}"
-    change_line="* [CHANGE] Update Helm dependency \`opentelemetry-agent\` to chart version \`${NEW_VERSION}\`."
+    change_line="- [Change] Update Helm dependency \`opentelemetry-agent\` to chart version \`${NEW_VERSION}\`."
   fi
   
   echo "### ${header_version} / ${today}" > "$entry_file"
