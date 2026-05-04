@@ -31,16 +31,6 @@ on:
         description: "Override collector appVersion (skips helm lookup)"
         type: string
         required: false
-      fleet_manager_repo:
-        description: "Fleet Manager repo in owner/repo format"
-        type: string
-        default: "coralogix/fleet-manager"
-        required: false
-      fleet_manager_ref:
-        description: "Fleet Manager ref (branch/tag/SHA)"
-        type: string
-        default: "master"
-        required: false
       create_pr:
         description: "If true, create commit/push and open PR in Fleet Manager Helm Data"
         type: boolean
@@ -148,15 +138,6 @@ jobs:
       - name: Set up Helm
         if: steps.detect.outputs.bumped == 'true'
         uses: azure/setup-helm@v4
-
-      - name: Checkout Fleet Manager
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.fleet_manager_repo || 'coralogix/fleet-manager' }}
-          ref: ${{ inputs.fleet_manager_ref || 'master' }}
-          path: fleet-manager
-          fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
 
       - name: Checkout Fleet Manager Helm Data
         uses: actions/checkout@v4
