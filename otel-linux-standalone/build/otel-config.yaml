@@ -394,9 +394,6 @@ processors:
       - delete_key(resource.attributes, "process.runtime.version")
       - delete_key(resource.attributes, "telemetry.distro.name")
       - delete_key(resource.attributes, "telemetry.distro.version")
-      - delete_key(resource.attributes, "telemetry.sdk.language")
-      - delete_key(resource.attributes, "telemetry.sdk.name")
-      - delete_key(resource.attributes, "telemetry.sdk.version")
     metric_statements:
     - context: metric
       statements:
@@ -462,9 +459,6 @@ processors:
       - delete_key(resource.attributes, "net.host.port")
       - delete_key(resource.attributes, "telemetry.distro.name")
       - delete_key(resource.attributes, "telemetry.distro.version")
-      - delete_key(resource.attributes, "telemetry.sdk.language")
-      - delete_key(resource.attributes, "telemetry.sdk.name")
-      - delete_key(resource.attributes, "telemetry.sdk.version")
     trace_statements:
     - context: span
       statements:
