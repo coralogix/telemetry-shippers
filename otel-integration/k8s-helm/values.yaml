@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.304"
+  version: "0.0.305"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -272,6 +272,18 @@ opentelemetry-agent:
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
+    # Configures the agent to receive eBPF profiler profiles from the node-local
+    # profiler collector and enrich them with Kubernetes metadata before export.
+    profilesCollection:
+      enabled: true
+      serviceLabels:
+        - tag_name: service.label
+          key: app.kubernetes.io/name
+          from: pod
+      serviceAnnotations:
+        - tag_name: service.annotation
+          key: app.coralogix.com/service
+          from: pod
     # Configures the collector to receive StatsD metrics.
     # Adds the statsd receiver to the metrics pipeline.
     statsdReceiver:
@@ -883,8 +895,6 @@ opentelemetry-ebpf-profiler:
   presets:
     ebpfProfiler:
       enabled: true
-    profilesK8sAttributes:
-      enabled: true
     fleetManagement:
       enabled: true
       agentType: "ebpf-profiler"
@@ -894,7 +904,11 @@ opentelemetry-ebpf-profiler:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     otlpExporter:
-      enabled: false
+      enabled: true
+      endpoint: ${env:K8S_NODE_IP}:4317
+      pipelines: ["profiles"]
+      tls:
+        insecure: true
     otlpReceiver:
       enabled: false
     collectorMetrics:
@@ -909,12 +923,6 @@ opentelemetry-ebpf-profiler:
           cx.agent.type: "ebpf-profiler"
         logs:
           level: "{{ .Values.global.logLevel }}"
-      pipelines:
-        profiles:
-          exporters:
-            - debug
-          processors:
-            - memory_limiter
 
 opentelemetry-ebpf-instrumentation:
   enabled: false

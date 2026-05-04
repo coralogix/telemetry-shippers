@@ -2,6 +2,17 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.305 / 2026-05-04
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.1
+- [Breaking] eBPF profiler profiles are now sent through the node-local agent `profilesCollection` pipeline for Kubernetes enrichment and Coralogix export. Previously, the profiler sent profiles directly to Coralogix, so installations that customize the profiler or agent profile pipeline should update their configuration to route profiles through the agent.
+
+#### Changes from opentelemetry-collector 0.131.1:
+- [Feat] Support forwarding eBPF profiler profiles to the node-local agent with the `otlpExporter` preset.
+- [Feat] Add the `x-coralogix-ingress: otlp/v1.10.0` header to Coralogix profile exports.
+- [Fix] Split profile Kubernetes pod association so `container.id` matching is attempted before falling back to connection metadata.
+- [Fix] Scope profile Kubernetes RBAC to the presets that configure `k8sattributes/profiles` and keep OTLP ports controlled by values.
+
 ### v0.0.304 / 2026-04-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.0
