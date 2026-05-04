@@ -1,0 +1,27 @@
+# Expectations for the otel-ecs-ec2 chart E2E.
+# Adds aws.ecs.* attributes that the chart's coralogix exporter should attach
+# (regression target: v0.129.5 changed `aws.ecs.cluster` to `aws.ecs.cluster.name`).
+
+logs:
+  min_count: 1
+  required_attributes:
+    - aws.ecs.cluster.name
+    - service.name
+    - e2e.run_id
+
+traces:
+  min_count: 1
+  required_attributes:
+    - service.name
+    - e2e.run_id
+
+metrics:
+  min_count: 1
+  required_labels:
+    - cx_application_name
+    - cx_subsystem_name
+    - aws_ecs_cluster_name
+    - e2e_run_id
+
+collector_health:
+  max_send_failures: 0
