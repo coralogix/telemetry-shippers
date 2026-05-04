@@ -310,6 +310,7 @@ jobs:
             printf -- "- otel-integration chart: \`%s\`\n" "$INTEGRATION_CHART_VERSION"
             printf -- "- opentelemetry-collector chart: \`%s\`\n" "$COLLECTOR_CHART_VERSION"
             echo ""
+            echo "Dumb ticket reference to pass build: CX-39963."
           } > "$pr_body"
 
           gh pr create \
