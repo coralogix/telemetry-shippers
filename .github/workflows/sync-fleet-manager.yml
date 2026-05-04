@@ -7,6 +7,8 @@ on:
     paths:
       - otel-integration/k8s-helm/Chart.yaml
       - otel-integration/CHANGELOG.md
+      - otel-ecs-ec2/Chart.yaml
+      - otel-ecs-ec2/CHANGELOG.md
       - otel-linux-standalone/Chart.yaml
       - otel-linux-standalone/CHANGELOG.md
       - otel-macos-standalone/Chart.yaml
@@ -120,6 +122,7 @@ jobs:
         run: |
           go run ./cmd/helmlog validate \
             otel-integration/CHANGELOG.md \
+            otel-ecs-ec2/CHANGELOG.md \
             otel-linux-standalone/CHANGELOG.md \
             otel-macos-standalone/CHANGELOG.md \
             otel-windows-standalone/CHANGELOG.md
@@ -128,6 +131,7 @@ jobs:
         run: |
           set -euo pipefail
           go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_integration_changelog.json"                 otel-integration/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_ecs_ec2_changelog.json"                     otel-ecs-ec2/CHANGELOG.md
           go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_linux_standalone_changelog.json"            otel-linux-standalone/CHANGELOG.md
           go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_macos_standalone_changelog.json"            otel-macos-standalone/CHANGELOG.md
           go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_windows_standalone_changelog.json"          otel-windows-standalone/CHANGELOG.md
@@ -212,6 +216,7 @@ jobs:
 
           mappings=(
             "$RUNNER_TEMP/otel_integration_changelog.json:$destination_dir/otel_integration_changelog.json"
+            "$RUNNER_TEMP/otel_ecs_ec2_changelog.json:$destination_dir/otel_ecs_ec2_changelog.json"
             "$RUNNER_TEMP/otel_linux_standalone_changelog.json:$destination_dir/otel_linux_standalone_changelog.json"
             "$RUNNER_TEMP/otel_macos_standalone_changelog.json:$destination_dir/otel_macos_standalone_changelog.json"
             "$RUNNER_TEMP/otel_windows_standalone_changelog.json:$destination_dir/otel_windows_standalone_changelog.json"
