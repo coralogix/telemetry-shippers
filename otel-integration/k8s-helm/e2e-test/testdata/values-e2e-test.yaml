@@ -20,6 +20,8 @@ opentelemetry-agent:
       collectionInterval: "30s"
     spanMetrics:
       enabled: true
+    profilesCollection:
+      enabled: false
   config:
     exporters:
       debug:
