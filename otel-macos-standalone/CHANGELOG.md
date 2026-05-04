@@ -2,6 +2,19 @@
 
 ## otel-macos-standalone
 
+### v0.0.30 / 2026-05-04
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.1
+
+#### Changes from opentelemetry-collector 0.131.1:
+- [Feat] Support forwarding eBPF profiler profiles to a node-local agent with the `otlpExporter` preset, keeping Kubernetes attributes and profile service-name mapping on the standard agent collector.
+- [Feat] Add the `x-coralogix-ingress: otlp/v1.10.0` header to Coralogix profile exports.
+- [Fix] Match profile Kubernetes attributes by `container.id` before falling back to connection-based pod association.
+- [Fix] Scope profile Kubernetes RBAC to the presets that configure `k8sattributes/profiles` and keep OTLP ports controlled by values.
+
+#### Changes from opentelemetry-collector 0.131.0:
+- [Feat] Bump OpenTelemetry Collector image to v0.151.0.
+
 ### v0.0.29 / 2026-04-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.0
