@@ -239,7 +239,9 @@ jobs:
             cp "$src" "$dst"
           done
 
-          read -r -a changed_files <<< "$(git -C "$GITHUB_WORKSPACE/fleet-manager-helm-data" diff --name-only -- "$destination_dir" | tr '\n' ' ')"
+          mapfile -t changed_files < <(
+            git -C "$GITHUB_WORKSPACE/fleet-manager-helm-data" ls-files --modified --others --exclude-standard -- "$destination_dir"
+          )
 
           if [ "${#changed_files[@]}" -eq 0 ]; then
             echo "updated=false" >> "$GITHUB_OUTPUT"
