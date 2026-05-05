@@ -130,14 +130,15 @@ jobs:
       - name: Generate changelog artifacts (json)
         run: |
           set -euo pipefail
-          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_integration_changelog.json"                 otel-integration/CHANGELOG.md
-          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_ecs_ec2_changelog.json"                     otel-ecs-ec2/CHANGELOG.md
-          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_linux_standalone_changelog.json"            otel-linux-standalone/CHANGELOG.md
-          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_macos_standalone_changelog.json"            otel-macos-standalone/CHANGELOG.md
-          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_windows_standalone_changelog.json"          otel-windows-standalone/CHANGELOG.md
-          go run ./cmd/helmlog os-mapping --output "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json"   --os linux
-          go run ./cmd/helmlog os-mapping --output "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json" --os windows
-          go run ./cmd/helmlog os-mapping --output "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json"   --os macos
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_integration_changelog.json"                    otel-integration/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_ecs_ec2_changelog.json"                        otel-ecs-ec2/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_linux_standalone_changelog.json"               otel-linux-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_macos_standalone_changelog.json"               otel-macos-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_windows_standalone_changelog.json"             otel-windows-standalone/CHANGELOG.md
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_ecs_ec2_chart_versions_map.json"            otel-ecs-ec2/Chart.yaml
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json"   otel-linux-standalone/Chart.yaml
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json" otel-windows-standalone/Chart.yaml
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json"   otel-macos-standalone/Chart.yaml
 
       - name: Set up Helm
         if: steps.detect.outputs.bumped == 'true'
@@ -220,6 +221,7 @@ jobs:
             "$RUNNER_TEMP/otel_linux_standalone_changelog.json:$destination_dir/otel_linux_standalone_changelog.json"
             "$RUNNER_TEMP/otel_macos_standalone_changelog.json:$destination_dir/otel_macos_standalone_changelog.json"
             "$RUNNER_TEMP/otel_windows_standalone_changelog.json:$destination_dir/otel_windows_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_ecs_ec2_chart_versions_map.json:$destination_dir/otel_ecs_ec2_chart_versions_map.json"
             "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json:$destination_dir/otel_linux_standalone_chart_versions_map.json"
             "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json:$destination_dir/otel_windows_standalone_chart_versions_map.json"
             "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json:$destination_dir/otel_macos_standalone_chart_versions_map.json"

@@ -54,11 +54,11 @@ type parseError struct {
 	Line           string
 }
 
-type osMappingResult struct {
-	Mappings []osMappingEntry `json:"mappings"`
+type chartMappingResult struct {
+	Mappings []chartMappingEntry `json:"mappings"`
 }
 
-type osMappingEntry struct {
+type chartMappingEntry struct {
 	ChartVersion          string `json:"chart_version"`
 	CollectorChartVersion string `json:"collector_chart_version"`
 }
@@ -89,26 +89,24 @@ func newRootCmd() *cobra.Command {
 
 	rootCmd.AddCommand(newValidateCmd())
 	rootCmd.AddCommand(newGenerateCmd())
-	rootCmd.AddCommand(newOSMappingCmd())
+	rootCmd.AddCommand(newChartMappingCmd())
 
 	return rootCmd
 }
 
-func newOSMappingCmd() *cobra.Command {
-	osFlag := "linux"
+func newChartMappingCmd() *cobra.Command {
 	outputPath := ""
 	historyRef := "HEAD"
 
 	cmd := &cobra.Command{
-		Use:   "os-mapping [os]",
-		Short: "Generate chart to collector version mapping for one OS",
-		Args:  cobra.NoArgs,
+		Use:   "chart-mapping <Chart.yaml>",
+		Short: "Generate chart to collector version mapping for one chart",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			return runOSMapping(osFlag, outputPath, historyRef)
+			return runChartMapping(args[0], outputPath, historyRef)
 		},
 	}
 
-	cmd.Flags().StringVar(&osFlag, "os", "linux", "Target OS (linux|macos|windows; aliases: mac,darwin,win)")
 	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (defaults to stdout)")
 	cmd.Flags().StringVar(&historyRef, "ref", "HEAD", "Git ref whose history will be scanned")
 
@@ -192,31 +190,34 @@ func runGenerate(changelogPath, outputPath string) error {
 	return nil
 }
 
-func runOSMapping(inputOS, outputPath, historyRef string) error {
-	normalizedOS, err := normalizeOS(inputOS)
-	if err != nil {
-		return err
-	}
-
+func runChartMapping(chartFile, outputPath, historyRef string) error {
 	repoRoot, err := gitRepoRoot()
 	if err != nil {
 		return err
 	}
 
-	chartFile := filepath.Join(fmt.Sprintf("otel-%s-standalone", normalizedOS), "Chart.yaml")
-	if _, err := os.Stat(filepath.Join(repoRoot, chartFile)); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("ERROR: chart file not found for OS %q: %s", normalizedOS, chartFile)
-		}
-		return fmt.Errorf("ERROR: failed to access chart file %s: %w", chartFile, err)
-	}
+	return runChartMappingWithRepoRoot(repoRoot, chartFile, outputPath, historyRef)
+}
 
-	result, err := buildOSMapping(repoRoot, chartFile, historyRef)
+func runChartMappingWithRepoRoot(repoRoot, chartFile, outputPath, historyRef string) error {
+	chartFile, err := repoRelativeChartFile(repoRoot, chartFile)
 	if err != nil {
 		return err
 	}
 
-	output, err := marshalOSMappingJSON(result)
+	if _, err := os.Stat(filepath.Join(repoRoot, chartFile)); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("ERROR: chart file not found: %s", chartFile)
+		}
+		return fmt.Errorf("ERROR: failed to access chart file %s: %w", chartFile, err)
+	}
+
+	result, err := buildChartMapping(repoRoot, chartFile, historyRef)
+	if err != nil {
+		return err
+	}
+
+	output, err := marshalChartMappingJSON(result)
 	if err != nil {
 		return err
 	}
@@ -237,13 +238,35 @@ func runOSMapping(inputOS, outputPath, historyRef string) error {
 	return nil
 }
 
-func buildOSMapping(repoRoot, chartFile, historyRef string) (osMappingResult, error) {
-	hashes, err := gitHistoryHashesForPath(repoRoot, historyRef, chartFile)
-	if err != nil {
-		return osMappingResult{}, err
+func repoRelativeChartFile(repoRoot, chartFile string) (string, error) {
+	chartFile = strings.TrimSpace(chartFile)
+	if chartFile == "" {
+		return "", errors.New("ERROR: chart file path is required")
 	}
 
-	result := osMappingResult{Mappings: make([]osMappingEntry, 0)}
+	if filepath.IsAbs(chartFile) {
+		relativePath, err := filepath.Rel(repoRoot, chartFile)
+		if err != nil {
+			return "", fmt.Errorf("ERROR: failed to resolve chart file path %s: %w", chartFile, err)
+		}
+		chartFile = relativePath
+	}
+
+	chartFile = filepath.Clean(chartFile)
+	if chartFile == "." || strings.HasPrefix(chartFile, ".."+string(os.PathSeparator)) || chartFile == ".." {
+		return "", fmt.Errorf("ERROR: chart file must be inside repository: %s", chartFile)
+	}
+
+	return chartFile, nil
+}
+
+func buildChartMapping(repoRoot, chartFile, historyRef string) (chartMappingResult, error) {
+	hashes, err := gitHistoryHashesForPath(repoRoot, historyRef, chartFile)
+	if err != nil {
+		return chartMappingResult{}, err
+	}
+
+	result := chartMappingResult{Mappings: make([]chartMappingEntry, 0)}
 	deduplicationMap := map[string]string{}
 	orderKeeper := []string{}
 	for _, hash := range hashes {
@@ -269,7 +292,7 @@ func buildOSMapping(repoRoot, chartFile, historyRef string) (osMappingResult, er
 	}
 
 	for _, chartVersion := range orderKeeper {
-		result.Mappings = append(result.Mappings, osMappingEntry{
+		result.Mappings = append(result.Mappings, chartMappingEntry{
 			ChartVersion:          chartVersion,
 			CollectorChartVersion: deduplicationMap[chartVersion],
 		})
@@ -295,19 +318,6 @@ func gitHistoryHashesForPath(repoRoot, historyRef, chartFile string) ([]string, 
 	}
 
 	return hashes, nil
-}
-
-func normalizeOS(value string) (string, error) {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "", "linux":
-		return "linux", nil
-	case "macos", "mac", "darwin":
-		return "macos", nil
-	case "windows", "win":
-		return "windows", nil
-	default:
-		return "", fmt.Errorf("ERROR: unsupported OS %q (supported: linux, macos|mac|darwin, windows|win)", value)
-	}
 }
 
 func gitRepoRoot() (string, error) {
@@ -402,7 +412,7 @@ func normalizeYAMLScalar(value string) string {
 	return value
 }
 
-func marshalOSMappingJSON(mapping osMappingResult) ([]byte, error) {
+func marshalChartMappingJSON(mapping chartMappingResult) ([]byte, error) {
 	output, err := json.MarshalIndent(mapping, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: failed to encode json: %w", err)
