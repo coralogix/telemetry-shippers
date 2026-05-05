@@ -32,6 +32,7 @@ jobs:
         filters: |
           otel-changelog-validation:
             - 'otel-integration/CHANGELOG.md'
+            - 'otel-ecs-ec2/CHANGELOG.md'
             - 'otel-linux-standalone/CHANGELOG.md'
             - 'otel-macos-standalone/CHANGELOG.md'
             - 'otel-windows-standalone/CHANGELOG.md'
@@ -45,6 +46,7 @@ jobs:
       run: |
         go run ./cmd/helmlog validate \
           otel-integration/CHANGELOG.md \
+          otel-ecs-ec2/CHANGELOG.md \
           otel-linux-standalone/CHANGELOG.md \
           otel-macos-standalone/CHANGELOG.md \
           otel-windows-standalone/CHANGELOG.md
