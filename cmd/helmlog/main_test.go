@@ -211,42 +211,6 @@ func TestValidateReleaseDateUsesLocalCalendarDay(t *testing.T) {
 	}
 }
 
-func TestNormalizeOS(t *testing.T) {
-	tests := []struct {
-		name    string
-		input   string
-		want    string
-		wantErr bool
-	}{
-		{name: "default linux", input: "", want: "linux"},
-		{name: "linux", input: "linux", want: "linux"},
-		{name: "mac alias", input: "mac", want: "macos"},
-		{name: "darwin alias", input: "darwin", want: "macos"},
-		{name: "windows alias", input: "win", want: "windows"},
-		{name: "unsupported", input: "solaris", wantErr: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := normalizeOS(tt.input)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("normalizeOS(%q) error = nil, want error", tt.input)
-				}
-				return
-			}
-
-			if err != nil {
-				t.Fatalf("normalizeOS(%q) error = %v", tt.input, err)
-			}
-
-			if got != tt.want {
-				t.Fatalf("normalizeOS(%q) = %q, want %q", tt.input, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestExtractVersionsFromChart(t *testing.T) {
 	chart := `apiVersion: v2
 name: linux-standalone
@@ -307,20 +271,20 @@ dependencies:
 	}
 }
 
-func TestMarshalOSMappingJSON(t *testing.T) {
-	mapping := osMappingResult{
-		Mappings: []osMappingEntry{
+func TestMarshalChartMappingJSON(t *testing.T) {
+	mapping := chartMappingResult{
+		Mappings: []chartMappingEntry{
 			{ChartVersion: "0.0.18", CollectorChartVersion: "0.130.4"},
 			{ChartVersion: "0.0.17", CollectorChartVersion: "0.129.2"},
 		},
 	}
 
-	output, err := marshalOSMappingJSON(mapping)
+	output, err := marshalChartMappingJSON(mapping)
 	if err != nil {
-		t.Fatalf("marshalOSMappingJSON() error = %v", err)
+		t.Fatalf("marshalChartMappingJSON() error = %v", err)
 	}
 
-	var got osMappingResult
+	var got chartMappingResult
 	if err := json.Unmarshal(output, &got); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
@@ -334,15 +298,15 @@ func TestMarshalOSMappingJSON(t *testing.T) {
 	}
 }
 
-func TestBuildOSMappingLimitsHistoryToTargetRef(t *testing.T) {
-	repoRoot := setupOSMappingTestRepo(t)
+func TestBuildChartMappingLimitsHistoryToTargetRef(t *testing.T) {
+	repoRoot := setupChartMappingTestRepo(t, filepath.Join("otel-linux-standalone", "Chart.yaml"))
 
-	mainResult, err := buildOSMapping(repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), "HEAD")
+	mainResult, err := buildChartMapping(repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), "HEAD")
 	if err != nil {
-		t.Fatalf("buildOSMapping(HEAD) error = %v", err)
+		t.Fatalf("buildChartMapping(HEAD) error = %v", err)
 	}
 
-	wantMain := []osMappingEntry{
+	wantMain := []chartMappingEntry{
 		{ChartVersion: "0.0.2", CollectorChartVersion: "0.101.0"},
 		{ChartVersion: "0.0.1", CollectorChartVersion: "0.100.0"},
 	}
@@ -351,15 +315,15 @@ func TestBuildOSMappingLimitsHistoryToTargetRef(t *testing.T) {
 	}
 }
 
-func TestBuildOSMappingSupportsExplicitRef(t *testing.T) {
-	repoRoot := setupOSMappingTestRepo(t)
+func TestBuildChartMappingSupportsExplicitRef(t *testing.T) {
+	repoRoot := setupChartMappingTestRepo(t, filepath.Join("otel-linux-standalone", "Chart.yaml"))
 
-	featureResult, err := buildOSMapping(repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), "feature")
+	featureResult, err := buildChartMapping(repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), "feature")
 	if err != nil {
-		t.Fatalf("buildOSMapping(feature) error = %v", err)
+		t.Fatalf("buildChartMapping(feature) error = %v", err)
 	}
 
-	wantFeature := []osMappingEntry{
+	wantFeature := []chartMappingEntry{
 		{ChartVersion: "0.9.9", CollectorChartVersion: "9.9.9"},
 		{ChartVersion: "0.0.1", CollectorChartVersion: "0.100.0"},
 	}
@@ -368,18 +332,18 @@ func TestBuildOSMappingSupportsExplicitRef(t *testing.T) {
 	}
 }
 
-func TestBuildOSMappingKeepsNewestDuplicateChartVersion(t *testing.T) {
-	repoRoot := setupOSMappingTestRepo(t)
+func TestBuildChartMappingKeepsNewestDuplicateChartVersion(t *testing.T) {
+	repoRoot := setupChartMappingTestRepo(t, filepath.Join("otel-linux-standalone", "Chart.yaml"))
 
 	writeTestChart(t, repoRoot, "0.0.2", "0.099.0")
 	runTestGit(t, repoRoot, "commit", "-am", "main rollback collector for same chart version")
 
-	result, err := buildOSMapping(repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), "HEAD")
+	result, err := buildChartMapping(repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), "HEAD")
 	if err != nil {
-		t.Fatalf("buildOSMapping(HEAD) error = %v", err)
+		t.Fatalf("buildChartMapping(HEAD) error = %v", err)
 	}
 
-	want := []osMappingEntry{
+	want := []chartMappingEntry{
 		{ChartVersion: "0.0.2", CollectorChartVersion: "0.099.0"},
 		{ChartVersion: "0.0.1", CollectorChartVersion: "0.100.0"},
 	}
@@ -388,10 +352,38 @@ func TestBuildOSMappingKeepsNewestDuplicateChartVersion(t *testing.T) {
 	}
 }
 
-func setupOSMappingTestRepo(t *testing.T) string {
+func TestRunChartMappingSupportsArbitraryChartPath(t *testing.T) {
+	repoRoot := setupChartMappingTestRepo(t, filepath.Join("otel-ecs-ec2", "Chart.yaml"))
+	t.Chdir(repoRoot)
+
+	outputPath := filepath.Join(repoRoot, "otel_ecs_ec2_chart_versions_map.json")
+	if err := runChartMapping(filepath.Join(repoRoot, "otel-ecs-ec2", "Chart.yaml"), outputPath, "HEAD"); err != nil {
+		t.Fatalf("runChartMapping() error = %v", err)
+	}
+
+	output, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("os.ReadFile() error = %v", err)
+	}
+
+	var got chartMappingResult
+	if err := json.Unmarshal(output, &got); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+
+	want := []chartMappingEntry{
+		{ChartVersion: "0.0.2", CollectorChartVersion: "0.101.0"},
+		{ChartVersion: "0.0.1", CollectorChartVersion: "0.100.0"},
+	}
+	if !reflect.DeepEqual(got.Mappings, want) {
+		t.Fatalf("mappings = %#v, want %#v", got.Mappings, want)
+	}
+}
+
+func setupChartMappingTestRepo(t *testing.T, chartPath string) string {
 	t.Helper()
 
-	repoRoot, err := os.MkdirTemp(".", "os-mapping-test-")
+	repoRoot, err := os.MkdirTemp(".", "chart-mapping-test-")
 	if err != nil {
 		t.Fatalf("os.MkdirTemp() error = %v", err)
 	}
@@ -407,25 +399,29 @@ func setupOSMappingTestRepo(t *testing.T) string {
 
 	runTestGit(t, repoRoot, "init", "-b", "main")
 
-	writeTestChart(t, repoRoot, "0.0.1", "0.100.0")
-	runTestGit(t, repoRoot, "add", "otel-linux-standalone/Chart.yaml")
+	writeTestChartAt(t, repoRoot, chartPath, "0.0.1", "0.100.0")
+	runTestGit(t, repoRoot, "add", chartPath)
 	runTestGit(t, repoRoot, "commit", "-m", "main base")
 
 	runTestGit(t, repoRoot, "checkout", "-b", "feature")
-	writeTestChart(t, repoRoot, "0.9.9", "9.9.9")
+	writeTestChartAt(t, repoRoot, chartPath, "0.9.9", "9.9.9")
 	runTestGit(t, repoRoot, "commit", "-am", "feature only")
 
 	runTestGit(t, repoRoot, "checkout", "main")
-	writeTestChart(t, repoRoot, "0.0.2", "0.101.0")
+	writeTestChartAt(t, repoRoot, chartPath, "0.0.2", "0.101.0")
 	runTestGit(t, repoRoot, "commit", "-am", "main update")
 
 	return repoRoot
 }
 
 func writeTestChart(t *testing.T, repoRoot, chartVersion, collectorVersion string) {
+	writeTestChartAt(t, repoRoot, filepath.Join("otel-linux-standalone", "Chart.yaml"), chartVersion, collectorVersion)
+}
+
+func writeTestChartAt(t *testing.T, repoRoot, chartPath, chartVersion, collectorVersion string) {
 	t.Helper()
 
-	chartPath := filepath.Join(repoRoot, "otel-linux-standalone", "Chart.yaml")
+	chartPath = filepath.Join(repoRoot, chartPath)
 	if err := os.MkdirAll(filepath.Dir(chartPath), 0o755); err != nil {
 		t.Fatalf("os.MkdirAll() error = %v", err)
 	}
