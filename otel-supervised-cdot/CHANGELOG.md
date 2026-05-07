@@ -2,7 +2,7 @@
 
 ## v0.0.4 - 2026-05-07
 
-- [change] Bump CDOT version to 0.5.12
+- [Chore] Bump CDOT to version 0.5.12 and Supervisor to version 0.151.0.
 
 ## v0.0.3 - 2026-03-16
 
