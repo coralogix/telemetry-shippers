@@ -1,6 +1,6 @@
 # OpenTelemetry Supervised Collector
 
-This repository contains a containerized OpenTelemetry Collector with the Coralogix OpAMP Supervisor.
+This repository contains a containerized OpenTelemetry Collector with the [Coralogix OpAMP Supervisor](https://github.com/coralogix/opentelemetry-collector-contrib/tree/main/cmd/opampsupervisor).
 
 ## Prerequisites
 
@@ -47,14 +47,14 @@ testing purposes and are not part of the released image.
 
 ### Configuration variables
 
-| Variable             | Description                            | Default                      |
-|----------------------|----------------------------------------|------------------------------|
+| Variable             | Description                            | Default                               |
+|----------------------|----------------------------------------|---------------------------------------|
 | `IMAGE_NAME`         | Container image name                   | `coralogix-otel-supervised-collector` |
-| `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)` |
-| `SUPERVISOR_VERSION` | CX OpAMP Supervisor version            | `$(cat SUPERVISOR_VERSION)`  |
-| `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | `$(cat COLLECTOR_VERSION)`   |
-| `REGISTRY`           | Container registry (optional)          | (empty)                      |
-| `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`    |
+| `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)`        |
+| `SUPERVISOR_VERSION` | CX OpAMP Supervisor version            | `$(cat SUPERVISOR_VERSION)`           |
+| `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | `$(cat COLLECTOR_VERSION)`            |
+| `REGISTRY`           | Container registry (optional)          | (empty)                               |
+| `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`             |
 
 ### Available targets
 
