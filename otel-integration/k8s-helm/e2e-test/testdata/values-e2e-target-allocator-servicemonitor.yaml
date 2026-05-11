@@ -37,7 +37,7 @@ opentelemetry-agent:
     allocationStrategy: "per-node"
     prometheusCR:
       enabled: true
-      scrapeInterval: 30s
+      scrapeInterval: 10s
 
   config:
     exporters:
