@@ -7,7 +7,9 @@ on:
     branches:
       - master
     paths:
-    - 'otel-supervised-collector/CURRENT_VERSION'
+    - 'otel-supervised-collector/CURRENT_IMAGE_VERSION'
+    - 'otel-supervised-collector/COLLECTOR_VERSION'
+    - 'otel-supervised-collector/SUPERVISOR_VERSION'
 
 jobs:
   trigger-release:
@@ -38,19 +40,29 @@ jobs:
 
           echo "Comparing versions between $BEFORE_SHA and HEAD"
 
-          # Get previous version
-          git show "$BEFORE_SHA":otel-supervised-collector/CURRENT_VERSION > old_ver 2>/dev/null || echo "" > old_ver
+          # Get previous versions
+          git show "$BEFORE_SHA":otel-supervised-collector/CURRENT_IMAGE_VERSION > old_image_ver 2>/dev/null || echo "" > old_image_ver
+          git show "$BEFORE_SHA":otel-supervised-collector/COLLECTOR_VERSION > old_collector_ver 2>/dev/null || echo "" > old_collector_ver
+          git show "$BEFORE_SHA":otel-supervised-collector/SUPERVISOR_VERSION > old_supervisor_ver 2>/dev/null || echo "" > old_supervisor_ver
 
-          # Get current version
-          cat otel-supervised-collector/CURRENT_VERSION > new_ver
+          # Get current versions
+          cat otel-supervised-collector/CURRENT_IMAGE_VERSION > new_image_ver
+          cat otel-supervised-collector/COLLECTOR_VERSION > new_collector_ver
+          cat otel-supervised-collector/SUPERVISOR_VERSION > new_supervisor_ver
 
           # Compare stripping all whitespace
-          OLD=$(tr -d '[:space:]' < old_ver)
-          NEW=$(tr -d '[:space:]' < new_ver)
+          OLD_IMAGE=$(tr -d '[:space:]' < old_image_ver)
+          OLD_COLLECTOR=$(tr -d '[:space:]' < old_collector_ver)
+          NEW_COLLECTOR=$(tr -d '[:space:]' < new_collector_ver)
+          NEW_IMAGE=$(tr -d '[:space:]' < new_image_ver)
+          OLD_SUPERVISOR=$(tr -d '[:space:]' < old_supervisor_ver)
+          NEW_SUPERVISOR=$(tr -d '[:space:]' < new_supervisor_ver)
 
-          if [ "$OLD" != "$NEW" ]; then
+          if [ "$OLD_IMAGE" != "$NEW_IMAGE" ] || [ "$OLD_COLLECTOR" != "$NEW_COLLECTOR" ] || [ "$OLD_SUPERVISOR" != "$NEW_SUPERVISOR" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Version changed from '$OLD' to '$NEW'"
+            echo "Image version changed from '$OLD_IMAGE' to '$NEW_IMAGE'"
+            echo "Collector version changed from '$OLD_COLLECTOR' to '$NEW_COLLECTOR'"
+            echo "Supervisor version changed from '$OLD_SUPERVISOR' to '$NEW_SUPERVISOR'"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No version change detected (ignoring whitespace)"

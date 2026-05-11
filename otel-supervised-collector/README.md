@@ -1,6 +1,6 @@
 # OpenTelemetry Supervised Collector
 
-This repository contains a containerized OpenTelemetry Collector with OpAMP supervision support.
+This repository contains a containerized OpenTelemetry Collector with the Coralogix OpAMP Supervisor.
 
 ## Prerequisites
 
@@ -9,18 +9,8 @@ This repository contains a containerized OpenTelemetry Collector with OpAMP supe
 
 ## Release
 
-> [!CAUTION]
-> This image is in alpha stage and under heavy development. It's not recommended
-> for use in production environments. Support will be provided only when it reaches
-> a stable release.
-
-The container image is built and pushed to Docker Hub via GitHub Actions.
-Images are available at [Docker Hub](https://hub.docker.com/r/coralogixrepo/otel-supervised-collector)
-and are tagged with the OpenTelemetry Collector version in the following format:
-
-```
-coralogixrepo/otel-supervised-collector:0.141.0
-```
+The container image is built and pushed to the Coralogix container image repository via GitHub Actions.
+Images are available at cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-collector.
 
 ### Supported platforms
 
@@ -59,10 +49,10 @@ testing purposes and are not part of the released image.
 
 | Variable             | Description                            | Default                      |
 |----------------------|----------------------------------------|------------------------------|
-| `IMAGE_NAME`         | Container image name                   | `otel-supervised-collector`  |
-| `IMAGE_TAG`          | Container image tag                    | `latest`                     |
-| `SUPERVISOR_VERSION` | OpAMP Supervisor version               | `$(cat CURRENT_VERSION)`     |
-| `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | Same as `SUPERVISOR_VERSION` |
+| `IMAGE_NAME`         | Container image name                   | `coralogix-otel-supervised-collector` |
+| `IMAGE_TAG`          | Container image tag                    | `$(cat CURRENT_IMAGE_VERSION)` |
+| `SUPERVISOR_VERSION` | CX OpAMP Supervisor version            | `$(cat SUPERVISOR_VERSION)`  |
+| `COLLECTOR_VERSION`  | OpenTelemetry Collector version        | `$(cat COLLECTOR_VERSION)`   |
 | `REGISTRY`           | Container registry (optional)          | (empty)                      |
 | `PLATFORMS`          | Target platforms for multi-arch builds | `linux/amd64,linux/arm64`    |
 
@@ -86,13 +76,13 @@ make build
 #### Build with a custom OpenTelemetry Collector version
 
 ```bash
-make build COLLECTOR_VERSION=$(cat CURRENT_VERSION)
+make build COLLECTOR_VERSION=$(cat COLLECTOR_VERSION)
 ```
 
 #### Build with a custom OpAMP Supervisor version
 
 ```bash
-make build SUPERVISOR_VERSION=$(cat CURRENT_VERSION)
+make build SUPERVISOR_VERSION=$(cat SUPERVISOR_VERSION)
 ```
 
 #### Build with custom image tag
@@ -102,7 +92,7 @@ make build SUPERVISOR_VERSION=$(cat CURRENT_VERSION)
 make build IMAGE_TAG=v1.0.0
 
 # Build with all custom settings
-make build IMAGE_TAG=v1.0.0 IMAGE_NAME=supervised-collector COLLECTOR_VERSION=$(cat CURRENT_VERSION)
+make build IMAGE_TAG=v1.0.0 IMAGE_NAME=supervised-collector COLLECTOR_VERSION=$(cat COLLECTOR_VERSION) SUPERVISOR_VERSION=$(cat SUPERVISOR_VERSION)
 ```
 
 #### Multi-Architecture Builds
@@ -115,7 +105,7 @@ make build-multiarch
 make build-multiarch PLATFORMS=linux/amd64,linux/arm64,linux/arm/v7
 
 # Build multi-arch with specific OTEL version and push
-make build-multiarch-push COLLECTOR_VERSION=$(cat CURRENT_VERSION)
+make build-multiarch-push COLLECTOR_VERSION=$(cat COLLECTOR_VERSION)
 ```
 
 > **Note:**

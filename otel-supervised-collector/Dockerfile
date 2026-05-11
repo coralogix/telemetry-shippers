@@ -1,4 +1,4 @@
-# Version args must be provided (e.g., via Makefile which reads CURRENT_VERSION)
+# Version args must be provided (e.g., via Makefile which reads version files)
 ARG COLLECTOR_VERSION
 ARG SUPERVISOR_VERSION
 
