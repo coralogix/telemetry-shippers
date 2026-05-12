@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/coralogix/telemetry-shippers/main/otel-integration/k8s-helm/otel-agent-collector-config.schema.json",
+  "$id": "https://raw.githubusercontent.com/coralogix/telemetry-shippers/main/fleet-schemas/0.147.0-contrib.schema.json",
   "title": "OpenTelemetry Agent Collector Config",
   "description": "Reduced OpenTelemetry Collector schema for the otel-integration agent render path. Defaults are taken from the rendered agent preset configuration in otel-integration/k8s-helm/values.yaml.",
   "type": "object",
