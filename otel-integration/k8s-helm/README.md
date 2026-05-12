@@ -367,9 +367,9 @@ opentelemetry-agent:
 
 #### Tune resource catalog Coralogix exporter queue and batching
 
-At the moment, this queue tuning applies to the Coralogix exporter used by the resource catalog pipeline. Use it when you need the resource catalog exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](../../../developer-portal/apis/limitations/index.md).
+At the moment, this queue tuning applies to the Coralogix exporter used by the resource catalog pipeline. Use it when you need the resource catalog exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
 
-``` yaml
+```yaml
 opentelemetry-agent:
   presets:
     coralogixResourceCatalogExporter:
