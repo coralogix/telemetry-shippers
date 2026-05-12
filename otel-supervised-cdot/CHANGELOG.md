@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.5 - 2026-05-12
+
+- [Chore] Bump Supervisor to version 0.151.1.
+
 ## v0.0.4 - 2026-05-07
 
 - [Chore] Bump CDOT to version 0.5.12 and Supervisor to version 0.151.0.
