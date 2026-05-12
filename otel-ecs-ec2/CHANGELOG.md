@@ -1,5 +1,21 @@
 # Changelog
 
+### v0.0.25 / 2026-05-12
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.2`.
+
+#### Changes from opentelemetry-collector 0.131.2:
+- [Feat] Enable `presets.coralogixExporter.keepalive` preset for Coralogix exporter by default.
+
+#### Changes from opentelemetry-collector 0.131.1:
+- [Feat] Support forwarding eBPF profiler profiles to a node-local agent with the `otlpExporter` preset, keeping Kubernetes attributes and profile service-name mapping on the standard agent collector.
+- [Feat] Add the `x-coralogix-ingress: otlp/v1.10.0` header to Coralogix profile exports.
+- [Fix] Match profile Kubernetes attributes by `container.id` before falling back to connection-based pod association.
+- [Fix] Scope profile Kubernetes RBAC to the presets that configure `k8sattributes/profiles` and keep OTLP ports controlled by values.
+
+#### Changes from opentelemetry-collector 0.131.0:
+- [Feat] Bump OpenTelemetry Collector image to v0.151.0.
+
 ### v0.0.24 / 2026-05-07
 
 * [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.12` (aligned in Helm values, example manifest, Terraform `image_version` default, and Makefile `CDOT_IMAGE` default).
