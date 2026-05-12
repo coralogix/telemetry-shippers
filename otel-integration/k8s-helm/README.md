@@ -258,7 +258,7 @@ helm upgrade --install otel-integration \
 
 ### Enabling dependent charts
 
-The **OpenTelemetry Agent** is primarily used for collecting application telemetry, while the **OpenTelemetry Cluster Collector** is primarily used to collect cluster-level data. Depending on your requirements, you can either use the default configuration that enables both components, or you can choose to disable either of them by modifying the `enabled` flag in the `values.yaml` file under the `opentelemetry-agent` or `opentelemetry-cluster-collector` section as shown below:
+The **OpenTelemetry Agent** is primarily used for collecting application telemetry, while the **OpenTelemetry Cluster Collector** is primarily used to collect cluster-level data. Depending on your requirements, you can either use the default configuration that enables both components, or you can select to disable either of them by modifying the `enabled` flag in the `values.yaml` file under the `opentelemetry-agent` or `opentelemetry-cluster-collector` section as shown below:
 
 ```yaml
 ...
@@ -364,6 +364,50 @@ opentelemetry-agent:
           exporters:
             - coralogix
 ```
+
+#### Tune resource catalog Coralogix exporter queue and batching
+
+At the moment, this queue tuning applies to the Coralogix exporter used by the resource catalog pipeline. Use it when you need the resource catalog exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
+
+```yaml
+opentelemetry-agent:
+  presets:
+    coralogixResourceCatalogExporter:
+      sendingQueue:
+        enabled: true
+        sizer: bytes
+        queueSize: 209715200
+        numConsumers: 20
+        batch:
+          flushTimeout: 250ms
+          minSize: 1048576
+          maxSize: 2097152
+          sizer: bytes
+```
+
+To tune only resource catalog traffic, override these values under `presets.coralogixResourceCatalogExporter.sendingQueue`.
+
+Start with the default values and tune based on queue behavior:
+
+- If the queue size grows during short downstream slowdowns and then returns to normal, the current settings are usually sufficient.
+- If the queue size keeps growing during normal traffic, increase `numConsumers` so the exporter can drain the queue faster.
+- If the queue size spikes during bursts or short backend slowdowns and data starts dropping, increase `queueSize` to add more buffer.
+- If enqueue failures continue after increasing `queueSize`, increase `numConsumers` as well.
+
+- Increase `queueSize` when brief backend slowdowns or bursts are causing queue pressure or dropped exports.
+- Increase `numConsumers` when the queue does not drain fast enough under sustained steady-state load.
+- Keep `batch.minSize` at `1048576` bytes and `batch.maxSize` at `2097152` bytes unless Coralogix changes the recommendation.
+- Remember that larger byte queues increase collector memory usage.
+
+Watch these exporter metrics after deployment:
+
+- `otelcol_exporter_queue_size`: Shows the current queue occupancy. If it grows during short slowdowns and then returns to normal, the current settings are usually sufficient.
+- `otelcol_exporter_queue_capacity`: Shows the configured queue capacity. Compare it with `otelcol_exporter_queue_size` to see how close the queue gets to its limit.
+- `otelcol_exporter_enqueue_failed_*`: Shows data that could not enter the queue. If this increases, the queue is too small, the exporter is draining too slowly, or both.
+- `otelcol_exporter_send_failed_*`: Shows failed send attempts to the destination. If this increases together with queue growth, the backend or network path is likely the bottleneck.
+- `otelcol_exporter_queue_batch_send_size_bytes`: Shows the size of requests entering the exporter queue. Use it to understand the request size distribution, not as a direct measure of per-consumer throughput.
+
+Watch queue growth, drain behavior, and exporter errors to confirm the new values are working as expected.
 
 ## OpenTelemetry Agent
 
