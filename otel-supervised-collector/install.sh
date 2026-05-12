@@ -1,9 +1,10 @@
 #!/bin/sh
 set -eu
 
-DEFAULT_VERSION=""
-SUPERVISOR_VERSION=""
-COLLECTOR_VERSION=""
+DEFAULT_COLLECTOR_VERSION=""
+DEFAULT_SUPERVISOR_VERSION=""
+SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-}"
+COLLECTOR_VERSION="${COLLECTOR_VERSION:-}"
 OTEL_COLLECTOR_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
 SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-collector-releases/releases"
 SUPERVISOR_CORALOGIX_MIN_VERSION="0.146.0"
@@ -70,11 +71,12 @@ get_supervisor_release_url_prefix() {
 }
 
 fetch_default_version() {
-  version_url="https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-supervised-collector/CURRENT_VERSION"
-  version=$(curl -fsSL "$version_url") || fail "Unable to fetch default version from $version_url. Set VERSION and rerun to skip fetching."
+  version_file="$1"
+  version_url="https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-supervised-collector/${version_file}"
+  version=$(curl -fsSL "$version_url") || fail "Unable to fetch default version from $version_url. Set VERSION or ${version_file} and rerun to skip fetching."
   version=$(printf "%s" "$version" | tr -d '[:space:]')
   if [ -z "$version" ]; then
-    fail "Fetched default version is empty from $version_url. Set VERSION and rerun to skip fetching."
+    fail "Fetched default version is empty from $version_url. Set VERSION or ${version_file} and rerun to skip fetching."
   fi
   printf "%s" "$version"
 }
@@ -97,6 +99,7 @@ check_arch() {
 
 detect_pkg_type() {
   if [ -r /etc/os-release ]; then
+    # shellcheck source=/dev/null
     . /etc/os-release
     base="${ID_LIKE:-$ID}"
     case "$base" in
@@ -296,9 +299,16 @@ main() {
   require_cmd curl
   require_cmd awk
 
-  DEFAULT_VERSION="${VERSION:-$(fetch_default_version)}"
-  SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_VERSION}"
-  COLLECTOR_VERSION="${COLLECTOR_VERSION:-$SUPERVISOR_VERSION}"
+  if [ -n "${VERSION:-}" ]; then
+    DEFAULT_SUPERVISOR_VERSION="$VERSION"
+    DEFAULT_COLLECTOR_VERSION="$VERSION"
+  else
+    DEFAULT_SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$(fetch_default_version SUPERVISOR_VERSION)}"
+    DEFAULT_COLLECTOR_VERSION="${COLLECTOR_VERSION:-$(fetch_default_version COLLECTOR_VERSION)}"
+  fi
+
+  SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_SUPERVISOR_VERSION}"
+  COLLECTOR_VERSION="${COLLECTOR_VERSION:-$DEFAULT_COLLECTOR_VERSION}"
 
   check_arch
   ensure_sudo

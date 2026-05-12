@@ -55,12 +55,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set image version
-        id: set-image-version
+      - name: Set image versions
+        id: set-image-versions
         run: |
-          version=$(cat ./otel-supervised-collector/CURRENT_VERSION | tr -d '[:space:]')
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "Detected collector version: ${version}"
+          image_version=$(cat ./otel-supervised-collector/CURRENT_IMAGE_VERSION | tr -d '[:space:]')
+          collector_version=$(cat ./otel-supervised-collector/COLLECTOR_VERSION | tr -d '[:space:]')
+          supervisor_version=$(cat ./otel-supervised-collector/SUPERVISOR_VERSION | tr -d '[:space:]')
+          {
+            echo "image_version=${image_version}"
+            echo "collector_version=${collector_version}"
+            echo "supervisor_version=${supervisor_version}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Detected image version: ${image_version}"
+          echo "Detected collector version: ${collector_version}"
+          echo "Detected supervisor version: ${supervisor_version}"
 
       - name: Build and Push Supervised Collector Image
         uses: docker/build-push-action@v5
@@ -69,9 +77,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event.inputs.push_image == 'true' }}
           build-args: |
-            COLLECTOR_VERSION=${{ steps.set-image-version.outputs.version }}
-            SUPERVISOR_VERSION=${{ steps.set-image-version.outputs.version }}
+            COLLECTOR_VERSION=${{ steps.set-image-versions.outputs.collector_version }}
+            SUPERVISOR_VERSION=${{ steps.set-image-versions.outputs.supervisor_version }}
           tags: |
-            ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-version.outputs.version }}
+            ${{ env.REGISTRY_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.set-image-versions.outputs.image_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

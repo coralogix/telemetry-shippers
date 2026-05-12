@@ -2,9 +2,9 @@
 
 # Default values
 IMAGE_NAME ?= coralogix-otel-supervised-collector
-IMAGE_TAG ?= latest
-SUPERVISOR_VERSION ?= $(shell cat CURRENT_VERSION)
-COLLECTOR_VERSION ?= $(SUPERVISOR_VERSION)
+IMAGE_TAG ?= $(shell tr -d '[:space:]' < CURRENT_IMAGE_VERSION)
+SUPERVISOR_VERSION ?= $(shell tr -d '[:space:]' < SUPERVISOR_VERSION)
+COLLECTOR_VERSION ?= $(shell tr -d '[:space:]' < COLLECTOR_VERSION)
 PLATFORMS ?= linux/amd64,linux/arm64
 
 # Docker build arguments
@@ -47,10 +47,10 @@ help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ''
 	@echo 'Variables:'
-	@echo '  IMAGE_NAME             Docker image name (default: otel-supervised-collector)'
-	@echo '  IMAGE_TAG              Docker image tag (default: latest)'
-	@echo '  COLLECTOR_VERSION      OpenTelemetry Collector version (default: contents of CURRENT_VERSION)'
-	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: contents of CURRENT_VERSION)'
+	@echo '  IMAGE_NAME             Docker image name (default: coralogix-otel-supervised-collector)'
+	@echo '  IMAGE_TAG              Docker image tag (default: contents of CURRENT_IMAGE_VERSION)'
+	@echo '  COLLECTOR_VERSION      OpenTelemetry Collector version (default: contents of COLLECTOR_VERSION)'
+	@echo '  SUPERVISOR_VERSION     OpAMP Supervisor version (default: contents of SUPERVISOR_VERSION)'
 	@echo '  PLATFORMS              Target platforms for multi-arch builds (default: linux/amd64,linux/arm64)'
 	@echo ''
 	@echo 'Examples:'
