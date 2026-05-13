@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.0 - 2026-05-13
+
+- [chore] Bump Supervisor to version 0.151.2.
+- [chore] Align versioning with other Supervisor-based images.
+
 ## v0.0.5 - 2026-05-12
 
 - [Chore] Bump Supervisor to version 0.151.1.

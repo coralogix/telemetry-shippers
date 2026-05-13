@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.0 - 2026-05-13
+
+- [chore] Bump Supervisor to version 0.151.2.
+
 ## v0.5.0 - 2026-05-12
 
 - [chore] Bump Supervisor to version 0.151.1.
