@@ -365,14 +365,14 @@ opentelemetry-agent:
             - coralogix
 ```
 
-#### Tune resource catalog Coralogix exporter queue and batching
+#### Coralogix exporter sending queue and batching
 
-At the moment, this queue tuning applies to the Coralogix exporter used by the resource catalog pipeline. Use it when you need the resource catalog exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
+The ``presets.coralogixExporter.sendingQueue` exposes sending-queue and batch settings.
 
 ```yaml
 opentelemetry-agent:
   presets:
-    coralogixResourceCatalogExporter:
+    coralogixExporter:
       sendingQueue:
         enabled: true
         sizer: bytes
@@ -385,19 +385,20 @@ opentelemetry-agent:
           sizer: bytes
 ```
 
-To tune only resource catalog traffic, override these values under `presets.coralogixResourceCatalogExporter.sendingQueue`.
+Same settings can be applied to `coralogixResourceCatalogExporter` preset.
 
-Start with the default values and tune based on queue behavior:
+Memory and oversized payloads:
 
-- If the queue size grows during short downstream slowdowns and then returns to normal, the current settings are usually sufficient.
-- If the queue size keeps growing during normal traffic, increase `numConsumers` so the exporter can drain the queue faster.
-- If the queue size spikes during bursts or short backend slowdowns and data starts dropping, increase `queueSize` to add more buffer.
-- If enqueue failures continue after increasing `queueSize`, increase `numConsumers` as well.
+- A larger byte-backed queue and bigger batches hold more data in process. If you raise `queueSize`, `batch.maxSize`, or `numConsumers`, **raise Pod memory requests and limits** as needed so the collector does not OOM under load.
+- With byte sizing, **any single item larger than `batch.maxSize` cannot be batched into an exportable unit**. Telemetry that exceeds the limit can be dropped or fail to export (for example very large log bodies or spans).
 
-- Increase `queueSize` when brief backend slowdowns or bursts are causing queue pressure or dropped exports.
-- Increase `numConsumers` when the queue does not drain fast enough under sustained steady-state load.
-- Keep `batch.minSize` at `1048576` bytes and `batch.maxSize` at `2097152` bytes unless Coralogix changes the recommendation.
-- Remember that larger byte queues increase collector memory usage.
+Start with the chart defaults and tune from queue behavior and metrics:
+
+- If the queue grows during short downstream slowdowns and then recovers, settings are usually fine.
+- If the queue keeps growing under normal traffic, increase `numConsumers` so the exporter drains faster.
+- If bursts or short backend slowdowns spike the queue and exports drop, increase `queueSize`; if enqueue failures persist, raise `numConsumers` as well.
+- If the queue does not drain fast enough under steady load, increase `numConsumers`.
+- Keep `batch.minSize` / `batch.maxSize` aligned with [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/); the sample values above are illustrative.
 
 Watch these exporter metrics after deployment:
 
@@ -646,6 +647,8 @@ The Coralogix Resource Catalog can be used to monitor the various resource types
 This preset enables the scrape of the Kubernetes API to populate your Kubernetes resource inventory. It uses the `k8sobjects` receiver and collects objects as defined in this configuration, uses a processor to enrich the collected objects, and exports it with a customized `coralogix/resource_catalog` exporter.
 
 This preset needs to be enabled only in the cluster-collector configuration.
+
+To tune the exporter queue and batches for this pipeline, set `presets.coralogixResourceCatalogExporter.sendingQueue` on `opentelemetry-cluster-collector` (see [Resource catalog exporter queue and batching](#resource-catalog-exporter-queue-and-batching)).
 
 ```yaml
   presets:
