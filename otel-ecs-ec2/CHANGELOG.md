@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.26 / 2026-05-13
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.3`.
+
+#### Changes from opentelemetry-collector 0.131.3:
+- [Breaking] Enable byte-sized batching for the Coralogix exporter sending queue by default. The collector can now consume more memory. See the [Coralogix exporter sending queue and batching](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#coralogix-exporter-sending-queue-and-batching) documentation for details.
+
 ### v0.0.25 / 2026-05-12
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.2`.
