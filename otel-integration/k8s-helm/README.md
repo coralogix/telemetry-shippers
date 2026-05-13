@@ -369,6 +369,8 @@ opentelemetry-agent:
 
 The ``presets.coralogixExporter.sendingQueue` exposes sending-queue and batch settings.
 
+Use it when you need the resource catalog exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
+
 ```yaml
 opentelemetry-agent:
   presets:
