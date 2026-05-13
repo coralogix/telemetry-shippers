@@ -367,9 +367,9 @@ opentelemetry-agent:
 
 #### Coralogix exporter sending queue and batching
 
-The ``presets.coralogixExporter.sendingQueue` exposes sending-queue and batch settings.
+The `presets.coralogixExporter.sendingQueue` exposes sending-queue and batch settings.
 
-Use it when you need the resource catalog exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
+Use it when you need the coralogix exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
 
 ```yaml
 opentelemetry-agent:
@@ -387,7 +387,7 @@ opentelemetry-agent:
           sizer: bytes
 ```
 
-Same settings can be applied to `coralogixResourceCatalogExporter` preset.
+The same settings can be applied to `coralogixResourceCatalogExporter` preset, which is used to send data for the resource catalog.
 
 Memory and oversized payloads:
 
@@ -650,7 +650,7 @@ This preset enables the scrape of the Kubernetes API to populate your Kubernetes
 
 This preset needs to be enabled only in the cluster-collector configuration.
 
-To tune the exporter queue and batches for this pipeline, set `presets.coralogixResourceCatalogExporter.sendingQueue` on `opentelemetry-cluster-collector` (see [Resource catalog exporter queue and batching](#resource-catalog-exporter-queue-and-batching)).
+To tune the exporter queue and batches for this pipeline, set `presets.coralogixResourceCatalogExporter.sendingQueue` on `opentelemetry-cluster-collector` (see [Coralogix exporter sending queue and batching](#coralogix-exporter-sending-queue-and-batching)).
 
 ```yaml
   presets:
