@@ -2,9 +2,18 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.309 / 2026-05-14
+### v0.0.310 / 2026-05-14
 
 - [Breaking] Enable database sanitization for spans by default when span metrics are generated. See the [About span metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#about-span-metrics) documentation for details.
+
+### v0.0.309 / 2026-05-14
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.4
+
+#### Changes from opentelemetry-collector 0.131.4:
+- [Feat] Unify versioning of all Supervisor-based images and control it from `presets.fleetManagement.supervisor.imageVersion`. Top-level `image.tag` overrides has priority over this.
+- [Feat] Upgrade image used by the Supervisor preset to the latest Coralogix Supervised Collector images, v0.6.0.
+- [Feat] Add optional `presets.fleetManagement.supervisor.objstoreConfig` support to create and mount a Thanos Objstore ConfigMap, which will be used by the Supervisor.
 
 ### v0.0.308 / 2026-05-13
 

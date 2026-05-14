@@ -16,7 +16,7 @@ YQ ?= yq
 
 .PHONY: all otel-config otel-config-ebpf manifest manifest-ebpf
 
-all: otel-config manifest
+all: otel-config otel-config-ebpf manifest manifest-ebpf
 
 # Render only the OpenTelemetry config (no Kubernetes wrapper)
 otel-config:
