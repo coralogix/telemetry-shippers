@@ -1740,7 +1740,6 @@ opentelemetry-agent:
       sanitizeDatabases: []
 ```
 
-
 In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
 
 ```yaml

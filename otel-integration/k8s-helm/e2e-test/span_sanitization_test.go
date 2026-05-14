@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -77,11 +76,19 @@ func TestE2E_SpanSanitization(t *testing.T) {
 
 	waitForTraces(t, 1, tracesConsumer)
 
-	assertSanitizedTraces(t, tracesConsumer.AllTraces(), expectations)
+	assertSanitizedTraces(t, tracesConsumer, expectations)
 	assertSanitizedSpanMetrics(t, metricsConsumer, expectations)
 }
 
-func assertSanitizedTraces(t *testing.T, batches []ptrace.Traces, expectations []spanSanitizationExpectation) {
+func assertSanitizedTraces(t *testing.T, tracesConsumer *consumertest.TracesSink, expectations []spanSanitizationExpectation) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		return sanitizedTracesPresent(t, tracesConsumer.AllTraces(), expectations)
+	}, 2*time.Minute, 2*time.Second, "sanitized traces not observed in time")
+}
+
+func sanitizedTracesPresent(t *testing.T, batches []ptrace.Traces, expectations []spanSanitizationExpectation) bool {
 	t.Helper()
 
 	serviceSpanNames := map[string]map[string]struct{}{}
@@ -117,11 +124,19 @@ func assertSanitizedTraces(t *testing.T, batches []ptrace.Traces, expectations [
 
 	for _, exp := range expectations {
 		names, ok := serviceSpanNames[exp.serviceName]
-		require.Truef(t, ok, "no spans received for service %s", exp.serviceName)
+		if !ok {
+			t.Logf("trace for service %s not yet observed", exp.serviceName)
+			return false
+		}
 
 		_, hasExpected := names[exp.sanitizedName]
-		assert.Truef(t, hasExpected, "sanitized span name %q not found for service %s (found: %v)", exp.sanitizedName, exp.serviceName, mapKeysFromSet(names))
+		if !hasExpected {
+			t.Logf("sanitized span name %q for service %s not yet observed (found: %v)", exp.sanitizedName, exp.serviceName, mapKeysFromSet(names))
+			return false
+		}
 	}
+
+	return true
 }
 
 func mapKeysFromSet(m map[string]struct{}) []string {
