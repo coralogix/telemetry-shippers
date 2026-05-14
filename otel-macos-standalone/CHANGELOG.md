@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.31 / 2026-05-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.3
+
+#### Changes from opentelemetry-collector 0.131.3:
+- [Breaking] Enable byte-sized batching for the Coralogix exporter sending queue by default. The collector can now consume more memory. See the [Coralogix exporter sending queue and batching](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#coralogix-exporter-sending-queue-and-batching) documentation for details.
+
 ### v0.0.30 / 2026-05-12
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.2
