@@ -78,6 +78,7 @@ declare -a TEST_CONFIGS=(
     "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
+    "TestE2E_SpanSanitization:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
 )
 
 # Parse command line arguments

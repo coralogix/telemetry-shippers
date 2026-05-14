@@ -1706,6 +1706,41 @@ This feature is enabled by default and can be disabled by setting the `spanmetri
 
 Beware that enabling the feature will result in creation of additional metrics. Depending on how you instrument your applications, this can result in a significant increase in the number of metrics. This is especially true for cases where the span name includes specific values, such as user IDs or UUIDs. Such instrumentation practice is [strongly discouraged](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#span).
 
+To reduce this risk, the chart also enables **span metrics sanitization** automatically when `spanMetrics` or `spanMetricsMulti` is enabled. This wires the collector redaction processor into trace pipelines before span-to-metric conversion.
+
+Sanitization matters because span metrics use span names and span attributes as metric dimensions. If those fields contain raw IDs, URLs, SQL statements, Redis commands, Mongo queries, or OpenSearch/Elasticsearch request bodies, the span metrics connector can emit a new time series for each unique value. That causes three problems:
+
+- Metric cardinality grows very quickly, which increases cost and memory usage.
+- Aggregated request/error/duration metrics become fragmented across many near-unique series.
+- Database metrics become harder to use because query text or command payloads dominate the dimensions instead of stable operation names.
+
+By default, span metrics sanitization:
+
+- Normalizes URL-like span names and HTTP URL attributes when `sanitize_url: true`.
+- Sanitizes database statements and commands for `sql`, `redis`, `memcached`, `mongo`, `opensearch`, and `es`.
+- Applies database span name sanitization only when the span carries `db.system` or `db.system.name`, so non-database spans are not rewritten accidentally.
+
+If your instrumentation is already stable, or if you need raw values for troubleshooting, you can disable the feature entirely:
+
+```yaml
+opentelemetry-agent:
+  presets:
+    spanMetricsSanitization:
+      enabled: false
+```
+
+You can also disable only part of it:
+
+```yaml
+opentelemetry-agent:
+  presets:
+    spanMetricsSanitization:
+      enabled: true
+      sanitize_url: false
+      sanitizeDatabases: []
+```
+
+
 In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
 
 ```yaml
