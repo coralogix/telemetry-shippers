@@ -1,5 +1,14 @@
 # Changelog
 
+### v0.0.27 / 2026-05-14
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.4`.
+
+#### Changes from opentelemetry-collector 0.131.4:
+- [Feat] Unify versioning of all Supervisor-based images and control it from `presets.fleetManagement.supervisor.imageVersion`. Top-level `image.tag` overrides has priority over this.
+- [Feat] Upgrade image used by the Supervisor preset to the latest Coralogix Supervised Collector images, v0.6.0.
+- [Feat] Add optional `presets.fleetManagement.supervisor.objstoreConfig` support to create and mount a Thanos Objstore ConfigMap, which will be used by the Supervisor.
+
 ### v0.0.26 / 2026-05-13
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.3`.
