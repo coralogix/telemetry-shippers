@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.28 / 2026-05-18
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.5`.
+
+#### Changes from opentelemetry-collector 0.131.5:
+- [Fix] Switch the `kubernetesAttributes` preset to `k8sattributes.extract.deployment_name_from_replicaset: true`, keeping `k8s.deployment.name` extraction while removing the extra `transform/k8s_attributes` workaround processor.
+
 ### v0.0.27 / 2026-05-14
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.4`.
