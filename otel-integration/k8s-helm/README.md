@@ -1720,6 +1720,8 @@ By default, span metrics sanitization:
 - Sanitizes database statements and commands for `sql`, `redis`, `memcached`, `mongo`, `opensearch`, and `es`.
 - Applies database span name sanitization only when the span carries `db.system` or `db.system.name`, so non-database spans are not rewritten accidentally.
 
+Under the hood, this uses backend-specific sanitizers rather than a single generic regex. The URL sanitizer detects path-like span names and URL attributes, then replaces variable-looking path segments, IDs, UUIDs, timestamps, and query-string values with stable placeholders while keeping the route shape intact. The database sanitizer uses protocol-specific obfuscators: SQL literals are parameterized, Redis and Memcached command arguments are scrubbed, and MongoDB/OpenSearch/Elasticsearch JSON payload values are redacted while preserving the overall query structure.
+
 If your instrumentation is already stable, or if you need raw values for troubleshooting, you can disable the feature entirely:
 
 ```yaml
