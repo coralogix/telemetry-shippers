@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.313 / 2026-05-19
+
+- [Chore] Bump OBI version to 0.9.0.
+- [Chore] Update OBI configurations with GenAI + jsonrpc + kafka instrumentation
+
 ### v0.0.312 / 2026-05-18
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.6
