@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.311 / 2026-05-18
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.5
+
+#### Changes from opentelemetry-collector 0.131.5:
+- [Fix] Switch the `kubernetesAttributes` preset to `k8sattributes.extract.deployment_name_from_replicaset: true`, keeping `k8s.deployment.name` extraction while removing the extra `transform/k8s_attributes` workaround processor.
+
 ### v0.0.310 / 2026-05-14
 
 - [Breaking] Enable database sanitization for spans by default when span metrics are generated. See the [About span metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#about-span-metrics) documentation for details.
