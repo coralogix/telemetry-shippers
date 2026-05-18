@@ -2,6 +2,14 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.312 / 2026-05-18
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.6
+
+#### Changes from opentelemetry-collector 0.131.6:
+- [Fix] Rewrite chart-owned OTTL statements to use explicit context-prefixed paths, removing collector startup rewrite warnings across transform/filter presets.
+- [Fix] Update example-only OTTL snippets to use explicit span attribute paths and regenerate rendered examples.
+
 ### v0.0.311 / 2026-05-18
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.5

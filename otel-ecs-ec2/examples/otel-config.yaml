@@ -127,14 +127,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.28
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.29
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-integration/0.0.28
+        X-Coralogix-Distribution: helm-otel-integration/0.0.29
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-integration/0.0.28
+        X-Coralogix-Distribution: helm-otel-integration/0.0.29
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -154,13 +154,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-integration/0.0.28
+        X-Coralogix-Distribution: helm-otel-integration/0.0.29
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.28
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.29
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -185,7 +185,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-agent.version: 0.131.5
+        helm.chart.opentelemetry-agent.version: 0.131.6
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -209,12 +209,12 @@ processors:
   filter/db_compact_spanmetrics:
     traces:
       span:
-      - kind != SPAN_KIND_CLIENT or attributes["db.namespace"] == nil or attributes["db.system"]
-        == nil
+      - span.kind != SPAN_KIND_CLIENT or span.attributes["db.namespace"] == nil or
+        span.attributes["db.system"] == nil
   filter/db_spanmetrics:
     traces:
       span:
-      - attributes["db.system"] == nil
+      - span.attributes["db.system"] == nil
   memory_limiter:
     check_interval: 5s
     limit_percentage: 80
@@ -280,25 +280,27 @@ processors:
     trace_statements:
     - context: resource
       statements:
-      - keep_keys(attributes, ["service.name", "k8s.cluster.name", "host.name", "deployment.environment.name"])
+      - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
+        "deployment.environment.name"])
   transform/db_compact:
     trace_statements:
     - context: resource
       statements:
-      - keep_keys(attributes, ["service.name", "k8s.cluster.name", "host.name", "deployment.environment.name"])
+      - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
+        "deployment.environment.name"])
     - context: span
       statements:
-      - keep_keys(attributes, ["db.namespace", "db.system"])
+      - keep_keys(span.attributes, ["db.namespace", "db.system"])
   transform/entity-event:
     error_mode: silent
     log_statements:
     - context: log
       statements:
-      - set(attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
-      - merge_maps(attributes, resource.attributes, "insert")
+      - set(log.attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+      - merge_maps(log.attributes, resource.attributes, "insert")
     - context: resource
       statements:
-      - keep_keys(attributes, [""])
+      - keep_keys(resource.attributes, [""])
   transform/prometheus:
     error_mode: ignore
     metric_statements:
@@ -339,15 +341,15 @@ processors:
         == "opentelemetry-collector"
     - context: resource
       statements:
-      - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"]
+      - set(resource.attributes["k8s.pod.ip"], resource.attributes["net.host.name"])
+        where resource.attributes["service.name"] == "opentelemetry-collector"
+      - delete_key(resource.attributes, "service_name") where resource.attributes["service.name"]
         == "opentelemetry-collector"
-      - delete_key(attributes, "service_name") where attributes["service.name"] ==
-        "opentelemetry-collector"
     - context: datapoint
       statements:
-      - delete_key(attributes, "service_name") where resource.attributes["service.name"]
+      - delete_key(datapoint.attributes, "service_name") where resource.attributes["service.name"]
         == "opentelemetry-collector"
-      - delete_key(attributes, "otel_scope_name") where attributes["service.name"]
+      - delete_key(datapoint.attributes, "otel_scope_name") where datapoint.attributes["service.name"]
         == "opentelemetry-collector"
   transform/reduce:
     error_mode: silent
@@ -474,22 +476,22 @@ processors:
     trace_statements:
     - context: span
       statements:
-      - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
-        != nil
+      - set(span.attributes["http.method"], span.attributes["http.request.method"])
+        where span.attributes["http.request.method"] != nil
   transform/spanmetrics:
     error_mode: silent
     metric_statements:
     - context: datapoint
       statements:
-      - set(attributes["status.code"], "STATUS_CODE_ERROR") where attributes["status.code"]
-        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+      - set(datapoint.attributes["status.code"], "STATUS_CODE_ERROR") where datapoint.attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and datapoint.attributes["otel.status_code"]
         == "ERROR"
-      - set(attributes["status.code"], "STATUS_CODE_OK") where attributes["status.code"]
-        == nil and instrumentation_scope.name == "spanmetricsconnector" and attributes["otel.status_code"]
+      - set(datapoint.attributes["status.code"], "STATUS_CODE_OK") where datapoint.attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and datapoint.attributes["otel.status_code"]
         == "OK"
-      - set(attributes["status.code"], "STATUS_CODE_UNSET") where attributes["status.code"]
-        == nil and instrumentation_scope.name == "spanmetricsconnector" and (attributes["otel.status_code"]
-        == "UNSET" or attributes["otel.status_code"] == nil)
+      - set(datapoint.attributes["status.code"], "STATUS_CODE_UNSET") where datapoint.attributes["status.code"]
+        == nil and instrumentation_scope.name == "spanmetricsconnector" and (datapoint.attributes["otel.status_code"]
+        == "UNSET" or datapoint.attributes["otel.status_code"] == nil)
 receivers:
   awsecscontainermetricsd: {}
   filelog:
