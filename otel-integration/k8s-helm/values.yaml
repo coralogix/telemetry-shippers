@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.309"
+  version: "0.0.310"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -233,6 +233,17 @@ opentelemetry-agent:
       #    histogramBuckets: [1s, 2s]
       #  - selector: route() where attributes["service.name"] == "two"
       #    histogramBuckets: [5s, 10s]
+    # Sanitizes high-cardinality span names and selected span attributes before
+    # spans are converted into span metrics.
+    # Default: auto-enabled when spanMetrics or spanMetricsMulti is enabled.
+    # Set enabled=false to disable the feature completely.
+    # Set sanitize_url=false to keep URL-style span names and URL attributes unchanged.
+    # Set sanitizeDatabases=[] to keep database statements/commands unchanged.
+    spanMetricsSanitization:
+      enabled: auto
+      sanitize_url: true
+      sanitizeDatabases:
+        [sql, redis, memcached, mongo, opensearch, es]
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
     # reduceResourceAttributes:

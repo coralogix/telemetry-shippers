@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.310 / 2026-05-14
+
+- [Breaking] Enable database sanitization for spans by default when span metrics are generated. See the [About span metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#about-span-metrics) documentation for details.
+
 ### v0.0.309 / 2026-05-14
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.4
