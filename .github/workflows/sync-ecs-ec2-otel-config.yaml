@@ -50,20 +50,21 @@ jobs:
           echo "Generated config:"
           cat examples/otel-config.yaml
 
-      - name: Patch config for e2e compatibility
+      - name: Patch config for e2e testing
         run: |
-          # Replace static application_name with env var for e2e testing
-          # Production deployments can set CX_APPLICATION_NAME env var, otherwise defaults to 'otel'
+          # Set application_name with env var fallback for non-ECS telemetry (hostmetrics, prometheus, etc.)
           yq -i '.exporters.coralogix.application_name = "${env:CX_APPLICATION_NAME:-otel}"' \
             otel-ecs-ec2/examples/otel-config.yaml
           
-          # Remove application_name_attributes so env var takes effect
-          # (attributes override application_name when present on data)
-          yq -i 'del(.exporters.coralogix.application_name_attributes)' \
+          # Add application_name_attributes for ECS telemetry to use cluster name
+          # The ecsattributesprocessor sets aws.ecs.cluster (for logs)
+          # The awsecscontainermetricsd sets aws.ecs.cluster.name (for metrics)
+          # Attributes take precedence when present; otherwise falls back to application_name
+          yq -i '.exporters.coralogix.application_name_attributes = ["aws.ecs.cluster.name", "aws.ecs.cluster", "aws.ecs.task.definition.family"]' \
             otel-ecs-ec2/examples/otel-config.yaml
           
-          echo "✓ Patched application_name to use env var with 'otel' default"
-          echo "✓ Removed application_name_attributes to allow env var control"
+          echo "✓ Patched application_name with env var fallback"
+          echo "✓ Added application_name_attributes for ECS cluster name support"
 
       - name: Upload config to S3
         run: |
