@@ -1,5 +1,13 @@
 # Changelog
 
+### v0.0.29 / 2026-05-18
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.6`.
+
+#### Changes from opentelemetry-collector 0.131.6:
+- [Fix] Rewrite chart-owned OTTL statements to use explicit context-prefixed paths, removing collector startup rewrite warnings across transform/filter presets.
+- [Fix] Update example-only OTTL snippets to use explicit span attribute paths and regenerate rendered examples.
+
 ### v0.0.28 / 2026-05-18
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.5`.
