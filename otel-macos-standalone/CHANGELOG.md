@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.35 / 2026-05-21
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.7
+
+#### Changes from opentelemetry-collector 0.131.7:
+- [Feat] Add optional `transformStatements`, `spanNameReplacePattern`, `dbMetrics`, and `compactMetrics` to the `spanMetricsMulti` preset, matching the single `spanMetrics` preset capabilities. All are opt-in (`dbMetrics` / `compactMetrics` default to off; dimension helpers preserve prior `spanMetricsMulti` behavior unless explicitly configured).
+
 ### v0.0.34 / 2026-05-18
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.6
