@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.314 / 2026-05-21
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.7
+
+#### Changes from opentelemetry-collector 0.131.7:
+- [Feat] Add optional `transformStatements`, `spanNameReplacePattern`, `dbMetrics`, and `compactMetrics` to the `spanMetricsMulti` preset, matching the single `spanMetrics` preset capabilities. All are opt-in (`dbMetrics` / `compactMetrics` default to off; dimension helpers preserve prior `spanMetricsMulti` behavior unless explicitly configured).
+
 ### v0.0.313 / 2026-05-19
 
 - [Chore] Bump OBI version to 0.9.0.
