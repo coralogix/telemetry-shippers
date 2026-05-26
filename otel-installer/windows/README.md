@@ -4,7 +4,7 @@ Install the OpenTelemetry Collector directly on Windows as a Windows Service.
 
 ## Overview
 
-This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Windows Service. It supports both **regular mode** (local config) and **supervisor mode** (remote config via Fleet Management).
+This PowerShell script deploys the Coralogix OpenTelemetry Collector as a Windows Service. It supports both **local configuration mode** (configuration file provided locally) and **supervisor mode** (remote configuration via Fleet Management).
 
 ## Prerequisites
 
@@ -174,7 +174,7 @@ The base config is merged with remote configuration from Fleet Manager. The conf
 
 ## Installation Locations
 
-### Regular Mode
+### Local Configuration Mode
 
 | Component     | Location                                                       |
 |---------------|----------------------------------------------------------------|
@@ -197,7 +197,7 @@ The base config is merged with remote configuration from Fleet Manager. The conf
 
 ## Service Management
 
-### Regular Mode
+### Local Configuration Mode
 
 ```powershell
 # Check status
@@ -307,6 +307,35 @@ Or run with bypass:
 ```powershell
 powershell -ExecutionPolicy Bypass -Command { $u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Config 'C:\otel\config.yaml' }
 ```
+
+### Process Not Found
+
+If `Get-Process otelcol-contrib` returns "Cannot find a process":
+
+1. **Check if the service is running:**
+
+   ```powershell
+   Get-Service otelcol-contrib
+   # or for supervisor mode:
+   Get-Service opampsupervisor
+   ```
+
+2. **Check why it failed:**
+
+   ```powershell
+   # For local configuration mode
+   Get-EventLog -LogName Application -Source otelcol-contrib -Newest 20
+
+   # For supervisor mode
+   Get-EventLog -LogName Application -Source opampsupervisor -Newest 50 | Format-List
+   ```
+
+3. **Try starting the service manually:**
+
+   ```powershell
+   Start-Service otelcol-contrib
+   Get-Service otelcol-contrib
+   ```
 
 ### Administrator Privileges
 

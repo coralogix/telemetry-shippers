@@ -2,7 +2,7 @@
 # Coralogix OpenTelemetry Collector - Docker Installation Script
 #
 # One-line installation:
-#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)"
+#   CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- -c /path/to/config.yaml
 #
 # Supervisor mode:
 #   CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor
@@ -15,7 +15,7 @@ set -euo pipefail
 
 
 COLLECTOR_IMAGE="otel/opentelemetry-collector-contrib"
-SUPERVISOR_IMAGE="coralogixrepo/otel-supervised-collector"
+SUPERVISOR_IMAGE="cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-collector"
 
 CONTAINER_NAME="coralogix-otel-collector"
 CONFIG_HOST_DIR="${HOME}/.coralogix-otel-collector"
@@ -37,6 +37,7 @@ MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
 USER_SET_MEMORY_LIMIT=false
 
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
+SUPERVISED_COLLECTOR_VERSION_URL="https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-supervised-collector/CURRENT_IMAGE_VERSION"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -86,6 +87,48 @@ get_version() {
     echo "$version"
 }
 
+fetch_supervisor_image_version() {
+    local script_dir version_file version version_url
+
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    version_file="${script_dir}/../../otel-supervised-collector/CURRENT_IMAGE_VERSION"
+
+    if [ -f "$version_file" ]; then
+        version=$(tr -d '[:space:]' < "$version_file")
+        if [ -n "$version" ]; then
+            echo "$version"
+            return 0
+        fi
+    fi
+
+    version=$(curl -fsSL "$SUPERVISED_COLLECTOR_VERSION_URL" 2>/dev/null | tr -d '[:space:]' || echo "")
+    if [ -z "$version" ]; then
+        warn "Unable to fetch supervisor image version from $SUPERVISED_COLLECTOR_VERSION_URL"
+        echo ""
+        echo "Specify the image version with --supervisor-version or --version."
+        echo ""
+        return 1
+    fi
+
+    echo "$version"
+}
+
+get_supervisor_image_version() {
+    local version=""
+
+    if [ -n "$SUPERVISOR_VERSION" ]; then
+        version="$SUPERVISOR_VERSION"
+    elif [ -n "$VERSION" ]; then
+        version="$VERSION"
+    elif version=$(fetch_supervisor_image_version); then
+        log "Using supervisor image version: ${version}" >&2
+    else
+        fail "Supervisor image version not specified and unable to fetch default. Use --supervisor-version or --version."
+    fi
+
+    echo "$version"
+}
+
 usage() {
     cat <<EOF
 Coralogix OpenTelemetry Collector - Docker Installation
@@ -93,9 +136,9 @@ Coralogix OpenTelemetry Collector - Docker Installation
 Usage: $0 [OPTIONS]
 
 Options:
-    -v, --version <version>     Default version for images (default: from Helm chart)
-    --collector-version <ver>   Collector image version (regular mode)
-    --supervisor-version <ver>  Supervisor image version (supervisor mode)
+    -v, --version <version>     Collector image version in local configuration mode (default: Helm chart appVersion)
+    --collector-version <ver>   Collector image version (local configuration mode)
+    --supervisor-version <ver>  Supervised collector image version (supervisor mode; default: CURRENT_IMAGE_VERSION)
     -c, --config <path>         Path to custom configuration file
     -s, --supervisor            Use supervisor mode (requires CORALOGIX_DOMAIN)
     --memory-limit <MiB>        Total memory in MiB to allocate to the collector (default: 512)
@@ -127,14 +170,14 @@ Examples:
     # Supervisor mode (config managed remotely)
     CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" $0 -s
 
-    # Gateway mode with custom memory and listen interface
+    # Gateway mode with custom memory
     CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --memory-limit 2048
 
     # Custom ports
     OTLP_GRPC_PORT=14317 OTLP_HTTP_PORT=14318 CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml
 
-    # Quick start with placeholder config (testing only)
-    CORALOGIX_PRIVATE_KEY="your-key" $0
+    # Install specific version
+    CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --version 0.140.1
 
     # Stop the container
     $0 --stop
@@ -422,9 +465,8 @@ EOF
 }
 
 run_supervisor_mode() {
-    local default_version
-    default_version=$(get_version)
-    local image_tag="${SUPERVISOR_VERSION:-${default_version}}"
+    local image_tag
+    image_tag=$(get_supervisor_image_version)
     local image="${SUPERVISOR_IMAGE}:${image_tag}"
     
     log "Pulling image: ${image}"

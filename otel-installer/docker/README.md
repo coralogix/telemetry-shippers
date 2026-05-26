@@ -5,7 +5,7 @@ Deploy the OpenTelemetry Collector in Docker with Coralogix integration.
 ## Overview
 
 This script runs the Coralogix OpenTelemetry Collector as a Docker container, supporting:
-- **Regular mode**: Local configuration file
+- **Local configuration mode**: Configuration file provided locally
 - **Supervisor mode**: Remote configuration via Fleet Management
 
 ## Prerequisites
@@ -15,14 +15,19 @@ This script runs the Coralogix OpenTelemetry Collector as a Docker container, su
 - Coralogix [Send-Your-Data API key](https://coralogix.com/docs/send-your-data-api-key/)
 - For Supervisor mode: Coralogix [domain](https://coralogix.com/docs/coralogix-domain/)
 
+> [!IMPORTANT]
+> **Configuration Required**
+>
+> A configuration file must be provided when installing the collector with a local configuration file.
+
 ## Quick Start
 
-### Regular Mode
+### Local Configuration Mode
 
 ```bash
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" \
-  -- --config /path/to/config.yaml
+  -- -c /path/to/config.yaml
 ```
 
 | Variable              | Description                                                                                 |
@@ -88,26 +93,28 @@ extensions:
 
 ## Script Options
 
-| Option                           | Description                                           |
-|----------------------------------|-------------------------------------------------------|
-| `-v, --version <version>`        | Default version (default: from Helm chart)            |
-| `--collector-version <version>`  | Collector image version                               |
-| `--supervisor-version <version>` | Supervisor image version                              |
-| `-c, --config <path>`            | Path to custom configuration file                     |
-| `-s, --supervisor`               | Use supervisor mode                                   |
-| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)  |
-|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |
-|                                  | (ignored in supervisor mode)                          |
-| `-f, --foreground`               | Run in foreground (default: detached)                 |
-| `--uninstall`                    | Stop and remove the container                         |
-| `-h, --help`                     | Show help message                                     |
+| Option                           | Description                                                                                                  |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `-v, --version <version>`        | Local configuration mode: collector image tag (default: Helm chart `appVersion`)                             |
+| `--collector-version <version>`  | Collector image version (local configuration mode)                                                           |
+| `--supervisor-version <version>` | Supervised collector image tag (supervisor mode; default: `otel-supervised-collector/CURRENT_IMAGE_VERSION`) |
+| `-c, --config <path>`            | Path to custom configuration file                                                                            |
+| `-s, --supervisor`               | Use supervisor mode                                                                                          |
+| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)                                                         |
+|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}`                                                        |
+|                                  | (ignored in supervisor mode)                                                                                 |
+| `-f, --foreground`               | Run in foreground (default: detached)                                                                        |
+| `--uninstall`                    | Stop and remove the container                                                                                |
+| `-h, --help`                     | Show help message                                                                                            |
 
 ## Container Images
 
-| Mode       | Image                                     |
-|------------|-------------------------------------------|
-| Regular    | `otel/opentelemetry-collector-contrib`    |
-| Supervisor | `coralogixrepo/otel-supervised-collector` |
+| Mode                | Image                                                                                         |
+|---------------------|-----------------------------------------------------------------------------------------------|
+| Local Configuration | `otel/opentelemetry-collector-contrib`                                                        |
+| Supervisor          | `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-collector` (same as Helm/K8s) |
+
+Supervisor image tags follow [`otel-supervised-collector/CURRENT_IMAGE_VERSION`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-supervised-collector/CURRENT_IMAGE_VERSION), not the Helm chart `appVersion`.
 
 ## Exposed Ports
 
@@ -245,8 +252,8 @@ docker stop coralogix-otel-collector && docker rm coralogix-otel-collector
 ## Notes
 
 - **Config storage**: Config files are stored in `~/.coralogix-otel-collector/` and persist across reboots
-- **Regular mode**: Requires a config file (`--config`). Without it, uses a placeholder config with nop receivers/exporters
-- **Supervisor mode**: Config is managed remotely via Coralogix Fleet Management. The `--config` flag is ignored in supervisor mode with a warning
+- **Local configuration mode**: Requires a config file (`-c` or `--config`). A configuration file must be provided for the collector to function properly
+- **Supervisor mode**: Config is managed remotely via Coralogix Fleet Management. The `-c`/`--config` flag is ignored in supervisor mode with a warning
 - **Port conflicts**: Script checks for port availability before starting and provides clear error messages
 - **Environment variables**: Configuration files should use environment variable substitution (e.g., `${env:OTEL_MEMORY_LIMIT_MIB}`) to leverage the script's environment variable support
 - **Memory management**: The `MEMORY_LIMIT_MIB` environment variable helps prevent OOM kills by configuring the memory_limiter processor
