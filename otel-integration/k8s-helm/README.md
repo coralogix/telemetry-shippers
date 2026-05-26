@@ -258,7 +258,7 @@ helm upgrade --install otel-integration \
 
 ### Enabling dependent charts
 
-The **OpenTelemetry Agent** is primarily used for collecting application telemetry, while the **OpenTelemetry Cluster Collector** is primarily used to collect cluster-level data. Depending on your requirements, you can either use the default configuration that enables both components, or you can choose to disable either of them by modifying the `enabled` flag in the `values.yaml` file under the `opentelemetry-agent` or `opentelemetry-cluster-collector` section as shown below:
+The **OpenTelemetry Agent** is primarily used for collecting application telemetry, while the **OpenTelemetry Cluster Collector** is primarily used to collect cluster-level data. Depending on your requirements, you can either use the default configuration that enables both components, or you can select to disable either of them by modifying the `enabled` flag in the `values.yaml` file under the `opentelemetry-agent` or `opentelemetry-cluster-collector` section as shown below:
 
 ```yaml
 ...
@@ -364,6 +364,53 @@ opentelemetry-agent:
           exporters:
             - coralogix
 ```
+
+#### Coralogix exporter sending queue and batching
+
+The `presets.coralogixExporter.sendingQueue` exposes sending-queue and batch settings.
+
+Use it when you need the coralogix exporter to absorb short downstream slowdowns or increase drain capacity. For this tuning, size the queue in bytes and keep the batch limits aligned with the current [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/).
+
+```yaml
+opentelemetry-agent:
+  presets:
+    coralogixExporter:
+      sendingQueue:
+        enabled: true
+        sizer: bytes
+        queueSize: 209715200
+        numConsumers: 20
+        batch:
+          flushTimeout: 250ms
+          minSize: 1048576
+          maxSize: 2097152
+          sizer: bytes
+```
+
+The same settings can be applied to `coralogixResourceCatalogExporter` preset, which is used to send data for the resource catalog.
+
+Memory and oversized payloads:
+
+- A larger byte-backed queue and bigger batches hold more data in process. If you raise `queueSize`, `batch.maxSize`, or `numConsumers`, **raise Pod memory requests and limits** as needed so the collector does not OOM under load.
+- With byte sizing, **any single item larger than `batch.maxSize` cannot be batched into an exportable unit**. Telemetry that exceeds the limit can be dropped or fail to export (for example very large log bodies or spans).
+
+Start with the chart defaults and tune from queue behavior and metrics:
+
+- If the queue grows during short downstream slowdowns and then recovers, settings are usually fine.
+- If the queue keeps growing under normal traffic, increase `numConsumers` so the exporter drains faster.
+- If bursts or short backend slowdowns spike the queue and exports drop, increase `queueSize`; if enqueue failures persist, raise `numConsumers` as well.
+- If the queue does not drain fast enough under steady load, increase `numConsumers`.
+- Keep `batch.minSize` / `batch.maxSize` aligned with [Coralogix ingestion limits](https://coralogix.com/docs/developer-portal/apis/limitations/); the sample values above are illustrative.
+
+Watch these exporter metrics after deployment:
+
+- `otelcol_exporter_queue_size`: Shows the current queue occupancy. If it grows during short slowdowns and then returns to normal, the current settings are usually sufficient.
+- `otelcol_exporter_queue_capacity`: Shows the configured queue capacity. Compare it with `otelcol_exporter_queue_size` to see how close the queue gets to its limit.
+- `otelcol_exporter_enqueue_failed_*`: Shows data that could not enter the queue. If this increases, the queue is too small, the exporter is draining too slowly, or both.
+- `otelcol_exporter_send_failed_*`: Shows failed send attempts to the destination. If this increases together with queue growth, the backend or network path is likely the bottleneck.
+- `otelcol_exporter_queue_batch_send_size_bytes`: Shows the size of requests entering the exporter queue. Use it to understand the request size distribution, not as a direct measure of per-consumer throughput.
+
+Watch queue growth, drain behavior, and exporter errors to confirm the new values are working as expected.
 
 ## OpenTelemetry Agent
 
@@ -602,6 +649,8 @@ The Coralogix Resource Catalog can be used to monitor the various resource types
 This preset enables the scrape of the Kubernetes API to populate your Kubernetes resource inventory. It uses the `k8sobjects` receiver and collects objects as defined in this configuration, uses a processor to enrich the collected objects, and exports it with a customized `coralogix/resource_catalog` exporter.
 
 This preset needs to be enabled only in the cluster-collector configuration.
+
+To tune the exporter queue and batches for this pipeline, set `presets.coralogixResourceCatalogExporter.sendingQueue` on `opentelemetry-cluster-collector` (see [Coralogix exporter sending queue and batching](#coralogix-exporter-sending-queue-and-batching)).
 
 ```yaml
   presets:
@@ -1423,68 +1472,63 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 The OpenTelemetry eBPF Profiler Collector runs the [otelcol-ebpf-profiler distribution](https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol-ebpf-profiler) as a DaemonSet to collect CPU profiles with eBPF and emit OTLP profiles. It is deployed as the `opentelemetry-ebpf-profiler` subchart and uses the same base chart values as the other collectors.
 
-The `ebpfProfiler` and `profilesK8sAttributes` presets are intended for the eBPF profiler distribution. Use the `metadata` preset to attach Coralogix integration attributes. If you export directly to Coralogix, enable the `otlpExporter` preset. To expose profiler metrics for scraping, enable `collectorMetrics` with `disablePrometheusReceiver: true` and rely on annotation-based discovery from the cluster-collector.
+The `ebpfProfiler` preset is intended for the eBPF profiler distribution. Use the `otlpExporter` preset to forward profiles to the node-local `opentelemetry-agent` over OTLP. Enable `profilesCollection` on the agent to receive profiles, enrich them with Kubernetes metadata, map `service.name`, and export them to Coralogix through the regular Coralogix exporter. To expose profiler metrics for scraping, enable `collectorMetrics` with `disablePrometheusReceiver: true` and rely on annotation-based discovery from the cluster-collector.
 
-To find your Coralogix OTLP endpoint, see [Identify your Coralogix domain](https://coralogix.com/docs/integrations/coralogix-endpoints/#1-identify-your-coralogix-domain).
-For OTLP over gRPC, use port `443` on the ingress endpoint (for example, `ingress.eu1.coralogix.com:443`).
+The legacy `coralogix-ebpf-profiler` chart configuration is still available for compatibility. See `k8s-helm/values-ebpf-profiler.yaml` for the legacy setup.
 
-The legacy `coralogix-ebpf-profiler` chart configuration is still available for compatibility. See `k8s-helm/values-ebpf-profiler.yaml` for the legacy setup and `k8s-helm/values-ebpf-profiler-collector.yaml` for the new collector-based configuration.
-
-Example configuration:
+Example configuration (only overrides; default values from `k8s-helm/values.yaml` are omitted):
 
 ```yaml
+global:
+  clusterName: "otel-integration-ebpf-profiler"
+  deploymentEnvironmentName: "ebpf-eks"
+  domain: "eu2.coralogix.com"
+
 opentelemetry-ebpf-profiler:
   enabled: true
-  mode: daemonset
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/path: "/metrics"
-    prometheus.io/port: "8888"
-  ports:
-    metrics:
-      enabled: true
 
   presets:
+    resourceDetection:
+      enabled: false
     ebpfProfiler:
       enabled: true
-    profilesK8sAttributes:
-      enabled: true
-    metadata:
-      enabled: true
-      clusterName: "test-cluster"
-      integrationName: "coralogix-integration-helm"
     otlpExporter:
       enabled: true
-      endpoint: "ingress.eu1.coralogix.com:443"
-      headers:
-        Authorization: "Bearer ${env:CORALOGIX_PRIVATE_KEY}"
-    otlpReceiver:
-      enabled: false
-    collectorMetrics:
-      enabled: true
-      disablePrometheusReceiver: true
+      endpoint: ${env:K8S_NODE_IP}:4317
+      pipelines: ["profiles"]
+      tls:
+        insecure: true
 
-  config:
-    exporters:
-      debug:
-        verbosity: detailed
-    service:
-      telemetry:
-        resource:
-          service.name: "opentelemetry-collector"
-          cx.agent.type: "ebpf-profiler"
-        logs:
-          level: "debug"
-      pipelines:
-        profiles:
-          exporters:
-            - otlp
-            - debug
-          processors:
-            - memory_limiter
+opentelemetry-agent:
+  enabled: true
+  presets:
+    profilesCollection:
+      enabled: true
+      serviceLabels:
+        - tag_name: service.label
+          key: app.kubernetes.io/name
+          from: pod
+      serviceAnnotations:
+        - tag_name: service.annotation
+          key: app.coralogix.com/service
+          from: pod
+    otlpReceiver:
+      enabled: true
+    coralogixExporter:
+      enabled: true
+
+opentelemetry-cluster-collector:
+  enabled: true
+  presets:
+    prometheusAnnotationDiscovery:
+      enabled: true
+      scrapeInterval: "30s"
+      observePods: true
+      observeServices: false
+      enableServiceRule: false
 ```
 
-See `k8s-helm/values-ebpf-profiler-collector.yaml` for a full example and the base [opentelemetry-collector chart](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) for additional values.
+See the base [opentelemetry-collector chart](https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector) for additional values.
 
 ### eBPF profiler metrics scrape via cluster-collector annotation discovery
 
@@ -1661,6 +1705,42 @@ The collector provides a possibility to synthesize R.E.D (Request, Error, Durati
 This feature is enabled by default and can be disabled by setting the `spanmetrics.enabled` value to `false` in the `values.yaml` file.
 
 Beware that enabling the feature will result in creation of additional metrics. Depending on how you instrument your applications, this can result in a significant increase in the number of metrics. This is especially true for cases where the span name includes specific values, such as user IDs or UUIDs. Such instrumentation practice is [strongly discouraged](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#span).
+
+To reduce this risk, the chart also enables **span metrics sanitization** automatically when `spanMetrics` or `spanMetricsMulti` is enabled. This wires the collector redaction processor into trace pipelines before span-to-metric conversion.
+
+Sanitization matters because span metrics use span names and span attributes as metric dimensions. If those fields contain raw IDs, URLs, SQL statements, Redis commands, Mongo queries, or OpenSearch/Elasticsearch request bodies, the span metrics connector can emit a new time series for each unique value. That causes three problems:
+
+- Metric cardinality grows very quickly, which increases cost and memory usage.
+- Aggregated request/error/duration metrics become fragmented across many near-unique series.
+- Database metrics become harder to use because query text or command payloads dominate the dimensions instead of stable operation names.
+
+By default, span metrics sanitization:
+
+- Normalizes URL-like span names and HTTP URL attributes when `sanitize_url: true`.
+- Sanitizes database statements and commands for `sql`, `redis`, `memcached`, `mongo`, `opensearch`, and `es`.
+- Applies database span name sanitization only when the span carries `db.system` or `db.system.name`, so non-database spans are not rewritten accidentally.
+
+Under the hood, this uses backend-specific sanitizers rather than a single generic regex. The URL sanitizer detects path-like span names and URL attributes, then replaces variable-looking path segments, IDs, UUIDs, timestamps, and query-string values with stable placeholders while keeping the route shape intact. The database sanitizer uses protocol-specific obfuscators: SQL literals are parameterized, Redis and Memcached command arguments are scrubbed, and MongoDB/OpenSearch/Elasticsearch JSON payload values are redacted while preserving the overall query structure.
+
+If your instrumentation is already stable, or if you need raw values for troubleshooting, you can disable the feature entirely:
+
+```yaml
+opentelemetry-agent:
+  presets:
+    spanMetricsSanitization:
+      enabled: false
+```
+
+You can also disable only part of it:
+
+```yaml
+opentelemetry-agent:
+  presets:
+    spanMetricsSanitization:
+      enabled: true
+      sanitize_url: false
+      sanitizeDatabases: []
+```
 
 In such cases, we recommend to either correct your instrumentation or to use the `spanMetrics.spanNameReplacePattern` parameter, to replace the problematic values with a generic placeholder. For example, if your span name corresponds to template `user-1234`, you can use the following pattern to replace the user ID with a generic placeholder. See the following configuration:
 

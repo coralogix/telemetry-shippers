@@ -6,6 +6,7 @@ var expectedResourceMetricsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.9.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
+	"https://opentelemetry.io/schemas/1.39.0": false,
 }
 
 const expectedScopeVersion = ""
@@ -22,20 +23,19 @@ func cloneAndOverrideStringMap(src map[string]string, overrides map[string]strin
 }
 
 var expectedResourceScopeNames = map[string]bool{
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":        false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper":       false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper": false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper":       false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper":     false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper":    false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper":    false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver":                                   false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                     false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer":                                         false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor":                                false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor":                                       false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor":                                 false,
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor":                            false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper":     false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper":    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper":    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper":  false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper": false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper": false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver":                                false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver":                                  false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer":                                      false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor":                             false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor":                                    false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor":                              false,
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor":                         false,
 	"spanmetricsconnector": false,
 
 	"go.opentelemetry.io/collector/exporter/exporterhelper":          false,
@@ -51,6 +51,7 @@ var (
 	unwantedScopeNames = map[string]struct{}{}
 	optionalScopeNames = map[string]struct{}{
 		"delta-to-cumulative-e2e": {},
+		"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper": {},
 	}
 )
 
@@ -87,7 +88,7 @@ var expectedResourceAttributesHostmetricsreceiver = map[string]string{
 	"azure.vm.scaleset.name":      "",
 	"azure.vm.size":               "",
 	"cloud.account.id":            "",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.provider":              "azure",
 	"cloud.region":                "",
 	"cx.otel_integration.name":    "coralogix-integration-helm",
@@ -132,7 +133,7 @@ var expectedResourceAttributesK8sattributesprocessor = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -165,7 +166,7 @@ var expectedResourceAttributesService = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -200,7 +201,7 @@ var expectedResourceAttributesMemorylimiterprocessor = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -245,7 +246,7 @@ var expectedResourceAttributesSpanmetricsconnector = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -267,7 +268,7 @@ var expectedResourceAttributesLoadscraper = map[string]string{
 	"host.id":                     "",
 	"k8s.node.name":               "otel-integration-agent-e2e-control-plane",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -328,7 +329,7 @@ var expectedResourceAttributesProcessscraper = map[string]string{
 	"host.id":                     "",
 	"k8s.node.name":               "otel-integration-agent-e2e-control-plane",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -361,7 +362,7 @@ var expectedResourceAttributesProcessorhelper = map[string]string{
 	"os.type":                     "linux",
 	"host.id":                     "",
 	"cloud.provider":              "azure",
-	"cloud.platform":              "azure_vm",
+	"cloud.platform":              "azure.vm",
 	"cloud.region":                "",
 	"cloud.account.id":            "",
 	"azure.vm.name":               "",
@@ -491,8 +492,6 @@ var expectedMetrics map[string]bool = map[string]bool{
 	"system.disk.operations":                                    false,
 	"system.disk.pending_operations":                            false,
 	"system.disk.weighted_io_time":                              false,
-	"system.filesystem.inodes.usage":                            false,
-	"system.filesystem.usage":                                   false,
 	"system.memory.usage":                                       false,
 	"system.memory.utilization":                                 false,
 	"system.network.connections":                                false,
@@ -520,7 +519,10 @@ var optionalExpectedMetrics = map[string]bool{
 	// Exporter queue metrics are version/config dependent and may not be emitted.
 	"otelcol_exporter_queue_batch_send_size": false,
 	// Added in newer collector versions (0.145.0+): internal k8s pod association metric.
-	"otelcol_otelcol.k8s.pod.association": false,
+	"otelcol.k8s.pod.association": false,
+	// Host filesystem metrics are valid but may not be emitted in containerized CI environments.
+	"system.filesystem.inodes.usage": false,
+	"system.filesystem.usage":        false,
 }
 
 var expectedTracesSchemaURL = map[string]bool{
@@ -528,12 +530,16 @@ var expectedTracesSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.25.0": false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
+	"https://opentelemetry.io/schemas/1.39.0": false,
+	"https://opentelemetry.io/schemas/1.40.0": false,
 }
 
 var expectedLogsSchemaURL = map[string]bool{
 	"https://opentelemetry.io/schemas/1.6.1":  false,
 	"https://opentelemetry.io/schemas/1.37.0": false,
 	"https://opentelemetry.io/schemas/1.38.0": false,
+	"https://opentelemetry.io/schemas/1.39.0": false,
+	"https://opentelemetry.io/schemas/1.40.0": false,
 }
 
 var expectedHostEntityAttributes = map[string]expectedValue{

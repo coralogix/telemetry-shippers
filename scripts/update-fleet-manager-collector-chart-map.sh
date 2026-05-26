@@ -11,13 +11,8 @@
 #      otel-integration Chart.yaml (or accepts it via --chart-version).
 #   2. Looks up the matching appVersion by querying the Coralogix Helm repo
 #      (or accepts it via --app-version).
-#   3. Clones (or reuses) a local Fleet Manager checkout.
-#   4. Invokes Fleet Manager's own add-chart-version-mapping.sh to insert:
-#        a. otel-integration chart version -> collector chart version
-#           (into otel_integration_chart_versions_map.json)
-#        b. collector chart version -> app version
-#           (into collector_chart_versions_map.json)
-#   5. Reports the result and optionally writes key environment variables to a
+#   3. Updates the mapping files in a Fleet Manager Helm Data checkout.
+#   4. Reports the result and optionally writes key environment variables to a
 #      file (--output-env) for downstream CI consumption.
 #
 set -euo pipefail
@@ -31,13 +26,10 @@ Options:
   --integration-chart-version <version> Override otel-integration chart version
   --chart-version <version>             Override opentelemetry-collector chart version (skips reading Chart.yaml)
   --app-version <version>               Override appVersion (skips helm lookup)
-  --fleet-manager-dir <path>            Existing Fleet Manager checkout to modify
-  --fleet-manager-repo <url>            Fleet Manager git URL (default: https://github.com/coralogix/fleet-manager.git)
-  --fleet-manager-branch <name>         Fleet Manager branch to clone (default: master)
   --output-env <path>                   Write environment key/values to this file
   -h, --help                            Show this help text
 
-If --fleet-manager-dir is not provided, a temporary clone is created and left on disk.
+Set FLEET_MANAGER_HELM_DATA_DIR to the Fleet Manager Helm Data directory to update.
 EOF
   exit 1
 }
@@ -52,9 +44,6 @@ chart_file=""
 integration_chart_version=""
 chart_version=""
 app_version=""
-fleet_manager_dir=""
-fleet_manager_repo="https://github.com/coralogix/fleet-manager.git"
-fleet_manager_branch="master"
 output_env=""
 
 while [ $# -gt 0 ]; do
@@ -73,18 +62,6 @@ while [ $# -gt 0 ]; do
       ;;
     --app-version)
       app_version="${2:-}"
-      shift 2
-      ;;
-    --fleet-manager-dir)
-      fleet_manager_dir="${2:-}"
-      shift 2
-      ;;
-    --fleet-manager-repo)
-      fleet_manager_repo="${2:-}"
-      shift 2
-      ;;
-    --fleet-manager-branch)
-      fleet_manager_branch="${2:-}"
       shift 2
       ;;
     --output-env)
@@ -160,68 +137,76 @@ if [ -z "$app_version" ]; then
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
-  echo "jq is required by Fleet Manager's add-chart-version-mapping.sh script." >&2
+  echo "jq is required." >&2
   exit 1
 fi
 
-if [ -n "$fleet_manager_dir" ]; then
-  if [ -d "$fleet_manager_dir" ]; then
-    if [ ! -d "$fleet_manager_dir/.git" ]; then
-      echo "Fleet Manager directory exists but is not a git repo: $fleet_manager_dir" >&2
-      exit 1
-    fi
-  else
-    git clone --depth 1 --branch "$fleet_manager_branch" "$fleet_manager_repo" "$fleet_manager_dir"
-  fi
-else
-  fleet_manager_dir="$(mktemp -d "${TMPDIR:-/tmp}/fleet-manager.XXXXXX")"
-  git clone --depth 1 --branch "$fleet_manager_branch" "$fleet_manager_repo" "$fleet_manager_dir"
-fi
-
-if [ ! -x "$fleet_manager_dir/scripts/add-chart-version-mapping.sh" ]; then
-  echo "Expected script not found in Fleet Manager checkout: $fleet_manager_dir/scripts/add-chart-version-mapping.sh" >&2
+map_dir="${FLEET_MANAGER_HELM_DATA_DIR:-}"
+if [ -z "$map_dir" ]; then
+  echo "Fleet Manager Helm Data directory is required. Set FLEET_MANAGER_HELM_DATA_DIR." >&2
   exit 1
 fi
 
-add_mapping_script="$fleet_manager_dir/scripts/add-chart-version-mapping.sh"
+if [ ! -d "$map_dir" ]; then
+  echo "Fleet Manager Helm Data directory not found: $map_dir" >&2
+  exit 1
+fi
+
 mapping_updated="false"
+map_dir="${map_dir%/}"
 
-# Helper: call add-chart-version-mapping.sh and handle "already exists" gracefully.
-# Runs from inside the fleet-manager dir so relative paths resolve correctly.
 run_add_mapping() {
-  local map_type="$1" from_version="$2" to_version="$3"
-  set +e
-  output="$(cd "$fleet_manager_dir" && "$add_mapping_script" --map "$map_type" "$from_version" "$to_version" 2>&1)"
-  status=$?
-  set -e
+  local map_type="$1" map_file="$2" from_version="$3" to_version="$4" target_key
 
-  if [ $status -ne 0 ]; then
-    if echo "$output" | grep -q "mapping already exists"; then
-      echo "$output"
-    else
-      echo "$output" >&2
-      exit $status
-    fi
-  else
-    mapping_updated="true"
-    echo "$output"
+  case "$map_type" in
+    collector)
+      target_key="collector_image_tag"
+      ;;
+    otel-integration)
+      target_key="collector_chart_version"
+      ;;
+    *)
+      echo "Unknown map type: $map_type" >&2
+      exit 1
+      ;;
+  esac
+
+  if [ ! -f "$map_file" ]; then
+    echo "Mapping file not found: $map_file" >&2
+    exit 1
   fi
+
+  if jq -e --arg cv "$from_version" '.mappings[]? | select(.chart_version == $cv)' "$map_file" >/dev/null 2>&1; then
+    echo "Mapping already exists for chart_version=$from_version"
+    return 0
+  fi
+
+  tmp="$(mktemp "${map_file}.XXXXXX")"
+  jq \
+    --arg cv "$from_version" \
+    --arg key "$target_key" \
+    --arg val "$to_version" \
+    '.mappings += [{"chart_version": $cv} + {($key): $val}] | .mappings |= (sort_by(.chart_version | split(".") | map(tonumber)) | reverse)' \
+    "$map_file" > "$tmp"
+
+  mv "$tmp" "$map_file"
+  mapping_updated="true"
+  echo "Added: chart_version=$from_version -> $target_key=$to_version"
 }
 
 # ── otel-integration mapping ───────────────────────────────────────────
 echo "--- otel-integration mapping: $integration_chart_version -> $chart_version ---"
-run_add_mapping otel-integration "$integration_chart_version" "$chart_version"
+run_add_mapping otel-integration "$map_dir/otel_integration_chart_versions_map.json" "$integration_chart_version" "$chart_version"
 
 # ── collector mapping ──────────────────────────────────────────────────
 echo "--- collector mapping: $chart_version -> $app_version ---"
-run_add_mapping collector "$chart_version" "$app_version"
+run_add_mapping collector "$map_dir/collector_chart_versions_map.json" "$chart_version" "$app_version"
 
-# ── summary ────────────────────────────────────────────────────────────
-echo "Fleet Manager working dir: $fleet_manager_dir"
+echo "Fleet Manager Helm Data dir: $map_dir"
 if [ "$mapping_updated" = "true" ]; then
-  if git -C "$fleet_manager_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if git -C "$map_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Diff:"
-    git -C "$fleet_manager_dir" --no-pager diff || true
+    git -C "$map_dir" --no-pager diff || true
   fi
 else
   echo "No changes made."
@@ -229,7 +214,7 @@ fi
 
 if [ -n "$output_env" ]; then
   cat > "$output_env" <<EOF
-FLEET_MANAGER_DIR=$fleet_manager_dir
+FLEET_MANAGER_HELM_DATA_DIR=$map_dir
 INTEGRATION_CHART_VERSION=$integration_chart_version
 CHART_VERSION=$chart_version
 APP_VERSION=$app_version

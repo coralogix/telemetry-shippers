@@ -1,4 +1,4 @@
-# Version args must be provided (e.g., via Makefile which reads CURRENT_VERSION)
+# Version args must be provided (e.g., via Makefile which reads version files)
 ARG COLLECTOR_VERSION
 ARG SUPERVISOR_VERSION
 
@@ -6,7 +6,7 @@ FROM alpine:3.22 AS certs
 RUN apk --update add ca-certificates
 RUN mkdir -p /etc/otelcol-contrib/supervisor-data
 
-FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
+FROM cgx.jfrog.io/coralogix-docker-images/cx-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
 
 FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${COLLECTOR_VERSION} AS collector
 

@@ -203,10 +203,12 @@ $SUPERVISOR_DATA_DIR = "${env:ProgramData}\opampsupervisor"
 $SUPERVISOR_STATE_DIR = Join-Path $SUPERVISOR_DATA_DIR "state"
 $SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_DATA_DIR "logs"
 $CHART_YAML_URL = "https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-collector/Chart.yaml"
-$OTEL_RELEASES_BASE_URL = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+$OTEL_COLLECTOR_RELEASES_BASE_URL = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+$OTEL_SUPERVISOR_RELEASES_BASE_URL = "https://github.com/coralogix/opentelemetry-collector-releases/releases"
 $OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
 $OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
 $OTEL_SUPERVISOR_MSI_CHECKSUMS_FILE = "checksums.txt"
+$OTEL_SUPERVISOR_CORALOGIX_MIN_VERSION = "0.146.0"
 
 # Global variables
 $script:UserSetMemoryLimit = $false
@@ -443,24 +445,69 @@ function Test-Version {
     }
 }
 
+function Normalize-Version {
+    param([string]$Version)
+
+    if ($Version.StartsWith("v")) {
+        return $Version.Substring(1)
+    }
+
+    return $Version
+}
+
+function Use-CoralogixSupervisorRelease {
+    param([string]$Version)
+
+    return ([version](Normalize-Version -Version $Version) -ge [version]$OTEL_SUPERVISOR_CORALOGIX_MIN_VERSION)
+}
+
+function Get-SupervisorReleaseTagUrl {
+    param([string]$Version)
+
+    $normalizedVersion = Normalize-Version -Version $Version
+
+    if (Use-CoralogixSupervisorRelease -Version $normalizedVersion) {
+        return "${OTEL_SUPERVISOR_RELEASES_BASE_URL}/tag/cmd/opampsupervisor/$normalizedVersion"
+    }
+
+    return "${OTEL_COLLECTOR_RELEASES_BASE_URL}/tag/cmd%2Fopampsupervisor%2Fv$normalizedVersion"
+}
+
+function Get-SupervisorReleaseUrlPrefix {
+    param([string]$Version)
+
+    $normalizedVersion = Normalize-Version -Version $Version
+
+    if (Use-CoralogixSupervisorRelease -Version $normalizedVersion) {
+        return "${OTEL_SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${normalizedVersion}"
+    }
+
+    return "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${normalizedVersion}"
+}
+
 function Test-SupervisorVersion {
     param([string]$Version)
     
-    # Supervisor uses a different release path: cmd/opampsupervisor/v{version}
-    $releaseUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/cmd%2Fopampsupervisor%2Fv$Version"
+    $normalizedVersion = Normalize-Version -Version $Version
+    $releaseUrl = Get-SupervisorReleaseTagUrl -Version $normalizedVersion
+    $searchUrl = if (Use-CoralogixSupervisorRelease -Version $normalizedVersion) {
+        "${OTEL_SUPERVISOR_RELEASES_BASE_URL}?q=opampsupervisor"
+    } else {
+        "${OTEL_COLLECTOR_RELEASES_BASE_URL}?q=opampsupervisor"
+    }
     try {
         $response = Invoke-WebRequest -Uri $releaseUrl -UseBasicParsing -Method Head -ErrorAction Stop
         return $true
     }
     catch {
         if ($_.Exception.Response.StatusCode -eq 404) {
-            Write-Warn "Supervisor version v$Version not found in OpenTelemetry releases"
+            Write-Warn "Supervisor version $normalizedVersion not found"
             Write-Host ""
             Write-Host "Please verify the version exists at:"
             Write-Host "  $releaseUrl"
             Write-Host ""
             Write-Host "You can find available supervisor versions at:"
-            Write-Host "  https://github.com/open-telemetry/opentelemetry-collector-releases/releases?q=opampsupervisor"
+            Write-Host "  $searchUrl"
             Write-Host ""
             return $false
         }
@@ -655,7 +702,7 @@ function Get-OtelChecksum {
         [string]$Filename
     )
     
-    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/v${Version}/${OTEL_COLLECTOR_CHECKSUMS_FILE}"
+    $checksumsUrl = "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/v${Version}/${OTEL_COLLECTOR_CHECKSUMS_FILE}"
     
     try {
         $checksums = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing -ErrorAction Stop
@@ -681,8 +728,7 @@ function Get-SupervisorChecksum {
         [string]$Filename
     )
     
-    # Tag must be URL-encoded (cmd/opampsupervisor/v -> cmd%2Fopampsupervisor%2Fv)
-    $checksumsUrl = "${OTEL_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${Version}/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
+    $checksumsUrl = "$(Get-SupervisorReleaseUrlPrefix -Version $Version)/${OTEL_SUPERVISOR_CHECKSUMS_FILE}"
     
     try {
         $checksums = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing -ErrorAction Stop
@@ -920,7 +966,7 @@ function Install-SupervisorMSI {
             # Map architecture names (MSI uses x64, not amd64)
             $msiArch = if ($Arch -eq "amd64") { "x64" } else { $Arch }
             $msiName = "opampsupervisor_${Version}_windows_${msiArch}.msi"
-            $msiUrl = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${Version}/${msiName}"
+            $msiUrl = "$(Get-SupervisorReleaseUrlPrefix -Version $Version)/$msiName"
             
             Write-Log "Downloading OpAMP Supervisor ${Version} MSI..."
             Write-Log "Download URL: $msiUrl"
@@ -1342,7 +1388,31 @@ function New-WindowsService {
     catch {
         Write-Warn "Failed to start service: $($_.Exception.Message)"
         Write-Host ""
-        
+
+        # Show actual failure reason from Application Event Log (collector writes errors there before exiting)
+        Write-Host "Recent collector errors (Application Event Log):" -ForegroundColor Yellow
+        try {
+            $recentErrors = Get-EventLog -LogName Application -Newest 50 -ErrorAction SilentlyContinue |
+                Where-Object { $_.Source -eq 'otelcol-contrib' } |
+                Select-Object -First 5
+            if ($recentErrors) {
+                foreach ($e in $recentErrors) {
+                    Write-Host ""
+                    Write-Host "  [$($e.TimeGenerated)] $($e.Source)" -ForegroundColor Cyan
+                    Write-Host "  $($e.Message)" -ForegroundColor Red
+                }
+                Write-Host ""
+            }
+            else {
+                Write-Host "  (No collector entries found in Application log. The service may have exited before writing.)"
+                Write-Host ""
+            }
+        }
+        catch {
+            Write-Host "  (Could not read Event Log: $($_.Exception.Message))"
+            Write-Host ""
+        }
+
         # Try to get the actual error by running the collector directly
         Write-Host "Checking for configuration errors..."
         $validateOutput = & "$BINARY_PATH" validate --config "$CONFIG_FILE" 2>&1 | Out-String
@@ -1361,14 +1431,16 @@ function New-WindowsService {
             Write-Host ""
         }
         else {
-            Write-Host "Validation output:"
-            Write-Host $validateOutput
-            Write-Host ""
+            if ($validateOutput.Trim()) {
+                Write-Host "Validation output:"
+                Write-Host $validateOutput
+                Write-Host ""
+            }
             Write-Host "Troubleshooting steps:"
             Write-Host "1. Check if binary exists: Test-Path '$BINARY_PATH'"
             Write-Host "2. Check if config exists: Test-Path '$CONFIG_FILE'"
             Write-Host "3. Validate config: & '$BINARY_PATH' validate --config '$CONFIG_FILE'"
-            Write-Host "4. Check Event Log: Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 20"
+            Write-Host "4. Check Application Event Log: Get-EventLog -LogName Application -Source 'otelcol-contrib' -Newest 20"
             Write-Host "5. Check service path: Get-CimInstance Win32_Service -Filter \"Name='$SERVICE_NAME'\" | Select-Object PathName"
             Write-Host ""
         }
@@ -2044,4 +2116,3 @@ Useful commands:
 
 # Run main function
 Main
-

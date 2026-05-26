@@ -57,8 +57,7 @@ func TestE2E_TargetAllocator_ServiceMonitorMetrics(t *testing.T) {
 	})
 	defer shutdownSink()
 
-	waitForMetrics(t, 5, metricsConsumer)
-	require.NoError(t, checkTargetAllocatorServiceMonitorMetrics(metricsConsumer.AllMetrics()))
+	waitForTargetAllocatorServiceMonitorMetrics(t, metricsConsumer)
 }
 
 func waitForKubeletServiceMonitor(t *testing.T, k8sClient *xk8stest.K8sClient) {
@@ -84,6 +83,25 @@ func waitForKubeletServiceMonitor(t *testing.T, k8sClient *xk8stest.K8sClient) {
 		}
 		return false
 	}, 3*time.Minute, 2*time.Second, "kubelet ServiceMonitor was not found")
+}
+
+func waitForTargetAllocatorServiceMonitorMetrics(t *testing.T, metricsConsumer *consumertest.MetricsSink) {
+	t.Helper()
+
+	var lastErr error
+	var lastBatchCount int
+	deadline := time.Now().Add(3 * time.Minute)
+	for time.Now().Before(deadline) {
+		actual := metricsConsumer.AllMetrics()
+		lastBatchCount = len(actual)
+		lastErr = checkTargetAllocatorServiceMonitorMetrics(actual)
+		if lastErr == nil {
+			return
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	require.NoErrorf(t, lastErr, "failed to observe ServiceMonitor-derived kubelet metrics; got %d metric batches", lastBatchCount)
 }
 
 func checkTargetAllocatorServiceMonitorMetrics(actual []pmetric.Metrics) error {

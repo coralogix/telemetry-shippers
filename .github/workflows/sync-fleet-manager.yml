@@ -1,0 +1,345 @@
+name: Sync Fleet Manager artifacts
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - otel-integration/k8s-helm/Chart.yaml
+      - otel-integration/CHANGELOG.md
+      - otel-ecs-ec2/Chart.yaml
+      - otel-ecs-ec2/CHANGELOG.md
+      - otel-linux-standalone/Chart.yaml
+      - otel-linux-standalone/CHANGELOG.md
+      - otel-macos-standalone/Chart.yaml
+      - otel-macos-standalone/CHANGELOG.md
+      - otel-windows-standalone/Chart.yaml
+      - otel-windows-standalone/CHANGELOG.md
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run map sync even if no version bump is detected"
+        type: boolean
+        default: false
+      integration_chart_version:
+        description: "Override otel-integration chart version (e.g. 0.0.268)"
+        type: string
+        required: false
+      collector_chart_version:
+        description: "Override opentelemetry-collector chart version (e.g. 0.128.15)"
+        type: string
+        required: false
+      app_version:
+        description: "Override collector appVersion (skips helm lookup)"
+        type: string
+        required: false
+      create_pr:
+        description: "If true, create commit/push and open PR in Fleet Manager Helm Data"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync-fleet-manager:
+    runs-on: ubuntu-latest
+    env:
+      FLEET_MANAGER_HELM_DATA_DESTINATION_DIR: integration_releases
+      FLEET_MANAGER_HELM_DATA_DIR: ${{ github.workspace }}/fleet-manager-helm-data/integration_releases
+    steps:
+      - name: Checkout telemetry-shippers
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yq and jq
+        run: sudo apt-get update && sudo apt-get install -y yq jq
+
+      - name: Detect otel-integration chart version bump
+        id: detect
+        run: |
+          set -euo pipefail
+          file="otel-integration/k8s-helm/Chart.yaml"
+
+          integration_chart_version="${INTEGRATION_CHART_VERSION_OVERRIDE:-}"
+          if [ -z "$integration_chart_version" ]; then
+            integration_chart_version="$(scripts/resolve-integration-chart-version.sh "$file")"
+          fi
+
+          old_integration_chart_version=""
+          base_sha="${GITHUB_EVENT_BEFORE:-}"
+          if [ -n "$base_sha" ] && [ "$base_sha" != "0000000000000000000000000000000000000000" ]; then
+            if git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
+              old_file="$(mktemp)"
+              if git show "$base_sha:$file" > "$old_file" 2>/dev/null; then
+                old_integration_chart_version="$(yq -r '.version' "$old_file")"
+              fi
+              rm -f "$old_file"
+            fi
+          fi
+
+          if [ -z "$old_integration_chart_version" ]; then
+            old_file="$(mktemp)"
+            if git show "HEAD^1:$file" > "$old_file" 2>/dev/null; then
+              old_integration_chart_version="$(yq -r '.version' "$old_file")"
+            fi
+            rm -f "$old_file"
+          fi
+
+          collector_chart_version="${COLLECTOR_CHART_VERSION_OVERRIDE:-}"
+          if [ -z "$collector_chart_version" ]; then
+            collector_chart_version="$(scripts/resolve-collector-chart-version.sh "$file")"
+          fi
+
+          app_version="${APP_VERSION_OVERRIDE:-}"
+
+          echo "integration_chart_version=$integration_chart_version" >> "$GITHUB_OUTPUT"
+          echo "old_integration_chart_version=$old_integration_chart_version" >> "$GITHUB_OUTPUT"
+          echo "collector_chart_version=$collector_chart_version" >> "$GITHUB_OUTPUT"
+          echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
+
+          bumped="false"
+          if [ "${FORCE_RUN:-false}" = "true" ]; then
+            bumped="true"
+          elif [ -n "$old_integration_chart_version" ] && [ "$integration_chart_version" != "$old_integration_chart_version" ]; then
+            bumped="true"
+          fi
+
+          echo "bumped=$bumped" >> "$GITHUB_OUTPUT"
+        env:
+          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+          INTEGRATION_CHART_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.integration_chart_version) || '' }}
+          COLLECTOR_CHART_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.collector_chart_version) || '' }}
+          APP_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.app_version) || '' }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Validate changelog format
+        run: |
+          go run ./cmd/helmlog validate \
+            otel-integration/CHANGELOG.md \
+            otel-ecs-ec2/CHANGELOG.md \
+            otel-linux-standalone/CHANGELOG.md \
+            otel-macos-standalone/CHANGELOG.md \
+            otel-windows-standalone/CHANGELOG.md
+
+      - name: Generate changelog artifacts (json)
+        run: |
+          set -euo pipefail
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_integration_changelog.json"                    otel-integration/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_ecs_ec2_changelog.json"                        otel-ecs-ec2/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_linux_standalone_changelog.json"               otel-linux-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_macos_standalone_changelog.json"               otel-macos-standalone/CHANGELOG.md
+          go run ./cmd/helmlog generate   --output "$RUNNER_TEMP/otel_windows_standalone_changelog.json"             otel-windows-standalone/CHANGELOG.md
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_ecs_ec2_chart_versions_map.json"            otel-ecs-ec2/Chart.yaml
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json"   otel-linux-standalone/Chart.yaml
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json" otel-windows-standalone/Chart.yaml
+          go run ./cmd/helmlog chart-mapping --output "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json"   otel-macos-standalone/Chart.yaml
+
+      - name: Set up Helm
+        if: steps.detect.outputs.bumped == 'true'
+        uses: azure/setup-helm@v4
+
+      - name: Checkout Fleet Manager Helm Data
+        uses: actions/checkout@v4
+        with:
+          repository: coralogix/fleet-manager-helm-data
+          ref: master
+          path: fleet-manager-helm-data
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Prepare Fleet Manager Helm Data branch
+        run: |
+          set -euo pipefail
+          repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
+          base_branch="master"
+          branch="bot/sync-fleet-manager-artifacts"
+
+          git -C "$repo_dir" config user.name "github-actions[bot]"
+          git -C "$repo_dir" config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git -C "$repo_dir" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git -C "$repo_dir" fetch origin "$branch"
+            git -C "$repo_dir" checkout "$branch"
+            git -C "$repo_dir" rebase "origin/$base_branch"
+          else
+            git -C "$repo_dir" checkout -b "$branch"
+          fi
+
+      - name: Update Fleet Manager collector chart mapping
+        id: update_map
+        if: steps.detect.outputs.bumped == 'true'
+        env:
+          INTEGRATION_CHART_VERSION: ${{ steps.detect.outputs.integration_chart_version }}
+          COLLECTOR_CHART_VERSION: ${{ steps.detect.outputs.collector_chart_version }}
+          APP_VERSION_OVERRIDE: ${{ steps.detect.outputs.app_version }}
+        run: |
+          set -euo pipefail
+
+          output_env="$RUNNER_TEMP/fleet-manager-output.env"
+          args=(
+            --chart-file otel-integration/k8s-helm/Chart.yaml
+            --output-env "$output_env"
+            --integration-chart-version "$INTEGRATION_CHART_VERSION"
+            --chart-version "$COLLECTOR_CHART_VERSION"
+          )
+          if [ -n "${APP_VERSION_OVERRIDE:-}" ]; then
+            args+=(--app-version "$APP_VERSION_OVERRIDE")
+          fi
+          scripts/update-fleet-manager-collector-chart-map.sh "${args[@]}"
+
+          set -a
+          . "$output_env"
+          set +a
+
+          if [ "${MAPPING_UPDATED:-false}" = "true" ]; then
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Copy artifacts to Fleet Manager Helm Data
+        id: update_helm_data
+        run: |
+          set -euo pipefail
+
+          destination_dir="${FLEET_MANAGER_HELM_DATA_DESTINATION_DIR#/}"
+          destination_dir="${destination_dir%/}"
+          if [ -z "$destination_dir" ]; then
+            echo "Fleet Manager Helm data destination directory cannot be empty." >&2
+            exit 1
+          fi
+
+          mappings=(
+            "$RUNNER_TEMP/otel_integration_changelog.json:$destination_dir/otel_integration_changelog.json"
+            "$RUNNER_TEMP/otel_ecs_ec2_changelog.json:$destination_dir/otel_ecs_ec2_changelog.json"
+            "$RUNNER_TEMP/otel_linux_standalone_changelog.json:$destination_dir/otel_linux_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_macos_standalone_changelog.json:$destination_dir/otel_macos_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_windows_standalone_changelog.json:$destination_dir/otel_windows_standalone_changelog.json"
+            "$RUNNER_TEMP/otel_ecs_ec2_chart_versions_map.json:$destination_dir/otel_ecs_ec2_chart_versions_map.json"
+            "$RUNNER_TEMP/otel_linux_standalone_chart_versions_map.json:$destination_dir/otel_linux_standalone_chart_versions_map.json"
+            "$RUNNER_TEMP/otel_windows_standalone_chart_versions_map.json:$destination_dir/otel_windows_standalone_chart_versions_map.json"
+            "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json:$destination_dir/otel_macos_standalone_chart_versions_map.json"
+          )
+
+          changed_files=()
+          for mapping in "${mappings[@]}"; do
+            src="${mapping%%:*}"
+            dst_name="${mapping#*:}"
+            dst="$GITHUB_WORKSPACE/fleet-manager-helm-data/$dst_name"
+
+            if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+              continue
+            fi
+
+            mkdir -p "$(dirname "$dst")"
+            cp "$src" "$dst"
+          done
+
+          mapfile -t changed_files < <(
+            git -C "$GITHUB_WORKSPACE/fleet-manager-helm-data" ls-files --modified --others --exclude-standard -- "$destination_dir"
+          )
+
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            echo "changed_files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+          printf 'changed_files=%s\n' "${changed_files[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, push, and create/update Fleet Manager Helm Data PR
+        if: steps.update_helm_data.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CREATE_PR: ${{ github.event_name != 'workflow_dispatch' || inputs.create_pr }}
+          FLEET_MANAGER_HELM_DATA_REPO: coralogix/fleet-manager-helm-data
+          FLEET_MANAGER_HELM_DATA_REF: master
+          INTEGRATION_CHART_VERSION: ${{ steps.detect.outputs.integration_chart_version }}
+          COLLECTOR_CHART_VERSION: ${{ steps.detect.outputs.collector_chart_version }}
+        run: |
+          set -euo pipefail
+
+          repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
+          branch="bot/sync-fleet-manager-artifacts"
+          changed_files="${{ steps.update_helm_data.outputs.changed_files }}"
+          destination_dir="${FLEET_MANAGER_HELM_DATA_DESTINATION_DIR#/}"
+          destination_dir="${destination_dir%/}"
+
+          enable_auto_merge() {
+            local pr_number="$1"
+            local head_sha="$2"
+
+            echo "Enabling auto-merge with squash strategy for PR #$pr_number"
+            gh pr merge "$pr_number" \
+              -R "$FLEET_MANAGER_HELM_DATA_REPO" \
+              --auto \
+              --match-head-commit "$head_sha" \
+              --squash
+          }
+
+          read -r -a files <<< "$changed_files"
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No files to stage."
+            exit 0
+          fi
+
+          git -C "$repo_dir" add "${files[@]}"
+          if git -C "$repo_dir" diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          if [ "${CREATE_PR:-false}" != "true" ]; then
+            echo "CREATE_PR is false; skipping commit/push/PR. (Dry run complete.)"
+            echo ""
+            echo "Changed files in Fleet Manager Helm Data:"
+            git -C "$repo_dir" --no-pager diff --cached --stat
+            echo ""
+            echo "Full staged diff:"
+            git -C "$repo_dir" --no-pager diff --cached
+            exit 0
+          fi
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Missing GH_TOKEN secret"
+            exit 1
+          fi
+
+          git -C "$repo_dir" commit -m "Sync Fleet Manager artifacts from telemetry-shippers"
+          git -C "$repo_dir" push --force-with-lease -u origin "$branch"
+          pushed_head_sha="$(git -C "$repo_dir" rev-parse HEAD)"
+
+          existing_pr="$(gh pr list -R "$FLEET_MANAGER_HELM_DATA_REPO" --head "$branch" --state open --json number --jq '.[0].number')"
+          if [ -n "$existing_pr" ]; then
+            echo "PR already exists: #$existing_pr"
+            enable_auto_merge "$existing_pr" "$pushed_head_sha"
+            exit 0
+          fi
+
+          pr_body="$RUNNER_TEMP/fleet-manager-helm-data-sync-pr-body.md"
+          {
+            echo "Automated synchronization from telemetry-shippers."
+            echo ""
+            echo "## Helm data artifacts"
+            printf -- "- Destination directory: \`%s\`\n" "$destination_dir"
+            printf -- "- otel-integration chart: \`%s\`\n" "$INTEGRATION_CHART_VERSION"
+            printf -- "- opentelemetry-collector chart: \`%s\`\n" "$COLLECTOR_CHART_VERSION"
+            echo ""
+            echo "Dumb ticket reference to pass build: CX-39963."
+          } > "$pr_body"
+
+          created_pr_url="$(gh pr create \
+            -R "$FLEET_MANAGER_HELM_DATA_REPO" \
+            --base "$FLEET_MANAGER_HELM_DATA_REF" \
+            --head "$branch" \
+            --title "Sync Fleet Manager Helm data from telemetry-shippers" \
+            --body-file "$pr_body")"
+
+          enable_auto_merge "$created_pr_url" "$pushed_head_sha"

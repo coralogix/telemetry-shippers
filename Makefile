@@ -21,3 +21,8 @@ check-docs: $(MDOX_BINARY)
 fmt-docs: $(MDOX_BINARY)
 	@echo ">> formatting and local/remote link check"
 	find . -type f -regex ".*.md" | xargs $(MDOX_BINARY) fmt --links.validate.config-file .mdox.validate.yaml -l --soft-wraps
+
+.PHONY: test
+test:
+	@echo ">> running Go tests"
+	go test ./...

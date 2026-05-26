@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.275"
+  version: "0.0.314"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -16,11 +16,11 @@ global:
 # - openshift
 # - eks/fargate
 # - gke/autopilot
-
 distribution: ""
 opentelemetry-agent:
   enabled: true
   mode: daemonset
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry
   # extraVolumes: []
   # extraVolumeMounts: []
@@ -80,7 +80,7 @@ opentelemetry-agent:
       scrapeInterval: 30s
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator
-      tag: v0.144.0
+      tag: v0.150.0
 
   # serviceAccount:
   #   # Specifies whether a service account should be created
@@ -233,6 +233,17 @@ opentelemetry-agent:
       #    histogramBuckets: [1s, 2s]
       #  - selector: route() where attributes["service.name"] == "two"
       #    histogramBuckets: [5s, 10s]
+    # Sanitizes high-cardinality span names and selected span attributes before
+    # spans are converted into span metrics.
+    # Default: auto-enabled when spanMetrics or spanMetricsMulti is enabled.
+    # Set enabled=false to disable the feature completely.
+    # Set sanitize_url=false to keep URL-style span names and URL attributes unchanged.
+    # Set sanitizeDatabases=[] to keep database statements/commands unchanged.
+    spanMetricsSanitization:
+      enabled: auto
+      sanitize_url: true
+      sanitizeDatabases:
+        [sql, redis, memcached, mongo, opensearch, es]
     # Removes uids and other uneeded attributes from metric resources.
     # This reduces target_info cardinality.
     # reduceResourceAttributes:
@@ -272,6 +283,18 @@ opentelemetry-agent:
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
+    # Configures the agent to receive eBPF profiler profiles from the node-local
+    # profiler collector and enrich them with Kubernetes metadata before export.
+    profilesCollection:
+      enabled: true
+      serviceLabels:
+        - tag_name: service.label
+          key: app.kubernetes.io/name
+          from: pod
+      serviceAnnotations:
+        - tag_name: service.annotation
+          key: app.coralogix.com/service
+          from: pod
     # Configures the collector to receive StatsD metrics.
     # Adds the statsd receiver to the metrics pipeline.
     statsdReceiver:
@@ -368,6 +391,7 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   enabled: true
   mode: deployment
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry-collector
   clusterRole:
     name: "coralogix-opentelemetry-collector"
@@ -574,6 +598,7 @@ opentelemetry-agent-windows:
 opentelemetry-gateway:
   enabled: false
   mode: deployment
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry-gateway
   service:
     enabled: true
@@ -715,6 +740,7 @@ opentelemetry-gateway:
 opentelemetry-receiver:
   enabled: false
   mode: deployment
+  # provider: aws  # Cloud provider (aws, gcp, azure, on-prem). Inferred from distribution if empty.
   fullnameOverride: coralogix-opentelemetry-receiver
   service:
     enabled: true
@@ -859,18 +885,29 @@ coralogix-ebpf-profiler:
 opentelemetry-ebpf-profiler:
   enabled: false
   mode: daemonset
+  fullnameOverride: coralogix-opentelemetry-ebpf-profiler
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/path: "/metrics"
     prometheus.io/port: "8888"
   ports:
+    otlp:
+      enabled: false
+    otlp-http:
+      enabled: false
     metrics:
       enabled: true
 
   presets:
+    resourceDetection:
+      enabled: false
     ebpfProfiler:
-      enabled: true
-    profilesK8sAttributes:
       enabled: true
     fleetManagement:
       enabled: true
@@ -881,7 +918,11 @@ opentelemetry-ebpf-profiler:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     otlpExporter:
-      enabled: false
+      enabled: true
+      endpoint: ${env:K8S_NODE_IP}:4317
+      pipelines: ["profiles"]
+      tls:
+        insecure: true
     otlpReceiver:
       enabled: false
     collectorMetrics:
@@ -896,12 +937,6 @@ opentelemetry-ebpf-profiler:
           cx.agent.type: "ebpf-profiler"
         logs:
           level: "{{ .Values.global.logLevel }}"
-      pipelines:
-        profiles:
-          exporters:
-            - debug
-          processors:
-            - memory_limiter
 
 opentelemetry-ebpf-instrumentation:
   enabled: false

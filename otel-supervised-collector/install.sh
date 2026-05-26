@@ -1,9 +1,13 @@
 #!/bin/sh
 set -eu
 
-DEFAULT_VERSION=""
-SUPERVISOR_VERSION=""
-COLLECTOR_VERSION=""
+DEFAULT_COLLECTOR_VERSION=""
+DEFAULT_SUPERVISOR_VERSION=""
+SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-}"
+COLLECTOR_VERSION="${COLLECTOR_VERSION:-}"
+OTEL_COLLECTOR_RELEASES_BASE_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases"
+SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-collector-releases/releases"
+SUPERVISOR_CORALOGIX_MIN_VERSION="0.146.0"
 
 ARCH=$(uname -m)
 # if arch is aarch64, change to arm64
@@ -28,12 +32,51 @@ require_cmd() {
   fi
 }
 
+version_at_least() {
+  version=${1#v}
+  minimum=${2#v}
+
+  awk -v version="$version" -v minimum="$minimum" '
+    BEGIN {
+      split(version, version_parts, ".")
+      split(minimum, minimum_parts, ".")
+      max_parts = length(version_parts) > length(minimum_parts) ? length(version_parts) : length(minimum_parts)
+      for (i = 1; i <= max_parts; i++) {
+        version_component = version_parts[i] + 0
+        minimum_component = minimum_parts[i] + 0
+        if (version_component > minimum_component) {
+          exit 0
+        }
+        if (version_component < minimum_component) {
+          exit 1
+        }
+      }
+      exit 0
+    }
+  '
+}
+
+use_coralogix_supervisor_release() {
+  version_at_least "$1" "$SUPERVISOR_CORALOGIX_MIN_VERSION"
+}
+
+get_supervisor_release_url_prefix() {
+  version=${1#v}
+
+  if use_coralogix_supervisor_release "$version"; then
+    printf "%s" "${SUPERVISOR_RELEASES_BASE_URL}/download/cmd/opampsupervisor/${version}"
+  else
+    printf "%s" "${OTEL_COLLECTOR_RELEASES_BASE_URL}/download/cmd%2Fopampsupervisor%2Fv${version}"
+  fi
+}
+
 fetch_default_version() {
-  version_url="https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-supervised-collector/CURRENT_VERSION"
-  version=$(curl -fsSL "$version_url") || fail "Unable to fetch default version from $version_url. Set VERSION and rerun to skip fetching."
+  version_file="$1"
+  version_url="https://raw.githubusercontent.com/coralogix/telemetry-shippers/master/otel-supervised-collector/${version_file}"
+  version=$(curl -fsSL "$version_url") || fail "Unable to fetch default version from $version_url. Set VERSION or ${version_file} and rerun to skip fetching."
   version=$(printf "%s" "$version" | tr -d '[:space:]')
   if [ -z "$version" ]; then
-    fail "Fetched default version is empty from $version_url. Set VERSION and rerun to skip fetching."
+    fail "Fetched default version is empty from $version_url. Set VERSION or ${version_file} and rerun to skip fetching."
   fi
   printf "%s" "$version"
 }
@@ -56,6 +99,7 @@ check_arch() {
 
 detect_pkg_type() {
   if [ -r /etc/os-release ]; then
+    # shellcheck source=/dev/null
     . /etc/os-release
     base="${ID_LIKE:-$ID}"
     case "$base" in
@@ -77,11 +121,11 @@ install_supervisor() {
   case "$pkg_type" in
     deb)
       pkg_name="opampsupervisor_${SUPERVISOR_VERSION}_linux_${ARCH}.deb"
-      pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SUPERVISOR_VERSION}/${pkg_name}"
+      pkg_url="$(get_supervisor_release_url_prefix "$SUPERVISOR_VERSION")/${pkg_name}"
       ;;
     rpm)
       pkg_name="opampsupervisor_${SUPERVISOR_VERSION}_linux_${ARCH}.rpm"
-      pkg_url="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv${SUPERVISOR_VERSION}/${pkg_name}"
+      pkg_url="$(get_supervisor_release_url_prefix "$SUPERVISOR_VERSION")/${pkg_name}"
       ;;
     *) fail "Unknown package type: $pkg_type" ;;
   esac
@@ -253,10 +297,18 @@ main() {
   require_cmd uname
   require_cmd tar
   require_cmd curl
+  require_cmd awk
 
-  DEFAULT_VERSION="${VERSION:-$(fetch_default_version)}"
-  SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_VERSION}"
-  COLLECTOR_VERSION="${COLLECTOR_VERSION:-$SUPERVISOR_VERSION}"
+  if [ -n "${VERSION:-}" ]; then
+    DEFAULT_SUPERVISOR_VERSION="$VERSION"
+    DEFAULT_COLLECTOR_VERSION="$VERSION"
+  else
+    DEFAULT_SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$(fetch_default_version SUPERVISOR_VERSION)}"
+    DEFAULT_COLLECTOR_VERSION="${COLLECTOR_VERSION:-$(fetch_default_version COLLECTOR_VERSION)}"
+  fi
+
+  SUPERVISOR_VERSION="${SUPERVISOR_VERSION:-$DEFAULT_SUPERVISOR_VERSION}"
+  COLLECTOR_VERSION="${COLLECTOR_VERSION:-$DEFAULT_COLLECTOR_VERSION}"
 
   check_arch
   ensure_sudo

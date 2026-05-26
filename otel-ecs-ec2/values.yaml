@@ -1,11 +1,11 @@
 global:
-  domain: "eu2.coralogix.com"
+  domain: "coralogix.com"
   clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.2"
+  version: "0.0.30"
   deploymentEnvironmentName: ""
 
 opentelemetry-agent:
@@ -14,7 +14,7 @@ opentelemetry-agent:
   mode: daemonset
   image:
     repository: coralogixrepo/coralogix-otel-collector
-    tag: v0.5.7
+    tag: v0.5.12
   # Extra config for the collector
   # This is used to add extra receivers, processors, exporters, and connectors
   # to the "logs", "metrics", and "traces" pipelines and other pipelines managed by the chart.
@@ -334,3 +334,47 @@ opentelemetry-agent:
           processors:
             - memory_limiter
           # receivers: []
+
+opentelemetry-ebpf-profiler:
+  enabled: false
+  distribution: "ecs"
+  mode: daemonset
+  presets:
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: "coralogix-integration-ecs-ec2"
+    fleetManagement:
+      enabled: true
+      agentType: "agent"
+      clusterName: "{{.Values.global.clusterName}}"
+
+    ebpfProfiler:
+      enabled: true
+      reporterInterval: "{{.Values.global.collectionInterval}}"
+      samplesPerSecond: 20
+
+    collectorMetrics:
+      enabled: false
+
+    otlpReceiver:
+      enabled: false
+
+    ecsAttributesContainerLogs:
+      enabled: true
+      profilesServiceName:
+        enabled: true
+
+    reduceResourceAttributes:
+      enabled: false
+
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    resourceDetection:
+      enabled: true
+
+  config:
+    exporters:
+      debug: null

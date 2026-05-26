@@ -6,17 +6,6 @@ global:
 
 opentelemetry-ebpf-profiler:
   enabled: true
-  command:
-    extraArgs:
-      - "--feature-gates=service.profilesSupport"
-  extraEnvs:
-    - name: CORALOGIX_PRIVATE_KEY
-      valueFrom:
-        secretKeyRef:
-          name: coralogix-keys
-          key: PRIVATE_KEY
-    - name: OTELCOL_FEATURE_GATES
-      value: "service.profilesSupport"
   ports:
     otlp:
       enabled: false

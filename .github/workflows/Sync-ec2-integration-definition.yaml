@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     paths:
-      - 'otel-ecs-ec2/examples/manifest.yaml'
+      - 'otel-ecs-ec2/Chart.yaml'
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       - name: Extract image version
         id: New_version
         run: |
-          Chart_version=$(yq -r '.opentelemetry-agent.image.tag | sub("^v"; "")' otel-ecs-ec2/values.yaml)
+          Chart_version=$(yq -r '.version' otel-ecs-ec2/Chart.yaml)
   
           if [ -z "$Chart_version" ]; then
             echo "Failed to extract collector version"
