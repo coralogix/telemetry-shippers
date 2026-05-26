@@ -93,25 +93,25 @@ extensions:
 
 ## Script Options
 
-| Option                           | Description                                                                                    |
-|----------------------------------|------------------------------------------------------------------------------------------------|
-| `-v, --version <version>`        | Local configuration mode: collector image tag (default: Helm chart `appVersion`)             |
-| `--collector-version <version>`  | Collector image version (local configuration mode)                                             |
+| Option                           | Description                                                                                                  |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `-v, --version <version>`        | Local configuration mode: collector image tag (default: Helm chart `appVersion`)                             |
+| `--collector-version <version>`  | Collector image version (local configuration mode)                                                           |
 | `--supervisor-version <version>` | Supervised collector image tag (supervisor mode; default: `otel-supervised-collector/CURRENT_IMAGE_VERSION`) |
-| `-c, --config <path>`            | Path to custom configuration file                     |
-| `-s, --supervisor`               | Use supervisor mode                                   |
-| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)  |
-|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}` |
-|                                  | (ignored in supervisor mode)                          |
-| `-f, --foreground`               | Run in foreground (default: detached)                 |
-| `--uninstall`                    | Stop and remove the container                         |
-| `-h, --help`                     | Show help message                                     |
+| `-c, --config <path>`            | Path to custom configuration file                                                                            |
+| `-s, --supervisor`               | Use supervisor mode                                                                                          |
+| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)                                                         |
+|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}`                                                        |
+|                                  | (ignored in supervisor mode)                                                                                 |
+| `-f, --foreground`               | Run in foreground (default: detached)                                                                        |
+| `--uninstall`                    | Stop and remove the container                                                                                |
+| `-h, --help`                     | Show help message                                                                                            |
 
 ## Container Images
 
-| Mode                | Image                                                                                      |
-|---------------------|--------------------------------------------------------------------------------------------|
-| Local Configuration | `otel/opentelemetry-collector-contrib`                                                   |
+| Mode                | Image                                                                                         |
+|---------------------|-----------------------------------------------------------------------------------------------|
+| Local Configuration | `otel/opentelemetry-collector-contrib`                                                        |
 | Supervisor          | `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-collector` (same as Helm/K8s) |
 
 Supervisor image tags follow [`otel-supervised-collector/CURRENT_IMAGE_VERSION`](https://github.com/coralogix/telemetry-shippers/blob/master/otel-supervised-collector/CURRENT_IMAGE_VERSION), not the Helm chart `appVersion`.
