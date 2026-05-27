@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.31 / 2026-05-27
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.8`.
+
+#### Changes from opentelemetry-collector 0.131.8:
+- [Fix] Wrap the chart-managed `health_check` extension endpoint in IPv6 bracket notation when `networkMode: ipv6` is used, aligning it with the other IPv6-safe listener endpoints and allowing the collector to start and pass health probes on IPv6-only clusters.
+
 ### v0.0.30 / 2026-05-21
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.131.7`.
