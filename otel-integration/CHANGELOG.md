@@ -2,12 +2,12 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.315 / 2026-05-27
+### v0.0.317 / 2026-05-27
 
-- [Chore] Bump chart dependency to opentelemetry-collector 0.131.8
+- [Chore] Bump chart dependency to opentelemetry-collector 0.133.0
 
-#### Changes from opentelemetry-collector 0.131.8:
-- [Fix] Wrap the chart-managed `health_check` extension endpoint in IPv6 bracket notation when `networkMode: ipv6` is used, aligning it with the other IPv6-safe listener endpoints and allowing the collector to start and pass health probes on IPv6-only clusters.
+#### Changes from opentelemetry-collector 0.133.0:
+- [Feat] Add the `presets.istioAutodetect` preset to discover Istio Prometheus scrape targets, keep a curated Istio metric set, optionally drop high-cardinality attributes, and optionally derive `service.name` for logs to improve correlation in Istio environments.
 
 ### v0.0.314 / 2026-05-21
 
