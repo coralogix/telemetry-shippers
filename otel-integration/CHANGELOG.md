@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.315 / 2026-05-27
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.132.0
+
+#### Changes from opentelemetry-collector 0.132.0:
+- [Feat] Add first-class managed-K8s DNS metric discovery under `presets.kubernetesApiServerMetrics.dns`, with `auto` selection between `kubedns` on GKE and `coredns` elsewhere so DNS control-plane metrics can be enabled without custom Prometheus jobs.
+
 ### v0.0.314 / 2026-05-21
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.7
