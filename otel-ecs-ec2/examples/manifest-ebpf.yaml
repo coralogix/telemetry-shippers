@@ -6,7 +6,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.131.7
+    helm.sh/chart: opentelemetry-agent-0.131.8
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.151.0"
@@ -22,7 +22,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.131.7
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.131.8
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.151.0"
@@ -38,7 +38,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.131.7
+    helm.sh/chart: opentelemetry-agent-0.131.8
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.151.0"
@@ -175,14 +175,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.30
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.31
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.30
+            X-Coralogix-Distribution: helm-otel-integration/0.0.31
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.30
+            X-Coralogix-Distribution: helm-otel-integration/0.0.31
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -202,13 +202,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.30
+            X-Coralogix-Distribution: helm-otel-integration/0.0.31
       coralogix/resource_catalog:
         application_name: resource
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.30
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.31
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -233,7 +233,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.131.7
+            helm.chart.opentelemetry-agent.version: 0.131.8
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -809,7 +809,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.131.7
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.131.8
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.151.0"
@@ -832,14 +832,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.30
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.31
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.30
+            X-Coralogix-Distribution: helm-otel-integration/0.0.31
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.30
+            X-Coralogix-Distribution: helm-otel-integration/0.0.31
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -859,7 +859,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.30
+            X-Coralogix-Distribution: helm-otel-integration/0.0.31
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
@@ -869,7 +869,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-ebpf-profiler.version: 0.131.7
+            helm.chart.opentelemetry-ebpf-profiler.version: 0.131.8
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -958,7 +958,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.131.7
+    helm.sh/chart: opentelemetry-agent-0.131.8
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.151.0"
@@ -975,7 +975,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a8a7a7a6c5e4d1437c5e9c17949a1ef1b9a8da0b0d16518da5fb706f6af15564
+        checksum/config: 7906eaec12f20a400a2309cd184fe4bbcc5b83a94de1f2a0e8636e0eceae65ae
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -1095,7 +1095,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.131.7
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.131.8
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.151.0"
@@ -1112,7 +1112,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e96e220d301061506fc2130a17b84a1a7a86034dee67851c4bfedfe9401d6831
+        checksum/config: e28a0988ed3a18dc65479807176e4bef9472c0b41f3b2d913c91151a64d4b0fb
         
       labels:
         app.kubernetes.io/name: opentelemetry-ebpf-profiler

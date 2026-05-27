@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.36 / 2026-05-27
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.8
+
+#### Changes from opentelemetry-collector 0.131.8:
+- [Fix] Wrap the chart-managed `health_check` extension endpoint in IPv6 bracket notation when `networkMode: ipv6` is used, aligning it with the other IPv6-safe listener endpoints and allowing the collector to start and pass health probes on IPv6-only clusters.
+
 ### v0.0.35 / 2026-05-21
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.7
