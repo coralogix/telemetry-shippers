@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.317 / 2026-05-27
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.134.0
+
+#### Changes from opentelemetry-collector 0.134.0:
+- [Feat] Extend `presets.kubernetesApiServerMetrics` with first-class managed control-plane metric discovery for kube-controller-manager, kube-scheduler, kube-proxy, and etcd, with per-component toggles and curated default metric sets.
+
 ### v0.0.314 / 2026-05-21
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.7
