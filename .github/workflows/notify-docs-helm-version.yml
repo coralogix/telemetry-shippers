@@ -1,0 +1,78 @@
+# Notifies coralogix/documentation when the otel-integration Helm chart version bumps.
+# Polling fallback: .github/workflows/poll-helm-chart.yml in the docs repo.
+#
+# Deploy this file to .github/workflows/ in coralogix/telemetry-shippers.
+# It supplements sync-otel-integration-docs.yml (which only fires on README.md
+# changes and does not carry version information).
+
+name: Notify docs on helm chart version bump
+
+permissions: {}
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - otel-integration/k8s-helm/Chart.yaml
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch enough history that github.event.before is reachable.
+          # 0 = full history; cheap on this repo.
+          fetch-depth: 0
+
+      - name: Resolve new and old chart versions
+        id: versions
+        env:
+          # github.event.before is the SHA the branch pointed at BEFORE the push.
+          # For multi-commit pushes that's the right baseline (HEAD^ would only
+          # point at the previous commit in the pushed batch).
+          # workflow_dispatch and force-pushes (000…000) don't set this — fall
+          # back to HEAD^ to keep the workflow self-sufficient.
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          NEW=$(grep '^version:' otel-integration/k8s-helm/Chart.yaml | awk '{print $2}')
+          if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            BASE="$BEFORE_SHA"
+          else
+            BASE="HEAD^"
+          fi
+          OLD=$(git show "$BASE:otel-integration/k8s-helm/Chart.yaml" 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "")
+          echo "new_version=$NEW" >> "$GITHUB_OUTPUT"
+          echo "old_version=$OLD" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger docs version bump
+        # Skip when the Chart.yaml edit didn't actually change the version field
+        # (metadata-only edits — description, dependencies, etc. — shouldn't
+        # fire a docs bump notification). Allow if old_version is empty
+        # (first-time setup or a path we couldn't resolve a base for).
+        if: |
+          steps.versions.outputs.new_version != '' &&
+          (steps.versions.outputs.old_version == '' ||
+           steps.versions.outputs.old_version != steps.versions.outputs.new_version)
+        run: |
+          curl --fail-with-body -X POST \
+               -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/coralogix/documentation/dispatches \
+               -d "{
+                 \"event_type\": \"component-version-bump\",
+                 \"client_payload\": {
+                   \"component\": \"helm_chart\",
+                   \"new_version\": \"${{ steps.versions.outputs.new_version }}\",
+                   \"old_version\": \"${{ steps.versions.outputs.old_version }}\"
+                 }
+               }"
+
+      - name: No-op notice
+        if: |
+          steps.versions.outputs.new_version != '' &&
+          steps.versions.outputs.old_version == steps.versions.outputs.new_version
+        run: |
+          echo "Chart.yaml was edited but version field is unchanged (${{ steps.versions.outputs.new_version }}); not notifying docs."
