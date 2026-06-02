@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.316 / 2026-06-02
+
+- [Chore] Update Windows collector image to v0.152.0.
+- [Chore] Update target allocator image to v0.152.0.
+
 ### v0.0.315 / 2026-05-27
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.8
