@@ -560,8 +560,9 @@ opentelemetry-cluster-collector:
           processors:
             - memory_limiter
           # receivers: []
-  tolerations:
-    - operator: Exists
+  # Centralized collector: schedule only on healthy, untainted nodes.
+  # Override to add tolerations for dedicated node pools if required.
+  tolerations: []
 
   startupProbe:
     failureThreshold: 4
@@ -731,8 +732,9 @@ opentelemetry-gateway:
             - tail_sampling
           # receivers: []
 
-  tolerations:
-    - operator: Exists
+  # Centralized gateway: schedule only on healthy, untainted nodes.
+  # Override to add tolerations for dedicated node pools if required.
+  tolerations: []
   ports:
     otlp-http:
       enabled: false
@@ -851,8 +853,9 @@ opentelemetry-receiver:
             - memory_limiter
           # receivers: []
 
-  tolerations:
-    - operator: Exists
+  # Centralized receiver: schedule only on healthy, untainted nodes.
+  # Override to add tolerations for dedicated node pools if required.
+  tolerations: []
   ports:
     otlp-http:
       enabled: false
