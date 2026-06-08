@@ -2,6 +2,14 @@
 
 ## otel-windows-standalone
 
+### v0.0.37 / 2026-06-08
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.9
+
+#### Changes from opentelemetry-collector 0.131.9:
+- [Breaking] Fix `spanMetricsMulti` to apply the same extra dimensions (including `errorTracking` fallback from `presets.spanMetrics`) to all spanmetrics connectors, and skip auto-added status code dimensions when they are already listed in `extraDimensions`.
+- [Breaking] Fix `spanmetrics/default` and routed `spanmetrics/<index>` connectors to match single `spanMetrics` compatibility defaults by setting `add_resource_attributes: true` and `histogram.unit: ms`, required for APM span metrics.
+
 ### v0.0.36 / 2026-05-27
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.131.8
