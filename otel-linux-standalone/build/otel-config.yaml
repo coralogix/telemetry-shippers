@@ -17,6 +17,8 @@ connectors:
     - name: http.response.status_code
     - name: rpc.grpc.status_code
     - name: service.version
+    exclude_dimensions:
+    - collector.instance.id
     histogram:
       explicit:
         buckets:
@@ -39,6 +41,7 @@ connectors:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
     exclude_dimensions:
+    - collector.instance.id
     - span.name
     histogram:
       explicit:
@@ -67,6 +70,8 @@ connectors:
     - name: db.collection.name
     - name: db.system
     - name: service.version
+    exclude_dimensions:
+    - collector.instance.id
     histogram:
       explicit:
         buckets:
@@ -92,6 +97,7 @@ connectors:
     - name: db.namespace
     - name: db.system
     exclude_dimensions:
+    - collector.instance.id
     - span.name
     - span.kind
     histogram:
@@ -127,14 +133,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.36
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.37
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.36
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.37
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.36
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.37
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -153,13 +159,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.36
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.37
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.36
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.37
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -183,7 +189,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.131.8
+        helm.chart.opentelemetry-agent.version: 0.132.0
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -318,8 +324,6 @@ processors:
         == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
         where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
-        where resource.attributes["service.name"] == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
         "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
         == "opentelemetry-collector"
@@ -337,9 +341,6 @@ processors:
         where resource.attributes["service.name"] == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
         where resource.attributes["service.name"] == "opentelemetry-collector"
-      - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
-        "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
-        == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
         where resource.attributes["service.name"] == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
@@ -753,4 +754,7 @@ service:
             prometheus:
               host: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}
               port: 8888
+              without_scope_info: false
+              without_type_suffix: false
+              without_units: false
 
