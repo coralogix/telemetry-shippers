@@ -518,6 +518,8 @@ var optionalExpectedMetrics = map[string]bool{
 	"otelcol_processor_batch_batch_size_trigger_send": false,
 	// Exporter queue metrics are version/config dependent and may not be emitted.
 	"otelcol_exporter_queue_batch_send_size": false,
+	// Added in collector 0.152.0 via exporterhelper in-flight telemetry.
+	"otelcol_exporter_in_flight_requests": false,
 	// Added in newer collector versions (0.145.0+): internal k8s pod association metric.
 	"otelcol.k8s.pod.association": false,
 	// Host filesystem metrics are valid but may not be emitted in containerized CI environments.

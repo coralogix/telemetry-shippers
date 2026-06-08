@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.5 / 2026-06-08
+
+* [IMPROVEMENT] Updated the default supervised CDOT image tag to `v0.7.0`.
+
 ### 0.0.4 / 2026-02-05
 
 * [IMPROVEMENT] Added supervisor image using cdot 0.5.7.
