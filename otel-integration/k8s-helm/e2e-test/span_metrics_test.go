@@ -32,6 +32,9 @@ var (
 		"service.name",
 		"k8s.cluster.name",
 	}
+	forbiddenDatapointAttrKeys = []string{
+		"collector.instance.id",
+	}
 )
 
 // TestE2E_SpanMetrics_RegularMetrics ensures we keep emitting the same shape of span metrics
@@ -41,9 +44,10 @@ func TestE2E_SpanMetrics_RegularMetrics(t *testing.T) {
 	require.NotEmpty(t, scenario.metrics, "Expected to receive metrics from span metrics connector")
 
 	validateSpanMetricCase(t, scenario, spanMetricValidationCase{
-		Name:             "regular span",
-		MetricPrefix:     "",
-		ResourceAttrKeys: resourceAttrsKeys,
+		Name:                       "regular span",
+		MetricPrefix:               "",
+		ResourceAttrKeys:           resourceAttrsKeys,
+		ForbiddenDatapointAttrKeys: forbiddenDatapointAttrKeys,
 	})
 }
 
@@ -53,10 +57,11 @@ func TestE2E_SpanMetrics_DatabaseMetrics(t *testing.T) {
 	require.NotEmpty(t, scenario.metrics, "Expected to receive metrics from span metrics connector")
 
 	validateSpanMetricCase(t, scenario, spanMetricValidationCase{
-		Name:              "database span",
-		MetricPrefix:      "db.",
-		ResourceAttrKeys:  resourceAttrsKeys,
-		DatapointAttrKeys: dbDimensionKeys,
+		Name:                       "database span",
+		MetricPrefix:               "db.",
+		ResourceAttrKeys:           resourceAttrsKeys,
+		DatapointAttrKeys:          dbDimensionKeys,
+		ForbiddenDatapointAttrKeys: forbiddenDatapointAttrKeys,
 	})
 }
 
@@ -67,9 +72,10 @@ func TestE2E_SpanMetrics_CompactMetrics(t *testing.T) {
 	require.NotEmpty(t, scenario.metrics, "Expected to receive metrics from span metrics connector")
 
 	validateSpanMetricCase(t, scenario, spanMetricValidationCase{
-		Name:             "compact span",
-		MetricPrefix:     "compact.",
-		ResourceAttrKeys: compactResourceAttrs,
+		Name:                       "compact span",
+		MetricPrefix:               "compact.",
+		ResourceAttrKeys:           compactResourceAttrs,
+		ForbiddenDatapointAttrKeys: forbiddenDatapointAttrKeys,
 	})
 }
 
@@ -87,14 +93,16 @@ func TestE2E_SpanMetrics_DatabaseCompactMetrics(t *testing.T) {
 			"db.namespace",
 			"db.system",
 		},
+		ForbiddenDatapointAttrKeys: forbiddenDatapointAttrKeys,
 	})
 }
 
 type spanMetricValidationCase struct {
-	Name              string
-	MetricPrefix      string
-	ResourceAttrKeys  []string
-	DatapointAttrKeys []string
+	Name                       string
+	MetricPrefix               string
+	ResourceAttrKeys           []string
+	DatapointAttrKeys          []string
+	ForbiddenDatapointAttrKeys []string
 }
 
 func (c spanMetricValidationCase) metricName(suffix string) string {
@@ -124,6 +132,7 @@ func validateSpanMetricCase(t *testing.T, scenario agentScenarioResult, cfg span
 
 	durationUnitValid := false
 	statusCodeAttributeFound := false
+	forbiddenDatapointAttributeFound := false
 
 	for _, metricsData := range scenario.metrics {
 		for i := 0; i < metricsData.ResourceMetrics().Len(); i++ {
@@ -162,6 +171,10 @@ func validateSpanMetricCase(t *testing.T, scenario agentScenarioResult, cfg span
 						updateDataPointAttributeTracker(metric, datapointTracker)
 					}
 
+					if metricContainsForbiddenAttributes(metric, cfg.ForbiddenDatapointAttrKeys) {
+						forbiddenDatapointAttributeFound = true
+					}
+
 					if verifyStatusCodeAttributes(t, metric) {
 						statusCodeAttributeFound = true
 					}
@@ -174,6 +187,7 @@ func validateSpanMetricCase(t *testing.T, scenario agentScenarioResult, cfg span
 	require.Truef(t, metricsFound[expectedDuration], "Expected to find %s metric in %s metrics", expectedDuration, cfg.Name)
 	require.Truef(t, durationUnitValid, "%s duration metric should continue to use 'ms'", cfg.Name)
 	require.Truef(t, statusCodeAttributeFound, "Expected to find status.code attribute in %s metrics", cfg.Name)
+	require.Falsef(t, forbiddenDatapointAttributeFound, "Forbidden datapoint attributes detected in %s metrics: %s", cfg.Name, strings.Join(cfg.ForbiddenDatapointAttrKeys, ", "))
 
 	if resourceTracker != nil {
 		require.Truef(t, trackerComplete(resourceTracker),
@@ -245,6 +259,23 @@ func updateDataPointAttributeTracker(metric pmetric.Metric, tracker map[string]b
 	forEachDataPoint(metric, func(attrs pcommon.Map) {
 		recordAttributes(attrs, tracker)
 	})
+}
+
+func metricContainsForbiddenAttributes(metric pmetric.Metric, forbiddenKeys []string) bool {
+	if len(forbiddenKeys) == 0 {
+		return false
+	}
+
+	found := false
+	forEachDataPoint(metric, func(attrs pcommon.Map) {
+		for _, key := range forbiddenKeys {
+			if _, ok := attrs.Get(key); ok {
+				found = true
+				return
+			}
+		}
+	})
+	return found
 }
 
 func forEachDataPoint(metric pmetric.Metric, fn func(attrs pcommon.Map)) {

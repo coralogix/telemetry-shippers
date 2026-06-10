@@ -6,14 +6,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.131.8
+    helm.sh/chart: opentelemetry-agent-0.132.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.151.0"
+    app.kubernetes.io/version: "0.152.1"
     app.kubernetes.io/managed-by: Helm
-    
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
 apiVersion: v1
@@ -22,10 +19,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.131.8
+    helm.sh/chart: opentelemetry-agent-0.132.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.151.0"
+    app.kubernetes.io/version: "0.152.1"
     app.kubernetes.io/managed-by: Helm
     
 data:
@@ -49,6 +46,8 @@ data:
         - name: http.response.status_code
         - name: rpc.grpc.status_code
         - name: service.version
+        exclude_dimensions:
+        - collector.instance.id
         histogram:
           explicit:
             buckets:
@@ -71,6 +70,7 @@ data:
         add_resource_attributes: true
         aggregation_cardinality_limit: 100000
         exclude_dimensions:
+        - collector.instance.id
         - span.name
         histogram:
           explicit:
@@ -99,6 +99,8 @@ data:
         - name: db.collection.name
         - name: db.system
         - name: service.version
+        exclude_dimensions:
+        - collector.instance.id
         histogram:
           explicit:
             buckets:
@@ -124,6 +126,7 @@ data:
         - name: db.namespace
         - name: db.system
         exclude_dimensions:
+        - collector.instance.id
         - span.name
         - span.kind
         histogram:
@@ -159,14 +162,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.31
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.32
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.31
+            X-Coralogix-Distribution: helm-otel-integration/0.0.32
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.31
+            X-Coralogix-Distribution: helm-otel-integration/0.0.32
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -186,13 +189,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.31
+            X-Coralogix-Distribution: helm-otel-integration/0.0.32
       coralogix/resource_catalog:
         application_name: resource
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.31
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.32
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -217,7 +220,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.131.8
+            helm.chart.opentelemetry-agent.version: 0.132.0
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -342,8 +345,6 @@ data:
             == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
             where resource.attributes["service.name"] == "opentelemetry-collector"
-          - replace_pattern(metric.name, "^otelcol_process_memory_rss_bytes$", "otelcol_process_memory_rss_bytes")
-            where resource.attributes["service.name"] == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
             "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
             == "opentelemetry-collector"
@@ -361,9 +362,6 @@ data:
             where resource.attributes["service.name"] == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
             where resource.attributes["service.name"] == "opentelemetry-collector"
-          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_table_size_ratio$",
-            "otelcol_otelsvc_k8s_pod_table_size_ratio") where resource.attributes["service.name"]
-            == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
             where resource.attributes["service.name"] == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
@@ -781,10 +779,12 @@ data:
                 prometheus:
                   host: 0.0.0.0
                   port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
         resource:
           cx.agent.type: agent
           service.name: opentelemetry-collector
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
 apiVersion: apps/v1
@@ -793,10 +793,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.131.8
+    helm.sh/chart: opentelemetry-agent-0.132.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.151.0"
+    app.kubernetes.io/version: "0.152.1"
     app.kubernetes.io/managed-by: Helm
     
 spec:
@@ -810,7 +810,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 7906eaec12f20a400a2309cd184fe4bbcc5b83a94de1f2a0e8636e0eceae65ae
+        checksum/config: f01c5e744ee1b047a71ef303145c2f3572ed4db732a889758cad459f50405fdc
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
