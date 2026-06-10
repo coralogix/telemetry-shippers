@@ -171,14 +171,10 @@ jobs:
         run: |
           branch_name="chore/bump-otel-collector-${{ steps.version.outputs.value }}"
           echo "branch_name=$branch_name" >> $GITHUB_ENV
-
-          if git ls-remote --exit-code --heads origin "$branch_name" >/dev/null 2>&1; then
-            echo "::notice::Branch $branch_name already exists; skipping new bump branch creation"
-            echo "BUMP_BRANCH_EXISTS=true" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          echo "BUMP_BRANCH_EXISTS=false" >> $GITHUB_ENV
+          
+          # Delete remote branch if exists
+          git push origin --delete "$branch_name" 2>/dev/null || true
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b $branch_name
@@ -186,7 +182,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run bump script
-        if: steps.changelog.outputs.status != 'skip' && env.BUMP_BRANCH_EXISTS != 'true'
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           # Build skip args
           SKIP_ARGS=""
@@ -204,7 +200,7 @@ jobs:
           ./scripts/bump-otel-collector-version.sh --version "${{ steps.version.outputs.value }}" $SKIP_ARGS $CHANGELOG_ARGS
 
       - name: Commit and push
-        if: steps.changelog.outputs.status != 'skip' && env.BUMP_BRANCH_EXISTS != 'true'
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           git add -A
           if git diff --staged --quiet; then
@@ -215,7 +211,7 @@ jobs:
           git push origin $branch_name
 
       - name: Build PR body
-        if: steps.changelog.outputs.status != 'skip' && env.BUMP_BRANCH_EXISTS != 'true'
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           if [[ -f "/tmp/otel-bump-summary.md" ]]; then
             cat /tmp/otel-bump-summary.md > /tmp/pr-body.md
@@ -242,7 +238,7 @@ jobs:
           echo "**To skip a chart:** Remove its \`chart:*\` label → changes auto-revert." >> /tmp/pr-body.md
 
       - name: Ensure labels exist
-        if: steps.changelog.outputs.status != 'skip' && env.BUMP_BRANCH_EXISTS != 'true'
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           for label in otel-collector-bump chart:otel-ecs-ec2 chart:otel-integration chart:otel-linux-standalone chart:otel-macos-standalone chart:otel-windows-standalone; do
             gh label create "$label" --description "Auto-created for otel-collector sync" --color "0E8A16" 2>/dev/null || true
@@ -251,7 +247,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build labels
-        if: steps.changelog.outputs.status != 'skip' && env.BUMP_BRANCH_EXISTS != 'true'
+        if: steps.changelog.outputs.status != 'skip'
         id: labels
         run: |
           LABELS="otel-collector-bump"
@@ -263,7 +259,7 @@ jobs:
           echo "value=$LABELS" >> $GITHUB_OUTPUT
 
       - name: Create pull request
-        if: steps.changelog.outputs.status != 'skip' && env.BUMP_BRANCH_EXISTS != 'true'
+        if: steps.changelog.outputs.status != 'skip'
         run: |
           gh pr create \
             --base master \
