@@ -1,0 +1,1032 @@
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate-monitoring/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-agent-eks-fargate-monitoring
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-agent-eks-fargate
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate-monitoring/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-agent-eks-fargate-monitoring
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+data:
+  relay: |
+    exporters:
+      coralogix:
+        application_name: otel
+        application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+        domain: eu2.coralogix.com
+        domain_settings:
+          keepalive:
+            enabled: true
+            permit_without_stream: false
+            time: 30s
+            timeout: 10s
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+        metrics:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+        private_key: ${env:CORALOGIX_PRIVATE_KEY}
+        profiles:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+            x-coralogix-ingress: otlp/v1.10.0
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: integration
+        subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - k8s.job.name
+        - k8s.container.name
+        - k8s.node.name
+        - service.name
+        timeout: 30s
+        traces:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+      debug: {}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      k8s_observer:
+        auth_type: serviceAccount
+        observe_nodes: true
+        observe_pods: true
+    processors:
+      batch:
+        send_batch_max_size: 2048
+        send_batch_size: 1024
+        timeout: 60s
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      resource/metadata:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'golden-render'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+      resourcedetection/env:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+        timeout: 2s
+      resourcedetection/region:
+        detectors:
+        - env
+        override: true
+        timeout: 2s
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: resource
+          statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["net.host.name"])
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - delete_key(resource.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: datapoint
+          statements:
+          - delete_key(datapoint.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(datapoint.attributes, "otel_scope_name") where datapoint.attributes["service.name"]
+            == "opentelemetry-collector"
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 30s
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
+      receiver_creator:
+        receivers:
+          kubeletstats:
+            config:
+              auth_type: serviceAccount
+              collection_interval: '30s'
+              endpoint: '`endpoint`:`kubelet_endpoint_port`'
+              extra_metadata_labels:
+              - container.id
+              insecure_skip_verify: true
+              metric_groups:
+              - container
+              - pod
+              - node
+            rule: type == "k8s.node" && labels["OTEL-collector-node"] == "true"
+        watch_observers:
+        - k8s_observer
+    service:
+      extensions:
+      - health_check
+      - k8s_observer
+      pipelines:
+        logs:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - batch
+          receivers:
+          - otlp
+        metrics:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - transform/prometheus
+          - batch
+          receivers:
+          - prometheus
+          - otlp
+        metrics/colmon:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          receivers:
+          - receiver_creator
+        traces:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - batch
+          receivers:
+          - otlp
+      telemetry:
+        logs:
+          encoding: json
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/configmap-script.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-agent-eks-fargate-script
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+    component: script
+data:
+  label-node-script: |
+    #!/bin/bash
+    set +x
+    # Download kubectl
+    # If the latest stable version is not compatible with your cluster, adjust accordingly.
+    curl -LOs "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    # Give execute permissions to kubectl
+    chmod +x kubectl
+
+    # Remove any prior label from other nodes. Label only the current node as the single OTEL-collector-node.
+    ./kubectl label nodes --all OTEL-collector-node-
+    ./kubectl label nodes $K8S_NODE_NAME OTEL-collector-node=true
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/configmap-statefulset.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-agent-eks-fargate-statefulset
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+data:
+  relay: |
+    exporters:
+      coralogix:
+        application_name: otel
+        application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+        domain: eu2.coralogix.com
+        domain_settings:
+          keepalive:
+            enabled: true
+            permit_without_stream: false
+            time: 30s
+            timeout: 10s
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+        metrics:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+        private_key: ${env:CORALOGIX_PRIVATE_KEY}
+        profiles:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+            x-coralogix-ingress: otlp/v1.10.0
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: integration
+        subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - k8s.job.name
+        - k8s.container.name
+        - k8s.node.name
+        - service.name
+        timeout: 30s
+        traces:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.318
+      debug: {}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      k8s_observer:
+        auth_type: serviceAccount
+        observe_nodes: true
+        observe_pods: true
+    processors:
+      batch:
+        send_batch_max_size: 2048
+        send_batch_size: 1024
+        timeout: 60s
+      k8sattributes:
+        extract:
+          deployment_name_from_replicaset: true
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+          - k8s.pod.uid
+          - k8s.pod.start_time
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: connection
+        - sources:
+          - from: resource_attribute
+            name: k8s.job.name
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      resource/metadata:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'golden-render'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+      resourcedetection/env:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+        timeout: 2s
+      resourcedetection/region:
+        detectors:
+        - env
+        override: true
+        timeout: 2s
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: resource
+          statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["net.host.name"])
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - delete_key(resource.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: datapoint
+          statements:
+          - delete_key(datapoint.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(datapoint.attributes, "otel_scope_name") where datapoint.attributes["service.name"]
+            == "opentelemetry-collector"
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 30s
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
+      receiver_creator:
+        receivers:
+          kubeletstats:
+            config:
+              auth_type: serviceAccount
+              collection_interval: '30s'
+              endpoint: '`endpoint`:`kubelet_endpoint_port`'
+              extra_metadata_labels:
+              - container.id
+              insecure_skip_verify: true
+              metric_groups:
+              - container
+              - pod
+              - node
+            rule: type == "k8s.node" && name contains "fargate" && name != "${env:K8S_NODE_NAME}"
+        watch_observers:
+        - k8s_observer
+    service:
+      extensions:
+      - health_check
+      - k8s_observer
+      pipelines:
+        logs:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - batch
+          receivers:
+          - otlp
+        metrics:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/prometheus
+          - batch
+          receivers:
+          - prometheus
+          - otlp
+        metrics/colmon:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          receivers:
+          - receiver_creator
+        metrics/kubeletstats:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          receivers:
+          - receiver_creator
+        traces:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - batch
+          receivers:
+          - otlp
+      telemetry:
+        logs:
+          encoding: json
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate-monitoring/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-agent-eks-fargate-monitoring
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - nodes/stats
+      - services
+      - endpoints
+      - pods
+      - pods/proxy
+      - configmaps
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs: ["patch"]
+  - nonResourceURLs:
+    - "/metrics/cadvisor"
+    verbs: ["get", "list", "watch"]
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-agent-eks-fargate
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - nodes/stats
+      - services
+      - endpoints
+      - pods
+      - pods/proxy
+      - configmaps
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs: ["patch"]
+  - nonResourceURLs:
+    - "/metrics/cadvisor"
+    verbs: ["get", "list", "watch"]
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate-monitoring/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-agent-eks-fargate-monitoring
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-agent-eks-fargate-monitoring
+subjects:
+- kind: ServiceAccount
+  name: otel-agent-eks-fargate-monitoring
+  namespace: default
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-agent-eks-fargate
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-agent-eks-fargate
+subjects:
+- kind: ServiceAccount
+  name: otel-agent-eks-fargate
+  namespace: default
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate-monitoring/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-agent-eks-fargate-monitoring
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+    component: standalone-collector
+spec:
+  type: ClusterIP
+  ports:
+
+    - name: metrics
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: otlp
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+      appProtocol: grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    component: standalone-collector
+  internalTrafficPolicy: Cluster
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-agent-eks-fargate
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+    component: statefulset-collector
+spec:
+  type: ClusterIP
+  ports:
+
+    - name: metrics
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: otlp
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+      appProtocol: grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    component: statefulset-collector
+  internalTrafficPolicy: Cluster
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate-monitoring/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-agent-eks-fargate-monitoring
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+      app.kubernetes.io/instance: render-check
+      component: standalone-collector
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: a4ab3cf76db459dc4a287e0af38428d99cf4cb77b3060f559d47c4f98a6c9ff0
+
+      labels:
+        app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
+        app.kubernetes.io/instance: render-check
+        component: standalone-collector
+
+    spec:
+
+      serviceAccountName: otel-agent-eks-fargate-monitoring
+      securityContext:
+        fsGroup: 65534
+      containers:
+        - name: opentelemetry-agent-eks-fargate-monitoring
+          command:
+            - /otelcol-contrib
+            - --config=/conf/relay.yaml
+          securityContext:
+            {}
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.152.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 8888
+              protocol: TCP
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: GOMEMLIMIT
+              value: "1638MiB"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "k8s.node.name=$(K8S_NODE_NAME),deployment.environment.name=golden-render,cloud.provider=aws,cloud.platform=aws_eks"
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PRIVATE_KEY
+                  name: coralogix-keys
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 1
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /conf
+              name: opentelemetry-agent-eks-fargate-monitoring-configmap
+      volumes:
+        - name: opentelemetry-agent-eks-fargate-monitoring-configmap
+          configMap:
+            name: otel-agent-eks-fargate-monitoring
+            items:
+              - key: relay
+                path: relay.yaml
+      nodeSelector:
+        eks.amazonaws.com/compute-type: fargate
+      hostNetwork: false
+---
+# Source: otel-integration/charts/opentelemetry-agent-eks-fargate/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: otel-agent-eks-fargate
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+spec:
+  serviceName: otel-agent-eks-fargate
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+      app.kubernetes.io/instance: render-check
+      component: statefulset-collector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 94c8f4e60f943af76ef87abb98fce92c9ff182b7e159c9e9bbdb51efb863ebf9
+
+      labels:
+        app.kubernetes.io/name: opentelemetry-agent-eks-fargate
+        app.kubernetes.io/instance: render-check
+        component: statefulset-collector
+
+    spec:
+
+      serviceAccountName: otel-agent-eks-fargate
+      securityContext:
+        fsGroup: 65534
+      initContainers:
+        - name: node-labeler
+          image: "public.ecr.aws/aws-cli/aws-cli:2.28.17"
+          command: ["/bin/sh", "-c", "/script/label_node.sh"]
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: script-volume
+              mountPath: /script
+      containers:
+        - name: opentelemetry-agent-eks-fargate
+          command:
+            - /otelcol-contrib
+            - --config=/conf/relay.yaml
+          securityContext:
+            {}
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.152.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 8888
+              protocol: TCP
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: GOMEMLIMIT
+              value: "1638MiB"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "k8s.node.name=$(K8S_NODE_NAME),deployment.environment.name=golden-render,cloud.provider=aws,cloud.platform=aws_eks"
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PRIVATE_KEY
+                  name: coralogix-keys
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 1
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /conf
+              name: opentelemetry-agent-eks-fargate-configmap
+      volumes:
+        - name: opentelemetry-agent-eks-fargate-configmap
+          configMap:
+            name: otel-agent-eks-fargate-statefulset
+            items:
+              - key: relay
+                path: relay.yaml
+        - name: script-volume
+          configMap:
+            name: otel-agent-eks-fargate-script
+            items:
+              - key: label-node-script
+                path: label_node.sh
+                mode: 0555
+      nodeSelector:
+        eks.amazonaws.com/compute-type: fargate
+      hostNetwork: false

@@ -3,11 +3,15 @@ ARG COLLECTOR_VERSION=v0.5.7
 ARG SUPERVISOR_VERSION=0.142.0
 
 FROM alpine:3.22 AS certs
+# hadolint ignore=DL3018,DL3019
 RUN apk --update add ca-certificates
+# hadolint ignore=DL3059
 RUN mkdir -p /etc/otelcol-contrib/supervisor-data
 
+# hadolint ignore=DL3006
 FROM cgx.jfrog.io/coralogix-docker-images/cx-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
 
+# hadolint ignore=DL3006
 FROM coralogixrepo/coralogix-otel-collector:${COLLECTOR_VERSION}
 
 USER 10001:10001

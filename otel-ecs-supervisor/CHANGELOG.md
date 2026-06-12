@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.6 / 2026-06-12
+
+* [IMPROVEMENT] Replaced secret-shaped Terraform example values with safe placeholders to avoid secret scanner false positives. ([#938](https://github.com/coralogix/telemetry-shippers/pull/938))
+
 ### 0.0.5 / 2026-06-08
 
 * [IMPROVEMENT] Updated the default supervised CDOT image tag to `v0.7.0`.

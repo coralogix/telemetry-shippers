@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.318 / 2026-06-12
+
+- [Chore] Add Helm golden render coverage for high-risk presets and document intentional shellcheck suppressions in the E2E runner.
+
 ### v0.0.317 / 2026-06-08
 
 - [Feat] Bump the OpenTelemetry Collector image to v0.152.1.

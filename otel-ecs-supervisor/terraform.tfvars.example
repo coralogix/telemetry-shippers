@@ -13,12 +13,12 @@ ecs_capacity_count = 1
 
 # Coralogix configuration
 coralogix_domain                      = "eu2.coralogix.com"
-coralogix_private_key   = "cxtp_8DgfhFf49DQHgXPvrVmVCaLqjvwl0A"
+coralogix_private_key   = "replace-with-coralogix-private-key"
 application_name                      = "my-app"
 subsystem_name                        = "ecs"
 
 # Optional: Use Secrets Manager instead of SSM
-# coralogix_private_key_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:coralogix-key-abc123"
+# coralogix_private_key_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example-key"
 
 # Resource configuration
 name_prefix    = "coralogix"

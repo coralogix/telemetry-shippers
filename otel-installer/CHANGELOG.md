@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.2.1] - 2026-06-12
+
+### Changed
+- Documented intentional shellcheck suppressions so checked-in installer scripts pass shellcheck without changing installer behavior.
+
 ## [0.2.0] - 2026-03-31
 
 ### Changed
