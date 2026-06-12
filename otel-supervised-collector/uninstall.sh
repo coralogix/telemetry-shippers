@@ -34,6 +34,7 @@ ensure_sudo() {
 
 detect_pkg_type() {
   if [ -r /etc/os-release ]; then
+    # shellcheck disable=SC1091 # Runtime OS metadata file; guarded by readability check.
     . /etc/os-release
     base="${ID_LIKE:-$ID}"
     case "$base" in

@@ -272,7 +272,7 @@ update_changelog() {
     temp_file=$(mktemp)
     head -n $((first_version_line - 1)) "$changelog_path" > "$temp_file"
     cat "$entry_file" >> "$temp_file"
-    tail -n +$first_version_line "$changelog_path" >> "$temp_file"
+    tail -n +"$first_version_line" "$changelog_path" >> "$temp_file"
     mv "$temp_file" "$changelog_path"
   else
     # No version headers found, append to end

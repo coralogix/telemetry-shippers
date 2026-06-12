@@ -15,6 +15,7 @@ jobs:
     - uses: dorny/paths-filter@v2
       id: filter
       with:
+        predicate-quantifier: every
         filters: | # Determine where the chart change occured and run the appropriate check.
           logs-fluent-bit-coralogix:
             - 'logs/fluent-bit/k8s-helm/coralogix/**'
@@ -30,6 +31,8 @@ jobs:
             - 'otel-infrastructure-collector/k8s-helm/**'
           otel-integration:
             - 'otel-integration/k8s-helm/**'
+            - '!otel-integration/k8s-helm/tests/**'
+            - '!otel-integration/k8s-helm/e2e-test/**'
           metrics-prometheus-agent:
             - 'metrics/prometheus-agent/**'
           metrics-prometheus-operator:

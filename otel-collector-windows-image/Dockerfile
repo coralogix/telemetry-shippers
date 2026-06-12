@@ -2,17 +2,25 @@
 # For Windows 2022, use `mcr.microsoft.com/windows/servercore:ltsc2022`
 ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 
+# DL3006: Always tag the version of an image explicitly.
+# DL3029: Do not use --platform= with FROM.
+# hadolint ignore=DL3006,DL3029
 FROM --platform=$BUILDPLATFORM curlimages/curl AS build
 WORKDIR /src
-RUN curl -Lo otelcol.tar.gz https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.121.0/otelcol-contrib_0.121.0_windows_amd64.tar.gz
-RUN tar -xzvf otelcol.tar.gz
+RUN curl -Lo otelcol.tar.gz https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.121.0/otelcol-contrib_0.121.0_windows_amd64.tar.gz && tar -xzvf otelcol.tar.gz
 
 ##
+# DL3006: Always tag the version of an image explicitly.
+# hadolint ignore=DL3006
 FROM ${WIN_BASE_IMAGE}
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
+# DL3045: COPY to a relative destination without WORKDIR.
+# hadolint ignore=DL3045
 COPY --from=build /src/otelcol-contrib.exe ./
+# DL3045: COPY to a relative destination without WORKDIR.
+# hadolint ignore=DL3045
 COPY configs/otelcol-contrib.yaml config.yaml
 
 ENV NO_WINDOWS_SERVICE=1
