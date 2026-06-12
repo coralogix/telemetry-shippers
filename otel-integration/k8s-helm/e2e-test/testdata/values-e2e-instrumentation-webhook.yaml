@@ -1,0 +1,36 @@
+instrumentationWebhook:
+  enabled: true
+  manager:
+    config:
+      enable-nginx-auto-instrumentation: true
+  instrumentation:
+    spec:
+      exporter:
+        endpoint: "http://$(OTEL_NODE_IP):4318"
+      apacheHttpd:
+        attrs:
+          - name: ApacheModuleOtelExporterEndpoint
+            value: "http://coralogix-opentelemetry.default.svc.cluster.local:4317"
+      nginx:
+        attrs:
+          - name: NginxModuleOtelExporterEndpoint
+            value: "http://coralogix-opentelemetry.default.svc.cluster.local:4317"
+      env:
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+        - name: OTEL_TRACES_SAMPLER
+          value: always_on
+        - name: OTEL_LOGS_EXPORTER
+          value: none
+      propagators:
+        - tracecontext
+        - baggage
+
+opentelemetry-agent:
+  config:
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - otlp/traces
+            - coralogix

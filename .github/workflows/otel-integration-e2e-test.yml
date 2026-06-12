@@ -18,7 +18,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -78,7 +78,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -98,6 +98,42 @@ jobs:
             echo
           done
 
+  otel-integration-instrumentation-webhook-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.25.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Verify amd64 runner
+        run: |
+          test "$(uname -m)" = "x86_64"
+          kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.nodeInfo.architecture}{"\n"}{end}'
+      - name: Run Instrumentation Webhook E2E test
+        env:
+          REQUIRE_INSTRUMENTATION_WEBHOOK_NODE_ARCH: "1"
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          chmod +x ./run-all.sh
+          ./run-all.sh --test TestE2E_InstrumentationWebhookNoCRDs
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | awk '/otel|instwebhook|instrumentation-webhook/ {print $1 "/" $2}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 -n "${pod%/*}" "${pod#*/}" || true
+            echo
+          done
+
   otel-integration-supervisor-test:
     runs-on: ubuntu-latest
     steps:
@@ -108,7 +144,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -188,7 +224,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -250,7 +286,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -310,7 +346,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:

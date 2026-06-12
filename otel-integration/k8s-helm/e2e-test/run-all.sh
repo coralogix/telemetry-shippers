@@ -79,6 +79,7 @@ declare -a TEST_CONFIGS=(
     "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
     "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
     "TestE2E_SpanSanitization:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
+    "TestE2E_InstrumentationWebhookNoCRDs:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-instrumentation-webhook.yaml:component=agent-collector:RUN_INSTRUMENTATION_WEBHOOK_E2E=1"
 )
 
 # Parse command line arguments
@@ -295,7 +296,7 @@ setup_helm_repos() {
 # Create secret
 create_secret() {
     log_info "Creating secret..."
-    kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123 --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY:-123}" --dry-run=client -o yaml | kubectl apply -f -
     log_success "Secret created/updated"
 }
 
@@ -483,7 +484,7 @@ install_chart() {
     # Build the helm command
     local helm_cmd="helm upgrade --install ${HELM_RELEASE_NAME} . \
       --set global.clusterName=\"${CLUSTER_NAME}\" \
-      --set global.domain=\"coralogix.com\" \
+      --set global.domain=\"${CORALOGIX_DOMAIN:-coralogix.com}\" \
       --set global.hostedEndpoint=\"${HOSTENDPOINT}\""
 
     # Add values files

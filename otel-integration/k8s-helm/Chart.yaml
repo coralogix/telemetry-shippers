@@ -14,6 +14,11 @@ dependencies:
     version: "0.132.0"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
+  - name: opentelemetry-instrumentation-webhook
+    alias: instrumentationWebhook
+    version: "0.1.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-instrumentation-webhook
+    condition: instrumentationWebhook.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-agent-windows
     version: "0.132.0"

@@ -17,6 +17,21 @@ global:
 # - eks/fargate
 # - gke/autopilot
 distribution: ""
+
+instrumentationWebhook:
+  enabled: false
+  nameOverride: instrumentation-webhook
+  manager:
+    nodeSelector:
+      kubernetes.io/os: linux
+  instrumentation:
+    spec:
+      exporter:
+        endpoint: "http://$(OTEL_NODE_IP):4318"
+      env:
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+
 opentelemetry-agent:
   enabled: true
   mode: daemonset
