@@ -1,0 +1,22 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: otel-integration-ebpf-profiler
+  region: eu-central-1
+
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: al2023-ng
+    # Amazon Linux 2023 ships a modern kernel with BTF for eBPF profiling.
+    amiFamily: AmazonLinux2023
+    instanceType: t3.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    preBootstrapCommands:
+      - sysctl -w kernel.perf_event_paranoid=0
+      - sysctl -w kernel.yama.ptrace_scope=0
+      - sysctl -w kernel.kptr_restrict=0

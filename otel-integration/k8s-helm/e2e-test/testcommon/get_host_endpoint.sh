@@ -18,8 +18,11 @@ function get_host_endpoint() {
         fi
     fi
 
-    # Export HOSTENDPOINT for GitHub Actions
-    echo "HOSTENDPOINT=$HOSTENDPOINT" >> "$GITHUB_ENV"
+    if [[ -n "$GITHUB_ENV" ]]; then
+        # Export HOSTENDPOINT for GitHub Actions
+        echo "HOSTENDPOINT=$HOSTENDPOINT" >> "$GITHUB_ENV"
+    fi
+
     echo "HOSTENDPOINT is set to $HOSTENDPOINT"
 }
 

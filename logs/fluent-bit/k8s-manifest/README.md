@@ -7,6 +7,14 @@ Here you can find instructions on how to install the Fluent-Bit shipper, togethe
 
 ## Installation
 
+First, make sure you have a k8s secret with the Coralogix API key in the same namespace as the daemonSet. Here is one of the examples on how to create it, assuming you have a key in `CORALOGIX_API_KEY` env.
+
+```bash
+kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=${CORALOGIX_API_KEY} -n monitoring
+```
+
+Note: the configmap name is important and is being used by the daemonSet.
+
 In order to specify important environment variables, please create a configmap:
 
 ```yaml
@@ -17,7 +25,7 @@ kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/name: fluent-bit
-    app.kubernetes.io/instance	: fluent-bit-http
+    app.kubernetes.io/instance: fluent-bit-http
   name: fluent-bit-env
 data:
   ENDPOINT: ingress.coralogix.com
@@ -140,13 +148,15 @@ service "fluent-bit" deleted
 
 ## Coralogix Endpoints
 
-| Region | Logs Endpoint               |
-|--------|-----------------------------|
-| EU     | `ingress.coralogix.com`     |
-| EU2    | `ingress.eu2.coralogix.com` |
-| US     | `ingress.coralogix.us`      |
-| SG     | `ingress.coralogixsg.com`   |
-| IN     | `ingress.coralogix.in`      |
+| Region | Logs Endpoint                 |
+|--------|-------------------------------|
+| EU1    | `ingress.coralogix.com`       |
+| EU2    | `ingress.eu2.coralogix.com`   |
+| US1    | `ingress.coralogix.us`        |
+| US2    | `ingress.cx498.coralogix.com` |
+| AP1    | `ingress.coralogix.in`        |
+| AP2    | `ingress.coralogixsg.com`     |
+| AP3    | `ingress.ap3.coralogix.com`   |
 
 ## Dashboard
 

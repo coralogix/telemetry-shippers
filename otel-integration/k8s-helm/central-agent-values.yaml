@@ -14,6 +14,11 @@ global:
 distribution: ""
 opentelemetry-agent:
   enabled: true
+  presets:
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+      pipelines: ["none"]
   config:
     exporters:
       otlp:
@@ -27,12 +32,16 @@ opentelemetry-agent:
         traces:
           exporters:
             - otlp
+        logs:
+          exporters:
+            - coralogix
+        metrics:
+          exporters:
+            - coralogix
 
 opentelemetry-cluster-collector:
   enabled: true
 opentelemetry-agent-windows:
   enabled: false
 opentelemetry-gateway:
-  enabled: false
-coralogix-ebpf-agent:
   enabled: false

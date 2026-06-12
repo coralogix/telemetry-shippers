@@ -1,0 +1,20 @@
+# Overrides to route cluster-collector telemetry to local sinks for E2E testing
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
+opentelemetry-cluster-collector:
+  enabled: true
+  config:
+    exporters:
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:5337"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+
+

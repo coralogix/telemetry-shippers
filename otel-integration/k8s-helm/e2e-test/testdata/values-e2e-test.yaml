@@ -1,10 +1,16 @@
 # Override values for E2E test - instead of exporting to Coralogix, export to a local sink used in the E2E test
 global:
-  logLevel: "debug"
+  logLevel: "info"
   hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent:
+  # The transactions e2e test port-forwards to the agent service, so keep it enabled.
+  service:
+    enabled: true
   presets:
+    deltaToCumulative:
+      enabled: true
+      maxStale: 1s
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
@@ -12,20 +18,66 @@ opentelemetry-agent:
       process:
         enabled: true
       collectionInterval: "30s"
+    spanMetrics:
+      enabled: true
+    profilesCollection:
+      enabled: false
   config:
     exporters:
-      otlp:
+      debug:
+        verbosity: detailed
+      otlp/metrics:
         endpoint: "{{.Values.global.hostedEndpoint}}:4317"
         tls:
           insecure: true
+      otlp/traces:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4321"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
+        tls:
+          insecure: true
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            # Bind to all interfaces so kubectl port-forward (which listens on 127.0.0.1)
+            # can reach the agent even though the collector defaults to ${env:MY_POD_IP}.
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+    extensions:
+      opamp:
+        server:
+          http:
+            endpoint: "http://{{.Values.global.hostedEndpoint}}:4320/v1/opamp"
+            headers:
+              X-Coralogix-Auth: "super secret key"
+            tls:
+              insecure: true
+        agent_description:
+          non_identifying_attributes:
+            "cx.agent.type": "agent"
+            "cx.cluster.name": "e2e-test-cluster"
     service:
       pipelines:
         metrics:
           exporters:
-            - otlp
+            - otlp/metrics
+            - debug
+        "metrics/compact":
+          exporters:
+            - otlp/metrics
+            - debug
+        "metrics/db_compact":
+          exporters:
+            - otlp/metrics
+            - debug
         traces:
           exporters:
-            - otlp
-        logs:
-          exporters:
+            - otlp/traces
             - debug
+        logs/resource_catalog:
+          exporters:
+            - otlp/logs

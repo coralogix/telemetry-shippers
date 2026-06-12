@@ -1,6 +1,790 @@
 # Changelog
 
-## OpenTelemtry-Integration
+## OpenTelemetry-Integration
+
+### v0.0.317 / 2026-06-08
+
+- [Feat] Bump the OpenTelemetry Collector image to v0.152.1.
+
+#### Changes from opentelemetry-collector 0.131.9:
+- [Breaking] Fix `spanMetricsMulti` to apply the same extra dimensions (including `errorTracking` fallback from `presets.spanMetrics`) to all spanmetrics connectors, and skip auto-added status code dimensions when they are already listed in `extraDimensions`.
+- [Breaking] Fix `spanmetrics/default` and routed `spanmetrics/<index>` connectors to match single `spanMetrics` compatibility defaults by setting `add_resource_attributes: true` and `histogram.unit: ms`, required for APM span metrics.
+
+### v0.0.316 / 2026-06-04
+
+- [Fix] Default `tolerations` to `[]` for the centralized `cluster-collector`, `gateway`, and `receiver` Deployments so they only schedule on healthy, untainted nodes instead of tolerating all taints via the previous blanket `operator: Exists`. The agent DaemonSet keeps `operator: Exists` for full node-level telemetry coverage.
+
+### v0.0.315 / 2026-05-27
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.8
+
+#### Changes from opentelemetry-collector 0.131.8:
+- [Fix] Wrap the chart-managed `health_check` extension endpoint in IPv6 bracket notation when `networkMode: ipv6` is used, aligning it with the other IPv6-safe listener endpoints and allowing the collector to start and pass health probes on IPv6-only clusters.
+
+### v0.0.314 / 2026-05-21
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.7
+
+#### Changes from opentelemetry-collector 0.131.7:
+- [Feat] Add optional `transformStatements`, `spanNameReplacePattern`, `dbMetrics`, and `compactMetrics` to the `spanMetricsMulti` preset, matching the single `spanMetrics` preset capabilities. All are opt-in (`dbMetrics` / `compactMetrics` default to off; dimension helpers preserve prior `spanMetricsMulti` behavior unless explicitly configured).
+
+### v0.0.313 / 2026-05-19
+
+- [Chore] Bump OBI version to 0.9.0.
+- [Chore] Update OBI configurations with GenAI + jsonrpc + kafka instrumentation
+
+### v0.0.312 / 2026-05-18
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.6
+
+#### Changes from opentelemetry-collector 0.131.6:
+- [Fix] Rewrite chart-owned OTTL statements to use explicit context-prefixed paths, removing collector startup rewrite warnings across transform/filter presets.
+- [Fix] Update example-only OTTL snippets to use explicit span attribute paths and regenerate rendered examples.
+
+### v0.0.311 / 2026-05-18
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.5
+
+#### Changes from opentelemetry-collector 0.131.5:
+- [Fix] Switch the `kubernetesAttributes` preset to `k8sattributes.extract.deployment_name_from_replicaset: true`, keeping `k8s.deployment.name` extraction while removing the extra `transform/k8s_attributes` workaround processor.
+
+### v0.0.310 / 2026-05-14
+
+- [Breaking] Enable database sanitization for spans by default when span metrics are generated. See the [About span metrics](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#about-span-metrics) documentation for details.
+
+### v0.0.309 / 2026-05-14
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.4
+
+#### Changes from opentelemetry-collector 0.131.4:
+- [Feat] Unify versioning of all Supervisor-based images and control it from `presets.fleetManagement.supervisor.imageVersion`. Top-level `image.tag` overrides has priority over this.
+- [Feat] Upgrade image used by the Supervisor preset to the latest Coralogix Supervised Collector images, v0.6.0.
+- [Feat] Add optional `presets.fleetManagement.supervisor.objstoreConfig` support to create and mount a Thanos Objstore ConfigMap, which will be used by the Supervisor.
+
+### v0.0.308 / 2026-05-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.3
+
+#### Changes from opentelemetry-collector 0.131.3:
+- [Breaking] Enable byte-sized batching for the Coralogix exporter sending queue by default. The collector can now consume more memory. See the [Coralogix exporter sending queue and batching](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/README.md#coralogix-exporter-sending-queue-and-batching) documentation for details.
+
+### v0.0.307 / 2026-05-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.2
+
+#### Changes from opentelemetry-collector 0.131.2:
+- [Feat] Enable `presets.coralogixExporter.keepalive` preset for Coralogix exporter by default.
+
+#### Changes from opentelemetry-collector 0.131.1:
+- [Feat] Support forwarding eBPF profiler profiles to a node-local agent with the `otlpExporter` preset, keeping Kubernetes attributes and profile service-name mapping on the standard agent collector.
+- [Feat] Add the `x-coralogix-ingress: otlp/v1.10.0` header to Coralogix profile exports.
+- [Fix] Match profile Kubernetes attributes by `container.id` before falling back to connection-based pod association.
+- [Fix] Scope profile Kubernetes RBAC to the presets that configure `k8sattributes/profiles` and keep OTLP ports controlled by values.
+
+#### Changes from opentelemetry-collector 0.131.0:
+- [Feat] Bump OpenTelemetry Collector image to v0.151.0.
+
+### v0.0.306 / 2026-05-11
+
+- [Chore] Update Windows collector image to v0.151.0.
+- [Chore] Update target allocator image to v0.150.0.
+
+### v0.0.305 / 2026-05-04
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.1
+- [Breaking] eBPF profiler profiles are now sent through the node-local agent `profilesCollection` pipeline for Kubernetes enrichment and Coralogix export. Previously, the profiler sent profiles directly to Coralogix, so installations that customize the profiler or agent profile pipeline should update their configuration to route profiles through the agent.
+- [Fix] Keep the eBPF profiler resource detection preset disabled; forwarded profiles are enriched by the node-local agent instead.
+
+#### Changes from opentelemetry-collector 0.131.1:
+- [Feat] Support forwarding eBPF profiler profiles to the node-local agent with the `otlpExporter` preset.
+- [Feat] Add the `x-coralogix-ingress: otlp/v1.10.0` header to Coralogix profile exports.
+- [Fix] Split profile Kubernetes pod association so `container.id` matching is attempted before falling back to connection metadata.
+- [Fix] Scope profile Kubernetes RBAC to the presets that configure `k8sattributes/profiles` and keep OTLP ports controlled by values.
+
+### v0.0.304 / 2026-04-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.131.0
+
+#### Changes from opentelemetry-collector 0.131.0:
+- [Feat] Bump OpenTelemetry Collector image to v0.151.0.
+
+### v0.0.303 / 2026-04-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.18
+
+#### Changes from opentelemetry-collector 0.130.18:
+- [Fix] Exclude `BOOKMARK` and `ERROR` watch event types from the `k8sobjects/resource_catalog` watch receivers used by the Kubernetes resource catalog presets, reducing non-actionable watch stream noise while preserving normal watch recovery behavior.
+
+### v0.0.302 / 2026-04-29
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.17
+
+#### Changes from opentelemetry-collector 0.130.17:
+- [Fix] Convert `supervisor.collector` wrapped collector logs into first-class log records when `presets.logsCollection.includeCollectorLogs` is enabled, preserving the nested collector severity, body, component attributes, and resource attributes instead of leaving them embedded in the outer `msg` string.
+
+### v0.0.301 / 2026-04-27
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.16
+
+#### Changes from opentelemetry-collector 0.130.16:
+- [Feat] Use `connection` pod association for profiling k8sattributes processor
+
+#### Changes from opentelemetry-collector 0.130.15:
+- [Fix] Use `syslog_parser` for macOS system log parsing logic.
+
+### v0.0.300 / 2026-04-22
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.14
+
+#### Changes from opentelemetry-collector 0.130.14:
+- [Fix] Ensure Coralogix exporter batcher from resource catalog pipeline uses the correct sizer.
+
+#### Changes from opentelemetry-collector 0.130.13:
+- [Fix] On-prem Kubernetes (`provider: on-prem` with a K8s distribution) now defaults `resourcedetection/resource_catalog` detectors to `[k8snode]` and `resourcedetection/env` detectors to `[env, k8snode, system]`, restoring the Coralogix Infra Catalog node/pod relationships that broke after the provider-aware change in v0.129.2 (CDS-2925).
+
+### v0.0.299 / 2026-04-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.12
+
+#### Changes from opentelemetry-collector 0.130.12:
+- [Feat] Add optional `presets.coralogixExporter.keepalive` support so the chart only renders shared Coralogix exporter gRPC keepalive settings when explicitly configured.
+
+#### Changes from opentelemetry-collector 0.130.11:
+- [Fix] Use the dedicated supervised eBPF profiler image and managed collector executable when `presets.ebpfProfiler` and `presets.fleetManagement.supervisor` are both enabled.
+
+### v0.0.298 / 2026-04-14
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.11
+
+#### Changes from opentelemetry-collector 0.130.11:
+- [Fix] Use the dedicated supervised eBPF profiler image and managed collector executable when `presets.ebpfProfiler` and `presets.fleetManagement.supervisor` are both enabled.
+
+### v0.0.297 / 2026-04-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.10
+
+#### Changes from opentelemetry-collector 0.130.9:
+- [Fix] Enable byte-sized Coralogix resource catalog exporter queue batching by default.
+- [Fix] Bump queue size from 50mib to 200mib in batch queue for resource catalog exporter.
+
+### v0.0.296 / 2026-04-10
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.8
+
+#### Changes from opentelemetry-collector 0.130.8:
+- [Fix] Add `IsMap()` guards to `transform/kube-events` processor to prevent `INVALID_ARGUMENT` when a Kubernetes event log body is a plain string (CDS-2869)
+
+### v0.0.295 / 2026-04-09
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.7
+
+#### Changes from opentelemetry-collector 0.130.7:
+- [Feat] Add support for fallback configuration for the Supervisor.
+
+### v0.0.294 / 2026-04-09
+
+- [Change] Bump OBI image to v0.7.1
+
+### v0.0.293 / 2026-04-08
+
+- [Change] Remove unused ports on `opentelemetry-ebpf-profiler` since OTLP receiver is not enabled.
+
+### v0.0.292 / 2026-04-05
+
+- [Change] Bump OBI image to v0.7.0
+
+### v0.0.291 / 2026-04-01
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.6
+
+#### Changes from opentelemetry-collector 0.130.6:
+- [Feat] Add target allocator `allocationFallbackStrategy`, `probeSelector`, and `probeNamespaceSelector` chart values for Prometheus CR rendering.
+
+### v0.0.290 / 2026-03-31
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.5
+
+#### Changes from opentelemetry-collector 0.130.5:
+- [Feat] For `distribution` `standalone` and `macos`, prepend `cx.application.name` and `cx.subsystem.name` to Coralogix exporter `application_name_attributes` and `subsystem_name_attributes` (before `service.namespace` / `service.name`) so presets such as `filelogMulti` and `prometheusMulti` drive Application/Subsystem when set.
+
+### v0.0.289 / 2026-03-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.4
+
+#### Changes from opentelemetry-collector 0.130.4:
+- [Feat] Use Coralogix' custom Supervised Collector image when `presets.fleetManagement.supervisor` is enabled. For now this custom image includes fallback configuration support (local file and S3).
+
+### v0.0.288 / 2026-03-16
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.3
+
+#### Changes from opentelemetry-collector 0.130.3:
+- [Fix] Preserve `telemetry.sdk.*` resource attributes on traces when `reduceResourceAttributes` is enabled in provider-based mode, while continuing to remove them for logs and metrics.
+
+### v0.0.287 / 2026-03-13
+
+- [Chore] Update Windows image to v0.147.0
+
+### v0.0.286 / 2026-03-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.2
+
+#### Changes from opentelemetry-collector 0.130.2:
+- [Fix] Pass `command.extraArgs` to the managed Collector through the supervisor `agent.args` configuration instead of appending them to the `opampsupervisor` container command.
+
+### v0.0.285 / 2026-03-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.1
+
+#### Changes from opentelemetry-collector 0.130.1:
+- [Feat] Add optional `presets.ebpfProfiler.samplesPerSecond` support that maps to `receivers.profiling.samples_per_second` only when set.
+
+### v0.0.284 / 2026-03-12
+
+- [Chore] Update Target Allocator image to v0.146.0
+
+### v0.0.283 / 2026-03-09
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.130.0
+- [Breaking] The resource attribute `cloud.platform` for Azure VMs changed from `azure_vm` to `azure.vm` and for Azure AKS changed from `azure_aks` to `azure.aks`. Any dashboards, alerts, or other places where these values are used will need to be updated.
+
+#### Changes from opentelemetry-collector 0.130.0:
+- [Feat] Bump OpenTelemetry Collector image to v0.147.0.
+
+### v0.0.282 / 2026-03-09
+
+- [Change] Bump OBI image to v0.6.0
+
+### v0.0.281 / 2026-02-26
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.9
+
+#### Changes from opentelemetry-collector 0.129.9:
+- [Fix] Ensure `service.profilesSupport` is auto-injected for direct collector runs whenever `profilesCollection` or `ebpfProfiler` presets are enabled, including when fleet management is enabled without supervisor mode, while still avoiding duplicate gates when already provided in `command.extraArgs` or injected by supervisor.
+
+### v0.0.280 / 2026-02-25
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.8
+
+#### Changes from opentelemetry-collector 0.129.8:
+- [Fix] Ensure `service.profilesSupport` is automatically enabled for both `profilesCollection` and `ebpfProfiler` presets in both direct collector and supervisor modes, while avoiding duplicate feature-gate arguments when already set via `command.extraArgs`.
+
+#### Changes from opentelemetry-collector 0.129.7:
+- [Feat] Extend `ecsAttributesContainerLogs` with `profilesServiceName.enabled` to map profiles `service.name` from ECS resource attributes with fallback order `aws.ecs.task.definition.family` then `aws.ecs.container.name`, wiring the transform only into existing profiles pipelines.
+
+### v0.0.279 / 2026-02-25
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.6
+
+#### Changes from opentelemetry-collector 0.129.6:
+- [Fix] AWS resource detection for Deployments/StatefulSets. On EKS clusters where `HttpPutResponseHopLimit=1`, IMDS is not accessible from container pods, causing the EC2/EKS detectors to fail. Deployments/StatefulSets now use the `env` detector with `cloud.provider` and `cloud.platform` attributes injected via `OTEL_RESOURCE_ATTRIBUTES`.
+- [Feat] Add top-level `provider` value (aws, gcp, azure, on-prem). When set, overrides inference from distribution. Enables self-managed K8s deployments with distribution="" and explicit provider. Self-managed on AWS uses EC2 detector only (no EKS) for DaemonSets.
+
+#### Changes from opentelemetry-collector 0.129.5:
+- [Fix] Use `aws.ecs.cluster.name` instead of `aws.ecs.cluster` for ECS distribution `application_name_attributes` to match the attribute name used by the `awsecscontainermetricsd` receiver.
+
+### v0.0.278 / 2026-02-24
+
+- [Fix] Add default `CORALOGIX_PRIVATE_KEY` secret mapping for `opentelemetry-ebpf-profiler`.
+
+### v0.0.277 / 2026-02-23
+
+- [Chore] Bump coralogix-operator to 2.1.0
+
+### v0.0.276 / 2026-02-16
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.5
+
+#### Changes from opentelemetry-collector 0.129.5:
+
+#### v0.129.5
+- [Fix] Use `aws.ecs.cluster.name` instead of `aws.ecs.cluster` for ECS distribution `application_name_attributes` to match the attribute name used by the `awsecscontainermetricsd` receiver.
+
+### v0.0.275 / 2026-02-13
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.4
+
+#### Changes from opentelemetry-collector 0.129.4:
+- [Fix] Increase the `presets.loadBalancing.k8s.timeout` default to `1m` so Kubernetes resolver users get a longer resolver timeout by default.
+
+### v0.0.274 / 2026-02-10
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.2
+
+### v0.0.273 / 2026-02-06
+- [CHORE] Update Windows image to v0.145.0.
+
+### v0.0.272 / 2026-02-06
+- [CHORE] Update Target Allocator image to v0.144.0.
+- [Feat] Add target allocator e2e test that validates ServiceMonitor metrics ingestion.
+
+### v0.0.271 / 2026-02-05
+- [Chore] Bump chart dependency to opentelemetry-collector 0.129.0 (collector image v0.145.0).
+- [Fix] Multiline stacktrace parsing fix (via upstream collector update).
+
+### v0.0.270 / 2026-02-04
+- [Fix] Use `collection_interval` for prometheus annotation discovery preset receivers (via base chart update).
+
+### v0.0.269 / 2026-02-03
+- [Feat] Add an option to disable the collector metrics Prometheus receiver and transform while keeping telemetry readers enabled.
+- [Feat] Add prometheus annotation discovery preset for cluster-collector with receiver_creator support for pod and service rules.
+- [Change] Enable `collectorMetrics` for the eBPF profiler with `disablePrometheusReceiver: true` by default.
+- [Chore] Bump chart dependency to opentelemetry-collector 0.128.18
+
+### v0.0.268 / 2026-01-22
+- [Fix] Use the configured `from` field for profiles k8sattributes service annotations.
+- [Fix] Fix `deltaToCumulative` preset producing `null` config when no options are set.
+- [Fix] Fix `reduceResourceAttributes` preset to only apply custom denylist when no provider is set (backward compatibility mode).
+
+### v0.0.267 / 2026-01-20
+- [Fix] Use `instrumentation_scope.name` to detect spanmetrics connector metrics when mapping `otel.status_code` back to `status.code`.
+- [Feat] Add Azure-specific transform to set `host.name` from `azure.vm.name` when `host.name` is empty, applied to all pipelines including `logs/resource_catalog` when provider is Azure.
+
+### v0.0.266 / 2026-01-15
+- [Fix] Remove unneeded `status_code="STATUS_CODE_UNSET"` label from non-span metrics such as hostmetrics or kubeletmetrics.
+
+### v0.0.265 / 2026-01-15
+- [Feat] Add cloud tags collection for Infra Explore by enabling `ec2.tags` and `azure.tags` in the `resourcedetection/entity` processor.
+- [Feat] Add Azure cloud support for Infra Explore by mapping `azure.vm.size` to `host.type` in the host entity events pipeline when provider is Azure.
+
+### v0.0.264 / 2026-01-13
+- [Fix] Apply `presets.spanMetrics.histogramBuckets` value to `dbMetrics`.
+
+### v0.0.263 / 2026-01-12
+- [Feat] Add collector-based eBPF profiler configuration and docs, including OTLP header support.
+
+### v0.0.262 / 2026-01-12
+- [Change] Bump OBI image to v0.4.1
+
+### v0.0.261 / 2026-01-08
+- [Feature] Ensure new behaviors from span metrics connector, defined behind +connector.spanmetrics.useSecondAsDefaultMetricsUnit, +connector.spanmetrics.excludeResourceMetrics, +spanmetrics.statusCodeConvention.useOtelPrefix feature gates don't break backward compatibility.
+
+1. Added add_resource_attributes: true to maintain resource attributes in span metrics
+2. Added histogram.unit: ms to maintain millisecond units for duration metrics
+3. Added OTTL transformations to convert new otel.status_code back to old status.code format with STATUS_CODE_* values
+
+- [Feat] Add an `ebpfProfiler` preset that switches to the otelcol-ebpf-profiler distribution, creates a profiles-only pipeline, and wires the profiling receiver. Allows to configure intervals, thresholds, off-CPU, verbosity, tracers.
+- [Feat] Add a `profilesK8sAttributes` preset to enrich profiles with Kubernetes attributes and map service.name from labels/metadata.
+- [Feat] Add an `otlpExporter` preset to configure an OTLP endpoint with optional headers, plus pipeline selection.
+
+- [Fix] Add missing field service.loadBalancerClass to support setups with AWS ALB Controller
+
+### v0.0.260 / 2026-01-06
+- [Fix] Remove unused `k8s_observer` extension from `kubernetesExtraMetrics` preset to avoid unnecessary API server load.
+
+### v0.0.259 / 2026-01-05
+- [CHORE] Update Target Allocator image to v0.141.0
+
+### v0.0.258 / 2026-01-05
+- [CHORE] Update Windows image to v0.142.0
+
+### v0.0.257 / 2025-12-30
+- [CHORE] Bump Collector to 0.142.0
+
+### v0.0.256 / 2025-12-24
+- [Feat] Add `provider` field to `reduceResourceAttributes` and `resourceDetection` presets for targeted cloud provider configuration.
+- [Bug] Apply `resourceDetection` preset to `profiles`.
+- [Feat] Add `dynamicSubsystemName` option to `journaldReceiver` preset to extract subsystem name from systemd unit name or syslog identifier.
+- [Fix] Fix `macosSystemLogs` regex pattern to correctly parse multiline log entries.
+- [Fix] Fix `macosSystemLogs` dynamic subsystem naming to use `service.name` instead of `cx.subsystem.name`.
+- [Fix] Remove `nop` exporter and receiver from `profiles` pipeline when the `supervisor` and `profilesCollection` presets are enabled.
+
+### v0.0.255 / 2025-12-22
+- [Feat] Add support for custom pod labels on TargetAllocator pods via `targetAllocator.podLabels`.
+
+### v0.0.254 / 2025-12-19
+- [Fix] Add missing `node` to `k8s_observer` for `kubernetesApiServerMetrics` preset.
+- [Fix] Add support for combining `profilesCollection` preset with `fleetManagement` preset.
+
+### v0.0.253 / 2025-12-15
+- [Feat] Add the `deltaToCumulative` preset to the agent so operators can opt into converting delta metrics before export.
+
+### v0.0.252 / 2025-12-12
+- [Feat] Add Context Propagation Mode option to OBI config, defaults to "http,tcp"
+
+### v0.0.251 / 2025-12-12
+- [Feat] PullPolicy Configuration for `coralogix-ebpf-profiler` helm chart
+
+### v0.0.250 / 2025-12-12
+- [CHORE] Bump Collector to 0.141.0
+- [Feat] Add deltaToCumulative preset (disabled by default) to convert metrics from delta temporality to cumulative.
+- [Feature] Add service.version to profile attributes when profilesCollection preset is enabled.
+- [Feat] Add dynamicSubsystemName option to macosSystemLogs preset to control copying unit name to subsystem name.
+- [Fix] Ensure logs/resource_catalog pipeline respects presets for metadata, kubernetesAttributes, and resourceDetection.
+- [Fix] Fix logic to correctly respect region.enabled: false in resourceDetection preset.
+- [Fix] Align macOS application naming attributes with the standalone distribution by using only service.name.
+- [Feat] Allow disabling the resourcedetection/region processor in the resourceDetection preset.
+- [Fix] Align macOS subsystem naming attributes with the standalone distribution by using only service.name.
+
+### v0.0.249 / 2025-12-08
+- [Feat] Bump OBI to [v0.3.0](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/releases/tag/v0.3.0)
+
+### v0.0.248 / 2025-12-08
+- [Breaking] Split `kubernetesExtraMetrics` preset: now only handles cAdvisor metrics scraping. API server scraping moved to `kubernetesApiServerMetrics` preset.
+- [Feat] Add `kubernetesApiServerMetrics` preset to scrape Kubernetes API server metrics separately from cAdvisor metrics.
+
+### v0.0.247 / 2025-12-02
+- [Feat] Enable the `transactions` preset for the otel agent by default.
+
+### v0.0.246 / 2025-12-02
+- [Change] Bump OBI image to v0.2.0
+- [Fix] Fixes in OBI default config
+
+### v0.0.245 / 2025-12-01
+- [Fix] Increase the Supervisor config apply timeout to 30 seconds (previously 5 seconds). This should match the default heartbeat interval.
+
+### v0.0.244 / 2025-11-26
+- [Change] Disable database statement sanitization in the span metrics sanitization preset by default. Currently sanitization is over agressive and replaces everything with a *, instead of obfuscating sensitive data.
+- [Feat] Add `nodeSelector` option to `targetAllocator` preset.
+
+### v0.0.243 / 2025-11-26
+- [Change] Narrow default span metrics database sanitization to SQL, Redis, and Memcached statements.
+- [Fix] Grant EndpointSlice RBAC permissions when enabling the Kubernetes resolver for the loadbalancing exporter.
+
+### v0.0.242 / 2025-11-25
+- [Feature] add `k8s.container.name` attribute to profiles
+- [Feature] update profiler to [v0.0.202547](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/releases/tag/v0.0.202547) to support proto v1.9.0
+
+### v0.0.241 / 2025-11-25
+- [Fix] Fix cluster name rendering in Supervisor configuration.
+
+### v0.0.240 / 2025-11-24
+- [CHORE] Update Target Allocator image to v0.140.0
+- [CHORE] Update Windows image to v0.140.1
+
+### v0.0.239 / 2025-11-21
+- [CHORE] Bump Collector to 0.140.1
+
+### v0.0.238 / 2025-11-19
+- [Fix] Add the `health_check` extension to the Supervisor minimal Collector configuration.
+
+### v0.0.237 / 2025-11-17
+- [Fix] Remove pipelines that have no exporters after presets are applied so limiting `presets.coralogixExporter.pipelines` to a subset no longer leaves invalid empty pipelines.
+
+### v0.0.236 / 2025-11-13
+- [Fix] Use new container image in the Supervisor preset hosted in Coralogix' JFrog instance.
+
+### v0.0.235 / 2025-11-12
+- [Fix] Default `deployment.environment.name` to `global.clusterName` when the resource detection preset's `deploymentEnvironmentName` stays empty and preserve it when span metrics' compact pipelines drop resource keys so the cluster identity remains set.
+
+### v0.0.234 / 2025-11-11
+- [Fix] Keep compact spanmetrics and database histograms by default by setting `dropHistogram` to `false`.
+- [Feat] Make the `fleetManagement.supervisor` preset ship a minimal collector config that only wires the OpAMP extension so the supervisor can connect to the Coralogix OpAMP backend.
+
+### v0.0.233 / 2025-11-07
+- [Fix] Derive Coralogix application and subsystem names from `service.namespace` and `service.name` when using the standalone distribution.
+- [Fix] Emit Coralogix OTLP headers with the `helm-otel-standalone` distribution tag when the standalone distribution is selected.
+- [Feat] Add `filelogMulti` preset for configuring multiple filelog receivers with Coralogix resource annotations.
+- [Feat] Allow `filelogMulti` receivers to derive Coralogix application and subsystem names from resource attributes after custom operators run.
+- [Feat] Allow `additionalEndpoints` option to `coralogixExporter` preset to add additional Coralogix endpoints.
+- [Feat] extend opamp extension and resource catalog exporter to support additional endpoints.
+- [Feat] Allow `filelogMulti` preset receivers to configure multiline log parsing.
+- [Feat] Allow setting custom non-identifying attributes for both supervisor and OpAMP extensions via `fleetManagement.customAttributes` preset.
+
+### v0.0.232 / 2025-10-22
+- [Feat] `opentelemetry-ebpf-instrumentation` - Increase http, postgres default buffer sizes, add graphql payload extraction
+
+### v0.0.231 / 2025-10-21
+- [Feat] Add `resource/metadata` processor to profiles pipeline when `profilesCollection` preset is enabled.
+- [Feat] update `opentelemetry-ebpf-profiler` to commit [0018abf5](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/commit/0018abf5f36d53f38eef235564b0acc42da6f69f) to support proto v1.8.0
+
+### v0.0.230 / 2025-10-20
+- [Feat] Add `prometheusMulti` preset for scraping multiple Prometheus targets with optional custom labels.
+- [Fix] Emit Prometheus multi-target jobs using the provided target name and only apply CX labels when explicitly configured.
+- [Chore] Standalone example enables the `prometheusMulti` preset with contrasting target configurations.
+- [Feat] Add `journaldReceiver` preset for systemd journal logs with optional directory, unit, and match filters.
+- [Feat] Allow conditional resource attribute removals in the `reduceResourceAttributes` preset via denylist entry conditions.
+- [Feat] Add `spanMetricsSanitization` preset to provide span name, URL, and database statement sanitization when span metrics presets are enabled.
+
+### v0.0.229 / 2025-10-16
+- [FIX] compact metrics unit name change. compact_duration_count -> compact_duration_ms_count, compact_duration_sum -> compact_duration_ms_sum, db_compact_duration_count -> db_compact_duration_ms_count, compact_duration_sum -> compact_duration_ms_sum
+- [Feat] Allow configuring resource detection detectors for environment and cloud metadata.
+- [Feat] Add standalone distribution option that binds Prometheus endpoints to 0.0.0.0 and scrapes host metrics from the root filesystem.
+
+### v0.0.228 / 2025-10-14
+- [Feat] Enable compact metrics for span-derived database metrics by default.
+
+### v0.0.227 / 2025-10-08
+- [Feat] Enable the compact span metrics preset by default.
+- [FIX] Route the logs router default path through a continuation stage so extra filelog operators always run and drop the now-redundant export noop stage.
+
+### v0.0.226 / 2025-10-08
+- [Feat] Enable the `k8sResourceAttributes` preset for the otel agent by default.
+
+### v0.0.225 / 2025-10-07
+- [CHORE] Bump Collector to 0.137.0
+
+### v0.0.224 / 2025-09-24
+- [CHORE] Bump Collector to 0.136.0
+
+### v0.0.223 / 2025-09-18
+- [Fix] filter k8s node on k8sattributes/profiles processor
+
+### v0.0.222 / 2025-09-16
+- [Feat] add spanmetrics.dbMetrics compact option.
+
+### v0.0.221 / 2025-09-10
+- [CHORE] Bump Collector to 0.135.0
+- [Breaking] Otel Collector metrics have changed otelcol_processor_filter_logs.filtered => otelcol_processor_filter_logs.filtered_ratio, telcol_processor_filter_datapoints.filtered => otelcol_processor_filter_datapoints.filtered_ratio
+- [CHORE] Updated Target Allocator to 0.132.0
+
+### v0.0.220 / 2025-09-08
+- [CHORE] Bump Collector to 0.134.1
+
+### v0.0.219 / 2025-09-05
+- [Feat] Coralogix exporter: add exporter helper settings (retry_on_failure, sending_queue); flatten values to `presets.coralogixExporter.retryOnFailure` and `sendingQueue`; add example and schema support.
+
+### v0.0.218 / 2025-09-03
+- [Fix] Fix quoting issue with EKS Fargate `collectionInterval`.
+- [Fix] Fix `otel_annotations` field intendation for `k8sattributes/profiles`.
+- [Feat] loadBalancing preset: add `pipelines` option to select pipelines (logs, metrics, traces, profiles). Default is ["traces"].
+- [Feature] Profiling: add `serviceLabels` and `serviceAnnotations` options to `profilesCollection` preset, to allow for custom service name detection.
+
+### v0.0.216 / 2025-08-29
+- [Feat] Add support for EKS Fargate.
+- [Feat] Add `eks` detector to `resource/region` processor.
+- [Feat] Profiling: improve service name detection by otel conventions.
+
+### v0.0.216 / 2025-08-19
+- [Feat] Add Kubernetes service resolver to load balancing preset and required RBAC.
+
+### v0.0.215 / 2025-08-12
+- [Fix] Tail sampling values: correct Coralogix preset pipelines syntax.
+
+### v0.0.214 / 2025-08-11
+- [Feat] Add affinity, tolerations, and nodeSelector to the `opentelemetry-ebpf-instrumentation` k8s-cache deployment.
+
+### v0.0.213 / 2025-08-08
+- [Feat] Update Collector to v0.131.1
+
+### v0.0.212 / 2025-08-07
+- [Fix] Resource attributes of the Collector's logs in the `filelog` receiver are correctly set.
+
+### v0.0.211 / 2025-08-07
+- [Feat] update `opentelemetry-ebpf-profiler` to commit [b93e1ec4](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/commit/b93e1ec4daedd7063c107162c146e3172de82e6e)
+- [Feat] `opentelemetry-ebpf-profiler`: Remove k8s-watcher and redis componentes,
+- [Feat] `opentelemetry-ebpf-profiler`: Service name and k8s attributes will be computed in collector using k8sAttributes and transform processors.
+
+### v0.0.210 / 2025-08-07
+- [Fix] `profilesCollection` preset correctly adds `coralogix` exporter to `profiles` pipeline.
+
+### v0.0.209 / 2025-08-07
+- [Feat] add option to drop compact duration histogram in spanMetrics preset.
+
+### v0.0.208 / 2025-08-05
+- [Fix] `headSampling` preset correctly removes `coralogix` exporter from the `traces` pipeline.
+- [Feat] Add compactMetrics option to spanMetrics preset.
+
+### v0.0.207 / 2025-08-05
+- [Feat] remove `coralogix-ebpf-agent` subchart, as now we recommend using `opentelemetry-ebpf-instrumentation` chart.
+
+### v0.0.206 / 2025-08-04
+
+- [Feat] Add k8sattributes support for profiles.
+
+### v0.0.205 / 2025-07-28
+- [Feat] Add support for profiles in the `reduceResourceAttributes` preset.
+- [Feat] Add `k8s.container.restart_count` to the `reduceResourceAttributes` preset.
+
+### v0.0.204 / 2025-07-28
+- [Feat] Use networkMode in ipv6-values.yaml
+
+### v0.0.203 / 2025-07-24
+- [Fix] Correct transform rule for `otelcol_otelsvc_k8s_pod_deleted_ratio` metric.
+- [Feat] Remove the attribute `cx.otel_integration.name` through the `reduceResourceAttributes` preset.
+- [Feat] Add more attribute coming from auto-instrumentation SDKs to the `reduceResourceAttributes` preset.
+- [Feat] Add additional Prometheus transform rules for collector metrics preset.
+- [Feat] Fail installation if kubernetesResources preset is enabled in daemonset mode.
+- [Feat] Set spanMetrics aggregationCardinalityLimit default to 100000.
+- [Feat] Update Collector to v0.130.1
+- [Feat] Add `reduceLogAttributes` preset to remove specified log record attributes from collected logs.
+- [Fix] Set `error_mode` to `silent` for the transformations of the `reduceResourceAttributes` and `reduceLogAttributes` presets.
+- [Feat] Add `host.image.id` to the `reduceResourceAttributes` preset.
+- [Fix] `command.name` override put back in place.
+- [Fix] `k8sResourceAttributes` preset works correctly when the `fleetManagement` preset is enabled.
+- [Feat] The `reduceResourceAttributes` preset now also removes attributes from traces and logs pipelines.
+- [Feat] The `reduceResourceAttributes` preset now removes a few more attributes.
+- [Fix] Skip prometheus receiver from collectorMetrics preset when PodMonitor or ServiceMonitor is enabled
+- [Fix] Remove extra blank lines when rendering container ports
+- [Feat] Allow disabling the /var/lib/dbus/machine-id mount via `presets.resourceDetection.dbusMachineId.enabled`
+- [Feat] Add transactions preset to group spans into transactions and enable Coralogix transaction processor
+- [Feat] Add `networkMode` option to configure IPv4 or IPv6 endpoints
+- [Feat] Update Collector to v0.130.0
+
+### v0.0.202 / 2025-07-14
+- [Feat] Add E2E test for hostEntityEvents preset.
+
+### v0.0.201 / 2025-07-13
+- [Feat] Bump `opentelemetry-ebpf-instrumentation` version to `0.1.2`
+
+### v0.0.200 / 2025-07-10
+- [Fix] Remove deprecated match_once key from `spanMetricsMultiConfig` config.
+
+### v0.0.199 / 2025-07-09
+- [Feat] add k8s ipv6 support for ebpf-profiler sub-chart, fix ipv6-values.yaml to support change in address fields.
+
+### v0.0.198 / 2025-07-09
+- [Fix] Apply `transform/prometheus` rule only for metrics from the Collector itself.
+
+### v0.0.197 / 2025-07-04
+- [Feat] Support global `deploymentEnvironmentName` for the resource detection preset.
+- [Feat] Update Collector to v0.129.1
+
+### v0.0.196 / 2025-07-03
+- [Feat] Add new variable `presets.coralogixExporter.pipelines` as an `array[string]` to allow enabling exporter on 2 pipelines at once. The old variable `presets.coralogixExporter.pipeline` is still available, but deprecated
+- [Feat] Add coralogix-operator subchart.
+
+### v0.0.195 / 2025-07-02
+- [Fix] Support templating for `presets.resourceDetection.deploymentEnvironmentName`.
+
+### v0.0.194 / 2025-06-27
+- [Feat] Upgrade OpenTelemetry Collector to `0.116.1`
+
+### v0.0.193 / 2025-06-22
+- [Feat] bump opentelemetry-ebpf-profiler version.
+
+### v0.0.192 / 2025-06-17
+- [Feat] bump opentelemetry-ebpf-instrumentation version.
+
+### v0.0.191 / 2025-06-16
+- [Fix] Recover metrics `k8s_node_allocatable_cpu__cpu` and `k8s_node_allocatable_memory__By` in `k8sclusterreceiver` on the collector side
+
+### v0.0.190 / 2025-06-15
+- [Feat] Add opentelemetry-ebpf-instrumentation subchart.
+
+### v0.0.189 / 2025-06-13
+- [Fix] Fix `command` template helper when using the Supervisor preset.
+
+### v0.0.188 / 2025-06-12
+- [Fix] Fix `image` template helper when using the Supervisor preset and when using the Collector CRDs.
+
+### v0.0.187 / 2025-06-12
+- [Feat] Add an alpha `supervisor` preset under the `fleetManagement` preset
+- [Feat] Certain attributes related to the `fleetManagement` preset are now added
+  as non-identifying attributes even when `k8sResourceAttributes` preset is disabled.
+
+### v0.0.186 / 2025-06-09
+- [Feat] allow `dropManagedFields`, `periodicCollection` and `transformStatements` in preset.kubernetesResources
+
+### v0.0.185 / 2025-06-06
+- [Feat] Allow filtering Kubernetes Resources using custom OTTL statements via `presets.kubernetesResources.filterStatements`
+
+### v0.0.184 / 2025-06-06
+- [Feat] Use semconv preset in agent instead of hardcoded version in values.yaml
+- [Fix] gke/autopilot to not use hostEntity preset and resourceDetection preset.
+
+### v0.0.183 / 2025-06-05
+- [Feat] Use newly added presets in windows instead of hardcoding stuff in values.yaml
+
+### v0.0.182 / 2025-06-05
+- [Fix] Cluster collector k8scluster shoudl not filter on NODE level
+- [Fix] fleetManagement preset automatically injects KUBE_NODE_NAME env variable.
+- [Fix] Agent k8scluster should filter on NODE level
+
+### v0.0.182 / 2025-06-05
+- [Feat] Use newly added presets in receiver instead of hardcoding stuff in values.yaml
+
+### v0.0.181 / 2025-06-05
+- [Fix] Disable Coralogix exporter for tracing pipeline when tail-sampling is used.
+
+### v0.0.180 / 2025-06-04
+- [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
+
+### v0.0.179 / 2025-05-30
+- [Feat] Use newly added presets instead of hardcoding stuff in values.yaml
+
+### v0.0.178 / 2025-05-22
+- [Feat] Update windows and target-allocator image
+
+### v0.0.177 / 2025-05-22
+- [Feat] Enable spanmetrics by default
+
+### v0.0.176 / 2025-05-19
+- [Feat] Update Collector to v0.126.0
+- [Update] `kubeletstatsreceiver`: set `collect_all_network_interfaces` on `pods`
+
+### v0.0.175 / 2025-05-19
+- [Fix] Fix utilization metric name and unit in `kubeletMetrics` preset to keep the metrics' backward compatibility for dashboards
+
+### v0.0.174 / 2025-05-16
+- [Chore] Remove unnecessary config form values.yaml
+- [Feat] Move to jaegerReceiver preset instead of configuring jaeger ports and receivers directly
+- [Feat] Move to zipkinReceiver preset instead of configuring zipkin ports and receivers directly
+- [Feat] Move to resourceDetection preset instead of configuring resourcedetection manually.
+
+### v0.0.173 / 2025-05-16
+- [Chore] Remove unnecessary config form values.yaml
+
+### v0.0.172 / 2025-05-15
+- [Feat] Update Collector to v0.125.0
+- [Fix] Configure `kubeletstatsreceiver` to enable network metrics collection from all available interfaces on Node level
+
+### v0.0.171 / 2025-05-09
+- [Fix] Fix target allocator namespace.
+- [Fix] Fix rendering of securityContext and podSecurityContext for Collector CRD.
+- [Feat] Add collectorMetrics preset to collect collector's own metrics using Prometheus receiver
+- [Feat] Add E2E test for the OTEL Operator
+
+### v0.0.170 / 2025-04-25
+- [Feat] Update Collector to v0.124.1
+- [Breaking] We are moving to ghcr image registry instead of dockerhub, as OTel doesn't use dockerhub due to rate limits. Ref https://github.com/open-telemetry/opentelemetry-collector-releases/releases/tag/v0.123.1
+
+### v0.0.169 / 2025-04-22
+- [Feat] Add scrapeAll metrics support for collector
+
+### v0.0.168 / 2025-04-14
+- [Feat] Add db dimensions to spanmetrics
+- [Fix] fix dbMetrics use db.collection.name instead of db.collection_name
+
+### v0.0.167 / 2025-04-11
+- [Feat] Update Collector to v0.123.0
+
+### v0.0.166 / 2025-04-08
+- [Feat] Add ebpf-profiler subchart.
+
+### v0.0.165 / 2025-04-04
+- [Feat] Review otel-integration readme
+
+### v0.0.164 / 2025-04-04
+- [Feat] Update Collector to v0.122.1
+
+### v0.0.163 / 2025-04-04
+- [Feat] Add MongoDB support to coralogix-ebpf-agent.
+
+### v0.0.162 / 2025-04-02
+- [Fix] Filter only Pods from standard kubernetes workloads in kubernetesResource presets.
+
+### v0.0.161 / 2025-04-01
+- [Fix] Add extraDimensions support for dbMetrics in spanMetrics preset
+
+### v0.0.160 / 2025-03-31
+- [Feat] Add extraDimensions support for dbMetrics in spanMetrics preset
+- [Fix] Configure hostEntityEvents preset to require hostMetrics preset to be enabled
+
+### v0.0.159 / 2025-03-25
+- [Revert] Remove `ebpf-profiler` as a subchart
+
+### v0.0.158 / 2025-03-21
+- [Fix] OpentelemetryCollector crd generation
+
+### v0.0.157 / 2025-03-19
+- [Feat] Use global k8stest package
+
+### v0.0.156 / 2025-03-17
+- [Feat] Enable fleetmanagement preset by default
+
+### v0.0.155 / 2025-03-12
+- [Fix] Add missing service_instance_id in metrics
+- [docs] Add headsampling docs
+
+### v0.0.154 / 2025-03-12
+- [Feat] Update windows image to v0.121.0
+- [Feat] Add ebpf-profiler subchart.
+
+### v0.0.153 / 2025-03-06
+- [Feat] Update Collector to v0.121.0
+- [Feat] Update Target Allocator to v0.119.0
+- [Feat] Add headSampling preset to configure probabilistic sampling for traces
 
 ### v0.0.152 / 2024-03-05
 
@@ -10,7 +794,7 @@
 
 - [Fix] Add Bottlerocket support to coralogix-ebpf-agent
 
-### v0.0.150 / 2025-02-29
+### v0.0.150 / 2025-02-28
 
 - [Feat] Upgrade OpenTelemetry Collector to `0.120.0`
 

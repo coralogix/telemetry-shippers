@@ -107,13 +107,15 @@ Note: we can use both static and dynamic at the sametime, static values take pre
 
 ## Coralogix Endpoints
 
-| Region | Logs Endpoint               |
-|--------|-----------------------------|
-| EU     | `ingress.coralogix.com`     |
-| EU2    | `ingress.eu2.coralogix.com` |
-| US     | `ingress.coralogix.us`      |
-| SG     | `ingress.coralogixsg.com`   |
-| IN     | `ingress.coralogix.in`      |
+| Region | Logs Endpoint                 |
+|--------|-------------------------------|
+| EU1    | `ingress.coralogix.com`       |
+| EU2    | `ingress.eu2.coralogix.com`   |
+| US1    | `ingress.coralogix.us`        |
+| US2    | `ingress.cx498.coralogix.com` |
+| AP1    | `ingress.coralogix.in`        |
+| AP2    | `ingress.coralogixsg.com`     |
+| AP3    | `ingress.ap3.coralogix.com`   |
 
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.

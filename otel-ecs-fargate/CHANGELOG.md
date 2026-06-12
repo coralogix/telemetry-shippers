@@ -8,6 +8,20 @@
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
 
+### 1.0.0 / 2026-03-11
+
+* [UPDATE] Changed from Parameter Store to S3 for configuration
+* [UPDATE] Updated example configuration to be inline with ECS EC2 configuration
+
+### 0.0.4 / 2025-10-09
+
+* [UPDATE] Added DB spanmetrics for ECS Fargate.
+
+### 0.0.3 / 2025-08-19
+
+* [UPDATE] Added spanmetrics for ECS Fargate.
+* [FIX] Fix metrics syntax.
+
 ### 0.0.2 / 2024-11-25
 
 * [UPDATE] Added configs for ECS Fargate Resource Catalog support

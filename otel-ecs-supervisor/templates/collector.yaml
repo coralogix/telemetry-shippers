@@ -1,0 +1,68 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: opentelemetry-collector
+          scrape_interval: 10s
+          static_configs:
+            - targets:
+                - 0.0.0.0:8888
+processors:
+  memory_limiter:
+    limit_mib: 512
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  resource:
+    attributes:
+      - key: service.name
+        value: "${application_name}"
+        action: upsert
+      - key: service.version
+        value: "1.0.0"
+        action: upsert
+
+exporters:
+  coralogix:
+    domain: "${coralogix_domain}"
+    private_key: "$${env:PRIVATE_KEY}"
+    application_name: "${application_name}"
+    subsystem_name: "${subsystem_name}"
+    timeout: 30s
+
+extensions:
+  opamp:
+    agent_description:
+      non_identifying_attributes:
+        cx.agent.type: "ecs-supervisor"
+        cx.cluster.name: "${application_name}"
+        cx.subsystem.name: "${subsystem_name}"
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [opamp, health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [coralogix]
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, batch, resource]
+      exporters: [coralogix]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [coralogix]
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: 0.0.0.0:8888

@@ -1,0 +1,42 @@
+name: OTEL ECS Supervisor Test
+
+on:
+  pull_request:
+    paths:
+    - 'otel-ecs-supervisor/**'
+  push:
+    paths:
+    - 'otel-ecs-supervisor/**'
+
+jobs:
+  terraform-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./otel-ecs-supervisor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check Prerequisites
+        run: make check-prereqs || echo "AWS credentials not available in CI - skipping AWS checks"
+
+      - name: Initialize Terraform
+        run: make init
+
+      - name: Run Terraform Tests
+        run: make test
+
+      - name: Test Template Generation
+        run: make test-templates
+
+      - name: Test Security Validation
+        run: make validate-security
+
+      - name: Test Example Configuration
+        run: make test-example

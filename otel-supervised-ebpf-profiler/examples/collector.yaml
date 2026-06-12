@@ -1,0 +1,24 @@
+receivers:
+  profiling:
+exporters:
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  opamp:
+    agent_description:
+      non_identifying_attributes:
+        cx.agent.type: "ebpf-profiler"
+        cx.cluster.name: "cluster"
+
+service:
+  pipelines:
+    profiles:
+      receivers: [profiling]
+      exporters: [debug]
+  extensions: [health_check, opamp]
+  telemetry:
+    logs:
+      level: debug

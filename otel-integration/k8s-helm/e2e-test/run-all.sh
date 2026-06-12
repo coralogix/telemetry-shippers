@@ -576,8 +576,11 @@ run_test() {
     local test_name="$1"
     local test_env_vars="$2"
     local test_package="./..."
+    local test_regex="^${test_name}$"
     if [[ "$test_name" == TestE2E_FleetManagerSupervisor* ]]; then
         test_package="./supervisor"
+    elif [[ "$test_name" == "TestE2E_SpanMetricsConnector" ]]; then
+        test_regex='^TestE2E_SpanMetrics_.*$'
     fi
 
     log_test "========================================"
@@ -607,11 +610,11 @@ run_test() {
     kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
 
     # Run the test
-    log_info "Executing: go test -v -run='^${test_name}$' ${test_package}"
+    log_info "Executing: go test -v -run='${test_regex}' ${test_package}"
     local test_start_time=$(date +%s)
 
     # Run test and capture exit code properly (tee doesn't preserve exit codes)
-    go test -v -run="^${test_name}$" ${test_package} 2>&1 | tee /tmp/test-${test_name}-output.log
+    go test -v -run="${test_regex}" ${test_package} 2>&1 | tee /tmp/test-${test_name}-output.log
     local test_exit_code=${PIPESTATUS[0]}
 
     local test_end_time=$(date +%s)

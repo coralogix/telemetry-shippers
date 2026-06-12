@@ -8,6 +8,119 @@ When upgrading to new collector version please check OpenTelemetry collector rel
 - https://github.com/open-telemetry/opentelemetry-collector/releases
 - https://github.com/open-telemetry/opentelemetry-collector-contrib/releases
 
+## v0.0.247 to v0.0.248
+
+The `kubernetesExtraMetrics` preset has been split into two separate presets:
+- `kubernetesExtraMetrics`: Now only handles cAdvisor metrics scraping and is enabled by default on agents
+- `kubernetesApiServerMetrics`: New preset for Kubernetes API server metrics scraping that is enabled by default on the cluster-collector
+
+If you were previously using `kubernetesExtraMetrics` to scrape both cAdvisor and API server metrics, you will need to enable both presets (enabled by default):
+
+```yaml
+opentelemetry-agent:
+  presets:
+    kubernetesExtraMetrics:
+      enabled: true
+      scrapeAll: false  # Controls cAdvisor metrics filtering
+    kubernetesApiServerMetrics:
+      enabled: true
+      scrapeAll: false  # Controls API server metrics filtering
+
+opentelemetry-cluster-collector:
+  presets:
+    kubernetesApiServerMetrics:
+      enabled: true
+      scrapeAll: false
+```
+
+## v0.0.206 to v0.0.207
+
+`coralogix-ebpf-agent` has been removed in favor of using `opentelemetry-ebpf-instrumentation` which can be configured to be deployed by setting `opentelemetry-ebpf-instrumentation.enabled` to `true`.
+
+## v0.0.195 to v0.0.196
+
+**Important Note for Tail-Sampling Configuration:**
+
+If you are using tail-sampling configuration, you must change the `coralogixExporter` preset pipelines to `none` to avoid conflicts with the tail-sampling setup:
+
+```yaml
+opentelemetry-agent:
+  presets:
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+      pipelines: ["none"]
+```
+
+See the [tail-sampling-values.yaml](https://github.com/coralogix/telemetry-shippers/blob/master/otel-integration/k8s-helm/tail-sampling-values.yaml#L9-L21) for a complete example.
+
+## v0.0.177 to v0.0.184
+
+We have migrated from static configurations provided in config to a more flexible presets-based approach. This change makes values.yaml more configurable by users, allowing you to enable or disable specific features that you don't use.
+
+For example, previously we configured `jaegerReceiver` in values.yaml:
+
+```
+opentelemetry-agent:
+  config:
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:14250
+          thrift_http:
+            endpoint: ${env:MY_POD_IP}:14268
+          thrift_compact:
+            endpoint: ${env:MY_POD_IP}:6831
+          thrift_binary:
+            endpoint: ${env:MY_POD_IP}:6832
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - coralogix
+          ...
+          receivers:
+            - ..
+            - jaeger
+  ports:
+    ...
+    jaeger-binary:
+      enabled: true
+      containerPort: 6832
+      servicePort: 6832
+      hostPort: 6832
+      protocol: TCP
+```
+
+Now it becomes:
+
+```
+opentelemetry-agent:
+  presets:
+    jaegerReceiver:
+      enabled: true
+```
+
+This gives you more control over your OpenTelemetry configuration and helps you only enable the features you need.
+
+New presets added:
+
+| Preset                | Description                                                                                                                                                                                                                                                                   |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| collectorMetrics      | Configures the collector to collect its own metrics using Prometheus receiver. Adds the prometheus receiver to the metrics pipeline with a scrape config targeting the collector's metrics endpoint. Also adds a transform processor to clean up metric names and attributes. |
+| jaegerReceiver        | Configures the collector to receive Jaeger data in all supported protocols. Adds the jaeger receiver to the traces pipeline with all protocols configured. Opens ports: 14250 (gRPC), 14268 (HTTP), 6831 (Thrift Compact), 6832 (Thrift Binary).                              |
+| zipkinReceiver        | Configures the collector to receive Zipkin data. Adds the zipkin receiver to the traces pipeline. Opens port 9411.                                                                                                                                                            |
+| otlpReceiver          | Configures the collector to receive OTLP data. Adds the OTLP receiver to the traces, metrics, and logs pipelines. Opens ports: 4317 (gRPC), 4318 (HTTP).                                                                                                                      |
+| statsdReceiver        | Configures the collector to receive StatsD metrics. Adds the statsd receiver to the metrics pipeline. Opens port 8125.                                                                                                                                                        |
+| zpages                | Configures the collector to expose zPages for debugging. Opens port 55679.                                                                                                                                                                                                    |
+| pprof                 | Configures the collector to expose pprof for profiling.                                                                                                                                                                                                                       |
+| batch                 | Configuration for the batch processor. Adds the batch processor to the logs, metrics, and traces pipelines.                                                                                                                                                                   |
+| coralogixExporter     | Configures the collector to export data to Coralogix.                                                                                                                                                                                                                         |
+| resourceDetection     | Configures resource detection processors to add system, environment and cloud information. Also configures volumes and volume mounts for the collector.                                                                                                                       |
+| semconv               | Applies semantic convention transformations.                                                                                                                                                                                                                                  |
+| k8sResourceAttributes | Configures Internal Collector's resource attributes for the collector.                                                                                                                                                                                                        |
+
 ## 0.0.89 to 0.0.90
 
 If you are providing your own configuration that relies on implicit conversion of types, this behavior is now deprecated and will not be supported in one of the future release (might cause your collectors to fail during start). Please update your configuration accordingly - to see which type casting behaviors are affected see the list [here](https://github.com/open-telemetry/opentelemetry-collector/issues/9532).

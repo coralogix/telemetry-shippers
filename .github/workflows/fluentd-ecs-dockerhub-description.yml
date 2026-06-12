@@ -1,0 +1,28 @@
+name: Fluentd-ECS DockerHub Description
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: master
+    paths:
+      - 'logs/fluentd/aws-ecs/readme.md'
+  workflow_dispatch:
+
+    permissions:
+      contents: read
+jobs:
+  update-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update DockerHub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: coralogixrepo/fluentd-coralogix-ecs
+          readme-filepath: ./logs/fluentd/aws-ecs/readme.md

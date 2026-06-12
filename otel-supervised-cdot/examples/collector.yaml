@@ -1,0 +1,30 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+exporters:
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  opamp:
+    agent_description:
+      non_identifying_attributes:
+        cx.agent.type: "agent"
+        cx.cluster.name: "cluster"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [debug]
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
+  extensions: [health_check, opamp]
+  telemetry:
+    logs:
+      level: debug

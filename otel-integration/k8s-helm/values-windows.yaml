@@ -20,10 +20,10 @@ opentelemetry-agent-windows:
     kubernetes.io/os: windows
   image:
     # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
-    repository: coralogixrepo/opentelemetry-collector-contrib-windows
+    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.117.0"
+    tag: "0.152.1-windows-2019-amd64"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
 
@@ -87,7 +87,7 @@ opentelemetry-agent-windows:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
     logsCollection:
@@ -117,6 +117,13 @@ opentelemetry-agent-windows:
       #     combineWith: ""
     kubernetesAttributes:
       enabled: true
+      podUid:
+        enabled: false
+      podStartTime:
+        enabled: false
+      nodeFilter:
+        enabled: true
+
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.
@@ -136,10 +143,11 @@ opentelemetry-agent-windows:
         - name: http.method
         - name: cgx.transaction
         - name: cgx.transaction.root
-          # Configures the collector to export span metrics with different histogram bucket options
-      # for different applications. Applications are selected and routed to different pipelines
-      # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
-      # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
+
+    # Configures the collector to export span metrics with different histogram bucket options
+    # for different applications. Applications are selected and routed to different pipelines
+    # using OTTL. For more information see https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/routingconnector
+    # Make sure to not use with spanMetrics preset, which applies single spanmetrics connector to tracing pipeline.
     spanMetricsMulti:
       enabled: false
       collectionInterval: "{{.Values.global.collectionInterval}}"
@@ -160,108 +168,61 @@ opentelemetry-agent-windows:
     # This reduces target_info cardinality.
     reduceResourceAttributes:
       enabled: false
+    # Configures the collector to collect its own metrics using Prometheus receiver.
+    # Adds the prometheus receiver to the metrics pipeline with a scrape config
+    # targeting the collector's metrics endpoint.
+    # Also adds a transform processor to clean up metric names and attributes.
+    collectorMetrics:
+      enabled: true
+      # Scrape interval for collector metrics
+      scrapeInterval: "{{.Values.global.collectionInterval}}"
 
+    # Configures the collector to export data to Coralogix.
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    # Configures the collector to expose zPages for debugging.
+    # Reference: https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
+    zpages:
+      enabled: true
+
+    # Configures the collector to expose pprof for profiling.
+    pprof:
+      enabled: true
+        # Configures the collector to receive Jaeger data in all supported protocols.
+    # Adds the jaeger receiver to the traces pipeline with all protocols configured.
+    jaegerReceiver:
+      enabled: true
+    # Configures the collector to receive Zipkin data.
+    # Adds the zipkin receiver to the traces pipeline.
+    zipkinReceiver:
+      enabled: true
+    # Configures the collector to receive OTLP data.
+    # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
+    otlpReceiver:
+      enabled: true
+    # Configures the collector to receive StatsD metrics.
+    # Adds the statsd receiver to the metrics pipeline.
+    statsdReceiver:
+      enabled: true
+    # Configuration for the batch processor.
+    # Adds the batch processor to the logs, metrics, and traces pipelines.
+    # See https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/batchprocessor for details on the processor.
+    batch:
+      enabled: true
+      # sendBatchSize: 1024
+      # sendBatchMaxSize: 2048
+      # timeout: "1s"
+    # Configures resource detection processors to add system and environment information.
+    # Also configures volumes and volume mounts for the collector.
+    resourceDetection:
+      enabled: true
   config:
-    extensions:
-      zpages:
-        endpoint: localhost:55679
-      pprof:
-        endpoint: localhost:1777
+    # extensions: {}
+    # receivers:{}
+    processors: {}
 
-    receivers:
-      statsd:
-        endpoint: ${env:MY_POD_IP}:8125
-      otlp:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:4317
-          http:
-            endpoint: ${env:MY_POD_IP}:4318
-      zipkin:
-        endpoint: ${env:MY_POD_IP}:9411
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: ${env:MY_POD_IP}:14250
-          thrift_http:
-            endpoint: ${env:MY_POD_IP}:14268
-          thrift_compact:
-            endpoint: ${env:MY_POD_IP}:6831
-          thrift_binary:
-            endpoint: ${env:MY_POD_IP}:6832
-      prometheus:
-        config:
-          scrape_configs:
-          - job_name: opentelemetry-collector
-            scrape_interval: 30s
-            static_configs:
-              - targets:
-                  - ${env:MY_POD_IP}:8888
-    processors:
-      batch:
-        send_batch_size: 1024
-        send_batch_max_size: 2048
-        timeout: "1s"
-      resourcedetection/env:
-        detectors: ["system", "env"]
-        timeout: 2s
-        override: false
-        system:
-          resource_attributes:
-            host.id:
-              enabled: true
-      resourcedetection/region:
-        detectors: ["gcp", "ec2", "azure"]
-        timeout: 2s
-        override: true
-      transform/prometheus:
-        error_mode: ignore
-        metric_statements:
-          - context: resource
-            statements:
-              - set(attributes["k8s.pod.ip"], attributes["net.host.name"]) where attributes["service.name"] == "opentelemetry-collector"
-      k8sattributes:
-        filter:
-          node_from_env_var: KUBE_NODE_NAME
-        extract:
-          metadata:
-            - "k8s.namespace.name"
-            # replace the below by `k8s.deployment.name` after https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/23067
-            - "k8s.replicaset.name"
-            - "k8s.statefulset.name"
-            - "k8s.daemonset.name"
-            - "k8s.cronjob.name"
-            - "k8s.job.name"
-            - "k8s.pod.name"
-            - "k8s.node.name"
-      # Will get the k8s resource limits
-      memory_limiter: null
-
-    exporters:
-      coralogix:
-        timeout: "30s"
-        private_key: "${env:CORALOGIX_PRIVATE_KEY}"
-        domain: "{{ .Values.global.domain }}"
-        logs:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        metrics:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        traces:
-          headers:
-            X-Coralogix-Distribution: "helm-otel-integration/{{ .Values.global.version }}"
-        application_name: "{{ .Values.global.defaultApplicationName }}"
-        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
-        application_name_attributes:
-          - "k8s.namespace.name"
-          - "service.namespace"
-        subsystem_name_attributes:
-          - "k8s.deployment.name"
-          - "k8s.statefulset.name"
-          - "k8s.daemonset.name"
-          - "k8s.cronjob.name"
-          - "service.name"
+    # exporters: {}
 
     service:
       telemetry:
@@ -270,52 +231,24 @@ opentelemetry-agent-windows:
           cx.agent.type: "agent"
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-
-        metrics:
-          address: ${env:MY_POD_IP}:8888
       extensions:
-      - zpages
-      - pprof
       - health_check
       pipelines:
         metrics:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
-            - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
-            - prometheus
-            - hostmetrics
-            - statsd
+          # receivers: []
         traces:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
-            - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
             - memory_limiter
-            - batch
-          receivers:
-            - otlp
-            - zipkin
-            - jaeger
+          # receivers: []
         logs:
-          exporters:
-            - coralogix
+          # exporters: []
           processors:
-            - k8sattributes
-            - resourcedetection/env
-            - resourcedetection/region
-            - batch
-          receivers:
-            - otlp
+            - memory_limiter
+          # receivers: []
   tolerations:
     - operator: Exists
 
@@ -327,22 +260,10 @@ opentelemetry-agent-windows:
       cpu: 1
       memory: 2G
 
-  ports:
-    statsd:
-      enabled: true
-      containerPort: 8125
-      servicePort: 8125
-      hostPort: 8125
-      protocol: UDP
-    jaeger-binary:
-      enabled: true
-      containerPort: 6832
-      servicePort: 6832
-      hostPort: 6832
-      protocol: TCP
-    # In order to enable podMonitor, following part must be enabled in order to expose the required port:
-    # metrics:
-    #   enabled: true
+  # In order to enable podMonitor, following part must be enabled in order to expose the required port:
+  # ports:
+  #   metrics:
+  #    enabled: true
 
   # podMonitor:
   #   enabled: true
@@ -360,6 +281,3 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   nodeSelector:
     kubernetes.io/os: linux
-
-coralogix-ebpf-agent:
-  enabled: false

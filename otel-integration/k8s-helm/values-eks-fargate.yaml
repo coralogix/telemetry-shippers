@@ -1,0 +1,11 @@
+opentelemetry-agent-eks-fargate:
+  enabled: true
+
+opentelemetry-agent-eks-fargate-monitoring:
+  enabled: true
+
+opentelemetry-cluster-collector:
+  enabled: false
+
+opentelemetry-agent:
+  enabled: false

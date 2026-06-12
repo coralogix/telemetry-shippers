@@ -1,0 +1,116 @@
+name: OTel Installer Release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'otel-installer/**'
+      - '!otel-installer/**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from CHANGELOG
+        id: version
+        run: |
+          VERSION=$(grep -m1 -oP '(?<=## \[)[0-9.]+' otel-installer/CHANGELOG.md)
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract version from CHANGELOG.md"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}"
+
+      - name: Check if already released
+        id: check
+        run: |
+          if git tag | grep -q "^otel-installer-v${{ steps.version.outputs.version }}$"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⏭️ Version ${{ steps.version.outputs.version }} already released, skipping"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "🚀 New version ${{ steps.version.outputs.version }} will be released"
+          fi
+
+      - name: Extract changelog
+        if: steps.check.outputs.skip == 'false'
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          {
+            echo 'content<<EOF'
+            awk "/^## \[${VERSION}\]/,/^## \[[0-9]/" otel-installer/CHANGELOG.md | head -n -1 | tail -n +2
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Prepare assets
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          mkdir -p dist
+          cp otel-installer/standalone/coralogix-otel-collector.sh dist/
+          cp otel-installer/docker/docker-install.sh dist/
+          cp otel-installer/windows/coralogix-otel-collector.ps1 dist/
+          chmod +x dist/*.sh
+          cd dist
+          sha256sum coralogix-otel-collector.sh > coralogix-otel-collector.sh.sha256
+          sha256sum docker-install.sh > docker-install.sh.sha256
+          sha256sum coralogix-otel-collector.ps1 > coralogix-otel-collector.ps1.sha256
+
+      - name: Create release
+        if: steps.check.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: otel-installer-v${{ steps.version.outputs.version }}
+          name: OTel Installer v${{ steps.version.outputs.version }}
+          body: |
+            ## OpenTelemetry Collector Installer v${{ steps.version.outputs.version }}
+            
+            ### Install
+            
+            **Standalone (Linux/macOS):**
+            ```bash
+            CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -fsSL https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/coralogix-otel-collector.sh)"
+            ```
+            
+            **Windows (PowerShell as Administrator):**
+            ```powershell
+            $env:CORALOGIX_PRIVATE_KEY="your-key"; iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/coralogix-otel-collector.ps1'))
+            ```
+            
+            **Docker:**
+            ```bash
+            CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -fsSL https://github.com/${{ github.repository }}/releases/download/otel-installer-v${{ steps.version.outputs.version }}/docker-install.sh)"
+            ```
+            
+            ### Changes
+            ${{ steps.changelog.outputs.content }}
+            
+            ### Docs
+            - [Standalone (Linux/macOS)](otel-installer/standalone/)
+            - [Windows](otel-installer/windows/)
+            - [Docker](otel-installer/docker/)
+          files: |
+            dist/coralogix-otel-collector.sh
+            dist/coralogix-otel-collector.ps1
+            dist/docker-install.sh
+            dist/*.sha256
+          fail_on_unmatched_files: true
+
+      - name: Attestation
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.sh
+            dist/*.ps1

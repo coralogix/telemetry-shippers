@@ -10,6 +10,11 @@ opentelemetry-agent:
   enabled: true
   mode: daemonset
   presets:
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+      pipelines: ["metrics", "logs"]
+
     loadBalancing:
       enabled: true
       routingKey: "traceID"
@@ -60,7 +65,4 @@ opentelemetry-cluster-collector:
   enabled: true
 
 opentelemetry-agent-windows:
-  enabled: false
-
-coralogix-ebpf-agent:
   enabled: false

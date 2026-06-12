@@ -1,8 +1,8 @@
 apiVersion: v2
 name: fluentd-http
 description: Fluentd Chart with HTTP output plugin
-version: 0.0.15
-appVersion: v1.18.0
+version: 0.0.16
+appVersion: v1.18.0-4
 keywords:
   - Fluentd
   - HTTP output plugin

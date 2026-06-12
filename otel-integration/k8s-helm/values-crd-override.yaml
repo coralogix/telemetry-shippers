@@ -19,6 +19,3 @@ opentelemetry-cluster-collector:
     generate: true
   configMap:
     create: false
-
-coralogix-ebpf-agent:
-  enabled: false

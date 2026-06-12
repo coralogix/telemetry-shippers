@@ -1,0 +1,35 @@
+name: Coralogix GitHub Actions Exporter
+
+on:
+  workflow_run:
+    types: [completed]
+    workflows: ["*"]
+
+permissions: read-all
+
+env:
+  OTEL_EXPORTER_OTLP_ENDPOINT: https://ingress.eu2.coralogix.com:443
+  OTEL_EXPORTER_OTLP_HEADERS: Authorization=Bearer ${{ secrets.CORALOGIX_API_KEY }}
+  
+  # GitHub Actions configuration
+  ACTION_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+  WORKFLOW_RUN_NAME: ${{ github.event.workflow_run.name }}
+  
+  GITHUB_CUSTOM_ATTS: '{"service.name":"github", "cx.application.name":"ghactions", "cx.subsystem.name":"${{ github.repository }}"}'
+  
+  OTLP_PROTOCOL: HTTP
+  GITHUB_DEBUG: false  # Set to true for troubleshooting
+
+jobs:
+  Coralogix-Exporter:
+    name: Coralogix Exporter
+    runs-on: ubuntu-latest
+    if: ${{ always() }}  # Run even if the monitored workflow failed
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Run Coralogix Exporter
+        uses: coralogix/OTLP-GitHubAction-Exporter@v3
+
+

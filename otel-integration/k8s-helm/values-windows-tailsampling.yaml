@@ -20,10 +20,10 @@ opentelemetry-agent-windows:
     kubernetes.io/os: windows
   image:
     # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
-    repository: coralogixrepo/opentelemetry-collector-contrib-windows
+    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.116.0"
+    tag: "0.152.1-windows-2019-amd64"
     # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
     digest: ""
   extraVolumes:
@@ -86,7 +86,7 @@ opentelemetry-agent-windows:
       clusterName: "{{.Values.global.clusterName}}"
       integrationName: "coralogix-integration-helm"
     fleetManagement:
-      enabled: false
+      enabled: true
       agentType: "agent"
       clusterName: "{{.Values.global.clusterName}}"
     logsCollection:
@@ -214,14 +214,6 @@ opentelemetry-agent-windows:
           service.name:
         logs:
           level: "{{ .Values.global.logLevel }}"
-          encoding: json
-        metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: ${env:MY_POD_IP}
-                    port: 8888
       extensions:
       - zpages
       - pprof
@@ -344,6 +336,3 @@ opentelemetry-agent:
 opentelemetry-cluster-collector:
   nodeSelector:
     kubernetes.io/os: linux
-
-coralogix-ebpf-agent:
-  enabled: false

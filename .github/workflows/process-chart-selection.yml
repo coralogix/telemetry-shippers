@@ -1,0 +1,58 @@
+name: Process Chart Selection
+
+on:
+  pull_request:
+    types: [unlabeled]
+
+jobs:
+  revert-chart:
+    if: |
+      startsWith(github.event.label.name, 'chart:') &&
+      contains(github.event.pull_request.labels.*.name, 'otel-collector-bump') &&
+      github.event.pull_request.user.login == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Revert chart
+        run: |
+          CHART="${{ github.event.label.name }}"
+          CHART="${CHART#chart:}"
+          
+          # Map chart to path
+          case "$CHART" in
+            otel-integration) CHART_PATH="otel-integration/" ;;
+            *) CHART_PATH="${CHART}/" ;;
+          esac
+          
+          echo "Reverting $CHART (path: $CHART_PATH)"
+          
+          # Revert to base branch
+          git checkout origin/${{ github.event.pull_request.base.ref }} -- "$CHART_PATH"
+          
+          # Commit if changes exist
+          if ! git diff --staged --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: skip $CHART from upgrade"
+            git push origin ${{ github.event.pull_request.head.ref }}
+            echo "chart_name=$CHART" >> $GITHUB_ENV
+          else
+            echo "No changes to revert for $CHART"
+            exit 0
+          fi
+
+      - name: Add comment
+        if: env.chart_name != ''
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "⏭️ **Skipped ${{ env.chart_name }}** - changes reverted."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
