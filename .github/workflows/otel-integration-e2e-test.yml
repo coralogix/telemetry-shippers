@@ -18,7 +18,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -78,7 +78,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -108,7 +108,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -144,7 +144,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -224,7 +224,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -286,7 +286,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -346,7 +346,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23.x
+          go-version: 1.25.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
