@@ -35,7 +35,7 @@ jobs:
           chmod +x ./get_host_endpoint.sh
           ./get_host_endpoint.sh
       - name: Setup Secret
-        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake
       - name: Install chart for testing
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
@@ -125,7 +125,7 @@ jobs:
           chmod +x ./get_host_endpoint.sh
           ./get_host_endpoint.sh
       - name: Setup Secret
-        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake
       - name: Install chart for supervisor testing
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
@@ -205,7 +205,7 @@ jobs:
           chmod +x ./get_host_endpoint.sh
           ./get_host_endpoint.sh
       - name: Setup Secret
-        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake
       - name: Install chart for tail-sampling test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
@@ -267,7 +267,7 @@ jobs:
           chmod +x ./get_host_endpoint.sh
           ./get_host_endpoint.sh
       - name: Setup Secret
-        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake
       - name: Install chart for span-metrics test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
@@ -327,7 +327,7 @@ jobs:
           chmod +x ./get_host_endpoint.sh
           ./get_host_endpoint.sh
       - name: Setup Secret
-        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake
       - name: Install cert-manager
         run: |
           helm repo add jetstack https://charts.jetstack.io

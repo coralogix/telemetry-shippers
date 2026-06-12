@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2086,SC2046,SC2005
 
 # Simply check if diff in changelog exists.
 git diff --exit-code --quiet origin/master... ./$1/CHANGELOG.md

@@ -5,16 +5,19 @@ ARG TELEMETRYGEN_VERSION=v0.147.0
 ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 
 # Build stage: cross-compile telemetrygen for Windows
+# hadolint ignore=DL3029
 FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
+# hadolint ignore=DL3018
 RUN apk add --no-cache git
 ARG TELEMETRYGEN_VERSION
 WORKDIR /src
-RUN git clone --depth 1 --branch ${TELEMETRYGEN_VERSION} https://github.com/open-telemetry/opentelemetry-collector-contrib.git .
+RUN git clone --depth 1 --branch "${TELEMETRYGEN_VERSION}" https://github.com/open-telemetry/opentelemetry-collector-contrib.git .
 # telemetrygen is a separate Go module; build from its directory
 WORKDIR /src/cmd/telemetrygen
 RUN CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o telemetrygen.exe .
 
 ##
+# hadolint ignore=DL3006
 FROM ${WIN_BASE_IMAGE}
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]

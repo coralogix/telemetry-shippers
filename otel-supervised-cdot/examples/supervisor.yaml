@@ -3,7 +3,7 @@ server:
   endpoint: "http://host.docker.internal:4320/v1/opamp"
   headers:
     # This is a mocked token for testing purposes.
-    X-Coralogix-Auth: "EgY0MjQyNDIiUApOCiRmZjhjODJmNi1iNzk2LTRhMWUtODkzMi0yMjBlMTc3MDBjMmUQBhokMzg2ZjA1ZjYtMWUyNS00ZmM0LWJhZjItNDgwZWQ5Yzk5NDJmQgkaBzEuMi4zLjQ="
+    X-Coralogix-Auth: "mock-coralogix-auth-token"
   tls:
     insecure_skip_verify: true
 

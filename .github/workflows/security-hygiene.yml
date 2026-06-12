@@ -1,0 +1,93 @@
+name: Security and Hygiene
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.24.3
+  SHELLCHECK_VERSION: 0.10.0
+  HADOLINT_VERSION: 2.12.0
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    name: gitleaks PR secret scan
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/bin"
+          curl -sSfL \
+            -o "${RUNNER_TEMP}/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf "${RUNNER_TEMP}/gitleaks.tar.gz" -C "${RUNNER_TEMP}/bin" gitleaks
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+      - name: Scan current tree
+        run: gitleaks detect --no-git --source . --redact --verbose
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    name: shellcheck checked-in scripts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/bin"
+          curl -sSfL \
+            -o "${RUNNER_TEMP}/shellcheck.tar.xz" \
+            "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          tar -xJf "${RUNNER_TEMP}/shellcheck.tar.xz" \
+            -C "${RUNNER_TEMP}/bin" \
+            --strip-components=1 \
+            "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+      - name: Lint checked-in shell scripts
+        run: |
+          set -euo pipefail
+          mapfile -d '' scripts < <(find . -type f -name '*.sh' -not -path './tmp/*' -print0)
+          shellcheck "${scripts[@]}"
+
+  hadolint:
+    runs-on: ubuntu-latest
+    name: hadolint Dockerfiles
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install hadolint
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/bin"
+          curl -sSfL \
+            -o "${RUNNER_TEMP}/bin/hadolint" \
+            "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64"
+          chmod +x "${RUNNER_TEMP}/bin/hadolint"
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+      - name: Lint Dockerfiles
+        run: |
+          set -euo pipefail
+          mapfile -d '' dockerfiles < <(find . -type f \( -name 'Dockerfile' -o -name 'Dockerfile.*' \) -print0)
+          hadolint "${dockerfiles[@]}"
+
+  helm-golden-render:
+    runs-on: ubuntu-latest
+    name: Helm golden renders
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.12.1
+
+      - name: Check high-risk preset renders
+        run: .github/scripts/check-helm-golden-renders.sh
