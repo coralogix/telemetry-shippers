@@ -1,4 +1,6 @@
 name: Otel Integration Helm Lint And Install Test
+permissions:
+  contents: read
 
 on:
   pull_request:
@@ -10,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
-          go-version: 1.21.x
+          go-version: 1.23.x
       - name: Setup cluster
         uses: ./.github/actions/setup
         with:
@@ -46,12 +48,372 @@ jobs:
           --set global.domain="coralogix.com"  \
           --set global.hostedEndpoint=$HOSTENDPOINT \
           -f ./values.yaml \
-          -f ./e2e-test/testdata/values-e2e-test.yaml
-          kubectl wait --all --for=condition=ready --timeout=300s pod -l component=agent-collector
+          -f ./e2e-test/testdata/values-e2e-test.yaml \
+          -f ./e2e-test/testdata/values-e2e-cluster-collector.yaml
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
       - name: Run E2E test
         env:
           HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
+          go test -v -run='^TestE2E.*' -skip='^TestE2E_TargetAllocator_ServiceMonitorMetrics$' $(go list ./... | rg -v '/supervisor$')
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done
+
+  otel-integration-target-allocator-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Run Target Allocator ServiceMonitor E2E test
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          chmod +x ./run-all.sh
+          ./run-all.sh --test TestE2E_TargetAllocator_ServiceMonitorMetrics
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done
+
+  otel-integration-instrumentation-webhook-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Verify amd64 runner
+        run: |
+          test "$(uname -m)" = "x86_64"
+          kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.nodeInfo.architecture}{"\n"}{end}'
+      - name: Run Instrumentation Webhook E2E test
+        env:
+          REQUIRE_INSTRUMENTATION_WEBHOOK_NODE_ARCH: "1"
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          chmod +x ./run-all.sh
+          ./run-all.sh --test TestE2E_InstrumentationWebhookNoCRDs
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | awk '/otel|instwebhook|instrumentation-webhook/ {print $1 "/" $2}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 -n "${pod%/*}" "${pod#*/}" || true
+            echo
+          done
+
+  otel-integration-supervisor-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Save kubeconfig to file
+        run: |
+          kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
+          echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
+      - name: Get and Set Kind HostEndpoint as env variable
+        shell: bash
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/testcommon
+          chmod +x ./get_host_endpoint.sh
+          ./get_host_endpoint.sh
+      - name: Setup Secret
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+      - name: Install chart for supervisor testing
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm
+          helm dependency build
+          helm upgrade --install otel-integration-agent-e2e . \
+          --set global.clusterName="otel-integration-agent-e2e" \
+          --set global.domain="coralogix.com"  \
+          --set global.hostedEndpoint=$HOSTENDPOINT \
+          -f ./values.yaml \
+          -f ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
+      - name: Run Supervisor E2E test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
+          go test -v -run='^TestE2E_FleetManagerSupervisor(_ConfigMapReload)?$' ./supervisor
+      - name: Install chart for supervisor non-minimal testing
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm
+          helm upgrade --install otel-integration-agent-e2e . \
+          --set global.clusterName="otel-integration-agent-e2e" \
+          --set global.domain="coralogix.com"  \
+          --set global.hostedEndpoint=$HOSTENDPOINT \
+          -f ./values.yaml \
+          -f ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
+      - name: Run Supervisor Non-Minimal E2E test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
+          go test -v -run='^TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig$' ./supervisor
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done
+
+  otel-integration-tail-sampling-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Save kubeconfig to file
+        run: |
+          kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
+          echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
+      - name: Get and Set Kind HostEndpoint as env variable
+        shell: bash
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/testcommon
+          chmod +x ./get_host_endpoint.sh
+          ./get_host_endpoint.sh
+      - name: Setup Secret
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+      - name: Install chart for tail-sampling test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm
+          helm dependency build
+          helm upgrade --install otel-integration-agent-e2e . \
+            --set global.clusterName="otel-integration-agent-e2e" \
+            --set global.domain="coralogix.com"  \
+            --set global.hostedEndpoint=$HOSTENDPOINT \
+            -f ./values.yaml \
+            -f ./tail-sampling-values.yaml \
+            -f ./e2e-test/testdata/values-e2e-tail-sampling.yaml
+          echo "Waiting for pods to be ready..."
+          kubectl wait --all --for=condition=ready --timeout=300s pod -l app.kubernetes.io/instance=otel-integration-agent-e2e
+      - name: Run Tail-sampling E2E test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+          RUN_TAIL_SAMPLING_E2E: "1"
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
+          go test -v -run='^TestE2E_TailSampling_Simple$' ./...
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done
+
+  otel-integration-span-metrics-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Save kubeconfig to file
+        run: |
+          kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
+          echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
+      - name: Get and Set Kind HostEndpoint as env variable
+        shell: bash
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/testcommon
+          chmod +x ./get_host_endpoint.sh
+          ./get_host_endpoint.sh
+      - name: Setup Secret
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+      - name: Install chart for span-metrics test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm
+          helm dependency build
+          helm upgrade --install otel-integration-agent-e2e . \
+            --set global.clusterName="otel-integration-agent-e2e" \
+            --set global.domain="coralogix.com"  \
+            --set global.hostedEndpoint=$HOSTENDPOINT \
+            -f ./values.yaml \
+            -f ./e2e-test/testdata/values-e2e-span-metrics.yaml
+          echo "Waiting for pods to be ready..."
+          kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
+      - name: Run Span-metrics E2E test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
+          go test -v -run='^TestE2E_SpanMetrics' ./...
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/instance=otel-integration-agent-e2e" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done
+
+  otel-integration-operator-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.23.x
+      - name: Setup cluster
+        uses: ./.github/actions/setup
+        with:
+          create-kind-cluster: "true"
+          cluster-name: "otel-integration-agent-e2e"
+      - name: Save kubeconfig to file
+        run: |
+          kubectl config view --raw > /tmp/kind-otel-integration-agent-e2e
+          echo "KUBECONFIG=/tmp/kind-otel-integration-agent-e2e" >> $GITHUB_ENV
+      - name: Get and Set Kind HostEndpoint as env variable
+        shell: bash
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/testcommon
+          chmod +x ./get_host_endpoint.sh
+          ./get_host_endpoint.sh
+      - name: Setup Secret
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+      - name: Install cert-manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --version v1.17.2 \
+            --set crds.enabled=true
+      - name: Install otel operator
+        run: |
+          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+          helm install \
+            opentelemetry-operator open-telemetry/opentelemetry-operator \
+            --set manager.collectorImage.repository=otel/opentelemetry-collector-contrib
+          echo "Waiting for operator to be ready..."
+          kubectl wait --all --for=condition=ready --timeout=300s pod -l app.kubernetes.io/name=opentelemetry-operator
+      - name: Install chart for testing
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm
+          helm dependency build
+          helm upgrade --install otel-integration-agent-e2e . \
+            --set global.clusterName="otel-integration-agent-e2e" \
+            --set global.domain="coralogix.com"  \
+            --set global.hostedEndpoint=$HOSTENDPOINT \
+            -f ./values.yaml \
+            -f ./values-crd-override.yaml \
+            -f ./e2e-test/testdata/values-e2e-test.yaml
+          echo "Waiting for resources to be created..."
+          sleep 20 # Sometimes, the resources are not created immediately and the wait fails
+          echo "Waiting for pods to be ready..."
+          kubectl wait --all --for=condition=ready --timeout=300s pod -l app.kubernetes.io/managed-by=opentelemetry-operator
+      - name: Run E2E test
+        env:
+          HOSTENDPOINT: ${{ env.HOSTENDPOINT }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          cd ./otel-integration/k8s-helm/e2e-test/
+          go clean -testcache
           go test -v -run=TestE2E_Agent ./...
+      - name: Pods logs
+        if: failure()
+        run: |
+          for pod in $(kubectl get pods -l "app.kubernetes.io/managed-by=opentelemetry-operator" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== Last 25 log lines for pod: $pod ====="
+            kubectl logs --tail=25 $pod
+            echo
+          done

@@ -5,3 +5,14 @@
 {{- if eq .Values.global.clusterName "" }}
 {{ fail "[ERROR] 'global.clusterName' must be set with your Kubernetes cluster name." }}
 {{ end }}
+
+{{- $ebpf := index .Values "coralogix-ebpf-agent" }}
+{{- if and $ebpf (eq (index $ebpf "enabled") true) }}
+{{ fail "[ERROR] 'coralogix-ebpf-agent' is deprecated. For ebpf instrumentation use 'opentelemetry-ebpf-agent.enabled' instead." }}
+{{ end }}
+
+{{- $instrumentationWebhook := index .Values "instrumentationWebhook" }}
+{{- $windowsAgent := index .Values "opentelemetry-agent-windows" }}
+{{- if and $instrumentationWebhook (eq (index $instrumentationWebhook "enabled") true) $windowsAgent (eq (index $windowsAgent "enabled") true) }}
+{{ fail "[ERROR] 'instrumentationWebhook.enabled' is supported only for Linux clusters. Disable 'opentelemetry-agent-windows.enabled' before enabling it." }}
+{{ end }}

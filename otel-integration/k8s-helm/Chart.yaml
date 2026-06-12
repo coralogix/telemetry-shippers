@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-integration
 description: OpenTelemetry Integration
-version: 0.0.152
+version: 0.0.316
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent
@@ -11,34 +11,64 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.108.0"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
     condition: opentelemetry-agent.enabled
+  - name: opentelemetry-instrumentation-webhook
+    alias: instrumentationWebhook
+    version: "0.1.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-instrumentation-webhook
+    condition: instrumentationWebhook.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-agent-windows
-    version: "0.108.0"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
     condition: opentelemetry-agent-windows.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-cluster-collector
-    version: "0.108.0"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
     condition: opentelemetry-cluster-collector.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-receiver
-    version: "0.108.0"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
     condition: opentelemetry-receiver.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-gateway
-    version: "0.108.0"
-    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
     condition: opentelemetry-gateway.enabled
-  - name: coralogix-ebpf-agent
-    alias: coralogix-ebpf-agent
-    version: "0.1.12"
+  - name: opentelemetry-collector
+    alias: opentelemetry-agent-eks-fargate
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
+    condition: opentelemetry-agent-eks-fargate.enabled
+  - name: opentelemetry-collector
+    alias: opentelemetry-agent-eks-fargate-monitoring
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
+    condition: opentelemetry-agent-eks-fargate-monitoring.enabled
+  - name: coralogix-ebpf-profiler
+    alias: coralogix-ebpf-profiler
+    version: "0.0.16"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts
-    condition: coralogix-ebpf-agent.enabled
+    condition: coralogix-ebpf-profiler.enabled
+  - name: opentelemetry-collector
+    alias: opentelemetry-ebpf-profiler
+    version: "0.132.0"
+    repository: file://../../../opentelemetry-helm-charts/charts/opentelemetry-collector
+    condition: opentelemetry-ebpf-profiler.enabled
+  - name: opentelemetry-ebpf-instrumentation
+    alias: opentelemetry-ebpf-instrumentation
+    version: "0.1.16"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts
+    condition: opentelemetry-ebpf-instrumentation.enabled
+  - name: coralogix-operator
+    alias: coralogix-operator
+    version: "2.1.0"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: coralogix-operator.enabled
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
