@@ -1,6 +1,8 @@
 FROM prom/prometheus:v2.37.1
-ADD prometheus.yml /etc/prometheus/
+COPY prometheus.yml /etc/prometheus/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+# DL3002: Last USER should not be root.
+# hadolint ignore=DL3002
 USER root
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

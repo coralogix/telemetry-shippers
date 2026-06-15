@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034,SC1091,SC2015,SC2317,SC2064
 #
 # Coralogix OpenTelemetry Collector Installer
 # Supports Linux and macOS

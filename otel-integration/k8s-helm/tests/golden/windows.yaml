@@ -1,0 +1,2842 @@
+---
+# Source: otel-integration/charts/opentelemetry-agent-windows/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coralogix-opentelemetry-windows
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-windows-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-windows
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: otel-integration/charts/opentelemetry-agent/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coralogix-opentelemetry
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: otel-integration/charts/opentelemetry-cluster-collector/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coralogix-opentelemetry-collector
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-cluster-collector-0.132.0
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: otel-integration/charts/opentelemetry-agent-windows/templates/configmap-agent.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coralogix-opentelemetry-windows-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-windows-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-windows
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+data:
+  relay: |
+    exporters:
+      coralogix:
+        application_name: otel
+        application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+        domain: eu2.coralogix.com
+        domain_settings:
+          keepalive:
+            enabled: true
+            permit_without_stream: false
+            time: 30s
+            timeout: 10s
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+        metrics:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+        private_key: ${env:CORALOGIX_PRIVATE_KEY}
+        profiles:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+            x-coralogix-ingress: otlp/v1.10.0
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: integration
+        subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - service.name
+        timeout: 30s
+        traces:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+      debug: {}
+    extensions:
+      file_storage:
+        directory: /var/lib/otelcol
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      opamp:
+        agent_description:
+          include_resource_attributes: true
+          non_identifying_attributes:
+            cx.agent.type: agent
+            cx.cluster.name: 'golden-render'
+            helm.chart.opentelemetry-agent-windows.version: 0.132.0
+        server:
+          http:
+            endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+            headers:
+              Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+            polling_interval: 2m
+      pprof:
+        endpoint: localhost:1777
+      zpages:
+        endpoint: localhost:55679
+    processors:
+      batch:
+        send_batch_max_size: 2048
+        send_batch_size: 1024
+        timeout: 1s
+      k8sattributes:
+        extract:
+          deployment_name_from_replicaset: true
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: connection
+        - sources:
+          - from: resource_attribute
+            name: k8s.job.name
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      resource/metadata:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'golden-render'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+      resourcedetection/env:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+        timeout: 2s
+      resourcedetection/region:
+        detectors:
+        - gcp
+        - ec2
+        - azure
+        - eks
+        eks:
+          node_from_env_var: K8S_NODE_NAME
+        override: true
+        timeout: 2s
+      transform/kubeletstatscpu:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - set(metric.unit, "1") where metric.name == "container.cpu.usage"
+          - set(metric.name, "container.cpu.utilization") where metric.name == "container.cpu.usage"
+          - set(metric.unit, "1") where metric.name == "k8s.pod.cpu.usage"
+          - set(metric.name, "k8s.pod.cpu.utilization") where metric.name == "k8s.pod.cpu.usage"
+          - set(metric.unit, "1") where metric.name == "k8s.node.cpu.usage"
+          - set(metric.name, "k8s.node.cpu.utilization") where metric.name == "k8s.node.cpu.usage"
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: resource
+          statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["net.host.name"])
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - delete_key(resource.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: datapoint
+          statements:
+          - delete_key(datapoint.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(datapoint.attributes, "otel_scope_name") where datapoint.attributes["service.name"]
+            == "opentelemetry-collector"
+    receivers:
+      filelog:
+        exclude:
+        - C:\var\log\pods\default_coralogix-opentelemetry-windows*_*\opentelemetry-agent-windows\*.log
+        force_flush_period: 0
+        include:
+        - C:\var\log\pods\*\*\*.log
+        include_file_name: false
+        include_file_path: true
+        operators:
+        - id: get-format
+          routes:
+          - expr: body matches "^\\{"
+            output: parser-docker
+          - expr: body matches "^[^ Z]+ "
+            output: parser-crio
+          - expr: body matches "^[^ Z]+Z"
+            output: parser-containerd
+          type: router
+        - id: parser-crio
+          regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          timestamp:
+            layout: 2006-01-02T15:04:05.999999999Z07:00
+            layout_type: gotime
+            parse_from: attributes.time
+          type: regex_parser
+        - combine_field: attributes.log
+          combine_with: ""
+          id: crio-recombine
+          is_last_entry: attributes.logtag == 'F'
+          max_batch_size: 1000
+          max_log_size: 1048576
+          output: handle_empty_log
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - id: parser-containerd
+          regex: ^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.time
+          type: regex_parser
+        - combine_field: attributes.log
+          combine_with: ""
+          id: containerd-recombine
+          is_last_entry: attributes.logtag == 'F'
+          max_batch_size: 1000
+          max_log_size: 1048576
+          output: handle_empty_log
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - id: parser-docker
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.time
+          type: json_parser
+        - combine_field: attributes.log
+          combine_with: ""
+          id: docker-recombine
+          is_last_entry: attributes.log endsWith "\n"
+          max_batch_size: 1000
+          max_log_size: 1048576
+          output: handle_empty_log
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - field: attributes.log
+          id: handle_empty_log
+          if: attributes.log == nil
+          type: add
+          value: ""
+        - parse_from: attributes["log.file.path"]
+          regex: ^C:\\var\\log\\pods\\(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[^\/]+)\\(?P<container_name>[^\._]+)\\(?P<restart_count>\d+)\.log$
+          type: regex_parser
+        - from: attributes.stream
+          to: attributes["log.iostream"]
+          type: move
+        - from: attributes.container_name
+          to: resource["k8s.container.name"]
+          type: move
+        - from: attributes.namespace
+          to: resource["k8s.namespace.name"]
+          type: move
+        - from: attributes.pod_name
+          to: resource["k8s.pod.name"]
+          type: move
+        - from: attributes.restart_count
+          to: resource["k8s.container.restart_count"]
+          type: move
+        - from: attributes.uid
+          to: resource["k8s.pod.uid"]
+          type: move
+        - from: attributes.log
+          id: clean-up-log-record
+          to: body
+          type: move
+        - id: logs-collection-continue
+          type: noop
+        retry_on_failure:
+          enabled: true
+        start_at: beginning
+        storage: file_storage
+      hostmetrics:
+        collection_interval: '30s'
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.utilization:
+                enabled: true
+          disk: null
+          filesystem:
+            exclude_mount_points:
+              match_type: strict
+              mount_points:
+              - ""
+          memory:
+            metrics:
+              system.memory.utilization:
+                enabled: true
+          network: null
+          paging: null
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:14250
+          thrift_binary:
+            endpoint: ${env:MY_POD_IP}:6832
+          thrift_compact:
+            endpoint: ${env:MY_POD_IP}:6831
+          thrift_http:
+            endpoint: ${env:MY_POD_IP}:14268
+      kubeletstats:
+        auth_type: serviceAccount
+        collect_all_network_interfaces:
+          node: true
+          pod: true
+        collection_interval: '30s'
+        endpoint: ${env:K8S_NODE_IP}:10250
+        insecure_skip_verify: true
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: '30s'
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
+      statsd:
+        endpoint: ${env:MY_POD_IP}:8125
+      zipkin:
+        endpoint: ${env:MY_POD_IP}:9411
+    service:
+      extensions:
+      - health_check
+      - file_storage
+      - opamp
+      - zpages
+      - pprof
+      pipelines:
+        logs:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - resource/metadata
+          - k8sattributes
+          - batch
+          receivers:
+          - filelog
+          - otlp
+        metrics:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - resource/metadata
+          - k8sattributes
+          - transform/kubeletstatscpu
+          - transform/prometheus
+          - batch
+          receivers:
+          - hostmetrics
+          - kubeletstats
+          - prometheus
+          - otlp
+          - statsd
+        traces:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - resource/metadata
+          - k8sattributes
+          - batch
+          receivers:
+          - jaeger
+          - zipkin
+          - otlp
+      telemetry:
+        logs:
+          encoding: json
+          level: 'warn'
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
+        resource:
+          cx.agent.type: agent
+          service.name: opentelemetry-collector
+---
+# Source: otel-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coralogix-opentelemetry-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+data:
+  relay: |
+    connectors:
+      forward/compact: {}
+      forward/db: {}
+      forward/db_compact: {}
+      spanmetrics:
+        add_resource_attributes: true
+        aggregation_cardinality_limit: 100000
+        dimensions:
+        - name: http.method
+        - name: cgx.transaction
+        - name: cgx.transaction.root
+        - name: status_code
+        - name: db.namespace
+        - name: db.operation.name
+        - name: db.collection.name
+        - name: db.system
+        - name: http.response.status_code
+        - name: rpc.grpc.status_code
+        - name: service.version
+        exclude_dimensions:
+        - collector.instance.id
+        histogram:
+          explicit:
+            buckets:
+            - 1ms
+            - 4ms
+            - 10ms
+            - 20ms
+            - 50ms
+            - 100ms
+            - 200ms
+            - 500ms
+            - 1s
+            - 2s
+            - 5s
+          unit: ms
+        metrics_expiration: 5m
+        metrics_flush_interval: '30s'
+        namespace: ""
+      spanmetrics/compact:
+        add_resource_attributes: true
+        aggregation_cardinality_limit: 100000
+        exclude_dimensions:
+        - collector.instance.id
+        - span.name
+        histogram:
+          explicit:
+            buckets:
+            - 1ms
+            - 4ms
+            - 10ms
+            - 20ms
+            - 50ms
+            - 100ms
+            - 200ms
+            - 500ms
+            - 1s
+            - 2s
+            - 5s
+          unit: ms
+        metrics_expiration: 5m
+        metrics_flush_interval: '30s'
+        namespace: compact
+      spanmetrics/db:
+        add_resource_attributes: true
+        aggregation_cardinality_limit: 100000
+        dimensions:
+        - name: db.namespace
+        - name: db.operation.name
+        - name: db.collection.name
+        - name: db.system
+        - name: service.version
+        exclude_dimensions:
+        - collector.instance.id
+        histogram:
+          explicit:
+            buckets:
+            - 1ms
+            - 4ms
+            - 10ms
+            - 20ms
+            - 50ms
+            - 100ms
+            - 200ms
+            - 500ms
+            - 1s
+            - 2s
+            - 5s
+          unit: ms
+        metrics_expiration: 5m
+        metrics_flush_interval: '30s'
+        namespace: db
+      spanmetrics/db_compact:
+        add_resource_attributes: true
+        aggregation_cardinality_limit: 100000
+        dimensions:
+        - name: db.namespace
+        - name: db.system
+        exclude_dimensions:
+        - collector.instance.id
+        - span.name
+        - span.kind
+        histogram:
+          explicit:
+            buckets:
+            - 1ms
+            - 4ms
+            - 10ms
+            - 20ms
+            - 50ms
+            - 100ms
+            - 200ms
+            - 500ms
+            - 1s
+            - 2s
+            - 5s
+          unit: ms
+        metrics_expiration: 5m
+        metrics_flush_interval: '30s'
+        namespace: db_compact
+    exporters:
+      coralogix:
+        application_name: otel
+        application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+        domain: eu2.coralogix.com
+        domain_settings:
+          keepalive:
+            enabled: true
+            permit_without_stream: false
+            time: 30s
+            timeout: 10s
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+        metrics:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+        private_key: ${env:CORALOGIX_PRIVATE_KEY}
+        profiles:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+            x-coralogix-ingress: otlp/v1.10.0
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: integration
+        subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - service.name
+        timeout: 30s
+        traces:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+      coralogix/resource_catalog:
+        application_name: resource
+        domain: eu2.coralogix.com
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+            x-coralogix-ingress: metadata-as-otlp-logs/v1
+        private_key: ${CORALOGIX_PRIVATE_KEY}
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: catalog
+        timeout: 30s
+      debug: {}
+    extensions:
+      file_storage:
+        directory: /var/lib/otelcol
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      opamp:
+        agent_description:
+          include_resource_attributes: true
+          non_identifying_attributes:
+            cx.agent.type: agent
+            cx.cluster.name: 'golden-render'
+            helm.chart.opentelemetry-agent.version: 0.132.0
+        server:
+          http:
+            endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+            headers:
+              Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+            polling_interval: 2m
+      pprof:
+        endpoint: localhost:1777
+      zpages:
+        endpoint: localhost:55679
+    processors:
+      batch:
+        send_batch_max_size: 2048
+        send_batch_size: 1024
+        timeout: 1s
+      coralogix:
+        transactions:
+          enabled: true
+      filter/db_compact_spanmetrics:
+        traces:
+          span:
+          - span.kind != SPAN_KIND_CLIENT or span.attributes["db.namespace"] == nil or
+            span.attributes["db.system"] == nil
+      filter/db_spanmetrics:
+        traces:
+          span:
+          - span.attributes["db.system"] == nil
+      filter/k8s_extra_metrics:
+        metrics:
+          metric:
+          - resource.attributes["service.name"] == "kubernetes-cadvisor" and (metric.name
+            != "container_fs_writes_total" and metric.name != "container_fs_reads_total"
+            and metric.name != "container_fs_writes_bytes_total" and metric.name != "container_fs_reads_bytes_total"
+            and metric.name != "container_fs_usage_bytes" and metric.name != "container_cpu_cfs_throttled_periods_total"
+            and metric.name != "container_cpu_cfs_periods_total")
+      groupbytrace/transactions:
+        wait_duration: 30s
+      k8sattributes:
+        extract:
+          deployment_name_from_replicaset: true
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: connection
+        - sources:
+          - from: resource_attribute
+            name: k8s.job.name
+      k8sattributes/profiles:
+        extract:
+          annotations:
+          - from: pod
+            key: app.coralogix.com/service
+            tag_name: service.annotation
+          labels:
+          - from: pod
+            key: app.kubernetes.io/name
+            tag_name: k8s.label.name
+          - from: pod
+            key: app.kubernetes.io/instance
+            tag_name: k8s.label.instance
+          - from: pod
+            key: app.kubernetes.io/name
+            tag_name: service.label
+          metadata:
+          - k8s.namespace.name
+          - k8s.replicaset.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.deployment.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.pod.name
+          - k8s.node.name
+          - container.id
+          - k8s.container.name
+          - service.version
+          otel_annotations: true
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: container.id
+        - sources:
+          - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      redaction/spanname:
+        allow_all_keys: true
+        db_sanitizer:
+          es:
+            attributes:
+            - db.statement
+            - elasticsearch.body
+            enabled: true
+          memcached:
+            attributes:
+            - db.statement
+            - memcached.command
+            enabled: true
+          mongo:
+            attributes:
+            - db.statement
+            - mongodb.query
+            enabled: true
+          opensearch:
+            attributes:
+            - db.statement
+            - opensearch.body
+            enabled: true
+          redis:
+            attributes:
+            - db.statement
+            - redis.command
+            enabled: true
+          sql:
+            attributes:
+            - db.statement
+            - db.query
+            enabled: true
+        url_sanitizer:
+          enabled: true
+      resource/metadata:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'golden-render'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+      resourcedetection/entity:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.cpu.cache.l2.size:
+              enabled: true
+            host.cpu.family:
+              enabled: true
+            host.cpu.model.id:
+              enabled: true
+            host.cpu.model.name:
+              enabled: true
+            host.cpu.stepping:
+              enabled: true
+            host.cpu.vendor.id:
+              enabled: true
+            host.id:
+              enabled: true
+            host.ip:
+              enabled: true
+            host.mac:
+              enabled: true
+            os.description:
+              enabled: true
+        timeout: 2s
+      resourcedetection/env:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+        timeout: 2s
+      resourcedetection/region:
+        detectors:
+        - gcp
+        - ec2
+        - azure
+        - eks
+        eks:
+          node_from_env_var: K8S_NODE_NAME
+        override: true
+        timeout: 2s
+      transform/compact:
+        trace_statements:
+        - context: resource
+          statements:
+          - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
+            "deployment.environment.name"])
+      transform/db_compact:
+        trace_statements:
+        - context: resource
+          statements:
+          - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
+            "deployment.environment.name"])
+        - context: span
+          statements:
+          - keep_keys(span.attributes, ["db.namespace", "db.system"])
+      transform/entity-event:
+        error_mode: silent
+        log_statements:
+        - context: log
+          statements:
+          - set(log.attributes["otel.entity.id"]["host.id"], resource.attributes["host.id"])
+          - merge_maps(log.attributes, resource.attributes, "insert")
+        - context: resource
+          statements:
+          - keep_keys(resource.attributes, [""])
+      transform/kubeletstatscpu:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - set(metric.unit, "1") where metric.name == "container.cpu.usage"
+          - set(metric.name, "container.cpu.utilization") where metric.name == "container.cpu.usage"
+          - set(metric.unit, "1") where metric.name == "k8s.pod.cpu.usage"
+          - set(metric.name, "k8s.pod.cpu.utilization") where metric.name == "k8s.pod.cpu.usage"
+          - set(metric.unit, "1") where metric.name == "k8s.node.cpu.usage"
+          - set(metric.name, "k8s.node.cpu.utilization") where metric.name == "k8s.node.cpu.usage"
+      transform/profiles:
+        profile_statements:
+        - set(resource.attributes["service.name"], resource.attributes["service.annotation"])
+          where resource.attributes["service.name"] == nil and resource.attributes["service.annotation"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["service.label"])
+          where resource.attributes["service.name"] == nil and resource.attributes["service.label"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.label.instance"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.label.instance"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.label.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.label.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.deployment.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.deployment.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.replicaset.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.replicaset.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.statefulset.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.statefulset.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.daemonset.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.daemonset.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.cronjob.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.cronjob.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.job.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.job.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.pod.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.pod.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.container.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.container.name"]
+          != nil
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: resource
+          statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["net.host.name"])
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - delete_key(resource.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: datapoint
+          statements:
+          - delete_key(datapoint.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(datapoint.attributes, "otel_scope_name") where datapoint.attributes["service.name"]
+            == "opentelemetry-collector"
+      transform/semconv:
+        error_mode: ignore
+        trace_statements:
+        - context: span
+          statements:
+          - set(span.attributes["http.method"], span.attributes["http.request.method"])
+            where span.attributes["http.request.method"] != nil
+      transform/spanmetrics:
+        error_mode: silent
+        metric_statements:
+        - context: datapoint
+          statements:
+          - set(datapoint.attributes["status.code"], "STATUS_CODE_ERROR") where datapoint.attributes["status.code"]
+            == nil and instrumentation_scope.name == "spanmetricsconnector" and datapoint.attributes["otel.status_code"]
+            == "ERROR"
+          - set(datapoint.attributes["status.code"], "STATUS_CODE_OK") where datapoint.attributes["status.code"]
+            == nil and instrumentation_scope.name == "spanmetricsconnector" and datapoint.attributes["otel.status_code"]
+            == "OK"
+          - set(datapoint.attributes["status.code"], "STATUS_CODE_UNSET") where datapoint.attributes["status.code"]
+            == nil and instrumentation_scope.name == "spanmetricsconnector" and (datapoint.attributes["otel.status_code"]
+            == "UNSET" or datapoint.attributes["otel.status_code"] == nil)
+    receivers:
+      filelog:
+        exclude: []
+        force_flush_period: 0
+        include:
+        - /var/log/pods/*/*/*.log
+        include_file_name: false
+        include_file_path: true
+        operators:
+        - id: get-format
+          routes:
+          - expr: body matches "^\\{"
+            output: parser-docker
+          - expr: body matches "^[^ Z]+ "
+            output: parser-crio
+          - expr: body matches "^[^ Z]+Z"
+            output: parser-containerd
+          type: router
+        - id: parser-crio
+          regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          timestamp:
+            layout: 2006-01-02T15:04:05.999999999Z07:00
+            layout_type: gotime
+            parse_from: attributes.time
+          type: regex_parser
+        - combine_field: attributes.log
+          combine_with: ""
+          id: crio-recombine
+          is_last_entry: attributes.logtag == 'F'
+          max_batch_size: 1000
+          max_log_size: 1048576
+          output: handle_empty_log
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - id: parser-containerd
+          regex: ^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.time
+          type: regex_parser
+        - combine_field: attributes.log
+          combine_with: ""
+          id: containerd-recombine
+          is_last_entry: attributes.logtag == 'F'
+          max_batch_size: 1000
+          max_log_size: 1048576
+          output: handle_empty_log
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - id: parser-docker
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.time
+          type: json_parser
+        - combine_field: attributes.log
+          combine_with: ""
+          id: docker-recombine
+          is_last_entry: attributes.log endsWith "\n"
+          max_batch_size: 1000
+          max_log_size: 1048576
+          output: handle_empty_log
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - field: attributes.log
+          id: handle_empty_log
+          if: attributes.log == nil
+          type: add
+          value: ""
+        - parse_from: attributes["log.file.path"]
+          regex: ^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]+)\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$
+          type: regex_parser
+        - from: attributes.stream
+          to: attributes["log.iostream"]
+          type: move
+        - from: attributes.container_name
+          to: resource["k8s.container.name"]
+          type: move
+        - from: attributes.namespace
+          to: resource["k8s.namespace.name"]
+          type: move
+        - from: attributes.pod_name
+          to: resource["k8s.pod.name"]
+          type: move
+        - from: attributes.restart_count
+          to: resource["k8s.container.restart_count"]
+          type: move
+        - from: attributes.uid
+          to: resource["k8s.pod.uid"]
+          type: move
+        - from: attributes.log
+          id: clean-up-log-record
+          to: body
+          type: move
+        - default: skip-collector-logs-recombine
+          routes:
+          - expr: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/opentelemetry-agent/.*.log")
+            output: collector-logs-recombine
+          type: router
+        - combine_field: body
+          combine_with: |2+
+
+          id: collector-logs-recombine
+          is_first_entry: body matches "^\\{"
+          max_batch_size: 1000
+          max_log_size: 1048576
+          source_identifier: attributes["log.file.path"]
+          type: recombine
+        - id: skip-collector-logs-recombine
+          type: noop
+        - field: body
+          if: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/opentelemetry-agent/.*.log")
+          regex: (?s)("stacktrace":"[^"]*)"}\n(.*)$
+          replace_with: $${1}\\n$${2}"}
+          type: regex_replace
+        - drop_ratio: 1
+          expr: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/opentelemetry-agent/.*.log")
+            and ((body contains "logRecord") or (body contains "ResourceLog"))
+          type: filter
+        - default: logs-collection-continue
+          routes:
+          - expr: (body matches "\"resource\":{.*?},?") and not (body matches "\"logger\":\"supervisor\\.collector\"")
+            output: parse-body
+          type: router
+        - id: parse-body
+          if: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/.*/.*.log")
+            and not (body matches "\"logger\":\"supervisor\\.collector\"")
+          on_error: send_quiet
+          parse_to: attributes["parsed_body_tmp"]
+          type: json_parser
+        - field: body
+          if: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/.*/.*.log")
+            and not (body matches "\"logger\":\"supervisor\\.collector\"")
+          on_error: send_quiet
+          regex: \"resource\":{.*?},?
+          replace_with: ""
+          type: regex_replace
+        - from: attributes["parsed_body_tmp"]["resource"]
+          if: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/.*/.*.log")
+            and not (body matches "\"logger\":\"supervisor\\.collector\"")
+          on_error: send_quiet
+          to: resource["attributes_tmp"]
+          type: move
+        - field: attributes["parsed_body_tmp"]
+          if: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/.*/.*.log")
+            and not (body matches "\"logger\":\"supervisor\\.collector\"")
+          on_error: send_quiet
+          type: remove
+        - field: resource["attributes_tmp"]
+          id: flatten-resource
+          if: (attributes["log.file.path"] matches "/var/log/pods/default_coralogix-opentelemetry.*_.*/.*/.*.log")
+            and not (body matches "\"logger\":\"supervisor\\.collector\"")
+          on_error: send_quiet
+          type: flatten
+        - id: logs-collection-continue
+          type: noop
+        retry_on_failure:
+          enabled: true
+        start_at: beginning
+        storage: file_storage
+      hostmetrics:
+        collection_interval: '30s'
+        root_path: /hostfs
+        scrapers:
+          cpu:
+            metrics:
+              system.cpu.utilization:
+                enabled: true
+          disk: null
+          filesystem:
+            exclude_fs_types:
+              fs_types:
+              - autofs
+              - binfmt_misc
+              - bpf
+              - cgroup2
+              - configfs
+              - debugfs
+              - devpts
+              - devtmpfs
+              - fusectl
+              - hugetlbfs
+              - iso9660
+              - mqueue
+              - nsfs
+              - overlay
+              - proc
+              - procfs
+              - pstore
+              - rpc_pipefs
+              - securityfs
+              - selinuxfs
+              - squashfs
+              - sysfs
+              - tracefs
+              match_type: strict
+            exclude_mount_points:
+              match_type: regexp
+              mount_points:
+              - /dev/*
+              - /proc/*
+              - /sys/*
+              - /run/k3s/containerd/*
+              - /run/containerd/runc/*
+              - /var/lib/docker/*
+              - /var/lib/kubelet/*
+              - /snap/*
+          load: null
+          memory:
+            metrics:
+              system.memory.utilization:
+                enabled: true
+          network: null
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:14250
+          thrift_binary:
+            endpoint: ${env:MY_POD_IP}:6832
+          thrift_compact:
+            endpoint: ${env:MY_POD_IP}:6831
+          thrift_http:
+            endpoint: ${env:MY_POD_IP}:14268
+      kubeletstats:
+        auth_type: serviceAccount
+        collect_all_network_interfaces:
+          node: true
+          pod: true
+        collection_interval: '30s'
+        endpoint: ${env:K8S_NODE_IP}:10250
+        insecure_skip_verify: true
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: '30s'
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
+      prometheus/k8s_extra_metrics:
+        config:
+          scrape_configs:
+          - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            honor_timestamps: true
+            job_name: kubernetes-cadvisor
+            metrics_path: /metrics/cadvisor
+            scheme: https
+            static_configs:
+            - targets:
+              - ${env:K8S_NODE_IP}:10250
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+      statsd:
+        endpoint: ${env:MY_POD_IP}:8125
+      zipkin:
+        endpoint: ${env:MY_POD_IP}:9411
+    service:
+      extensions:
+      - health_check
+      - file_storage
+      - opamp
+      - zpages
+      - pprof
+      pipelines:
+        logs:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - resource/metadata
+          - k8sattributes
+          - batch
+          receivers:
+          - filelog
+          - otlp
+        logs/resource_catalog:
+          exporters:
+          - coralogix/resource_catalog
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - k8sattributes
+          - resourcedetection/entity
+          - resourcedetection/region
+          - transform/entity-event
+          receivers:
+          - hostmetrics
+        metrics:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - resource/metadata
+          - k8sattributes
+          - transform/kubeletstatscpu
+          - filter/k8s_extra_metrics
+          - transform/spanmetrics
+          - transform/prometheus
+          - batch
+          receivers:
+          - hostmetrics
+          - kubeletstats
+          - prometheus/k8s_extra_metrics
+          - spanmetrics
+          - spanmetrics/db
+          - prometheus
+          - otlp
+          - statsd
+        metrics/compact:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - transform/spanmetrics
+          - batch
+          receivers:
+          - spanmetrics/compact
+        metrics/db_compact:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - transform/spanmetrics
+          - batch
+          receivers:
+          - spanmetrics/db_compact
+        profiles:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes/profiles
+          - resource/metadata
+          - transform/profiles
+          receivers:
+          - otlp
+        traces:
+          exporters:
+          - spanmetrics
+          - forward/db
+          - forward/compact
+          - forward/db_compact
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - resource/metadata
+          - k8sattributes
+          - transform/spanmetrics
+          - redaction/spanname
+          - transform/semconv
+          - groupbytrace/transactions
+          - coralogix
+          - batch
+          receivers:
+          - jaeger
+          - zipkin
+          - otlp
+        traces/compact:
+          exporters:
+          - spanmetrics/compact
+          processors:
+          - transform/compact
+          - batch
+          receivers:
+          - forward/compact
+        traces/db:
+          exporters:
+          - spanmetrics/db
+          processors:
+          - filter/db_spanmetrics
+          - batch
+          receivers:
+          - forward/db
+        traces/db_compact:
+          exporters:
+          - spanmetrics/db_compact
+          processors:
+          - filter/db_compact_spanmetrics
+          - transform/db_compact
+          - batch
+          receivers:
+          - forward/db_compact
+      telemetry:
+        logs:
+          encoding: json
+          level: 'warn'
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
+        resource:
+          cx.agent.type: agent
+          k8s.daemonset.name: coralogix-opentelemetry
+          k8s.namespace.name: default
+          k8s.node.name: ${env:KUBE_NODE_NAME}
+          k8s.pod.name: ${env:KUBE_POD_NAME}
+          service.name: opentelemetry-collector
+---
+# Source: otel-integration/charts/opentelemetry-cluster-collector/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coralogix-opentelemetry-collector
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-cluster-collector-0.132.0
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+data:
+  relay: |
+    exporters:
+      coralogix:
+        application_name: otel
+        application_name_attributes:
+        - k8s.namespace.name
+        - service.namespace
+        domain: eu2.coralogix.com
+        domain_settings:
+          keepalive:
+            enabled: true
+            permit_without_stream: false
+            time: 30s
+            timeout: 10s
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+        metrics:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+        private_key: ${env:CORALOGIX_PRIVATE_KEY}
+        profiles:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+            x-coralogix-ingress: otlp/v1.10.0
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: integration
+        subsystem_name_attributes:
+        - k8s.deployment.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - service.name
+        timeout: 30s
+        traces:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+      coralogix/resource_catalog:
+        application_name: resource
+        domain: eu2.coralogix.com
+        logs:
+          headers:
+            X-Coralogix-Distribution: helm-otel-integration/0.0.317
+            x-coralogix-ingress: metadata-as-otlp-logs/v1
+        private_key: ${CORALOGIX_PRIVATE_KEY}
+        sending_queue:
+          batch:
+            flush_timeout: 250ms
+            max_size: 2097152
+            min_size: 1048576
+            sizer: bytes
+          enabled: true
+          num_consumers: 20
+          queue_size: 209715200
+          sizer: bytes
+        subsystem_name: catalog
+        timeout: 30s
+      debug: {}
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+      k8s_observer:
+        auth_type: serviceAccount
+        observe_pods: true
+      opamp:
+        agent_description:
+          include_resource_attributes: true
+          non_identifying_attributes:
+            cx.agent.type: cluster-collector
+            cx.cluster.name: 'golden-render'
+            helm.chart.opentelemetry-cluster-collector.version: 0.132.0
+        server:
+          http:
+            endpoint: https://ingress.eu2.coralogix.com/opamp/v1
+            headers:
+              Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
+            polling_interval: 2m
+      pprof:
+        endpoint: localhost:1777
+      zpages:
+        endpoint: localhost:55679
+    processors:
+      batch:
+        send_batch_max_size: 2048
+        send_batch_size: 1024
+        timeout: 1s
+      filter/k8s_apiserver_metrics:
+        metrics:
+          metric:
+          - resource.attributes["service.name"] == "kubernetes-apiserver" and metric.name
+            != "kubernetes_build_info"
+      filter/workflow:
+        error_mode: silent
+        logs:
+          log_record:
+          - log.body["object"]["kind"] == "Pod" and not IsMatch(String(log.body["object"]["metadata"]["ownerReferences"]),
+            ".*StatefulSet.*|.*ReplicaSet.*|.*Job.*|.*DaemonSet.*")
+          - log.body["kind"] == "Pod" and not IsMatch(String(log.body["metadata"]["ownerReferences"]),
+            ".*StatefulSet.*|.*ReplicaSet.*|.*Job.*|.*DaemonSet.*")
+      k8sattributes:
+        extract:
+          deployment_name_from_replicaset: true
+          metadata:
+          - k8s.namespace.name
+          - k8s.deployment.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.node.name
+          - k8s.pod.name
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+        - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+        - sources:
+          - from: connection
+        - sources:
+          - from: resource_attribute
+            name: k8s.job.name
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      metricstransform/k8s-dashboard:
+        transforms:
+        - action: insert
+          include: k8s.pod.phase
+          match_type: strict
+          new_name: kube_pod_status_qos_class
+        - action: insert
+          include: k8s.pod.status_reason
+          match_type: strict
+          new_name: kube_pod_status_reason
+        - action: insert
+          include: k8s.node.allocatable_cpu
+          match_type: strict
+          new_name: kube_node_info
+        - action: insert
+          include: k8s.container.ready
+          match_type: strict
+          new_name: k8s.container.status.last_terminated_reason
+      resource/kube-events:
+        attributes:
+        - action: upsert
+          key: service.name
+          value: kube-events
+        - action: upsert
+          key: k8s.cluster.name
+          value: golden-render
+      resource/metadata:
+        attributes:
+        - action: upsert
+          key: k8s.cluster.name
+          value: 'golden-render'
+        - action: upsert
+          key: cx.otel_integration.name
+          value: coralogix-integration-helm
+      resourcedetection/env:
+        detectors:
+        - system
+        - env
+        override: false
+        system:
+          resource_attributes:
+            host.id:
+              enabled: true
+        timeout: 2s
+      resourcedetection/region:
+        detectors:
+        - gcp
+        - ec2
+        - azure
+        - eks
+        eks:
+          node_from_env_var: K8S_NODE_NAME
+        override: true
+        timeout: 2s
+      resourcedetection/resource_catalog:
+        azure:
+          resource_attributes:
+            azure.resourcegroup.name:
+              enabled: false
+            azure.vm.name:
+              enabled: false
+            azure.vm.scaleset.name:
+              enabled: false
+            azure.vm.size:
+              enabled: false
+            host.id:
+              enabled: false
+            host.name:
+              enabled: false
+        detectors:
+        - gcp
+        - ec2
+        - azure
+        - eks
+        ec2:
+          resource_attributes:
+            host.id:
+              enabled: false
+            host.image.id:
+              enabled: false
+            host.name:
+              enabled: false
+            host.type:
+              enabled: false
+        eks:
+          node_from_env_var: K8S_NODE_NAME
+        gcp:
+          resource_attributes:
+            host.id:
+              enabled: false
+            host.name:
+              enabled: false
+            host.type:
+              enabled: false
+            k8s.cluster.name:
+              enabled: false
+        override: true
+        timeout: 2s
+      transform/entity-event:
+        error_mode: silent
+        log_statements:
+        - context: log
+          statements:
+          - set(log.attributes["otel.entity.interval"], Milliseconds(Duration("1h")))
+      transform/k8s-dashboard:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - set(metric.unit, "1") where metric.name == "k8s.pod.phase"
+          - set(metric.unit, "") where metric.name == "kube_node_info"
+          - set(metric.unit, "") where metric.name == "k8s.container.status.last_terminated_reason"
+        - context: datapoint
+          statements:
+          - set(datapoint.value_int, 1) where metric.name == "kube_pod_status_qos_class"
+          - set(datapoint.attributes["qos_class"], resource.attributes["k8s.pod.qos_class"])
+            where metric.name == "kube_pod_status_qos_class"
+          - set(datapoint.attributes["pod"], resource.attributes["k8s.pod.name"]) where
+            metric.name == "kube_pod_status_reason"
+          - set(datapoint.attributes["reason"], "Evicted") where metric.name == "kube_pod_status_reason"
+            and datapoint.value_int == 1
+          - set(datapoint.attributes["reason"], "NodeAffinity") where metric.name == "kube_pod_status_reason"
+            and datapoint.value_int == 2
+          - set(datapoint.attributes["reason"], "NodeLost") where metric.name == "kube_pod_status_reason"
+            and datapoint.value_int == 3
+          - set(datapoint.attributes["reason"], "Shutdown") where metric.name == "kube_pod_status_reason"
+            and datapoint.value_int == 4
+          - set(datapoint.attributes["reason"], "UnexpectedAdmissionError") where metric.name
+            == "kube_pod_status_reason" and datapoint.value_int == 5
+          - set(datapoint.value_int, 0) where metric.name == "kube_pod_status_reason"
+            and datapoint.value_int == 6
+          - set(datapoint.value_int, 1) where metric.name == "kube_pod_status_reason"
+            and datapoint.value_int != 0
+          - set(datapoint.value_int, 1) where metric.name == "kube_node_info"
+          - set(datapoint.attributes["kubelet_version"], resource.attributes["k8s.kubelet.version"])
+            where metric.name == "kube_node_info"
+          - set(datapoint.value_int, 1) where metric.name == "k8s.container.status.last_terminated_reason"
+          - set(datapoint.attributes["reason"], "") where metric.name == "k8s.container.status.last_terminated_reason"
+          - set(datapoint.attributes["reason"], resource.attributes["k8s.container.status.last_terminated_reason"])
+            where metric.name == "k8s.container.status.last_terminated_reason"
+        - context: resource
+          statements:
+          - delete_key(resource.attributes, "k8s.container.status.last_terminated_reason")
+          - delete_key(resource.attributes, "k8s.pod.qos_class")
+          - delete_key(resource.attributes, "k8s.kubelet.version")
+      transform/kube-events:
+        log_statements:
+        - context: log
+          statements:
+          - keep_keys(log.body["object"], ["type", "eventTime", "reason", "regarding",
+            "note", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+            where IsMap(log.body) and IsMap(log.body["object"])
+          - keep_keys(log.body["object"]["metadata"], ["creationTimestamp"]) where IsMap(log.body)
+            and IsMap(log.body["object"]) and IsMap(log.body["object"]["metadata"])
+          - keep_keys(log.body["object"]["regarding"], ["kind", "name", "namespace"])
+            where IsMap(log.body) and IsMap(log.body["object"]) and IsMap(log.body["object"]["regarding"])
+      transform/prometheus:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - replace_pattern(metric.name, "_total$", "") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_cpu_seconds_seconds$", "otelcol_process_cpu_seconds")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_heap_alloc_bytes_bytes$",
+            "otelcol_process_runtime_heap_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_alloc_bytes_bytes$",
+            "otelcol_process_runtime_total_alloc_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_process_runtime_total_sys_memory_bytes_bytes$",
+            "otelcol_process_runtime_total_sys_memory_bytes") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_open_files$", "otelcol_fileconsumer_open_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_fileconsumer_reading_files$", "otelcol_fileconsumer_reading_files_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_ip_lookup_miss$", "otelcol_otelsvc_k8s_ip_lookup_miss_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_added$", "otelcol_otelsvc_k8s_pod_added_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_updated$", "otelcol_otelsvc_k8s_pod_updated_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
+            "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: resource
+          statements:
+          - set(resource.attributes["k8s.pod.ip"], resource.attributes["net.host.name"])
+            where resource.attributes["service.name"] == "opentelemetry-collector"
+          - delete_key(resource.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+        - context: datapoint
+          statements:
+          - delete_key(datapoint.attributes, "service_name") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - delete_key(datapoint.attributes, "otel_scope_name") where datapoint.attributes["service.name"]
+            == "opentelemetry-collector"
+    receivers:
+      k8s_cluster:
+        allocatable_types_to_report:
+        - cpu
+        - memory
+        collection_interval: '30s'
+        metrics:
+          k8s.pod.status_reason:
+            enabled: true
+        resource_attributes:
+          k8s.container.status.last_terminated_reason:
+            enabled: true
+          k8s.kubelet.version:
+            enabled: true
+          k8s.pod.qos_class:
+            enabled: true
+      k8sobjects:
+        objects:
+        - exclude_watch_type:
+          - DELETED
+          group: events.k8s.io
+          mode: watch
+          name: events
+      k8sobjects/resource_catalog:
+        objects:
+        - group: ""
+          mode: pull
+          name: namespaces
+        - group: ""
+          mode: pull
+          name: nodes
+        - group: ""
+          mode: pull
+          name: persistentvolumeclaims
+        - group: ""
+          mode: pull
+          name: persistentvolumes
+        - group: ""
+          mode: pull
+          name: pods
+        - group: ""
+          mode: pull
+          name: services
+        - group: apps
+          mode: pull
+          name: daemonsets
+        - group: apps
+          mode: pull
+          name: deployments
+        - group: apps
+          mode: pull
+          name: replicasets
+        - group: apps
+          mode: pull
+          name: statefulsets
+        - group: autoscaling
+          mode: pull
+          name: horizontalpodautoscalers
+        - group: batch
+          mode: pull
+          name: cronjobs
+        - group: batch
+          mode: pull
+          name: jobs
+        - group: extensions
+          mode: pull
+          name: ingresses
+        - group: networking.k8s.io
+          mode: pull
+          name: ingresses
+        - group: policy
+          mode: pull
+          name: poddisruptionbudgets
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: clusterrolebindings
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: clusterroles
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: rolebindings
+        - group: rbac.authorization.k8s.io
+          mode: pull
+          name: roles
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: ""
+          mode: watch
+          name: namespaces
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: ""
+          mode: watch
+          name: nodes
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: ""
+          mode: watch
+          name: persistentvolumeclaims
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: ""
+          mode: watch
+          name: persistentvolumes
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: ""
+          mode: watch
+          name: pods
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: apps
+          mode: watch
+          name: daemonsets
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: apps
+          mode: watch
+          name: deployments
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: apps
+          mode: watch
+          name: replicasets
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: apps
+          mode: watch
+          name: statefulsets
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: autoscaling
+          mode: watch
+          name: horizontalpodautoscalers
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: batch
+          mode: watch
+          name: cronjobs
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: batch
+          mode: watch
+          name: jobs
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: extensions
+          mode: watch
+          name: ingresses
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: networking.k8s.io
+          mode: watch
+          name: ingresses
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: policy
+          mode: watch
+          name: poddisruptionbudgets
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: rbac.authorization.k8s.io
+          mode: watch
+          name: clusterrolebindings
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: rbac.authorization.k8s.io
+          mode: watch
+          name: clusterroles
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: rbac.authorization.k8s.io
+          mode: watch
+          name: rolebindings
+        - exclude_watch_type:
+          - BOOKMARK
+          - ERROR
+          group: rbac.authorization.k8s.io
+          mode: watch
+          name: roles
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+            max_recv_msg_size_mib: 20
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: '30s'
+            static_configs:
+            - targets:
+              - ${env:MY_POD_IP}:8888
+      prometheus/k8s_apiserver_metrics:
+        config:
+          scrape_configs:
+          - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            honor_timestamps: true
+            job_name: kubernetes-apiserver
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+            - action: keep
+              regex: default;kubernetes;https
+              source_labels:
+              - __meta_kubernetes_namespace
+              - __meta_kubernetes_service_name
+              - __meta_kubernetes_endpoint_port_name
+            scheme: https
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+    service:
+      extensions:
+      - health_check
+      - k8s_observer
+      - opamp
+      - zpages
+      - pprof
+      pipelines:
+        logs:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resource/kube-events
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - transform/kube-events
+          - batch
+          receivers:
+          - k8sobjects
+          - otlp
+        logs/resource_catalog:
+          exporters:
+          - coralogix/resource_catalog
+          processors:
+          - memory_limiter
+          - resourcedetection/resource_catalog
+          - transform/entity-event
+          - filter/workflow
+          - resource/metadata
+          - batch
+          receivers:
+          - k8sobjects/resource_catalog
+        metrics:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - metricstransform/k8s-dashboard
+          - transform/k8s-dashboard
+          - filter/k8s_apiserver_metrics
+          - transform/prometheus
+          - batch
+          receivers:
+          - k8s_cluster
+          - prometheus/k8s_apiserver_metrics
+          - prometheus
+          - otlp
+        traces:
+          exporters:
+          - debug
+          - coralogix
+          processors:
+          - memory_limiter
+          - resource/metadata
+          - resourcedetection/region
+          - resourcedetection/env
+          - k8sattributes
+          - batch
+          receivers:
+          - otlp
+      telemetry:
+        logs:
+          encoding: json
+          level: 'warn'
+        metrics:
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
+                  without_scope_info: false
+                  without_type_suffix: false
+                  without_units: false
+        resource:
+          cx.agent.type: cluster-collector
+          service.name: opentelemetry-collector
+---
+# Source: otel-integration/charts/opentelemetry-agent-windows/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coralogix-opentelemetry-agent-windows
+  labels:
+    helm.sh/chart: opentelemetry-agent-windows-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-windows
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "endpoints", "nodes/stats", "nodes/metrics", "nodes", "services"]
+    verbs: ["get", "watch", "list"]
+  - nonResourceURLs:
+    - "/metrics"
+    verbs: ["get"]
+---
+# Source: otel-integration/charts/opentelemetry-agent/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coralogix-opentelemetry-agent
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/stats", "nodes/metrics"]
+    verbs: ["get", "watch", "list"]
+  - nonResourceURLs:
+    - "/metrics"
+    verbs: ["get"]
+---
+# Source: otel-integration/charts/opentelemetry-cluster-collector/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coralogix-opentelemetry-collector
+  labels:
+    helm.sh/chart: opentelemetry-cluster-collector-0.132.0
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services" ]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["daemonsets", "deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "endpoints", "nodes/stats", "nodes/metrics", "nodes", "services"]
+    verbs: ["get", "watch", "list"]
+  - nonResourceURLs:
+    - "/metrics"
+    verbs: ["get"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
+    verbs: ["watch", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["aws-auth"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources:
+    - namespaces
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - pods
+    - services
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+    - daemonsets
+    - deployments
+    - replicasets
+    - statefulsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources:
+    - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources:
+    - cronjobs
+    - jobs
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources:
+    - ingresses
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+    - ingresses
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources:
+    - poddisruptionbudgets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+    - clusterrolebindings
+    - clusterroles
+    - rolebindings
+    - roles
+    verbs: ["get", "list", "watch"]
+---
+# Source: otel-integration/charts/opentelemetry-agent-windows/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coralogix-opentelemetry-agent-windows
+  labels:
+    helm.sh/chart: opentelemetry-agent-windows-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-windows
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coralogix-opentelemetry-agent-windows
+subjects:
+- kind: ServiceAccount
+  name: coralogix-opentelemetry-windows
+  namespace: default
+---
+# Source: otel-integration/charts/opentelemetry-agent/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coralogix-opentelemetry-agent
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coralogix-opentelemetry-agent
+subjects:
+- kind: ServiceAccount
+  name: coralogix-opentelemetry
+  namespace: default
+---
+# Source: otel-integration/charts/opentelemetry-cluster-collector/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coralogix-opentelemetry-collector
+  labels:
+    helm.sh/chart: opentelemetry-cluster-collector-0.132.0
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coralogix-opentelemetry-collector
+subjects:
+- kind: ServiceAccount
+  name: coralogix-opentelemetry-collector
+  namespace: default
+---
+# Source: otel-integration/charts/opentelemetry-cluster-collector/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: coralogix-opentelemetry-collector
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-cluster-collector-0.132.0
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+    component: standalone-collector
+spec:
+  type: ClusterIP
+  ports:
+
+    - name: otlp
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+      appProtocol: grpc
+  selector:
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    component: standalone-collector
+  internalTrafficPolicy: Cluster
+---
+# Source: otel-integration/charts/opentelemetry-agent-windows/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: coralogix-opentelemetry-windows-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-windows-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent-windows
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-agent-windows
+      app.kubernetes.io/instance: render-check
+      component: agent-collector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 826953bc5d16342c76b72a02d57be6dc6be09a7c752c51d70be6432b090c65ac
+
+      labels:
+        app.kubernetes.io/name: opentelemetry-agent-windows
+        app.kubernetes.io/instance: render-check
+        component: agent-collector
+
+    spec:
+
+      serviceAccountName: coralogix-opentelemetry-windows
+      securityContext:
+        {}
+      containers:
+        - name: opentelemetry-agent-windows
+          command:
+            - "C:\\otelcol-contrib.exe"
+            - --config=C:\\conf\relay.yaml
+          securityContext:
+            {}
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.152.1-windows-2019-amd64"
+          imagePullPolicy: Always
+          ports:
+            - name: jaeger-binary
+              containerPort: 6832
+              protocol: TCP
+              hostPort: 6832
+            - name: jaeger-compact
+              containerPort: 6831
+              protocol: UDP
+              hostPort: 6831
+            - name: jaeger-grpc
+              containerPort: 14250
+              protocol: TCP
+              hostPort: 14250
+            - name: jaeger-thrift
+              containerPort: 14268
+              protocol: TCP
+              hostPort: 14268
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+              hostPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+              hostPort: 4318
+            - name: statsd
+              containerPort: 8125
+              protocol: UDP
+              hostPort: 8125
+            - name: zipkin
+              containerPort: 9411
+              protocol: TCP
+              hostPort: 9411
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: K8S_NODE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: GOMEMLIMIT
+              value: "1525MiB"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "k8s.node.name=$(K8S_NODE_NAME),k8s.node.name=$(K8S_NODE_NAME),deployment.environment.name=golden-render"
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PRIVATE_KEY
+                  name: coralogix-keys
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            limits:
+              cpu: 1
+              memory: 2G
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: C:\conf
+              name: opentelemetry-agent-windows-configmap
+            - name: varlogpods
+              mountPath: C:\var\log\pods
+              readOnly: true
+            - name: varlibotelcol
+              mountPath: /var/lib/otelcol
+            - mountPath: "C:\\hostfs"
+              name: hostfs
+              readOnly: true
+            - mountPath: /etc/machine-id
+              mountPropagation: HostToContainer
+              name: etcmachineid
+              readOnly: true
+            - mountPath: /var/lib/dbus/machine-id
+              mountPropagation: HostToContainer
+              name: varlibdbusmachineid
+              readOnly: true
+      volumes:
+        - name: opentelemetry-agent-windows-configmap
+          configMap:
+            name: coralogix-opentelemetry-windows-agent
+            items:
+              - key: relay
+                path: relay.yaml
+        - name: varlogpods
+          hostPath:
+            path: C:\var\log\pods
+        - name: programdata
+          hostPath:
+            path: C:\ProgramData
+        - name: varlibotelcol
+          hostPath:
+            path: /var/lib/otelcol
+            type: DirectoryOrCreate
+        - name: hostfs
+          hostPath:
+            path: "C:\\"
+        - hostPath:
+            path: /etc/machine-id
+          name: etcmachineid
+        - hostPath:
+            path: /var/lib/dbus/machine-id
+          name: varlibdbusmachineid
+      nodeSelector:
+
+        kubernetes.io/os: windows
+      tolerations:
+        - operator: Exists
+      dnsPolicy: ClusterFirstWithHostNet
+---
+# Source: otel-integration/charts/opentelemetry-agent/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: coralogix-opentelemetry-agent
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.132.0
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-agent
+      app.kubernetes.io/instance: render-check
+      component: agent-collector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: db363f35618487c8f7861e22b708b4ca86d181b66884dbcb670df30beff396c9
+
+      labels:
+        app.kubernetes.io/name: opentelemetry-agent
+        app.kubernetes.io/instance: render-check
+        component: agent-collector
+
+    spec:
+
+      serviceAccountName: coralogix-opentelemetry
+      securityContext:
+        {}
+      containers:
+        - name: opentelemetry-agent
+          command:
+            - /otelcol-contrib
+            - --config=/conf/relay.yaml
+            - --feature-gates=+service.profilesSupport
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.152.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: jaeger-binary
+              containerPort: 6832
+              protocol: TCP
+              hostPort: 6832
+            - name: jaeger-compact
+              containerPort: 6831
+              protocol: UDP
+              hostPort: 6831
+            - name: jaeger-grpc
+              containerPort: 14250
+              protocol: TCP
+              hostPort: 14250
+            - name: jaeger-thrift
+              containerPort: 14268
+              protocol: TCP
+              hostPort: 14268
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+              hostPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+              hostPort: 4318
+            - name: statsd
+              containerPort: 8125
+              protocol: UDP
+              hostPort: 8125
+            - name: zipkin
+              containerPort: 9411
+              protocol: TCP
+              hostPort: 9411
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: KUBE_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: K8S_NODE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            - name: GOMEMLIMIT
+              value: "1525MiB"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "k8s.node.name=$(K8S_NODE_NAME),deployment.environment.name=golden-render"
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PRIVATE_KEY
+                  name: coralogix-keys
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            limits:
+              cpu: 1
+              memory: 2G
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /conf
+              name: opentelemetry-agent-configmap
+            - name: varlogpods
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: varlibotelcol
+              mountPath: /var/lib/otelcol
+            - name: hostfs
+              mountPath: /hostfs
+              readOnly: true
+              mountPropagation: HostToContainer
+            - mountPath: /etc/machine-id
+              mountPropagation: HostToContainer
+              name: etcmachineid
+              readOnly: true
+            - mountPath: /var/lib/dbus/machine-id
+              mountPropagation: HostToContainer
+              name: varlibdbusmachineid
+              readOnly: true
+      volumes:
+        - name: opentelemetry-agent-configmap
+          configMap:
+            name: coralogix-opentelemetry-agent
+            items:
+              - key: relay
+                path: relay.yaml
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: varlibotelcol
+          hostPath:
+            path: /var/lib/otelcol
+            type: DirectoryOrCreate
+        - name: hostfs
+          hostPath:
+            path: /
+        - name: etcmachineid
+          hostPath:
+            path: /etc/machine-id
+        - name: varlibdbusmachineid
+          hostPath:
+            path: /var/lib/dbus/machine-id
+      nodeSelector:
+
+        kubernetes.io/os: linux
+      tolerations:
+        - operator: Exists
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+---
+# Source: otel-integration/charts/opentelemetry-cluster-collector/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coralogix-opentelemetry-collector
+  namespace: default
+  labels:
+    helm.sh/chart: opentelemetry-cluster-collector-0.132.0
+    app.kubernetes.io/name: opentelemetry-cluster-collector
+    app.kubernetes.io/instance: render-check
+    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/managed-by: Helm
+
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-cluster-collector
+      app.kubernetes.io/instance: render-check
+      component: standalone-collector
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: f40e8af2bd36b2ae59a97c43ca3e468cf2e274a67711e09bc9442d102c56eb47
+
+      labels:
+        app.kubernetes.io/name: opentelemetry-cluster-collector
+        app.kubernetes.io/instance: render-check
+        component: standalone-collector
+
+    spec:
+
+      serviceAccountName: coralogix-opentelemetry-collector
+      securityContext:
+        {}
+      containers:
+        - name: opentelemetry-cluster-collector
+          command:
+            - /otelcol-contrib
+            - --config=/conf/relay.yaml
+          securityContext:
+            {}
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.152.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: otlp
+              containerPort: 4317
+              protocol: TCP
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: GOMEMLIMIT
+              value: "1525MiB"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment.name=golden-render"
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: CORALOGIX_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PRIVATE_KEY
+                  name: coralogix-keys
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          startupProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 4
+            httpGet:
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          resources:
+            limits:
+              cpu: 1
+              memory: 2G
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /conf
+              name: opentelemetry-cluster-collector-configmap
+            - mountPath: /etc/machine-id
+              mountPropagation: HostToContainer
+              name: etcmachineid
+              readOnly: true
+            - mountPath: /var/lib/dbus/machine-id
+              mountPropagation: HostToContainer
+              name: varlibdbusmachineid
+              readOnly: true
+      volumes:
+        - name: opentelemetry-cluster-collector-configmap
+          configMap:
+            name: coralogix-opentelemetry-collector
+            items:
+              - key: relay
+                path: relay.yaml
+        - name: etcmachineid
+          hostPath:
+            path: /etc/machine-id
+        - name: varlibdbusmachineid
+          hostPath:
+            path: /var/lib/dbus/machine-id
+      nodeSelector:
+
+        kubernetes.io/os: linux
+      hostNetwork: false

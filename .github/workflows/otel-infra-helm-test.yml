@@ -18,7 +18,6 @@ jobs:
         with:
           create-kind-cluster: "true"
       - name: Setup Secret
-        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123
+        run: kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake
       - name: Run chart-testing (install)
         run: ct lint-and-install --namespace default --charts otel-infrastructure-collector/k8s-helm
-

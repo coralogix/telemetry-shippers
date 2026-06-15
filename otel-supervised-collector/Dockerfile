@@ -3,11 +3,15 @@ ARG COLLECTOR_VERSION
 ARG SUPERVISOR_VERSION
 
 FROM alpine:3.22 AS certs
-RUN apk --update add ca-certificates
-RUN mkdir -p /etc/otelcol-contrib/supervisor-data
+RUN apk add --no-cache ca-certificates=20260413-r0 \
+    && mkdir -p /etc/otelcol-contrib/supervisor-data
 
+# DL3006: Always tag the version of an image explicitly.
+# hadolint ignore=DL3006
 FROM cgx.jfrog.io/coralogix-docker-images/cx-opampsupervisor:${SUPERVISOR_VERSION} AS supervisor
 
+# DL3006: Always tag the version of an image explicitly.
+# hadolint ignore=DL3006
 FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:${COLLECTOR_VERSION} AS collector
 
 # Uncomment the line below to generate a more helpful debug container

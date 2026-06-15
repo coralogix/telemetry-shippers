@@ -1,45 +1,46 @@
 #!/bin/sh
+# shellcheck disable=SC2117,SC2068
 set -xv
 
 # check for SCRAPE_CONFIG env variable, if not, configure default values
 # else use the value of SCRAPE_CONFIG as the prometheus yaml config.
-if [[ -z "${SCRAPE_CONFIG}" ]]; then
+if [ -z "${SCRAPE_CONFIG}" ]; then
   # Get docker host 
-  DOCKERHOST=`cat /hostetc/hostname`
+  DOCKERHOST=$(cat /hostetc/hostname)
 
   # Get Cluster name from the ecs-agent
-  CLUSTERNAME=`wget -qO- http://172.17.0.1:51678/v1/metadata | sed -e 's/[{}]/''/g' | awk -F , '{split($1,a,"\"");print a[4]}'`
+  CLUSTERNAME=$(wget -qO- http://172.17.0.1:51678/v1/metadata | sed -e 's/[{}]/''/g' | awk -F , '{split($1,a,"\"");print a[4]}')
 
   # Get host public ip
-  HOSTPUBLICIP=`wget -qO- http://checkip.amazonaws.com`
+  HOSTPUBLICIP=$(wget -qO- http://checkip.amazonaws.com)
 
   # Variables check
-  if [[ -z $CORALOGIX_PRIVATEKEY ]]; then
+  if [ -z "$CORALOGIX_PRIVATEKEY" ]; then
     echo "CORALOGIX_PRIVATEKEY environment variable must be set"
     exit 1
   fi
 
-  if [[ -z $CORALOGIX_ENDPOINT ]]; then
+  if [ -z "$CORALOGIX_ENDPOINT" ]; then
     echo "CORALOGIX_ENDPOINT environment variable must be set"
     exit 1
   fi
 
-  if [[ -z $SCRAPE_INTERVAL ]]; then
+  if [ -z "$SCRAPE_INTERVAL" ]; then
     echo "SCRAPE_INTERVAL environment variable must be set"
     exit 1
   fi
 
-  if [[ -z $DOCKERHOST ]]; then
+  if [ -z "$DOCKERHOST" ]; then
     echo "error while retrieving instance hostname, verify that /etc/hostname is mounted"
     exit 1
   fi
 
-  if [[ -z $CLUSTERNAME ]]; then
+  if [ -z "$CLUSTERNAME" ]; then
     echo "error while retrieving clustername from ecs-agent"
     exit 1
   fi
 
-  if [[ -z $HOSTPUBLICIP ]]; then
+  if [ -z "$HOSTPUBLICIP" ]; then
     echo "error while retrieving host public ip, verify that host has outgoing ports (80,443) open"
     exit 1
   fi

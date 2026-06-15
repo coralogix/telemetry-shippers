@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2094,SC2012,SC2086,SC2046
 
 set -e
 
@@ -295,7 +296,7 @@ setup_helm_repos() {
 # Create secret
 create_secret() {
     log_info "Creating secret..."
-    kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=123 --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create secret generic coralogix-keys --from-literal=PRIVATE_KEY=fake --dry-run=client -o yaml | kubectl apply -f -
     log_success "Secret created/updated"
 }
 
@@ -314,7 +315,8 @@ uninstall_chart() {
         sleep 5
 
         # Verify pods are gone
-        local remaining_pods=$(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+        local remaining_pods
+        remaining_pods=$(kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" --no-headers 2>/dev/null | wc -l | tr -d ' ')
         if [ "$remaining_pods" -gt 0 ]; then
             log_warning "Still ${remaining_pods} pod(s) remaining after uninstall, waiting additional 10 seconds..."
             sleep 10
@@ -460,7 +462,8 @@ build_helm_dependencies() {
     fi
 
     # Check for opentelemetry-collector charts (required dependencies)
-    local collector_charts=$(ls charts/opentelemetry-collector-*.tgz 2>/dev/null | wc -l | tr -d ' ')
+    local collector_charts
+    collector_charts=$(ls charts/opentelemetry-collector-*.tgz 2>/dev/null | wc -l | tr -d ' ')
     if [ "$collector_charts" -eq 0 ]; then
         log_error "No opentelemetry-collector charts found in charts/ directory"
         log_error "This may indicate that local file paths in Chart.yaml are not resolving correctly"
@@ -610,16 +613,18 @@ run_test() {
 
     # Run the test
     log_info "Executing: go test -v -run='${test_regex}' ${test_package}"
-    local test_start_time=$(date +%s)
+    local test_start_time
+    test_start_time=$(date +%s)
 
     # Run test and capture exit code properly (tee doesn't preserve exit codes)
-    go test -v -run="${test_regex}" ${test_package} 2>&1 | tee /tmp/test-${test_name}-output.log
+    go test -v -run="${test_regex}" ${test_package} 2>&1 | tee "/tmp/test-${test_name}-output.log"
     local test_exit_code=${PIPESTATUS[0]}
 
-    local test_end_time=$(date +%s)
+    local test_end_time
+    test_end_time=$(date +%s)
     local test_duration=$((test_end_time - test_start_time))
 
-    if [ $test_exit_code -eq 0 ]; then
+    if [ "$test_exit_code" -eq 0 ]; then
         log_success "✓ Test ${test_name} PASSED (duration: ${test_duration}s)"
         TEST_RESULTS+=("PASS")
         ((++PASSED_TESTS))
@@ -633,7 +638,7 @@ run_test() {
         # Show test output
         log_error "Test output saved to: /tmp/test-${test_name}-output.log"
         log_error "Last 50 lines of test output:"
-        tail -50 /tmp/test-${test_name}-output.log || true
+        tail -50 "/tmp/test-${test_name}-output.log" || true
 
         # Collect pod logs on failure
         log_warning "Collecting pod logs..."

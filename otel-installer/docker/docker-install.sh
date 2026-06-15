@@ -88,7 +88,7 @@ get_version() {
 }
 
 fetch_supervisor_image_version() {
-    local script_dir version_file version version_url
+    local script_dir version_file version
 
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     version_file="${script_dir}/../../otel-supervised-collector/CURRENT_IMAGE_VERSION"
@@ -142,7 +142,7 @@ Options:
     -c, --config <path>         Path to custom configuration file
     -s, --supervisor            Use supervisor mode (requires CORALOGIX_DOMAIN)
     --memory-limit <MiB>        Total memory in MiB to allocate to the collector (default: 512)
-                                Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
+                                Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
                                 (ignored in supervisor mode)
     --supervisor-base-config <path>  Path to base collector config for supervisor mode
                                       Merged with remote config from Fleet Manager
@@ -627,4 +627,3 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
 }
 
 main "$@"
-
