@@ -2,6 +2,14 @@
 
 ## OpenTelemetry EKS-Fargate
 
+### v0.0.6 / 2026-06-16
+
+* [BREAKING] Rename Kubernetes secret key from `PRIVATE_KEY` to `CORALOGIX_PRIVATE_KEY` to match the container environment variable name. Before applying updated manifests, recreate the secret:
+  ```bash
+  kubectl delete secret coralogix-keys -n $NAMESPACE
+  kubectl create secret generic coralogix-keys -n $NAMESPACE --from-literal=CORALOGIX_PRIVATE_KEY=<your-api-key>
+  ```
+
 ### v0.0.5 / 2025-05-14
 * [FIX] Remove overwrite of k8s.node.name attribute
 

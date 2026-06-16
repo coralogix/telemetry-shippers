@@ -306,7 +306,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: coralogix-keys
-                  key: PRIVATE_KEY
+                  key: CORALOGIX_PRIVATE_KEY
           resources:
             limits:
               cpu: 1
