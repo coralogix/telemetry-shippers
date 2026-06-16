@@ -15,11 +15,11 @@ The Coralogix EKS Fargate integration for Metrics and Traces leverages OpenTelem
 ## Creating Secret
 
 1. Export your API key to a local variable:
-   1. `export CORALOGIX_PRIVATE_KEY=<Send-Your-Data API key>`
+   1. `export PRIVATE_KEY=<Send-Your-Data API key>`
 2. Set your namespace variable:
    1. `export NAMESPACE=cx-eks-fargate-otel`
 3. Create the secret using kubectl:
-   1. `kubectl create secret generic coralogix-keys -n $NAMESPACE --from-literal=CORALOGIX_PRIVATE_KEY=$CORALOGIX_PRIVATE_KEY`
+   1. `kubectl create secret generic coralogix-keys -n $NAMESPACE --from-literal=PRIVATE_KEY=$PRIVATE_KEY`
 4. Confirm it’s been set
    1. `kubectl get secret coralogix-keys -o yaml -n $NAMESPACE`
 
