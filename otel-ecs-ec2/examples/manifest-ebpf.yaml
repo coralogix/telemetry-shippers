@@ -11,9 +11,6 @@ metadata:
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
-    
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/serviceaccount.yaml
 apiVersion: v1
@@ -27,9 +24,6 @@ metadata:
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
-    
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
 apiVersion: v1
@@ -804,7 +798,6 @@ data:
         resource:
           cx.agent.type: agent
           service.name: opentelemetry-collector
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/configmap-agent.yaml
 apiVersion: v1
@@ -953,7 +946,6 @@ data:
       telemetry:
         logs:
           encoding: json
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
 apiVersion: apps/v1
@@ -1090,7 +1082,6 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       hostNetwork: true
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/daemonset.yaml
 apiVersion: apps/v1
