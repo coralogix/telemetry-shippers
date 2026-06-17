@@ -6,10 +6,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.132.0
+    helm.sh/chart: opentelemetry-agent-0.133.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/serviceaccount.yaml
@@ -19,10 +19,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.132.0
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.133.0
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
@@ -32,10 +32,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.132.0
+    helm.sh/chart: opentelemetry-agent-0.133.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
     
 data:
@@ -175,14 +175,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.32
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.33
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.32
+            X-Coralogix-Distribution: helm-otel-integration/0.0.33
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.32
+            X-Coralogix-Distribution: helm-otel-integration/0.0.33
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -202,13 +202,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.32
+            X-Coralogix-Distribution: helm-otel-integration/0.0.33
       coralogix/resource_catalog:
         application_name: resource
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.32
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.33
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -233,7 +233,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.132.0
+            helm.chart.opentelemetry-agent.version: 0.133.0
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -806,10 +806,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.132.0
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.133.0
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
     
 data:
@@ -829,14 +829,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.32
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.33
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.32
+            X-Coralogix-Distribution: helm-otel-integration/0.0.33
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.32
+            X-Coralogix-Distribution: helm-otel-integration/0.0.33
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -856,7 +856,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.32
+            X-Coralogix-Distribution: helm-otel-integration/0.0.33
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
@@ -866,7 +866,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-ebpf-profiler.version: 0.132.0
+            helm.chart.opentelemetry-ebpf-profiler.version: 0.133.0
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -954,10 +954,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.132.0
+    helm.sh/chart: opentelemetry-agent-0.133.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
     
 spec:
@@ -971,7 +971,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f01c5e744ee1b047a71ef303145c2f3572ed4db732a889758cad459f50405fdc
+        checksum/config: 98352dadfed818896dccbbf489922cf71b0ee3777c6ef5838aa1d2cdacbcc2c4
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -1090,10 +1090,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.132.0
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.133.0
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.152.1"
+    app.kubernetes.io/version: "0.153.0"
     app.kubernetes.io/managed-by: Helm
     
 spec:
@@ -1107,7 +1107,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e939b4cb931956583f65a5fa0f01cc09a41f5ffc9df2347cda3b14538dd3cf43
+        checksum/config: d59f771f40f2ca58a659ab47495f22cd0b8ef66ca5913418f85be2905e1cb9a1
         
       labels:
         app.kubernetes.io/name: opentelemetry-ebpf-profiler
@@ -1129,7 +1129,7 @@ spec:
             runAsUser: 0
             runAsGroup: 0
             privileged: true
-          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.152.1"
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.153.0"
           imagePullPolicy: IfNotPresent
           ports:
             - name: otlp
