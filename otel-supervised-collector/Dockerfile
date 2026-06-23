@@ -3,7 +3,7 @@ ARG COLLECTOR_VERSION
 ARG SUPERVISOR_VERSION
 
 FROM alpine:3.22 AS certs
-RUN apk add --no-cache ca-certificates=20260413-r0 \
+RUN apk add --no-cache ca-certificates=20260611-r0 \
     && mkdir -p /etc/otelcol-contrib/supervisor-data
 
 # DL3006: Always tag the version of an image explicitly.
