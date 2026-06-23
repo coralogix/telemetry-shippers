@@ -77,7 +77,7 @@ load_test_configs() {
     done <<'EOF'
 # test|platform|wait label|env vars|values files
 TestE2E_Agent|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml
-TestE2E_Agent|windows|component=agent-collector||./values.yaml ./values-windows.yaml ./e2e-test/testdata/values-e2e-test.yaml
+TestE2E_Agent|windows|app.kubernetes.io/name=opentelemetry-agent-windows||./values.yaml ./values-windows.yaml ./e2e-test/testdata/values-e2e-windows-test.yaml
 TestE2E_ClusterCollector_Metrics|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml
 TestE2E_TailSampling_Simple|linux|app.kubernetes.io/instance=otel-integration-agent-e2e|RUN_TAIL_SAMPLING_E2E=1|./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml
 TestE2E_TargetAllocator_ServiceMonitorMetrics|linux|component=agent-collector|RUN_TARGET_ALLOCATOR_E2E=1|./values.yaml ./e2e-test/testdata/values-e2e-target-allocator-servicemonitor.yaml
@@ -208,7 +208,7 @@ check_prerequisites() {
     if [ "$ENVIRONMENT" = "linux" ]; then
         required_commands="kind helm kubectl go docker"
     else
-        required_commands="helm kubectl go rg"
+        required_commands="helm kubectl go"
     fi
 
     for cmd in $required_commands; do

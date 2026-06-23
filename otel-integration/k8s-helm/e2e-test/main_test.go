@@ -43,11 +43,12 @@ const (
 )
 
 type agentScenarioResult struct {
-	logs      []plog.Logs
-	metrics   []pmetric.Metrics
-	traces    []ptrace.Traces
-	namespace string
-	testID    string
+	logs             []plog.Logs
+	metrics          []pmetric.Metrics
+	traces           []ptrace.Traces
+	namespace        string
+	testID           string
+	windowsNodeNames map[string]struct{}
 }
 
 var (
@@ -57,6 +58,11 @@ var (
 
 func TestE2E_Agent(t *testing.T) {
 	scenario := getAgentScenario(t)
+
+	if isWindowsE2EEnvironment() {
+		requireWindowsAgentMetrics(t, scenario)
+		return
+	}
 
 	checkSystemLogsAttributes(t, scenario.logs)
 	checkResourceMetrics(t, scenario.metrics)
@@ -92,6 +98,10 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 
 	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
 	require.NoError(t, err)
+	windowsNodeNames := listWindowsNodeNames(t, k8sClient)
+	if isWindowsE2EEnvironment() {
+		return collectWindowsAgentScenario(t, windowsNodeNames)
+	}
 
 	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
@@ -164,11 +174,34 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 	waitForMetrics(t, 20, metricsConsumer)
 
 	return agentScenarioResult{
-		logs:      cloneLogs(logsConsumer.AllLogs()),
-		metrics:   cloneMetrics(metricsConsumer.AllMetrics()),
-		traces:    cloneTraces(tracesConsumer.AllTraces()),
-		namespace: testNs,
-		testID:    testID,
+		logs:             cloneLogs(logsConsumer.AllLogs()),
+		metrics:          cloneMetrics(metricsConsumer.AllMetrics()),
+		traces:           cloneTraces(tracesConsumer.AllTraces()),
+		namespace:        testNs,
+		testID:           testID,
+		windowsNodeNames: windowsNodeNames,
+	}
+}
+
+func collectWindowsAgentScenario(t *testing.T, windowsNodeNames map[string]struct{}) agentScenarioResult {
+	t.Helper()
+
+	metricsConsumer := new(consumertest.MetricsSink)
+	shutdownSink := StartUpSinks(t, ReceiverSinks{
+		Metrics: &MetricSinkConfig{
+			Consumer: metricsConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4317,
+			},
+		},
+	})
+	defer shutdownSink()
+
+	waitForMetrics(t, 20, metricsConsumer)
+
+	return agentScenarioResult{
+		metrics:          cloneMetrics(metricsConsumer.AllMetrics()),
+		windowsNodeNames: windowsNodeNames,
 	}
 }
 
@@ -183,6 +216,53 @@ func requireHostEndpoint(t *testing.T) {
 
 func isWindowsE2EEnvironment() bool {
 	return os.Getenv("E2E_ENVIRONMENT") == "windows"
+}
+
+func listWindowsNodeNames(t *testing.T, client *xk8stest.K8sClient) map[string]struct{} {
+	t.Helper()
+	if !isWindowsE2EEnvironment() {
+		return nil
+	}
+
+	nodes, err := client.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("nodes")).List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+
+	names := map[string]struct{}{}
+	for _, node := range nodes.Items {
+		if node.GetLabels()["kubernetes.io/os"] == "windows" {
+			names[node.GetName()] = struct{}{}
+		}
+	}
+	require.NotEmpty(t, names, "windows e2e requires at least one Windows node")
+	return names
+}
+
+func requireWindowsAgentMetrics(t *testing.T, scenario agentScenarioResult) {
+	t.Helper()
+
+	for _, current := range scenario.metrics {
+		for i := 0; i < current.ResourceMetrics().Len(); i++ {
+			attrs := current.ResourceMetrics().At(i).Resource().Attributes()
+			nodeName, ok := attrs.Get("k8s.node.name")
+			if !ok {
+				continue
+			}
+			if _, found := scenario.windowsNodeNames[nodeName.AsString()]; found {
+				return
+			}
+		}
+	}
+
+	require.Failf(t, "missing Windows agent metrics", "expected metrics from Windows nodes: %v", sortedKeys(scenario.windowsNodeNames))
+}
+
+func sortedKeys(values map[string]struct{}) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func ensureNamespaceIsClean(t *testing.T, client *xk8stest.K8sClient, manifest []byte, manifestPath string) {
