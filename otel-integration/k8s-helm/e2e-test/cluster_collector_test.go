@@ -17,7 +17,7 @@ import (
 // to a local OTLP sink and that resource attributes mark it as a cluster-collector.
 func TestE2E_ClusterCollector_Metrics(t *testing.T) {
 	// Validate host endpoint detection vs env (parity with agent test)
-	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	requireHostEndpoint(t)
 
 	// Use kubeconfig from env if set (same as agent test)
 	kubeconfigPath := testKubeConfig

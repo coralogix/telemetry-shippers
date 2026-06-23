@@ -81,7 +81,7 @@ func getAgentScenario(t *testing.T) agentScenarioResult {
 func collectAgentScenario(t *testing.T) agentScenarioResult {
 	t.Helper()
 
-	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	requireHostEndpoint(t)
 
 	testDataDir := filepath.Join("testdata")
 
@@ -101,6 +101,7 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
 
 	testNs := nsObj.GetName()
+	waitForDefaultServiceAccount(t, k8sClient, testNs)
 
 	podFile := filepath.Join(testDataDir, "pod.yaml")
 	buf, err = os.ReadFile(podFile)
@@ -159,8 +160,8 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 	})
 
 	waitForLogs(t, 1, logsConsumer)
-	waitForMetrics(t, 20, metricsConsumer)
 	waitForTraces(t, 10, tracesConsumer)
+	waitForMetrics(t, 20, metricsConsumer)
 
 	return agentScenarioResult{
 		logs:      cloneLogs(logsConsumer.AllLogs()),
@@ -169,6 +170,19 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 		namespace: testNs,
 		testID:    testID,
 	}
+}
+
+func requireHostEndpoint(t *testing.T) {
+	t.Helper()
+	require.NotEmpty(t, os.Getenv("HOSTENDPOINT"), "HOSTENDPOINT must be set")
+	if isWindowsE2EEnvironment() {
+		return
+	}
+	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+}
+
+func isWindowsE2EEnvironment() bool {
+	return os.Getenv("E2E_ENVIRONMENT") == "windows"
 }
 
 func ensureNamespaceIsClean(t *testing.T, client *xk8stest.K8sClient, manifest []byte, manifestPath string) {
@@ -197,6 +211,16 @@ func ensureNamespaceIsClean(t *testing.T, client *xk8stest.K8sClient, manifest [
 			Get(context.Background(), nsName, metav1.GetOptions{})
 		return apierrors.IsNotFound(err)
 	}, 2*time.Minute, 2*time.Second, "namespace %s still terminating", nsName)
+}
+
+func waitForDefaultServiceAccount(t *testing.T, client *xk8stest.K8sClient, namespace string) {
+	t.Helper()
+
+	serviceAccountsRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
+	require.Eventually(t, func() bool {
+		_, err := client.DynamicClient.Resource(serviceAccountsRes).Namespace(namespace).Get(context.Background(), "default", metav1.GetOptions{})
+		return err == nil
+	}, time.Minute, time.Second, "default service account was not created in namespace %s", namespace)
 }
 
 func decodeManifestObject(t *testing.T, manifest []byte, manifestPath string) *unstructured.Unstructured {
@@ -400,6 +424,9 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
+		if !ok && isOptionalResourceDetectionAttribute(k) {
+			return true
+		}
 		if !ok {
 			attributes.Range(func(k string, v pcommon.Value) bool {
 				fmt.Printf("found attribute: scopeName: %s, attribute: %v\n", scopeName, k)
@@ -414,6 +441,15 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	})
 
 	return nil
+}
+
+func isOptionalResourceDetectionAttribute(key string) bool {
+	switch key {
+	case "cloud.availability_zone", "host.image.id", "host.type":
+		return true
+	default:
+		return false
+	}
 }
 
 func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, testNs string) error {

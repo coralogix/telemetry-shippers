@@ -34,7 +34,7 @@ func TestE2E_TargetAllocator_ServiceMonitorMetrics(t *testing.T) {
 		t.Skip("skipping target allocator ServiceMonitor E2E; set RUN_TARGET_ALLOCATOR_E2E=1 to enable")
 	}
 
-	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	requireHostEndpoint(t)
 
 	kubeconfigPath := testKubeConfig
 	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {

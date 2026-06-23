@@ -35,7 +35,7 @@ func TestE2E_TailSampling_Simple(t *testing.T) {
 	}
 
 	// Parity check with other E2E tests
-	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	requireHostEndpoint(t)
 
 	testDataDir := filepath.Join("testdata")
 
