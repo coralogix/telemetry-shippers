@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.0 - 2026-06-22
+
+- [chore] Bump Collector to version 0.154.0.
+- [chore] Bump Supervisor to version 0.154.0.
+
 ## v0.8.0 - 2026-06-16
 
 - [chore] Bump Collector to version 0.153.0.
