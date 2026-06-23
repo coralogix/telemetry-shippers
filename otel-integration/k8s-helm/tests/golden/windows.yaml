@@ -2399,7 +2399,7 @@ spec:
             - --config=C:\\conf\relay.yaml
           securityContext:
             {}
-          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.153.0-windows-2019-amd64"
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.154.0-windows-2019-amd64"
           imagePullPolicy: Always
           ports:
             - name: jaeger-binary
