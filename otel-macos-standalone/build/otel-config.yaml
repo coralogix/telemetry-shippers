@@ -133,14 +133,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.38
+        X-Coralogix-Distribution: helm-otel-macos/0.0.39
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.38
+        X-Coralogix-Distribution: helm-otel-macos/0.0.39
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.38
+        X-Coralogix-Distribution: helm-otel-macos/0.0.39
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -159,13 +159,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.38
+        X-Coralogix-Distribution: helm-otel-macos/0.0.39
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.38
+        X-Coralogix-Distribution: helm-otel-macos/0.0.39
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -189,7 +189,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.133.0
+        helm.chart.opentelemetry-agent.version: 0.134.0
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
