@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.320 / 2026-06-24
+
+- [Feat] Add optional `instrumentationWebhook` support for Java, Python, and .NET workload auto-instrumentation.
+
 ### v0.0.319 / 2026-06-23
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.0
