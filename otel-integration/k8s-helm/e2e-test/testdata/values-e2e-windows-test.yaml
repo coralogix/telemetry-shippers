@@ -1,0 +1,39 @@
+# Override values for Windows E2E: export Windows-agent telemetry to local sinks.
+global:
+  logLevel: "info"
+  hostedEndpoint: "host.docker.internal"
+
+opentelemetry-agent-windows:
+  presets:
+    coralogixExporter:
+      enabled: false
+  config:
+    exporters:
+      debug:
+        verbosity: detailed
+      otlp/metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4317"
+        tls:
+          insecure: true
+      otlp/traces:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4321"
+        tls:
+          insecure: true
+      otlp/logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:4323"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        metrics:
+          exporters:
+            - otlp/metrics
+            - debug
+        traces:
+          exporters:
+            - otlp/traces
+            - debug
+        logs:
+          exporters:
+            - otlp/logs
+            - debug

@@ -45,6 +45,7 @@ KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.30.0}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 HELM_CHART_DIR="${PROJECT_ROOT}/otel-integration/k8s-helm"
 E2E_TEST_DIR="${PROJECT_ROOT}/otel-integration/k8s-helm/e2e-test"
+ENVIRONMENT="${E2E_ENVIRONMENT:-linux}"
 COLLECTOR_CONTRIB_DIR=""
 CUSTOM_IMAGE_REPOSITORY="docker.io/library/otelcontribcol"
 CUSTOM_IMAGE_TAG="latest"
@@ -64,42 +65,86 @@ FAILED_TESTS=0
 
 # Test to run (empty means run all in workflow mode)
 RUN_SPECIFIC_TEST=""
+LIST_TESTS=0
 
-# Define test configurations globally
-# Format: test_name:values_files:wait_label:env_vars
-# NOTE: TestE2E_HeadSampling_Simple is skipped - test appears to be broken
-declare -a TEST_CONFIGS=(
-    "TestE2E_ClusterCollector_Metrics:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml:component=agent-collector:"
-    "TestE2E_TailSampling_Simple:./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml:app.kubernetes.io/instance=otel-integration-agent-e2e:RUN_TAIL_SAMPLING_E2E=1"
-    "TestE2E_TargetAllocator_ServiceMonitorMetrics:./values.yaml ./e2e-test/testdata/values-e2e-target-allocator-servicemonitor.yaml:component=agent-collector:RUN_TARGET_ALLOCATOR_E2E=1"
-    # "TestE2E_HeadSampling_Simple:./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml:component=agent-collector:RUN_HEAD_SAMPLING_E2E=1"  # SKIPPED - test appears broken
-    "TestE2E_FleetManager:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-    "TestE2E_FleetManagerSupervisor:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml:component=agent-collector:"
-    "TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig:./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml:component=agent-collector:"
-    "TestE2E_TransactionsPreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-    "TestE2E_DeltaToCumulativePreset:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-    "TestE2E_SpanMetricsConnector:./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml:component=agent-collector:"
-    "TestE2E_SpanSanitization:./values.yaml ./e2e-test/testdata/values-e2e-test.yaml:component=agent-collector:"
-)
+declare -a TEST_CONFIGS=()
+
+load_test_configs() {
+    local test_name platform wait_label env_vars values_files
+    while IFS='|' read -r test_name platform wait_label env_vars values_files; do
+        [[ -z "$test_name" || "$test_name" == \#* ]] && continue
+        TEST_CONFIGS+=("$test_name:$values_files:$wait_label:$env_vars:$platform")
+    done <<'EOF'
+# test|platform|wait label|env vars|values files
+TestE2E_Agent|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml
+TestE2E_Agent|windows|app.kubernetes.io/name=opentelemetry-agent-windows||./values.yaml ./values-windows.yaml ./e2e-test/testdata/values-e2e-windows-test.yaml
+TestE2E_ClusterCollector_Metrics|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml
+TestE2E_TailSampling_Simple|linux|app.kubernetes.io/instance=otel-integration-agent-e2e|RUN_TAIL_SAMPLING_E2E=1|./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml
+TestE2E_TargetAllocator_ServiceMonitorMetrics|linux|component=agent-collector|RUN_TARGET_ALLOCATOR_E2E=1|./values.yaml ./e2e-test/testdata/values-e2e-target-allocator-servicemonitor.yaml
+# TestE2E_HeadSampling_Simple|linux|component=agent-collector|RUN_HEAD_SAMPLING_E2E=1|./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml
+TestE2E_FleetManager|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml
+TestE2E_FleetManagerSupervisor|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml
+TestE2E_FleetManagerSupervisor_NonMinimalCollectorConfig|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml
+TestE2E_TransactionsPreset|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml
+TestE2E_DeltaToCumulativePreset|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml
+TestE2E_SpanMetricsConnector|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-span-metrics.yaml
+TestE2E_SpanSanitization|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml
+EOF
+}
+
+load_test_configs
+
+print_available_tests() {
+    echo "Available tests for ${ENVIRONMENT}:"
+    local found=0
+    for config in "${TEST_CONFIGS[@]}"; do
+        IFS=':' read -r test_name _ _ _ platform <<< "$config"
+        if is_platform_enabled "$platform"; then
+            printf "  [%s] %s\n" "$platform" "$test_name"
+            found=1
+        fi
+    done
+    [ "$found" -eq 1 ] || echo "  (none)"
+}
+
+is_platform_enabled() {
+    case "$1" in
+        both) return 0 ;;
+        "$ENVIRONMENT") return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --collector-contrib)
+            if [ $# -lt 2 ]; then
+                log_error "--collector-contrib requires a path"
+                exit 1
+            fi
             COLLECTOR_CONTRIB_DIR="$2"
             shift 2
             ;;
         --test)
+            if [ $# -lt 2 ]; then
+                log_error "--test requires a test name"
+                exit 1
+            fi
             RUN_SPECIFIC_TEST="$2"
             shift 2
             ;;
+        --environment)
+            if [ $# -lt 2 ]; then
+                log_error "--environment requires linux or windows"
+                exit 1
+            fi
+            ENVIRONMENT="$2"
+            shift 2
+            ;;
         --list-tests)
-            echo "Available tests:"
-            for config in "${TEST_CONFIGS[@]}"; do
-                IFS=':' read -r test_name _ _ _ <<< "$config"
-                echo "  - $test_name"
-            done
-            exit 0
+            LIST_TESTS=1
+            shift
             ;;
         -h|--help)
             echo "Usage: $0 [OPTIONS]"
@@ -107,6 +152,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --collector-contrib PATH  Path to opentelemetry-collector-contrib repository"
             echo "                           If provided, will build and use a custom image"
+            echo "  --environment ENV        Test environment: linux or windows (default: linux)"
             echo "  --test TEST_NAME         Run a specific test instead of all tests"
             echo "  --list-tests             List all available tests"
             echo "  -h, --help               Show this help message"
@@ -119,6 +165,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Examples:"
             echo "  $0                                              # Run all tests"
+            echo "  $0 --environment windows --list-tests          # List Windows-classified tests"
             echo "  $0 --test TestE2E_TailSampling_Simple          # Run specific test"
             echo "  $0 --list-tests                                # List available tests"
             exit 0
@@ -136,14 +183,35 @@ if [ -z "$COLLECTOR_CONTRIB_DIR" ] && [ -n "$COLLECTOR_CONTRIB" ]; then
     COLLECTOR_CONTRIB_DIR="$COLLECTOR_CONTRIB"
 fi
 
-log_test "=== Running GitHub Workflow Equivalent ==="
+case "$ENVIRONMENT" in
+    linux|windows)
+        ;;
+    *)
+        log_error "Unsupported environment: ${ENVIRONMENT}. Expected linux or windows."
+        exit 1
+        ;;
+esac
+
+if [ "$LIST_TESTS" -eq 1 ]; then
+    print_available_tests
+    exit 0
+fi
+
+log_test "=== Running GitHub Workflow Equivalent (${ENVIRONMENT}) ==="
 
 # Check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
 
     local missing=0
-    for cmd in kind helm kubectl go docker; do
+    local required_commands
+    if [ "$ENVIRONMENT" = "linux" ]; then
+        required_commands="kind helm kubectl go docker"
+    else
+        required_commands="helm kubectl go"
+    fi
+
+    for cmd in $required_commands; do
         if ! command -v "$cmd" &> /dev/null; then
             log_error "$cmd is not installed"
             missing=1
@@ -166,6 +234,24 @@ check_prerequisites() {
     fi
 
     log_success "All prerequisites met"
+}
+
+setup_existing_cluster() {
+    if [ -n "$COLLECTOR_CONTRIB_DIR" ]; then
+        log_error "--collector-contrib is only supported for --environment linux"
+        exit 1
+    fi
+    if [ -z "${KUBECONFIG:-}" ]; then
+        log_error "KUBECONFIG must point to the ready Windows cluster"
+        exit 1
+    fi
+    if [ -z "${HOSTENDPOINT:-}" ]; then
+        log_error "HOSTENDPOINT must be reachable from the ready Windows cluster"
+        exit 1
+    fi
+    KUBECONFIG_PATH="$KUBECONFIG"
+    kubectl cluster-info >/dev/null
+    log_success "Existing cluster ready"
 }
 
 # Setup kind cluster
@@ -289,6 +375,7 @@ build_custom_image() {
 setup_helm_repos() {
     echo -e "${YELLOW}Setting up helm repositories...${NC}"
     helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts || true
+    helm repo add coralogix-charts https://cgx.jfrog.io/artifactory/coralogix-charts || true
     helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual || true
     helm repo update || echo "Warning: Some helm repositories failed to update, continuing anyway..."
 }
@@ -596,6 +683,7 @@ run_test() {
     # Set environment variables for the test
     export KUBECONFIG="${KUBECONFIG_PATH}"
     export HOSTENDPOINT="${HOSTENDPOINT}"
+    export E2E_ENVIRONMENT="${ENVIRONMENT}"
 
     # Set additional env vars if provided
     if [ -n "$test_env_vars" ]; then
@@ -657,6 +745,11 @@ run_test() {
 }
 
 run_workflow_mode() {
+    if [ "$ENVIRONMENT" = "windows" ]; then
+        run_platform_workflow_mode
+        return $?
+    fi
+
     uninstall_chart
     build_helm_dependencies
 
@@ -673,6 +766,7 @@ run_workflow_mode() {
 
     export KUBECONFIG="${KUBECONFIG_PATH}"
     export HOSTENDPOINT="${HOSTENDPOINT}"
+    export E2E_ENVIRONMENT="${ENVIRONMENT}"
 
     local workflow_start_time
     workflow_start_time=$(date +%s)
@@ -785,6 +879,28 @@ run_workflow_mode() {
     return 0
 }
 
+run_platform_workflow_mode() {
+    local failed=0
+    local ran=0
+
+    for test_config in "${TEST_CONFIGS[@]}"; do
+        IFS=':' read -r test_name _ _ _ platform <<< "$test_config"
+        if ! is_platform_enabled "$platform"; then
+            continue
+        fi
+        ((++ran))
+        if ! run_specific_test "$test_name"; then
+            failed=1
+        fi
+    done
+
+    if [ "$ran" -eq 0 ]; then
+        log_error "No tests configured for ${ENVIRONMENT}"
+        return 1
+    fi
+    return "$failed"
+}
+
 # Print summary
 print_summary() {
     echo -e "${BLUE}========================================${NC}"
@@ -824,10 +940,14 @@ run_specific_test() {
     log_info "Looking for test: ${target_test}"
     
     for test_config in "${TEST_CONFIGS[@]}"; do
-        IFS=':' read -r test_name values_files wait_label env_vars <<< "$test_config"
+        IFS=':' read -r test_name values_files wait_label env_vars platform <<< "$test_config"
         
         if [ "$test_name" = "$target_test" ]; then
             found=1
+            if ! is_platform_enabled "$platform"; then
+                continue
+            fi
+
             log_test "========================================"
             log_test "Running: ${test_name}"
             log_test "========================================"
@@ -876,11 +996,27 @@ run_specific_test() {
         done
         return 1
     fi
+
+    log_error "Test '${target_test}' is not configured for '${ENVIRONMENT}'"
+    return 1
 }
 
 # Main execution
 main() {
     check_prerequisites
+
+    if [ "$ENVIRONMENT" = "windows" ]; then
+        setup_existing_cluster
+        setup_helm_repos
+        create_secret
+        if [ -n "$RUN_SPECIFIC_TEST" ]; then
+            run_specific_test "$RUN_SPECIFIC_TEST"
+            return $?
+        fi
+        run_workflow_mode
+        return $?
+    fi
+
     setup_kind_cluster
     get_host_endpoint
     build_custom_image

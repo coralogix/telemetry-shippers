@@ -17,6 +17,9 @@ spec:
         app: {{ .Name }}-{{ .DataType }}-statefulset
     spec:
       restartPolicy: Always
+      # telemetrygen is a Linux image; keep it off Windows nodes in mixed EKS clusters.
+      nodeSelector:
+        kubernetes.io/os: linux
       containers:
       - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
         name: telemetrygen

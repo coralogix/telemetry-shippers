@@ -4,6 +4,9 @@ metadata:
   name: nginx
   namespace: e2e
 spec:
+  # telemetrygen/nginx test images are Linux images; keep them off Windows nodes in mixed EKS clusters.
+  nodeSelector:
+    kubernetes.io/os: linux
   containers:
   - name: nginx
     image: nginx:1.14.2

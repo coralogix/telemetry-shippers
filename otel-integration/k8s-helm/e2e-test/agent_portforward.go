@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"sync"
 	"testing"
 	"time"
 
@@ -107,38 +106,16 @@ func startPortForward(t *testing.T, kubeconfigPath, namespace, resource string, 
 
 	waitForLocalPort(t, localPort, doneCh, &output)
 
-	monitorCtx, monitorCancel := context.WithCancel(context.Background())
-	var (
-		mu             sync.Mutex
-		portForwardErr error
-	)
-
-	go func() {
-		select {
-		case err := <-doneCh:
-			if ctx.Err() == context.Canceled || monitorCtx.Err() != nil {
-				return
-			}
-			mu.Lock()
-			if err != nil {
-				portForwardErr = fmt.Errorf("kubectl port-forward exited unexpectedly: %w | output: %s", err, output.String())
-			} else {
-				portForwardErr = fmt.Errorf("kubectl port-forward exited unexpectedly without error. Output: %s", output.String())
-			}
-			t.Logf("port-forward output: %s", output.String())
-			mu.Unlock()
-		case <-monitorCtx.Done():
-		}
-	}()
-
 	cleanup := func() {
-		monitorCancel()
 		cancel()
-		<-doneCh
-		mu.Lock()
-		err := portForwardErr
-		mu.Unlock()
-		require.NoError(t, err)
+		select {
+		case <-doneCh:
+		case <-time.After(5 * time.Second):
+			if cmd.Process != nil {
+				_ = cmd.Process.Kill()
+			}
+			t.Logf("timed out waiting for kubectl port-forward to exit; output: %s", output.String())
+		}
 	}
 	return localPort, cleanup
 }

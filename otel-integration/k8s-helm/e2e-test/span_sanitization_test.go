@@ -28,7 +28,7 @@ type spanSanitizationExpectation struct {
 }
 
 func TestE2E_SpanSanitization(t *testing.T) {
-	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	requireHostEndpoint(t)
 
 	kubeconfigPath := testKubeConfig
 	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {
