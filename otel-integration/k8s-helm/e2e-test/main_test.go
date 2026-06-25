@@ -43,11 +43,12 @@ const (
 )
 
 type agentScenarioResult struct {
-	logs      []plog.Logs
-	metrics   []pmetric.Metrics
-	traces    []ptrace.Traces
-	namespace string
-	testID    string
+	logs             []plog.Logs
+	metrics          []pmetric.Metrics
+	traces           []ptrace.Traces
+	namespace        string
+	testID           string
+	windowsNodeNames map[string]struct{}
 }
 
 var (
@@ -57,6 +58,11 @@ var (
 
 func TestE2E_Agent(t *testing.T) {
 	scenario := getAgentScenario(t)
+
+	if isWindowsE2EEnvironment() {
+		requireWindowsAgentMetrics(t, scenario)
+		return
+	}
 
 	checkSystemLogsAttributes(t, scenario.logs)
 	checkResourceMetrics(t, scenario.metrics)
@@ -81,7 +87,7 @@ func getAgentScenario(t *testing.T) agentScenarioResult {
 func collectAgentScenario(t *testing.T) agentScenarioResult {
 	t.Helper()
 
-	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+	requireHostEndpoint(t)
 
 	testDataDir := filepath.Join("testdata")
 
@@ -92,6 +98,10 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 
 	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
 	require.NoError(t, err)
+	windowsNodeNames := listWindowsNodeNames(t, k8sClient)
+	if isWindowsE2EEnvironment() {
+		return collectWindowsAgentScenario(t, windowsNodeNames)
+	}
 
 	nsFile := filepath.Join(testDataDir, "namespace.yaml")
 	buf, err := os.ReadFile(nsFile)
@@ -101,6 +111,7 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 	require.NoErrorf(t, err, "failed to create k8s namespace from file %s", nsFile)
 
 	testNs := nsObj.GetName()
+	waitForDefaultServiceAccount(t, k8sClient, testNs)
 
 	podFile := filepath.Join(testDataDir, "pod.yaml")
 	buf, err = os.ReadFile(podFile)
@@ -159,16 +170,99 @@ func collectAgentScenario(t *testing.T) agentScenarioResult {
 	})
 
 	waitForLogs(t, 1, logsConsumer)
-	waitForMetrics(t, 20, metricsConsumer)
 	waitForTraces(t, 10, tracesConsumer)
+	waitForMetrics(t, 20, metricsConsumer)
 
 	return agentScenarioResult{
-		logs:      cloneLogs(logsConsumer.AllLogs()),
-		metrics:   cloneMetrics(metricsConsumer.AllMetrics()),
-		traces:    cloneTraces(tracesConsumer.AllTraces()),
-		namespace: testNs,
-		testID:    testID,
+		logs:             cloneLogs(logsConsumer.AllLogs()),
+		metrics:          cloneMetrics(metricsConsumer.AllMetrics()),
+		traces:           cloneTraces(tracesConsumer.AllTraces()),
+		namespace:        testNs,
+		testID:           testID,
+		windowsNodeNames: windowsNodeNames,
 	}
+}
+
+func collectWindowsAgentScenario(t *testing.T, windowsNodeNames map[string]struct{}) agentScenarioResult {
+	t.Helper()
+
+	metricsConsumer := new(consumertest.MetricsSink)
+	shutdownSink := StartUpSinks(t, ReceiverSinks{
+		Metrics: &MetricSinkConfig{
+			Consumer: metricsConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4317,
+			},
+		},
+	})
+	defer shutdownSink()
+
+	waitForMetrics(t, 20, metricsConsumer)
+
+	return agentScenarioResult{
+		metrics:          cloneMetrics(metricsConsumer.AllMetrics()),
+		windowsNodeNames: windowsNodeNames,
+	}
+}
+
+func requireHostEndpoint(t *testing.T) {
+	t.Helper()
+	require.NotEmpty(t, os.Getenv("HOSTENDPOINT"), "HOSTENDPOINT must be set")
+	if isWindowsE2EEnvironment() {
+		return
+	}
+	require.Equal(t, xk8stest.HostEndpoint(t), os.Getenv("HOSTENDPOINT"), "HostEndpoints does not match env and detected")
+}
+
+func isWindowsE2EEnvironment() bool {
+	return os.Getenv("E2E_ENVIRONMENT") == "windows"
+}
+
+func listWindowsNodeNames(t *testing.T, client *xk8stest.K8sClient) map[string]struct{} {
+	t.Helper()
+	if !isWindowsE2EEnvironment() {
+		return nil
+	}
+
+	nodes, err := client.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("nodes")).List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+
+	names := map[string]struct{}{}
+	for _, node := range nodes.Items {
+		if node.GetLabels()["kubernetes.io/os"] == "windows" {
+			names[node.GetName()] = struct{}{}
+		}
+	}
+	require.NotEmpty(t, names, "windows e2e requires at least one Windows node")
+	return names
+}
+
+func requireWindowsAgentMetrics(t *testing.T, scenario agentScenarioResult) {
+	t.Helper()
+
+	for _, current := range scenario.metrics {
+		for i := 0; i < current.ResourceMetrics().Len(); i++ {
+			attrs := current.ResourceMetrics().At(i).Resource().Attributes()
+			nodeName, ok := attrs.Get("k8s.node.name")
+			if !ok {
+				continue
+			}
+			if _, found := scenario.windowsNodeNames[nodeName.AsString()]; found {
+				return
+			}
+		}
+	}
+
+	require.Failf(t, "missing Windows agent metrics", "expected metrics from Windows nodes: %v", sortedKeys(scenario.windowsNodeNames))
+}
+
+func sortedKeys(values map[string]struct{}) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func ensureNamespaceIsClean(t *testing.T, client *xk8stest.K8sClient, manifest []byte, manifestPath string) {
@@ -197,6 +291,16 @@ func ensureNamespaceIsClean(t *testing.T, client *xk8stest.K8sClient, manifest [
 			Get(context.Background(), nsName, metav1.GetOptions{})
 		return apierrors.IsNotFound(err)
 	}, 2*time.Minute, 2*time.Second, "namespace %s still terminating", nsName)
+}
+
+func waitForDefaultServiceAccount(t *testing.T, client *xk8stest.K8sClient, namespace string) {
+	t.Helper()
+
+	serviceAccountsRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
+	require.Eventually(t, func() bool {
+		_, err := client.DynamicClient.Resource(serviceAccountsRes).Namespace(namespace).Get(context.Background(), "default", metav1.GetOptions{})
+		return err == nil
+	}, time.Minute, time.Second, "default service account was not created in namespace %s", namespace)
 }
 
 func decodeManifestObject(t *testing.T, manifest []byte, manifestPath string) *unstructured.Unstructured {
@@ -400,6 +504,9 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 
 	attributes.Range(func(k string, v pcommon.Value) bool {
 		val, ok := compareMap[k]
+		if !ok && isOptionalResourceDetectionAttribute(k) {
+			return true
+		}
 		if !ok {
 			attributes.Range(func(k string, v pcommon.Value) bool {
 				fmt.Printf("found attribute: scopeName: %s, attribute: %v\n", scopeName, k)
@@ -414,6 +521,15 @@ func checkResourceAttributes(t *testing.T, attributes pcommon.Map, scopeName str
 	})
 
 	return nil
+}
+
+func isOptionalResourceDetectionAttribute(key string) bool {
+	switch key {
+	case "cloud.availability_zone", "host.image.id", "host.type":
+		return true
+	default:
+		return false
+	}
 }
 
 func checkTracesAttributes(t *testing.T, actual []ptrace.Traces, testID string, testNs string) error {
