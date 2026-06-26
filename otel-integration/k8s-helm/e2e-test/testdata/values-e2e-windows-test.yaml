@@ -1,9 +1,15 @@
 # Override values for Windows E2E: export Windows-agent telemetry to local sinks.
 global:
-  logLevel: "info"
+  logLevel: "debug"
   hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent-windows:
+  podSecurityContext:
+    windowsOptions:
+      runAsUserName: "NT AUTHORITY\\SYSTEM"
+  securityContext:
+    windowsOptions:
+      runAsUserName: "NT AUTHORITY\\SYSTEM"
   presets:
     coralogixExporter:
       enabled: false
