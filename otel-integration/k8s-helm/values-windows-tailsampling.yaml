@@ -79,6 +79,9 @@ opentelemetry-agent-windows:
     priorityValue: 1000000000
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
+  securityContext:
+    windowsOptions:
+      runAsUserName: "NT AUTHORITY\\SYSTEM"
 
   presets:
     metadata:

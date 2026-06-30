@@ -68,14 +68,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -97,7 +97,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
       debug: {}
     extensions:
       file_storage:
@@ -621,14 +621,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -650,13 +650,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -1471,14 +1471,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -1500,13 +1500,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.321
+            X-Coralogix-Distribution: helm-otel-integration/0.0.322
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -2400,7 +2400,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 09c934aee5afee64fb3d6caae2205ea6583d12adf0e9a3f8a47ca8515b29e2e8
+        checksum/config: b1e29121650fa96abfaa4f61ad4bb3385436979b217c7f55e612b023e869de5f
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-windows
@@ -2418,7 +2418,8 @@ spec:
             - "C:\\otelcol-contrib.exe"
             - --config=C:\\conf\relay.yaml
           securityContext:
-            {}
+            windowsOptions:
+              runAsUserName: NT AUTHORITY\SYSTEM
           image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.154.0-windows-2019-amd64"
           imagePullPolicy: Always
           ports:
@@ -2574,7 +2575,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a7c76f12081db149f9672c8438b541f9e5722de7762e0ac61a01eb24c82e3338
+        checksum/config: 8924065c1032701e5a29098978faa7303b4c50dbc291372a3ffa45725a3a3129
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -2762,7 +2763,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 70c6468f986a79b2af07942046d5096fa73ace7694cac56fe98d20731f69d5c0
+        checksum/config: ba203d32f9ed7dc7bc66cd80df2156e23c63a326225e580e7ff07a7295d588e5
 
       labels:
         app.kubernetes.io/name: opentelemetry-cluster-collector

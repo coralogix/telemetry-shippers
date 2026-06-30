@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.322 / 2026-06-30
+
+- [Fix] Run the Windows integration agent container as `NT AUTHORITY\SYSTEM` so the default Windows log collection preset can read pod log files.
+
 ### v0.0.321 / 2026-06-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.2
