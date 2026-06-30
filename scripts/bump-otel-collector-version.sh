@@ -295,6 +295,7 @@ run_post_commands() {
   if [[ "$DRY_RUN" == "true" ]]; then
     if [[ "$chart" == "otel-integration" ]]; then
       log_info "  Would run: helm dependency update"
+      log_info "  Would run: .github/scripts/check-helm-golden-renders.sh --update"
     elif [[ "$chart" == "otel-ecs-ec2" ]]; then
       log_info "  Would run: helm dependency update && make all"
     else
