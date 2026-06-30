@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.36 / 2026-06-30
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.2`.
+
+#### Changes from opentelemetry-collector 0.134.2:
+- [Feat] Add per-object startup delays for Kubernetes resource catalog periodic collection to spread initial pull requests.
+
 ### v0.0.35 / 2026-06-30
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.1`.
