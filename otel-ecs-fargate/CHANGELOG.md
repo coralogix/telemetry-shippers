@@ -8,6 +8,10 @@
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
 
+### 1.1.0 / 2026-06-30
+
+* [UPDATE] Use `otlp` v1.10.0 for profiles ingestion
+
 ### 1.0.0 / 2026-03-11
 
 * [UPDATE] Changed from Parameter Store to S3 for configuration
