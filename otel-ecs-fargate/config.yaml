@@ -130,6 +130,7 @@ exporters:
     profiles:
       headers:
         X-Coralogix-Distribution: ecs-fargate-integration/1.0.0
+        x-coralogix-ingress: otlp/v1.10.0
     subsystem_name: integration
     subsystem_name_attributes:
     - aws.ecs.container.name
