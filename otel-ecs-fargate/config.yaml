@@ -122,14 +122,14 @@ exporters:
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/1.0.0
+        X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/1.0.0
+        X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/1.0.0
+        X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
         x-coralogix-ingress: otlp/v1.10.0
     subsystem_name: integration
     subsystem_name_attributes:
@@ -139,13 +139,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/1.0.0
+        X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-fargate-integration/1.0.0
+        X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     subsystem_name: catalog
