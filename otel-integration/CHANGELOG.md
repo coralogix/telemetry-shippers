@@ -2,9 +2,13 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.320 / 2026-06-24
+### v0.0.320 / 2026-06-30
 
-- [Feat] Add optional `instrumentationWebhook` support for Java, Python, and .NET workload auto-instrumentation.
+- [Chore] Bump chart dependency to opentelemetry-collector 0.134.1
+- [Feat] Add optional `opentelemetry-autoinstrumentation` support for Java, Python, and .NET workload auto-instrumentation.
+
+#### Changes from opentelemetry-collector 0.134.1:
+- [Fix] Use the ECS Coralogix distribution header for all ECS signals and centralize the header mapping in a shared template helper.
 
 ### v0.0.319 / 2026-06-23
 

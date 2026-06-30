@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.35 / 2026-06-30
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.1`.
+
+#### Changes from opentelemetry-collector 0.134.1:
+- [Fix] Use the ECS Coralogix distribution header for all ECS signals and centralize the header mapping in a shared template helper.
+
 ### v0.0.34 / 2026-06-23
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.0`.
