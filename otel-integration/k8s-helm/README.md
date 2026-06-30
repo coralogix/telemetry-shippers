@@ -195,7 +195,7 @@ The chart can deploy an instrumentation webhook that injects OpenTelemetry auto-
 Enable it with:
 
 ```yaml
-instrumentationWebhook:
+opentelemetry-autoinstrumentation:
   enabled: true
 ```
 
@@ -211,7 +211,7 @@ Java and .NET use OTLP/gRPC to `http://$(OTEL_NODE_IP):4317`. Python uses OTLP H
 
 > [!IMPORTANT]
 >
-> Do not enable `instrumentationWebhook` in a cluster that already has another OpenTelemetry Operator webhook installed, unless the webhook names and selectors are configured to avoid collisions.
+> Do not enable `opentelemetry-autoinstrumentation` in a cluster that already has another OpenTelemetry Operator webhook installed, unless the webhook names and selectors are configured to avoid collisions.
 
 ### Troubleshooting
 

@@ -1,4 +1,4 @@
-instrumentationWebhook:
+opentelemetry-autoinstrumentation:
   enabled: true
 
 opentelemetry-agent:
