@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.321 / 2026-06-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.134.2
+
+#### Changes from opentelemetry-collector 0.134.2:
+- [Feat] Add per-object startup delays for Kubernetes resource catalog periodic collection to spread initial pull requests.
+
 ### v0.0.320 / 2026-06-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.1
