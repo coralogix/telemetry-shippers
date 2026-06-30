@@ -312,6 +312,15 @@ run_post_commands() {
       add_chart_warning "$chart" "helm dependency update failed"
       has_warning=true
     fi
+
+    log_info "  Running Helm render golden files update..."
+    cmd_output=$(.github/scripts/check-helm-golden-renders.sh --update 2>&1) && cmd_exit=0 || cmd_exit=$?
+    if [[ $cmd_exit -ne 0 ]]; then
+      echo "$cmd_output" >&2
+      log_error "  Failed: Helm render golden files update (exit code: $cmd_exit)"
+      add_chart_warning "$chart" "Helm render golden files update failed"
+      has_warning=true
+    fi
   else
     # Standalone charts: update deps first, then generate config
     log_info "  Running helm dependency update..."
