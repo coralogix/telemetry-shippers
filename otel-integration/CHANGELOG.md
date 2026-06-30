@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.320 / 2026-06-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.134.1
+
+#### Changes from opentelemetry-collector 0.134.1:
+- [Fix] Use the ECS Coralogix distribution header for all ECS signals and centralize the header mapping in a shared template helper.
+
 ### v0.0.319 / 2026-06-23
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.0
