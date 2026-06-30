@@ -37,23 +37,23 @@ CHART_WARNINGS=""
 
 get_chart_path() {
   case "$1" in
-    otel-ecs-ec2) echo "otel-ecs-ec2" ;;
-    otel-integration) echo "otel-integration/k8s-helm" ;;
-    otel-linux-standalone) echo "otel-linux-standalone" ;;
-    otel-macos-standalone) echo "otel-macos-standalone" ;;
-    otel-windows-standalone) echo "otel-windows-standalone" ;;
-    *) echo "" ;;
+  otel-ecs-ec2) echo "otel-ecs-ec2" ;;
+  otel-integration) echo "otel-integration/k8s-helm" ;;
+  otel-linux-standalone) echo "otel-linux-standalone" ;;
+  otel-macos-standalone) echo "otel-macos-standalone" ;;
+  otel-windows-standalone) echo "otel-windows-standalone" ;;
+  *) echo "" ;;
   esac
 }
 
 get_changelog_path() {
   case "$1" in
-    otel-ecs-ec2) echo "otel-ecs-ec2/CHANGELOG.md" ;;
-    otel-integration) echo "otel-integration/CHANGELOG.md" ;;
-    otel-linux-standalone) echo "otel-linux-standalone/CHANGELOG.md" ;;
-    otel-macos-standalone) echo "otel-macos-standalone/CHANGELOG.md" ;;
-    otel-windows-standalone) echo "otel-windows-standalone/CHANGELOG.md" ;;
-    *) echo "" ;;
+  otel-ecs-ec2) echo "otel-ecs-ec2/CHANGELOG.md" ;;
+  otel-integration) echo "otel-integration/CHANGELOG.md" ;;
+  otel-linux-standalone) echo "otel-linux-standalone/CHANGELOG.md" ;;
+  otel-macos-standalone) echo "otel-macos-standalone/CHANGELOG.md" ;;
+  otel-windows-standalone) echo "otel-windows-standalone/CHANGELOG.md" ;;
+  *) echo "" ;;
   esac
 }
 
@@ -87,45 +87,45 @@ usage() {
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case $1 in
-      --version)
-        NEW_VERSION="$2"
-        shift 2
-        ;;
-      --changelog-file)
-        CHANGELOG_FILE="$2"
-        shift 2
-        ;;
-      --source-commit)
-        SOURCE_COMMIT="$2"
-        shift 2
-        ;;
-      --source-pr)
-        SOURCE_PR="$2"
-        shift 2
-        ;;
-      --source-repo)
-        SOURCE_REPO="$2"
-        shift 2
-        ;;
-      --skip)
-        SKIP_CHARTS="$SKIP_CHARTS $2"
-        shift 2
-        ;;
-      --summary-file)
-        SUMMARY_FILE="$2"
-        shift 2
-        ;;
-      --dry-run)
-        DRY_RUN=true
-        shift
-        ;;
-      --help|-h)
-        usage
-        ;;
-      *)
-        log_error "Unknown option: $1"
-        exit 1
-        ;;
+    --version)
+      NEW_VERSION="$2"
+      shift 2
+      ;;
+    --changelog-file)
+      CHANGELOG_FILE="$2"
+      shift 2
+      ;;
+    --source-commit)
+      SOURCE_COMMIT="$2"
+      shift 2
+      ;;
+    --source-pr)
+      SOURCE_PR="$2"
+      shift 2
+      ;;
+    --source-repo)
+      SOURCE_REPO="$2"
+      shift 2
+      ;;
+    --skip)
+      SKIP_CHARTS="$SKIP_CHARTS $2"
+      shift 2
+      ;;
+    --summary-file)
+      SUMMARY_FILE="$2"
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    --help | -h)
+      usage
+      ;;
+    *)
+      log_error "Unknown option: $1"
+      exit 1
+      ;;
     esac
   done
 
@@ -143,7 +143,7 @@ should_skip() {
 increment_patch_version() {
   local version="$1"
   local major minor patch
-  IFS='.' read -r major minor patch <<< "$version"
+  IFS='.' read -r major minor patch <<<"$version"
   echo "${major}.${minor}.$((patch + 1))"
 }
 
@@ -162,7 +162,7 @@ update_chart_yaml() {
   local chart_path
   chart_path=$(get_chart_path "$chart")
   local chart_yaml="$REPO_ROOT/$chart_path/Chart.yaml"
-  
+
   if [[ ! -f "$chart_yaml" ]]; then
     log_error "Chart.yaml not found: $chart_yaml"
     return 1
@@ -172,7 +172,7 @@ update_chart_yaml() {
   current_version=$(get_current_chart_version "$chart_yaml")
   local new_chart_version
   new_chart_version=$(increment_patch_version "$current_version")
-  
+
   local current_dep_version
   current_dep_version=$(get_dependency_version "$chart_yaml")
 
@@ -204,7 +204,7 @@ update_values_yaml() {
 
   local current_global_version
   current_global_version=$(yq '.global.version // ""' "$values_yaml" | tr -d '"')
-  
+
   if [[ -z "$current_global_version" ]]; then
     log_warn "  No global.version in values.yaml (skipping)"
     return 0
@@ -249,18 +249,18 @@ update_changelog() {
   if [[ "$chart" == "otel-ecs-ec2" ]]; then
     change_line="- [Change] Update Helm dependency \`opentelemetry-agent\` to chart version \`${NEW_VERSION}\`."
   fi
-  
-  echo "### ${header_version} / ${today}" > "$entry_file"
-  echo "" >> "$entry_file"
-  echo "$change_line" >> "$entry_file"
+
+  echo "### ${header_version} / ${today}" >"$entry_file"
+  echo "" >>"$entry_file"
+  echo "$change_line" >>"$entry_file"
 
   if [[ -n "$CHANGELOG_FILE" && -f "$CHANGELOG_FILE" ]]; then
-    echo "" >> "$entry_file"
+    echo "" >>"$entry_file"
     # Changelog file already contains version headers from workflow
-    cat "$CHANGELOG_FILE" >> "$entry_file"
+    cat "$CHANGELOG_FILE" >>"$entry_file"
   fi
 
-  echo "" >> "$entry_file"
+  echo "" >>"$entry_file"
 
   # Find first version header line number and insert before it
   local first_version_line
@@ -270,13 +270,13 @@ update_changelog() {
     # Insert entry before the first version header
     local temp_file
     temp_file=$(mktemp)
-    head -n $((first_version_line - 1)) "$changelog_path" > "$temp_file"
-    cat "$entry_file" >> "$temp_file"
-    tail -n +"$first_version_line" "$changelog_path" >> "$temp_file"
+    head -n $((first_version_line - 1)) "$changelog_path" >"$temp_file"
+    cat "$entry_file" >>"$temp_file"
+    tail -n +"$first_version_line" "$changelog_path" >>"$temp_file"
     mv "$temp_file" "$changelog_path"
   else
     # No version headers found, append to end
-    cat "$entry_file" >> "$changelog_path"
+    cat "$entry_file" >>"$changelog_path"
   fi
 
   rm -f "$entry_file"
@@ -331,7 +331,7 @@ run_post_commands() {
       add_chart_warning "$chart" "helm dependency update failed"
       has_warning=true
     fi
-    
+
     local makefile="$REPO_ROOT/${chart}/Makefile"
     if [[ -f "$makefile" ]]; then
       local make_target="otel-config"
@@ -364,7 +364,7 @@ run_post_commands() {
 
 process_chart() {
   local chart="$1"
-  
+
   log_info "Processing $chart..."
 
   if should_skip "$chart"; then
@@ -401,7 +401,7 @@ process_chart() {
 
   update_values_yaml "$chart" "$new_chart_version"
   update_changelog "$chart" "$new_chart_version"
-  
+
   if run_post_commands "$chart"; then
     set_chart_status "$chart" "ok"
     log_success "  Completed $chart"
@@ -414,7 +414,7 @@ process_chart() {
 generate_summary() {
   local has_failures=false
   local has_warnings=false
-  
+
   echo "" >&2
   log_info "=========================================="
   log_info "Summary"
@@ -423,31 +423,31 @@ generate_summary() {
   echo "New opentelemetry-collector version: $NEW_VERSION" >&2
   echo "" >&2
   echo "Charts:" >&2
-  
+
   for chart in $ALL_CHARTS; do
     local status
     status=$(get_chart_status "$chart")
     case "$status" in
-      ok)
-        echo "  [OK]      $chart" >&2
-        ;;
-      skipped)
-        echo "  [SKIP]    $chart" >&2
-        ;;
-      warning)
-        echo "  [WARN]    $chart" >&2
-        has_warnings=true
-        ;;
-      failed)
-        echo "  [FAILED]  $chart" >&2
-        has_failures=true
-        ;;
-      *)
-        echo "  [?]       $chart" >&2
-        ;;
+    ok)
+      echo "  [OK]      $chart" >&2
+      ;;
+    skipped)
+      echo "  [SKIP]    $chart" >&2
+      ;;
+    warning)
+      echo "  [WARN]    $chart" >&2
+      has_warnings=true
+      ;;
+    failed)
+      echo "  [FAILED]  $chart" >&2
+      has_failures=true
+      ;;
+    *)
+      echo "  [?]       $chart" >&2
+      ;;
     esac
   done
-  
+
   # Show warnings details
   if [[ -n "$CHART_WARNINGS" ]]; then
     echo "" >&2
@@ -459,7 +459,7 @@ generate_summary() {
       echo "  - $wchart: $wtext" >&2
     done
   fi
-  
+
   echo "" >&2
   if [[ -n "$SOURCE_COMMIT" ]]; then
     echo "Source commit: $SOURCE_COMMIT" >&2
@@ -471,16 +471,16 @@ generate_summary() {
     echo "" >&2
     log_warn "DRY RUN - no changes were made"
   fi
-  
+
   echo "" >&2
   echo "Summary file: $SUMMARY_FILE" >&2
-  
+
   if [[ "$has_failures" == "true" ]]; then
     echo "" >&2
     log_error "Some charts failed to process"
     return 1
   fi
-  
+
   if [[ "$has_warnings" == "true" ]]; then
     echo "" >&2
     log_warn "Some charts completed with warnings - review the output above"
@@ -490,12 +490,12 @@ generate_summary() {
 generate_markdown_summary() {
   local has_warnings=false
   local has_failures=false
-  
+
   {
     echo "## OpenTelemetry Collector Bump Summary"
     echo ""
     echo "**Version:** \`$NEW_VERSION\`"
-    
+
     # Source links
     if [[ -n "$SOURCE_COMMIT" || -n "$SOURCE_PR" ]]; then
       echo -n "**Source:** "
@@ -512,43 +512,43 @@ generate_markdown_summary() {
       fi
       echo "$links"
     fi
-    
+
     echo ""
     echo "### Charts"
     echo ""
     echo "| Chart | Status | Notes |"
     echo "|-------|--------|-------|"
-    
+
     for chart in $ALL_CHARTS; do
       local status
       status=$(get_chart_status "$chart")
       local status_icon notes=""
-      
+
       case "$status" in
-        ok)
-          status_icon="✅ OK"
-          ;;
-        skipped)
-          status_icon="⏭️ Skipped"
-          ;;
-        warning)
-          status_icon="⚠️ Warning"
-          has_warnings=true
-          # Get warning for this chart
-          notes=$(echo "$CHART_WARNINGS" | tr '|' '\n' | grep "^$chart:" | cut -d: -f2- | head -1)
-          ;;
-        failed)
-          status_icon="❌ Failed"
-          has_failures=true
-          ;;
-        *)
-          status_icon="❓ Unknown"
-          ;;
+      ok)
+        status_icon="✅ OK"
+        ;;
+      skipped)
+        status_icon="⏭️ Skipped"
+        ;;
+      warning)
+        status_icon="⚠️ Warning"
+        has_warnings=true
+        # Get warning for this chart
+        notes=$(echo "$CHART_WARNINGS" | tr '|' '\n' | grep "^$chart:" | cut -d: -f2- | head -1)
+        ;;
+      failed)
+        status_icon="❌ Failed"
+        has_failures=true
+        ;;
+      *)
+        status_icon="❓ Unknown"
+        ;;
       esac
-      
+
       echo "| $chart | $status_icon | $notes |"
     done
-    
+
     # Warnings section
     if [[ -n "$CHART_WARNINGS" ]]; then
       echo ""
@@ -561,7 +561,7 @@ generate_markdown_summary() {
         echo "- **$wchart:** $wtext"
       done
     fi
-    
+
     # Changelog entries if provided (already includes version headers)
     if [[ -n "$CHANGELOG_FILE" && -f "$CHANGELOG_FILE" ]]; then
       echo ""
@@ -569,7 +569,7 @@ generate_markdown_summary() {
       echo ""
       cat "$CHANGELOG_FILE"
     fi
-    
+
     # Footer
     echo ""
     echo "---"
@@ -578,17 +578,23 @@ generate_markdown_summary() {
     else
       echo "*Generated by bump-otel-collector-version.sh*"
     fi
-    
-  } > "$SUMMARY_FILE"
-  
+
+  } >"$SUMMARY_FILE"
+
   log_info "Markdown summary written to: $SUMMARY_FILE"
 }
 
 main() {
   parse_args "$@"
 
-  command -v yq >/dev/null 2>&1 || { log_error "yq is required but not installed"; exit 1; }
-  command -v helm >/dev/null 2>&1 || { log_error "helm is required but not installed"; exit 1; }
+  command -v yq >/dev/null 2>&1 || {
+    log_error "yq is required but not installed"
+    exit 1
+  }
+  command -v helm >/dev/null 2>&1 || {
+    log_error "helm is required but not installed"
+    exit 1
+  }
 
   log_info "Bumping opentelemetry-collector to version $NEW_VERSION"
   if [[ "$DRY_RUN" == "true" ]]; then
