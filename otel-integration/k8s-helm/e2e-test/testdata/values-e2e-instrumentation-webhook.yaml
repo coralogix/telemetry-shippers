@@ -1,0 +1,11 @@
+opentelemetry-autoinstrumentation:
+  enabled: true
+
+opentelemetry-agent:
+  config:
+    service:
+      pipelines:
+        traces:
+          exporters:
+            - otlp/traces
+            - debug

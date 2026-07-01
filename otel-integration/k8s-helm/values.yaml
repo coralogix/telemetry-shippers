@@ -17,6 +17,77 @@ global:
 # - eks/fargate
 # - gke/autopilot
 distribution: ""
+
+# Deploy the OpenTelemetry instrumentation webhook without requiring Instrumentation CRDs.
+# When enabled, supported application pods can be auto-instrumented by adding
+# instrumentation.opentelemetry.io/inject-java, inject-python, or inject-dotnet annotations.
+opentelemetry-autoinstrumentation:
+  enabled: false
+  # Use a stable name so webhook resources do not collide with a full operator installation.
+  nameOverride: otel-autoinstrumentation
+  # Keep CRDs disabled. This mode uses the static manager.config.instrumentations object below.
+  crds:
+    create: false
+  # cert-manager is optional. With certManager disabled, the webhook chart generates
+  # a self-signed serving certificate with Helm.
+  admissionWebhooks:
+    certManager:
+      enabled: false
+  manager:
+    # The webhook-only mode does not install OpenTelemetryCollector CRDs.
+    ignoreMissingCollectorCRDs: true
+    config:
+      # Use the static instrumentation config below instead of reading Instrumentation CRDs.
+      enable-instrumentation-crds: false
+      instrumentations:
+        spec:
+          # Common exporter endpoint. Language-specific env below can override it.
+          exporter:
+            endpoint: http://$(OTEL_NODE_IP):4317
+          propagators:
+            - tracecontext
+            - baggage
+          sampler:
+            type: parentbased_traceidratio
+            argument: "1.0"
+          # OTEL_NODE_IP sends telemetry to the agent DaemonSet on the same node as the workload pod.
+          env:
+            - name: OTEL_NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_TRACES_SAMPLER
+              value: always_on
+            - name: OTEL_LOGS_EXPORTER
+              value: none
+          java:
+            # Image must be set explicitly because this no-CRD mode does not use CRD defaulting.
+            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.28.1
+            env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://$(OTEL_NODE_IP):4317
+              - name: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: grpc
+          python:
+            # Python uses HTTP/protobuf on 4318; Java and .NET use gRPC on 4317.
+            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.63b1
+            env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://$(OTEL_NODE_IP):4318
+              - name: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: http/protobuf
+          dotnet:
+            # .NET auto-instrumentation currently supports x64 runtimes.
+            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:1.15.0
+            env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: http://$(OTEL_NODE_IP):4317
+              - name: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: grpc
+  # Webhook manager runs only on Linux nodes.
+  nodeSelector:
+    kubernetes.io/os: linux
+
 opentelemetry-agent:
   enabled: true
   mode: daemonset

@@ -188,6 +188,31 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
+### OpenTelemetry AutoInstrumentation without Instrumentation CRDs
+
+The chart can deploy an OpenTelemetry Operator webhook that injects OpenTelemetry auto-instrumentation into annotated application pods without requiring `Instrumentation` CRDs. This mode uses one static instrumentation configuration from Helm values and sends traces to the `opentelemetry-agent` DaemonSet on the same node as the application pod.
+
+Enable it with:
+
+```yaml
+opentelemetry-autoinstrumentation:
+  enabled: true
+```
+
+Supported annotations:
+
+```yaml
+instrumentation.opentelemetry.io/inject-java: "true"
+instrumentation.opentelemetry.io/inject-python: "true"
+instrumentation.opentelemetry.io/inject-dotnet: "true"
+```
+
+Java and .NET use OTLP/gRPC to `http://$(OTEL_NODE_IP):4317`. Python uses OTLP HTTP/protobuf to `http://$(OTEL_NODE_IP):4318`.
+
+> [!IMPORTANT]
+>
+> Do not enable `opentelemetry-autoinstrumentation` in a cluster that already has another OpenTelemetry Operator webhook installed, unless the webhook names and selectors are configured to avoid collisions.
+
 ### Troubleshooting
 
 During installation, you may encounter warning messages about missing namespace rules (`get`, `list`, `watch`). This is a known issue in OpenTelemetry (see [issue #2685](https://github.com/open-telemetry/opentelemetry-operator/issues/2685)) and does not impact the successful installation of the chart.
