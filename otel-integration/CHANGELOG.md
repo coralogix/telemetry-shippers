@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.322 / 2026-07-01
+
+- [Feat] Add stat metrics option to OBI config, defaults false.
+
 ### v0.0.321 / 2026-06-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.2

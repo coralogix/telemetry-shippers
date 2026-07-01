@@ -1571,15 +1571,16 @@ opentelemetry-cluster-collector:
 ```
 
 Notes:
+
 - To discover services via annotations, set `observeServices: true` and `enableServiceRule: true`.
 - Pod discovery uses `prometheus.io/scrape`, `prometheus.io/path`, and `prometheus.io/port` annotations.
 - Use the `prometheusAnnotationDiscovery` preset on the cluster-collector instead of adding a custom receiver_creator block to avoid double-scraping.
 
 ## Opentelemetry EBPF Instrumentation
 
-The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code. To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumenat.enabled` to `true` in the `values.yaml` file.
+The [OpenTelemetry EBPF Instrumentation](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) is an OpenTelemetry component that uses eBPF to collect telemetry data from the Linux kernel, such as network metrics and spans, without requiring modifications to the application code. To enable the OpenTelemetry EBPF Instrumentation, set `opentelemetry-ebpf-instrumentation.enabled` to `true` in the `values.yaml` file.
 
-for a full list of values for this chart, please look at [values.yaml](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
+For a full list of values for this chart, please look at [values.yaml](https://github.com/coralogix/opentelemetry-helm-charts/blob/main/charts/opentelemetry-ebpf-instrumentation/values.yaml)
 
 ### K8s Cache
 
