@@ -188,9 +188,9 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
   --render-subchart-notes -f values-crd-override.yaml --set global.clusterName=<cluster_name> --set global.domain=<domain>
 ```
 
-### Auto-instrumentation webhook without Instrumentation CRDs
+### OpenTelemetry AutoInstrumentation without Instrumentation CRDs
 
-The chart can deploy an instrumentation webhook that injects OpenTelemetry auto-instrumentation into annotated application pods without requiring `Instrumentation` CRDs. This mode uses one static instrumentation configuration from Helm values and sends traces to the `opentelemetry-agent` DaemonSet on the same node as the application pod.
+The chart can deploy an OpenTelemetry Operator webhook that injects OpenTelemetry auto-instrumentation into annotated application pods without requiring `Instrumentation` CRDs. This mode uses one static instrumentation configuration from Helm values and sends traces to the `opentelemetry-agent` DaemonSet on the same node as the application pod.
 
 Enable it with:
 

@@ -13,3 +13,8 @@ validators:
   # Ignore links that includes 'assets' because the generated content will resolve them correctly.
   - regex: '.+/assets/.+'
     type: ignore
+  # Ignore remote docs pages that reject or drop validator requests.
+  - regex: '^https:\/\/dev\.mysql\.com\/doc\/refman\/8\.0\/en\/server-logs\.html$'
+    type: ignore
+  - regex: '^https:\/\/opentelemetry\.io\/docs\/collector\/configuration\/$'
+    type: ignore

@@ -23,8 +23,8 @@ distribution: ""
 # instrumentation.opentelemetry.io/inject-java, inject-python, or inject-dotnet annotations.
 opentelemetry-autoinstrumentation:
   enabled: false
-  # Use a stable short name so webhook resources do not collide with a full operator installation.
-  nameOverride: instrumentation-webhook
+  # Use a stable name so webhook resources do not collide with a full operator installation.
+  nameOverride: otel-autoinstrumentation
   # Keep CRDs disabled. This mode uses the static manager.config.instrumentations object below.
   crds:
     create: false

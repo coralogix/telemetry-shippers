@@ -175,7 +175,7 @@ func waitForInstrumentationWebhookManager(k8sClient *xk8stest.K8sClient) error {
 	deployments := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	return eventually(5*time.Minute, 2*time.Second, func() (bool, error) {
 		list, err := k8sClient.DynamicClient.Resource(deployments).Namespace("default").List(context.Background(), metav1.ListOptions{
-			LabelSelector: "app.kubernetes.io/name=instrumentation-webhook,app.kubernetes.io/component=controller-manager",
+			LabelSelector: "app.kubernetes.io/name=otel-autoinstrumentation,app.kubernetes.io/component=controller-manager",
 		})
 		if err != nil {
 			return false, err
