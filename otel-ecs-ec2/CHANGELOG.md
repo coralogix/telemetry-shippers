@@ -1,5 +1,9 @@
 # Changelog
 
+### v0.0.37 / 2026-06-30
+
+- [Breaking] eBPF profiler profiles are now sent through the node-local agent `profilesCollection` pipeline enrichment and Coralogix export. Previously, the profiler sent profiles directly to Coralogix, so installations that customize the profiler or agent profile pipeline should update their configuration to route profiles through the agent.
+
 ### v0.0.36 / 2026-06-30
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.2`.
