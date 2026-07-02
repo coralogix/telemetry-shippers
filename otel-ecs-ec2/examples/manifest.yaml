@@ -11,9 +11,6 @@ metadata:
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.154.0"
     app.kubernetes.io/managed-by: Helm
-
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
 apiVersion: v1
@@ -878,7 +875,6 @@ data:
         resource:
           cx.agent.type: agent
           service.name: opentelemetry-collector
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -902,7 +898,6 @@ rules:
   - apiGroups: ["extensions"]
     resources: ["replicasets"]
     verbs: ["get", "list", "watch"]
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -924,7 +919,6 @@ subjects:
 - kind: ServiceAccount
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
 apiVersion: apps/v1

@@ -13,6 +13,7 @@ EBPF_ENABLE_SET ?= --set opentelemetry-ebpf-profiler.enabled=true
 
 HELM ?= helm
 YQ ?= yq
+MANIFEST_CLEANUP ?= sed 's/[[:space:]]*$$//' | sed -e ':a' -e 'N' -e '$$!ba' -e 's/\n\n*---/\n---/g'
 
 .PHONY: all otel-config otel-config-ebpf manifest manifest-ebpf
 
@@ -35,7 +36,8 @@ manifest:
 	@command -v $(HELM) >/dev/null 2>&1 || { echo "Error: helm not found in PATH" >&2; exit 1; }
 	@mkdir -p $(OUTPUT_DIR)
 	@$(HELM) dependency build $(CHART_PATH) >/dev/null
-	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) > $(MANIFEST_FILE)
+	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) \
+		| $(MANIFEST_CLEANUP) > $(MANIFEST_FILE)
 	@echo "Wrote $(MANIFEST_FILE)"
 
 # Render OpenTelemetry config with eBPF profiler enabled via --set
@@ -55,5 +57,6 @@ manifest-ebpf:
 	@command -v $(HELM) >/dev/null 2>&1 || { echo "Error: helm not found in PATH" >&2; exit 1; }
 	@mkdir -p $(OUTPUT_DIR)
 	@$(HELM) dependency build $(CHART_PATH) >/dev/null
-	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) $(EBPF_ENABLE_SET) > $(MANIFEST_EBPF_FILE)
+	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) $(EBPF_ENABLE_SET) \
+		| $(MANIFEST_CLEANUP) > $(MANIFEST_EBPF_FILE)
 	@echo "Wrote $(MANIFEST_EBPF_FILE)"
