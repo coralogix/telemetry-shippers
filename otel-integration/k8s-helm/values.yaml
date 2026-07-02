@@ -358,6 +358,8 @@ opentelemetry-agent:
     # profiler collector and enrich them with Kubernetes metadata before export.
     profilesCollection:
       enabled: true
+    profilesK8sAttributes:
+      enabled: true
       serviceLabels:
         - tag_name: service.label
           key: app.kubernetes.io/name

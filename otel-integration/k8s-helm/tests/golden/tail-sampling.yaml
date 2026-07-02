@@ -326,6 +326,10 @@ data:
             name: k8s.job.name
       k8sattributes/profiles:
         extract:
+          annotations:
+          - from: pod
+            key: app.coralogix.com/service
+            tag_name: service.annotation
           labels:
           - from: pod
             key: app.kubernetes.io/name
@@ -333,6 +337,9 @@ data:
           - from: pod
             key: app.kubernetes.io/instance
             tag_name: k8s.label.instance
+          - from: pod
+            key: app.kubernetes.io/name
+            tag_name: service.label
           metadata:
           - k8s.namespace.name
           - k8s.replicaset.name
@@ -489,6 +496,12 @@ data:
           - set(metric.name, "k8s.node.cpu.utilization") where metric.name == "k8s.node.cpu.usage"
       transform/profiles:
         profile_statements:
+        - set(resource.attributes["service.name"], resource.attributes["service.annotation"])
+          where resource.attributes["service.name"] == nil and resource.attributes["service.annotation"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["service.label"])
+          where resource.attributes["service.name"] == nil and resource.attributes["service.label"]
+          != nil
         - set(resource.attributes["service.name"], resource.attributes["k8s.label.instance"])
           where resource.attributes["service.name"] == nil and resource.attributes["k8s.label.instance"]
           != nil
@@ -2182,7 +2195,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 97f9b67b864ef5341ddc0458691799d574a60d7594fd45452823ceb092d3b46f
+        checksum/config: 999798f48b9431eba55e8903face64a9661ca031b9b5ecf438d44b92c2723f17
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent
