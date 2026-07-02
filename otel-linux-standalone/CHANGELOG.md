@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.42 / 2026-07-01
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.134.3
+
+#### Changes from opentelemetry-collector 0.134.3:
+- [Fix] The `profilesK8sAttributes` preset now is enabled by default.
+
 ### v0.0.41 / 2026-06-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.2

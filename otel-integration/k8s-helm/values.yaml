@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.322"
+  version: "0.0.323"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -357,6 +357,8 @@ opentelemetry-agent:
     # Configures the agent to receive eBPF profiler profiles from the node-local
     # profiler collector and enrich them with Kubernetes metadata before export.
     profilesCollection:
+      enabled: true
+    profilesK8sAttributes:
       enabled: true
       serviceLabels:
         - tag_name: service.label

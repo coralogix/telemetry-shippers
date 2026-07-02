@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.37 / 2026-07-01
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.3`.
+
+#### Changes from opentelemetry-collector 0.134.3:
+- [Fix] The `profilesK8sAttributes` preset now is enabled by default.
+
 ### v0.0.36 / 2026-06-30
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.2`.
