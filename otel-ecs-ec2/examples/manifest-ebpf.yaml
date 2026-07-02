@@ -1265,5 +1265,5 @@ spec:
             path: /sys/kernel/debug
       nodeSelector:
         kubernetes.io/os: linux
-      hostNetwork: false
+      hostNetwork: true
       hostPID: true
