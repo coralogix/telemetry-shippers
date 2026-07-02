@@ -1497,7 +1497,7 @@ The generated `kubernetes_sd_configs` is a common configuration syntax for disco
 
 The OpenTelemetry eBPF Profiler Collector runs the [otelcol-ebpf-profiler distribution](https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol-ebpf-profiler) as a DaemonSet to collect CPU profiles with eBPF and emit OTLP profiles. It is deployed as the `opentelemetry-ebpf-profiler` subchart and uses the same base chart values as the other collectors.
 
-The `ebpfProfiler` preset is intended for the eBPF profiler distribution. Use the `otlpExporter` preset to forward profiles to the node-local `opentelemetry-agent` over OTLP. Enable `profilesCollection` on the agent to receive profiles, enrich them with Kubernetes metadata, map `service.name`, and export them to Coralogix through the regular Coralogix exporter. To expose profiler metrics for scraping, enable `collectorMetrics` with `disablePrometheusReceiver: true` and rely on annotation-based discovery from the cluster-collector.
+The `ebpfProfiler` preset is intended for the eBPF profiler distribution. Use the `otlpExporter` preset to forward profiles to the node-local `opentelemetry-agent` over OTLP. Enable `profilesCollection` on the agent to receive profiles and `profilesK8sAttributes` to enrich them with Kubernetes metadata and map `service.name`. Profiles are exported to Coralogix through the regular Coralogix exporter. To expose profiler metrics for scraping, enable `collectorMetrics` with `disablePrometheusReceiver: true` and rely on annotation-based discovery from the cluster-collector.
 
 The legacy `coralogix-ebpf-profiler` chart configuration is still available for compatibility. See `k8s-helm/values-ebpf-profiler.yaml` for the legacy setup.
 
@@ -1528,6 +1528,8 @@ opentelemetry-agent:
   enabled: true
   presets:
     profilesCollection:
+      enabled: true
+    profilesK8sAttributes:
       enabled: true
       serviceLabels:
         - tag_name: service.label
