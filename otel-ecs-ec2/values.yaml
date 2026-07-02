@@ -71,6 +71,8 @@ opentelemetry-agent:
     
     ecsAttributesContainerLogs:
       enabled: true
+      profilesServiceName:
+        enabled: true
     ecsLogsCollection:
       enabled: true
       forceFlushPeriod: "0"
@@ -265,6 +267,8 @@ opentelemetry-agent:
     # Adds the OTLP receiver to the traces, metrics, and logs pipelines.
     otlpReceiver:
       enabled: true
+    profilesCollection:
+      enabled: true
     # Configures the collector to receive StatsD metrics.
     # Adds the statsd receiver to the metrics pipeline.
     statsdReceiver:
@@ -339,6 +343,12 @@ opentelemetry-ebpf-profiler:
   enabled: false
   distribution: "ecs"
   mode: daemonset
+  hostNetwork: true
+  ports:
+    otlp:
+      enabled: false
+    otlp-http:
+      enabled: false
   presets:
     metadata:
       enabled: true
@@ -360,20 +370,15 @@ opentelemetry-ebpf-profiler:
     otlpReceiver:
       enabled: false
 
-    ecsAttributesContainerLogs:
-      enabled: true
-      profilesServiceName:
-        enabled: true
-
     reduceResourceAttributes:
       enabled: false
 
-    coralogixExporter:
+    otlpExporter:
       enabled: true
-      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
-
-    resourceDetection:
-      enabled: true
+      endpoint: localhost:4317
+      pipelines: ["profiles"]
+      tls:
+        insecure: true
 
   config:
     exporters:
