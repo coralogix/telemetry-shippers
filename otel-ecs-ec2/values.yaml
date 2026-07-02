@@ -52,7 +52,6 @@ opentelemetry-agent:
   #         - otlp/3
   #         - spanmetrics/2
 
-
   hostNetwork: true
 
   presets:
@@ -68,7 +67,7 @@ opentelemetry-agent:
     ebpfProfiler:
       enabled: false
       reporterInterval: "{{.Values.global.collectionInterval}}"
-    
+
     ecsAttributesContainerLogs:
       enabled: true
       profilesServiceName:
@@ -269,6 +268,8 @@ opentelemetry-agent:
       enabled: true
     profilesCollection:
       enabled: true
+    profilesK8sAttributes:
+      enabled: false
     # Configures the collector to receive StatsD metrics.
     # Adds the statsd receiver to the metrics pipeline.
     statsdReceiver:
@@ -383,3 +384,8 @@ opentelemetry-ebpf-profiler:
   config:
     exporters:
       debug: null
+    extensions:
+      health_check:
+        # changing the healthcheck endpoint to avoid a conflict with the agent's
+        # because both the agent and the profiler are running on the host's network.
+        endpoint: localhost:13134
