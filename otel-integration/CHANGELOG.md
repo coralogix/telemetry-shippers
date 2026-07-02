@@ -2,6 +2,17 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.324 / 2026-07-07
+
+- [Chore] Bump OBI version to 0.10.0.
+- [Chore] Updates default `contextPropagation.mode` from "http,tcp" to "headers,tcp"
+- [Chore] Fixes typo in default config: `payload_extraction.http.genai.rerank`
+- [Chore] Adds `runtimeMetrics.go.enabled` and `runtimeMetrics.jvm.enabled` options (both default `false`) to opt in to the new Go and JVM application runtime metrics
+- [Chore] Adds `health_check.port` (default `0`/disabled) to the default OBI config to surface the new pipeline health-check endpoint
+- [Chore] Updates `stats.enabled: true` now also adds the "stats" metrics feature to `otel_metrics_export.features`; previously it only mounted tracefs, so stat probes loaded as no-op stubs and no stats metrics were ever exported
+- [Chore] Migrates default discovery config from deprecated `services`/`exclude_services` to `instrument`/`exclude_instrument` with glob syntax
+- [Chore] Fixes default `k8s_namespace` pattern from `.` (matches any single character) to `".*"` (matches any namespace)
+
 ### v0.0.323 / 2026-07-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.3
