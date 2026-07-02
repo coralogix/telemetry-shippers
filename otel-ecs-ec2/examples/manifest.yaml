@@ -6,12 +6,12 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.134.2
+    helm.sh/chart: opentelemetry-agent-0.134.3
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.154.0"
     app.kubernetes.io/managed-by: Helm
-    
+
 
 
 ---
@@ -22,12 +22,12 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.134.2
+    helm.sh/chart: opentelemetry-agent-0.134.3
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.154.0"
     app.kubernetes.io/managed-by: Helm
-    
+
 data:
   relay: |
     connectors:
@@ -165,14 +165,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.36
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.37
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.36
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.37
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.36
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.37
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -192,13 +192,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.36
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.37
       coralogix/resource_catalog:
         application_name: resource
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.36
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.37
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -223,7 +223,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.134.2
+            helm.chart.opentelemetry-agent.version: 0.134.3
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -253,6 +253,38 @@ data:
         traces:
           span:
           - span.attributes["db.system"] == nil
+      k8sattributes/profiles:
+        extract:
+          labels:
+          - from: pod
+            key: app.kubernetes.io/name
+            tag_name: k8s.label.name
+          - from: pod
+            key: app.kubernetes.io/instance
+            tag_name: k8s.label.instance
+          metadata:
+          - k8s.namespace.name
+          - k8s.replicaset.name
+          - k8s.statefulset.name
+          - k8s.daemonset.name
+          - k8s.deployment.name
+          - k8s.cronjob.name
+          - k8s.job.name
+          - k8s.pod.name
+          - k8s.node.name
+          - container.id
+          - k8s.container.name
+          - service.version
+          otel_annotations: true
+        filter:
+          node_from_env_var: K8S_NODE_NAME
+        passthrough: false
+        pod_association:
+        - sources:
+          - from: resource_attribute
+            name: container.id
+        - sources:
+          - from: connection
       memory_limiter:
         check_interval: 5s
         limit_percentage: 80
@@ -339,6 +371,50 @@ data:
         - context: resource
           statements:
           - keep_keys(resource.attributes, [""])
+      transform/profiles:
+        profile_statements:
+        - set(resource.attributes["service.name"], resource.attributes["k8s.label.instance"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.label.instance"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.label.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.label.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.deployment.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.deployment.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.replicaset.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.replicaset.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.statefulset.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.statefulset.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.daemonset.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.daemonset.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.cronjob.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.cronjob.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.job.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.job.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.pod.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.pod.name"]
+          != nil
+        - set(resource.attributes["service.name"], resource.attributes["k8s.container.name"])
+          where resource.attributes["service.name"] == nil and resource.attributes["k8s.container.name"]
+          != nil
+      transform/profiles-ecs-service-name:
+        profile_statements:
+        - context: resource
+          statements:
+          - set(resource.attributes["service.name"], resource.attributes["aws.ecs.task.definition.family"])
+            where (resource.attributes["service.name"] == nil or resource.attributes["service.name"]
+            == "") and resource.attributes["aws.ecs.task.definition.family"] != nil and
+            resource.attributes["aws.ecs.task.definition.family"] != ""
+          - set(resource.attributes["service.name"], resource.attributes["aws.ecs.container.name"])
+            where (resource.attributes["service.name"] == nil or resource.attributes["service.name"]
+            == "") and resource.attributes["aws.ecs.container.name"] != nil and resource.attributes["aws.ecs.container.name"]
+            != ""
       transform/prometheus:
         error_mode: ignore
         metric_statements:
@@ -724,6 +800,20 @@ data:
           - batch
           receivers:
           - spanmetrics/db_compact
+        profiles:
+          exporters:
+          - coralogix
+          processors:
+          - memory_limiter
+          - resourcedetection/region
+          - resourcedetection/env
+          - ecsattributes/container-logs
+          - resource/metadata
+          - transform/profiles-ecs-service-name
+          - k8sattributes/profiles
+          - transform/profiles
+          receivers:
+          - otlp
         traces:
           exporters:
           - spanmetrics
@@ -790,6 +880,52 @@ data:
           service.name: opentelemetry-collector
 
 ---
+# Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ecs-ec2-example-opentelemetry-agent
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.134.3
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: ecs-ec2-example
+    app.kubernetes.io/version: "0.154.0"
+    app.kubernetes.io/managed-by: Helm
+
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+
+---
+# Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ecs-ec2-example-opentelemetry-agent
+  labels:
+    helm.sh/chart: opentelemetry-agent-0.134.3
+    app.kubernetes.io/name: opentelemetry-agent
+    app.kubernetes.io/instance: ecs-ec2-example
+    app.kubernetes.io/version: "0.154.0"
+    app.kubernetes.io/managed-by: Helm
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ecs-ec2-example-opentelemetry-agent
+subjects:
+- kind: ServiceAccount
+  name: ecs-ec2-example-opentelemetry-agent
+  namespace: default
+
+---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -797,12 +933,12 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.134.2
+    helm.sh/chart: opentelemetry-agent-0.134.3
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.154.0"
     app.kubernetes.io/managed-by: Helm
-    
+
 spec:
   selector:
     matchLabels:
@@ -814,15 +950,15 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 55b69e9f035f90f6806900ad319d3d0d535b4084723a6553edbe9093ebd39ed4
-        
+        checksum/config: 7058b09485f3e58b35e3e438b0b5a2b75baef54e605efa46d576e0abba8733e7
+
       labels:
         app.kubernetes.io/name: opentelemetry-agent
         app.kubernetes.io/instance: ecs-ec2-example
         component: agent-collector
-        
+
     spec:
-      
+
       serviceAccountName: ecs-ec2-example-opentelemetry-agent
       securityContext:
         {}
@@ -831,6 +967,7 @@ spec:
           command:
             - /otelcol-contrib
             - --config=/conf/relay.yaml
+            - --feature-gates=+service.profilesSupport
           securityContext:
             runAsUser: 0
             runAsGroup: 0

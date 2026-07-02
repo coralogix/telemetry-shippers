@@ -11,12 +11,12 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-agent
-    version: "0.134.2"
+    version: "0.134.3"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-ebpf-profiler
-    version: "0.134.2"
+    version: "0.134.3"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-ebpf-profiler.enabled
 sources:
