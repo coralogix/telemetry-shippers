@@ -344,11 +344,6 @@ opentelemetry-ebpf-profiler:
   enabled: false
   distribution: "ecs"
   mode: daemonset
-  ports:
-    otlp:
-      enabled: false
-    otlp-http:
-      enabled: false
   presets:
     metadata:
       enabled: true
