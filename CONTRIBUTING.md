@@ -6,6 +6,7 @@
   * [Ask for Help](#ask-for-help)
   * [Pull Request Lifecycle](#pull-request-lifecycle)
   * [Development Environment Setup](#development-environment-setup)
+  * [Commit hooks](#commit-hooks)
   * [Sign Your Commits](#sign-your-commits)
   * [Pull Request Checklist](#pull-request-checklist)
 
@@ -60,6 +61,23 @@ The best way to reach us with a question when contributing is to ask on the orig
 You must have a Helm Chart CLI available in your environment to install the charts on this repository.
 
 If you don't have Helm installed yet, please check the official Helm documentation [here](https://helm.sh/docs/helm/helm_install/).
+
+## Commit hooks
+
+This repository uses [pre-commit](https://pre-commit.com/) for local commit hooks, including Gitleaks secret scanning.
+To enable the hooks locally, run from the repo root:
+
+```sh
+$ pre-commit install
+```
+
+To run the Gitleaks hook manually against staged changes:
+
+```sh
+$ pre-commit run gitleaks
+```
+
+If needed, bypass with `SKIP=gitleaks git commit ...` or `git commit --no-verify`.
 
 ## Sign Your Commits
 
