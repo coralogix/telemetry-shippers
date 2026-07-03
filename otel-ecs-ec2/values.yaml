@@ -365,15 +365,20 @@ opentelemetry-ebpf-profiler:
     otlpReceiver:
       enabled: false
 
+    ecsAttributesContainerLogs:
+      enabled: true
+      profilesServiceName:
+        enabled: true
+
     reduceResourceAttributes:
       enabled: false
 
-    otlpExporter:
+    coralogixExporter:
       enabled: true
-      endpoint: localhost:4317
-      pipelines: ["profiles"]
-      tls:
-        insecure: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+
+    resourceDetection:
+      enabled: true
 
   config:
     exporters:
