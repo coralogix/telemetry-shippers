@@ -52,8 +52,6 @@ opentelemetry-agent:
   #         - otlp/3
   #         - spanmetrics/2
 
-  hostNetwork: true
-
   presets:
     metadata:
       enabled: true
