@@ -52,6 +52,8 @@ opentelemetry-agent:
   #         - otlp/3
   #         - spanmetrics/2
 
+  hostNetwork: true
+
   presets:
     metadata:
       enabled: true
@@ -342,7 +344,6 @@ opentelemetry-ebpf-profiler:
   enabled: false
   distribution: "ecs"
   mode: daemonset
-  hostNetwork: true
   ports:
     otlp:
       enabled: false
