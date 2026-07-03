@@ -1,8 +1,10 @@
 # Changelog
 
-### v0.0.37 / 2026-07-01
+### v0.0.38 / 2026-07-03
 
 - [Feat] Enable profiles to be sent through the node-local agent `profilesCollection` pipeline for enrichment and Coralogix export. This agent can be used by applications in the same node to export their profiles. The eBPF profiler agent will still send profiles directly to the Coralogix backend.
+
+### v0.0.37 / 2026-07-01
 
 #### Changes from opentelemetry-collector 0.134.3:
 - [Fix] The `profilesK8sAttributes` preset now is enabled by default.
