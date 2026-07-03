@@ -71,10 +71,10 @@ To enable the hooks locally, run from the repo root:
 $ pre-commit install
 ```
 
-To test the Gitleaks hook manually:
+To run the Gitleaks hook manually against staged changes:
 
 ```sh
-$ pre-commit run gitleaks --all-files
+$ pre-commit run gitleaks
 ```
 
 If needed, bypass with `SKIP=gitleaks git commit ...` or `git commit --no-verify`.
