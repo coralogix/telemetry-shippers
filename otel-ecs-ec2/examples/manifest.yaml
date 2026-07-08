@@ -6,14 +6,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.134.4
+    helm.sh/chart: opentelemetry-agent-0.135.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.154.0"
+    app.kubernetes.io/version: "0.155.0"
     app.kubernetes.io/managed-by: Helm
-    
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
 apiVersion: v1
@@ -22,10 +19,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.134.4
+    helm.sh/chart: opentelemetry-agent-0.135.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.154.0"
+    app.kubernetes.io/version: "0.155.0"
     app.kubernetes.io/managed-by: Helm
     
 data:
@@ -165,14 +162,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -192,13 +189,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
       coralogix/resource_catalog:
         application_name: resource
         domain: coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -223,7 +220,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.134.4
+            helm.chart.opentelemetry-agent.version: 0.135.0
         server:
           http:
             endpoint: https://ingress.coralogix.com/opamp/v1
@@ -369,6 +366,24 @@ data:
             where resource.attributes["service.name"] == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
             where resource.attributes["service.name"] == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_accepted_log_records$",
+            "otelcol_processor_accepted_log_records") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_accepted_metric_points$",
+            "otelcol_processor_accepted_metric_points") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_accepted_spans$",
+            "otelcol_processor_accepted_spans") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_refused_log_records$",
+            "otelcol_processor_refused_log_records") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_refused_metric_points$",
+            "otelcol_processor_refused_metric_points") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
+          - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_refused_spans$",
+            "otelcol_processor_refused_spans") where resource.attributes["service.name"]
+            == "opentelemetry-collector"
           - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
             "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
             == "opentelemetry-collector"
@@ -788,7 +803,6 @@ data:
         resource:
           cx.agent.type: agent
           service.name: opentelemetry-collector
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
 apiVersion: apps/v1
@@ -797,10 +811,10 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.134.4
+    helm.sh/chart: opentelemetry-agent-0.135.0
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.154.0"
+    app.kubernetes.io/version: "0.155.0"
     app.kubernetes.io/managed-by: Helm
     
 spec:
@@ -814,7 +828,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b147b9c115245133ba6b4adafc5b378b4d85c123bb325d4e6d95dc65d4516b2a
+        checksum/config: ab6cd01b44a7a88ccb62f6277502f9015f7e7beba12e46529a91f437caebb955
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent

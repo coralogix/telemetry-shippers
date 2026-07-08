@@ -133,14 +133,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -160,13 +160,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -191,7 +191,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-agent.version: 0.134.4
+        helm.chart.opentelemetry-agent.version: 0.135.0
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -337,6 +337,24 @@ processors:
         where resource.attributes["service.name"] == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_otelsvc_k8s_pod_deleted$", "otelcol_otelsvc_k8s_pod_deleted_ratio")
         where resource.attributes["service.name"] == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_accepted_log_records$",
+        "otelcol_processor_accepted_log_records") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_accepted_metric_points$",
+        "otelcol_processor_accepted_metric_points") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_accepted_spans$",
+        "otelcol_processor_accepted_spans") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_refused_log_records$",
+        "otelcol_processor_refused_log_records") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_refused_metric_points$",
+        "otelcol_processor_refused_metric_points") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
+      - replace_pattern(metric.name, "^otelcol_processor_memory_limiter_refused_spans$",
+        "otelcol_processor_refused_spans") where resource.attributes["service.name"]
+        == "opentelemetry-collector"
       - replace_pattern(metric.name, "^otelcol_processor_filter_spans\\.filtered$",
         "otelcol_processor_filter_spans.filtered_ratio") where resource.attributes["service.name"]
         == "opentelemetry-collector"
@@ -773,14 +791,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -800,7 +818,7 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.38
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.39
 extensions:
   health_check:
     endpoint: ${env:MY_POD_IP}:13133
@@ -810,7 +828,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-ebpf-profiler.version: 0.134.4
+        helm.chart.opentelemetry-ebpf-profiler.version: 0.135.0
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
