@@ -144,7 +144,7 @@ jobs:
         if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
         run: |
           check_status() {
-            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS" or .state == "NEUTRAL" or .state == "SKIPPED")'
           }
 
           # Initialize the timeout variables
