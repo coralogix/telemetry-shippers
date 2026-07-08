@@ -2,6 +2,15 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.326 / 2026-07-08
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.135.0
+
+#### Changes from opentelemetry-collector 0.135.0:
+- [Feat] Bump the OpenTelemetry Collector image to v0.155.0.
+- [Feat] Upgrade Supervisor-based images to v0.10.0.
+- [Fix] Restore legacy memory limiter metric names in the rendered collector pipeline for backward compatibility.
+
 ### v0.0.325 / 2026-07-07
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.4

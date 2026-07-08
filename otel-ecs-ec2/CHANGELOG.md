@@ -1,5 +1,14 @@
 # Changelog
 
+### v0.0.39 / 2026-07-08
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.0`.
+
+#### Changes from opentelemetry-collector 0.135.0:
+- [Feat] Bump the OpenTelemetry Collector image to v0.155.0.
+- [Feat] Upgrade Supervisor-based images to v0.10.0.
+- [Fix] Restore legacy memory limiter metric names in the rendered collector pipeline for backward compatibility.
+
 ### v0.0.38 / 2026-07-07
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.4`.
