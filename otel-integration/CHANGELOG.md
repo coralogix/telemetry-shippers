@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.325 / 2026-07-07
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.134.4
+
+#### Changes from opentelemetry-collector 0.134.4:
+- [Fix] Run Windows collectors with the logs collection preset as `NT AUTHORITY\SYSTEM` by default so they can read pod log files.
+
 ### v0.0.324 / 2026-07-07
 
 - [Chore] Bump OBI version to 0.10.0.

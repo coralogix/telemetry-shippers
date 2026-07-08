@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.38 / 2026-07-07
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.4`.
+
+#### Changes from opentelemetry-collector 0.134.4:
+- [Fix] Run Windows collectors with the logs collection preset as `NT AUTHORITY\SYSTEM` by default so they can read pod log files.
+
 ### v0.0.37 / 2026-07-01
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.134.3`.

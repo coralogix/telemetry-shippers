@@ -4,12 +4,6 @@ global:
   hostedEndpoint: "host.docker.internal"
 
 opentelemetry-agent-windows:
-  podSecurityContext:
-    windowsOptions:
-      runAsUserName: "NT AUTHORITY\\SYSTEM"
-  securityContext:
-    windowsOptions:
-      runAsUserName: "NT AUTHORITY\\SYSTEM"
   presets:
     coralogixExporter:
       enabled: false
