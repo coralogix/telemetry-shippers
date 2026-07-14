@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.326"
+  version: "0.0.327"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -51,6 +51,10 @@ opentelemetry-autoinstrumentation:
             type: parentbased_traceidratio
             argument: "1.0"
           # OTEL_NODE_IP sends telemetry to the agent DaemonSet on the same node as the workload pod.
+          # These environment variables are injected into all auto-instrumented pods, including
+          # SDK-only injection (instrumentation.opentelemetry.io/inject-sdk: "true").
+          # SDK-only injection uses only these common env vars plus the exporter/sampler config above,
+          # without adding init containers or language-specific agents.
           env:
             - name: OTEL_NODE_IP
               valueFrom:
