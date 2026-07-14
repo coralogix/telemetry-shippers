@@ -494,3 +494,110 @@ func eventually(timeout, interval time.Duration, check func() (bool, error)) err
 	}
 	return fmt.Errorf("condition not met within %s", timeout)
 }
+
+func TestE2E_SDKInjection(t *testing.T) {
+	kubeconfigPath := testKubeConfig
+	if kubeConfigFromEnv := os.Getenv(kubeConfigEnvVar); kubeConfigFromEnv != "" {
+		kubeconfigPath = kubeConfigFromEnv
+	}
+
+	k8sClient, err := xk8stest.NewK8sClient(kubeconfigPath)
+	require.NoError(t, err)
+
+	require.NoError(t, waitForInstrumentationWebhookManager(k8sClient))
+
+	ns := fmt.Sprintf("sdk-injection-e2e-%s", uuid.NewString()[:8])
+	nsObj := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "v1",
+		"kind":       "Namespace",
+		"metadata": map[string]any{
+			"name": ns,
+		},
+	}}
+	_, err = k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("namespaces")).Create(context.Background(), nsObj, metav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = xk8stest.DeleteObject(k8sClient, nsObj)
+	})
+
+	tracesConsumer := new(consumertest.TracesSink)
+	shutdownSink := StartUpSinks(t, ReceiverSinks{
+		Traces: &TraceSinkConfig{
+			Consumer: tracesConsumer,
+			Ports: &ReceiverPorts{
+				Grpc: 4321,
+			},
+		},
+	})
+	defer shutdownSink()
+
+	tests := []struct {
+		name           string
+		image          string
+		port           int
+		path           string
+		command        []string
+		expectedEnvs   []string
+		noExpectedInit bool
+	}{
+		{
+			name:  "sdk-only-python",
+			image: "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main",
+			port:  8080,
+			path:  "/",
+			expectedEnvs: []string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT",
+				"OTEL_NODE_IP",
+				"OTEL_TRACES_SAMPLER",
+				"OTEL_LOGS_EXPORTER",
+			},
+			noExpectedInit: true,
+		},
+		{
+			name:  "sdk-only-java",
+			image: "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main",
+			port:  8080,
+			path:  "/",
+			expectedEnvs: []string{
+				"OTEL_EXPORTER_OTLP_ENDPOINT",
+				"OTEL_NODE_IP",
+				"OTEL_TRACES_SAMPLER",
+				"OTEL_LOGS_EXPORTER",
+			},
+			noExpectedInit: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			deployment := instrumentationWebhookDeployment(tc.name, ns, "", tc.image, tc.port, tc.path, tc.command, nil, "")
+			created, err := k8sClient.DynamicClient.Resource(appsV1Deployments()).Namespace(ns).Create(context.Background(), deployment, metav1.CreateOptions{})
+			require.NoError(t, err)
+			t.Cleanup(func() {
+				_ = xk8stest.DeleteObject(k8sClient, created)
+			})
+
+			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "")
+			curlPod(t, k8sClient, ns, baselinePod.GetName(), tc.port, tc.path)
+			requireNoTraceForPod(t, tracesConsumer, baselinePod.GetName(), 15*time.Second)
+
+			err = injectDeploymentInstrumentation(k8sClient, ns, created.GetName(), "instrumentation.opentelemetry.io/inject-sdk")
+			require.NoError(t, err)
+
+			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName())
+
+			if tc.noExpectedInit {
+				initContainers, found, _ := unstructured.NestedSlice(instrumentedPod.Object, "spec", "initContainers")
+				if found && len(initContainers) > 0 {
+					t.Errorf("SDK-only injection should not add init containers, but found %d init containers", len(initContainers))
+				}
+			}
+
+			for _, envName := range tc.expectedEnvs {
+				require.Truef(t, containerHasEnv(instrumentedPod, "app", envName), "expected env %q on container 'app' in pod %s", envName, tc.name)
+			}
+
+			t.Logf("SDK-only injection verified for %s - environment variables injected without init containers", tc.name)
+		})
+	}
+}

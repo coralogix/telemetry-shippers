@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.327 / 2026-07-13
+
+- [Chore] Bump OpenTelemetry Operator chart dependency to 0.119.0
+- [Feat] Add SDK-only injection support for applications with manual instrumentation
+
 ### v0.0.326 / 2026-07-08
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.0
