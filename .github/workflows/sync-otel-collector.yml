@@ -40,13 +40,19 @@ jobs:
 
       - name: Get version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
+          PAYLOAD_PR_URL: ${{ github.event.client_payload.pr_url }}
+          PAYLOAD_CHANGELOG_B64: ${{ github.event.client_payload.changelog_b64 }}
         run: |
-          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
-            VERSION="${{ github.event.client_payload.version }}"
-            SOURCE_PR="${{ github.event.client_payload.pr_url }}"
-            CHANGELOG_B64="${{ github.event.client_payload.changelog_b64 }}"
+          if [[ "$EVENT_NAME" == "repository_dispatch" ]]; then
+            VERSION="$PAYLOAD_VERSION"
+            SOURCE_PR="$PAYLOAD_PR_URL"
+            CHANGELOG_B64="$PAYLOAD_CHANGELOG_B64"
           else
-            VERSION="${{ inputs.version }}"
+            VERSION="$INPUT_VERSION"
             SOURCE_PR=""
             CHANGELOG_B64=""
           fi
