@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.0 - 2026-07-15
+
+- [chore] Bump Supervisor to version 0.155.1.
+- [chore] Align with the 0.155.1 supervised image release.
+
 ## v0.10.0 - 2026-07-07
 
 - [chore] Bump Supervisor to version 0.155.0.
