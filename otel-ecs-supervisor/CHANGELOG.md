@@ -4,7 +4,7 @@
 
 ### 0.0.9 / 2026-07-15
 
-* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.11.0`. ([PR pending](https://github.com/coralogix/telemetry-shippers/pulls))
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.11.0`.
 
 ### 0.0.8 / 2026-07-07
 
