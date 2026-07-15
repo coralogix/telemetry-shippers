@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.9 / 2026-07-15
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.11.0`.
+
 ### 0.0.8 / 2026-07-07
 
 * [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.10.0`.
