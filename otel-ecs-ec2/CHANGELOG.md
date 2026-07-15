@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.40 / 2026-07-15
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.1`.
+
+#### Changes from opentelemetry-collector 0.135.1:
+- [Feat] Upgrade Supervisor-based images to v0.11.0.
+
 ### v0.0.39 / 2026-07-08
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.0`.
