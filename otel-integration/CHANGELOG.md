@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.328 / 2026-07-15
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.135.1
+
+#### Changes from opentelemetry-collector 0.135.1:
+- [Feat] Upgrade Supervisor-based images to v0.11.0.
+
 ### v0.0.327 / 2026-07-13
 
 - [Chore] Bump OpenTelemetry Operator chart dependency to 0.119.0
