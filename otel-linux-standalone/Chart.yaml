@@ -1,7 +1,7 @@
 apiVersion: v2
 name: linux-standalone
 description: Standalone Linux OpenTelemetry Collector configuration
-version: 0.0.45
+version: 0.0.46
 keywords:
   - OpenTelemetry Collector
   - Coralogix

@@ -9,14 +9,16 @@ OTEL_CONFIG_FILE ?= $(OUTPUT_DIR)/otel-config.yaml
 OTEL_CONFIG_EBPF_FILE ?= $(OUTPUT_DIR)/otel-config-ebpf.yaml
 MANIFEST_FILE ?= $(OUTPUT_DIR)/manifest.yaml
 MANIFEST_EBPF_FILE ?= $(OUTPUT_DIR)/manifest-ebpf.yaml
+OBI_CONFIG_FILE ?= $(CHART_PATH)/obi/obi-config.yaml
 EBPF_ENABLE_SET ?= --set opentelemetry-ebpf-profiler.enabled=true
+OBI_ENABLE_SET ?= --set obi.enabled=true
 
 HELM ?= helm
 YQ ?= yq
 
-.PHONY: all otel-config otel-config-ebpf manifest manifest-ebpf
+.PHONY: all otel-config otel-config-ebpf manifest manifest-ebpf obi-config
 
-all: otel-config otel-config-ebpf manifest manifest-ebpf
+all: otel-config otel-config-ebpf manifest manifest-ebpf obi-config
 
 # Render only the OpenTelemetry config (no Kubernetes wrapper)
 otel-config:
@@ -49,6 +51,18 @@ otel-config-ebpf:
 	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) $(EBPF_ENABLE_SET) \
 		| $(YQ) eval -r 'select(.kind == "ConfigMap") | .data.relay' - > $(OTEL_CONFIG_EBPF_FILE)
 	@echo "Wrote $(OTEL_CONFIG_EBPF_FILE)"
+
+# Render only the OBI (OpenTelemetry eBPF Instrumentation) config file
+# that the OBI sidecar reads. Enabled via --set obi.enabled=true so the
+# default otel-config / manifest renders are unaffected.
+obi-config:
+	@command -v $(HELM) >/dev/null 2>&1 || { echo "Error: helm not found in PATH" >&2; exit 1; }
+	@command -v $(YQ) >/dev/null 2>&1 || { echo "Error: yq not found in PATH" >&2; exit 1; }
+	@mkdir -p $(dir $(OBI_CONFIG_FILE))
+	@$(HELM) dependency build $(CHART_PATH) >/dev/null
+	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) $(OBI_ENABLE_SET) \
+		| $(YQ) eval -N 'select(.kind == "ConfigMap" and .metadata.name == "$(RELEASE)-obi") | .data["obi-config.yml"]' - > $(OBI_CONFIG_FILE)
+	@echo "Wrote $(OBI_CONFIG_FILE)"
 
 # Render full Helm manifest with eBPF profiler enabled via --set
 manifest-ebpf:

@@ -15,6 +15,8 @@ AGENT_MEMORY ?= 256
 TELEMETRYGEN_DESIRED_COUNT ?= 1
 TELEMETRYGEN_RATE ?= 50
 TELEMETRYGEN_DURATION ?= 120s
+ENABLE_OBI ?= false
+OBI_IMAGE_VERSION ?= v0.10.0
 
 ifeq ($(strip $(CDOT_IMAGE)),)
   CDOT_IMAGE_REPO :=
@@ -38,7 +40,9 @@ TFVARS_EXAMPLE ?= \
   -var="rate_per_second=$(TELEMETRYGEN_RATE)" \
   -var="duration=$(TELEMETRYGEN_DURATION)" \
   $(if $(CDOT_IMAGE_REPO),-var="image=$(CDOT_IMAGE_REPO)") \
-  $(if $(CDOT_IMAGE_TAG),-var="image_version=$(CDOT_IMAGE_TAG)")
+  $(if $(CDOT_IMAGE_TAG),-var="image_version=$(CDOT_IMAGE_TAG)") \
+  -var="enable_obi=$(ENABLE_OBI)" \
+  -var="obi_image_version=$(OBI_IMAGE_VERSION)"
 
 .PHONY: init validate plan-example fmt apply destroy stop redeploy
 

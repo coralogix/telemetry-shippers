@@ -43,10 +43,60 @@ locals {
   ecs_ami              = jsondecode(data.aws_ssm_parameter.ecs_ami.value)
   cluster_subnet_ids   = data.aws_subnets.default.ids
   agent_name           = "coralogix-otel-agent"
+  obi_name             = "coralogix-obi"
   telemetrygen_name    = "telemetrygen"
   otel_config          = file("${path.module}/../examples/otel-config.yaml")
   agent_service_suffix = random_string.agent_suffix.result
   telemetry_suffix     = random_string.telemetrygen_suffix.result
+
+  # OBI config: the rendered default (obi/obi-config.yaml) unless fully overridden.
+  obi_config      = var.obi_config != null ? var.obi_config : file("${path.module}/../obi/obi-config.yaml")
+  obi_config_path = "/etc/obi/obi-config.yml"
+
+  # Written to the host by the launch template when OBI is enabled, then
+  # bind-mounted read-only into the OBI sidecar at OTEL_EBPF_CONFIG_PATH.
+  obi_user_data = <<-OBI
+    mkdir -p /etc/obi
+    echo '${base64encode(local.obi_config)}' | base64 -d > ${local.obi_config_path}
+  OBI
+
+  # The OBI sidecar container definition, appended to the agent task when enabled.
+  obi_container = {
+    name       = local.obi_name
+    image      = "${var.obi_image}:${var.obi_image_version}"
+    essential  = false
+    privileged = true
+    environment = concat([
+      {
+        name  = "OTEL_EBPF_CONFIG_PATH"
+        value = local.obi_config_path
+      }
+      ], var.obi_context_propagation != "disabled" ? [
+      {
+        name  = "OTEL_EBPF_BPF_CONTEXT_PROPAGATION"
+        value = var.obi_context_propagation
+      }
+    ] : [])
+    mountPoints = [
+      { sourceVolume = "obi-config", containerPath = "/etc/obi", readOnly = true },
+      { sourceVolume = "host-proc", containerPath = "/proc", readOnly = true },
+      { sourceVolume = "cgroup", containerPath = "/sys/fs/cgroup" },
+      { sourceVolume = "debugfs", containerPath = "/sys/kernel/debug", readOnly = true },
+      { sourceVolume = "bpf", containerPath = "/sys/fs/bpf" },
+      { sourceVolume = "tracefs", containerPath = "/sys/kernel/tracing", readOnly = true }
+    ]
+    dependsOn = [
+      { containerName = local.agent_name, condition = "START" }
+    ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = var.enable_obi ? aws_cloudwatch_log_group.obi[0].name : ""
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  }
 }
 
 resource "aws_security_group" "ecs_instances" {
@@ -112,6 +162,7 @@ resource "aws_launch_template" "ecs" {
     kernel.perf_event_paranoid=1
     SYSCTL
     sysctl -p /etc/sysctl.d/99-ebpf.conf
+    ${var.enable_obi ? local.obi_user_data : ""}
   EOT
   )
 
@@ -184,6 +235,13 @@ resource "aws_cloudwatch_log_group" "otel_agent" {
   tags              = local.default_tags
 }
 
+resource "aws_cloudwatch_log_group" "obi" {
+  count             = var.enable_obi ? 1 : 0
+  name              = "/ecs/${local.obi_name}-${local.agent_service_suffix}"
+  retention_in_days = 7
+  tags              = local.default_tags
+}
+
 resource "aws_ecs_task_definition" "coralogix_otel_agent" {
   family                   = "${local.agent_name}-${local.agent_service_suffix}"
   cpu                      = max(var.memory, 256)
@@ -233,7 +291,12 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
     host_path = "/sys/kernel/tracing"
   }
 
-  container_definitions = jsonencode([
+  volume {
+    name      = "obi-config"
+    host_path = "/etc/obi"
+  }
+
+  container_definitions = jsonencode(concat([
     {
       name       = local.agent_name
       image      = "${var.image}:${var.image_version}"
@@ -300,7 +363,7 @@ resource "aws_ecs_task_definition" "coralogix_otel_agent" {
         }
       }
     }
-  ])
+  ], var.enable_obi ? [local.obi_container] : []))
 
   tags = merge({
     Name = "${local.agent_name}-${local.agent_service_suffix}"

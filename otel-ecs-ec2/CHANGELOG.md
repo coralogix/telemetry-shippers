@@ -1,5 +1,9 @@
 # Changelog
 
+### v0.0.41 / 2026-07-16
+
+- [Feat] Add opt-in OpenTelemetry eBPF Instrumentation (OBI) support. Set the Terraform `enable_obi` variable to run OBI (`ghcr.io/open-telemetry/opentelemetry-ebpf-instrumentation/ebpf-instrument:v0.10.0`) as a privileged sidecar in the collector task; it ships application spans & metrics to the node-local collector over OTLP. The OBI config is rendered with `make obi-config` into `obi/obi-config.yaml`. See `obi/README.md`.
+
 ### v0.0.40 / 2026-07-15
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.1`.

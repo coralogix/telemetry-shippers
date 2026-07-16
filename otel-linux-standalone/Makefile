@@ -5,6 +5,7 @@ CHART_PATH ?= .
 VALUES_FILE ?= $(CHART_PATH)/values.yaml
 OUTPUT_DIR ?= $(CHART_PATH)/build
 OTEL_CONFIG_FILE ?= $(abspath $(OUTPUT_DIR)/otel-config.yaml)
+OBI_CONFIG_FILE ?= $(abspath $(CHART_PATH)/obi/obi-config.yaml)
 TERRAFORM_DIR ?= $(CHART_PATH)/terraform
 
 AWS_PROFILE ?= research
@@ -25,6 +26,9 @@ TELEMETRYGEN_DURATION ?= inf
 TELEMETRYGEN_VERSION ?= v0.137.0
 TELEMETRYGEN_GO_VERSION ?= 1.24.0
 CORALOGIX_API_KEY ?= $(API_KEY)
+ENABLE_OBI ?= false
+OBI_VERSION ?= v0.10.0
+OBI_CONTEXT_PROPAGATION ?= headers,tcp
 
 HELM ?= helm
 YQ ?= yq
@@ -44,7 +48,11 @@ TF_VARS ?= \
 	-var="telemetrygen_duration=$(TELEMETRYGEN_DURATION)" \
 	-var="telemetrygen_version=$(TELEMETRYGEN_VERSION)" \
 	-var="telemetrygen_go_version=$(TELEMETRYGEN_GO_VERSION)" \
-	-var="coralogix_api_key=$(CORALOGIX_API_KEY)"
+	-var="coralogix_api_key=$(CORALOGIX_API_KEY)" \
+	-var="enable_obi=$(ENABLE_OBI)" \
+	-var="obi_version=$(OBI_VERSION)" \
+	-var="obi_context_propagation=$(OBI_CONTEXT_PROPAGATION)" \
+	-var="obi_config_path=$(OBI_CONFIG_FILE)"
 
 TELEMETRYGEN_TF_VARS ?= \
 	-var="aws_region=$(AWS_REGION)" \
@@ -54,7 +62,7 @@ TELEMETRYGEN_TF_VARS ?= \
 	-var="instance_type=$(TELEMETRYGEN_INSTANCE_TYPE)" \
 	-var="collector_endpoint=$(COLLECTOR_ENDPOINT)"
 
-.PHONY: all otel-config validate-config test helm-template terraform-init terraform-apply terraform-destroy terraform-output deploy destroy clean telemetrygen-init telemetrygen-apply telemetrygen-destroy telemetrygen-output
+.PHONY: all otel-config obi-config validate-config test helm-template terraform-init terraform-apply terraform-destroy terraform-output deploy destroy clean telemetrygen-init telemetrygen-apply telemetrygen-destroy telemetrygen-output
 
 all: deploy
 
@@ -67,6 +75,18 @@ otel-config:
 	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) \
 		| $(YQ) eval -r 'select(.kind == "ConfigMap") | .data.relay' - > $(OTEL_CONFIG_FILE)
 	@echo "Wrote $(OTEL_CONFIG_FILE)"
+
+# Render only the OBI (OpenTelemetry eBPF Instrumentation) config file that the
+# obi.service systemd unit reads. Enabled via --set obi.enabled=true so the
+# default otel-config render is unaffected.
+obi-config:
+	@command -v $(HELM) >/dev/null 2>&1 || { echo "Error: helm not found in PATH" >&2; exit 1; }
+	@command -v $(YQ) >/dev/null 2>&1 || { echo "Error: yq not found in PATH" >&2; exit 1; }
+	@mkdir -p $(dir $(OBI_CONFIG_FILE))
+	@$(HELM) dependency build $(CHART_PATH) >/dev/null
+	@$(HELM) template $(RELEASE) $(CHART_PATH) -f $(VALUES_FILE) --set obi.enabled=true \
+		| $(YQ) eval -N 'select(.kind == "ConfigMap" and .metadata.name == "$(RELEASE)-obi") | .data["obi-config.yml"]' - > $(OBI_CONFIG_FILE)
+	@echo "Wrote $(OBI_CONFIG_FILE)"
 
 validate-config: otel-config
 	@collector_image="$$( \
@@ -102,7 +122,7 @@ terraform-destroy: terraform-init
 terraform-output:
 	@AWS_PROFILE=$(AWS_PROFILE) AWS_SDK_LOAD_CONFIG=1 $(TF) -chdir=$(TERRAFORM_DIR) output
 
-deploy: otel-config terraform-apply
+deploy: otel-config obi-config terraform-apply
 
 destroy: terraform-destroy
 

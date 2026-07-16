@@ -2,6 +2,10 @@
 
 ## otel-macos-standalone
 
+### v0.0.46 / 2026-07-16
+
+- [Chore] Version bump to keep standalone chart versions aligned (OBI support added to `otel-linux-standalone` v0.0.46).
+
 ### v0.0.45 / 2026-07-15
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.1

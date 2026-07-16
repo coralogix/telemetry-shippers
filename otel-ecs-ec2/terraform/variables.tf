@@ -165,3 +165,38 @@ variable "task_memory" {
   type        = number
   default     = 256
 }
+
+# ---------------------------------------------------------------------------
+# OpenTelemetry eBPF Instrumentation (OBI)
+# ---------------------------------------------------------------------------
+# When enabled, OBI runs as a privileged sidecar in the collector task and
+# ships application spans & metrics to the node-local collector over OTLP.
+variable "enable_obi" {
+  description = "Run the OpenTelemetry eBPF Instrumentation (OBI) sidecar alongside the collector"
+  type        = bool
+  default     = false
+}
+
+variable "obi_image" {
+  description = "OBI (ebpf-instrument) image repository"
+  type        = string
+  default     = "ghcr.io/open-telemetry/opentelemetry-ebpf-instrumentation/ebpf-instrument"
+}
+
+variable "obi_image_version" {
+  description = "OBI (ebpf-instrument) image tag"
+  type        = string
+  default     = "v0.10.0"
+}
+
+variable "obi_context_propagation" {
+  description = "OBI eBPF distributed context propagation mode (OTEL_EBPF_BPF_CONTEXT_PROPAGATION). Set to \"disabled\" to turn off."
+  type        = string
+  default     = "headers,tcp"
+}
+
+variable "obi_config" {
+  description = "Full OBI configuration YAML. Defaults to the rendered obi/obi-config.yaml; set to override the entire config."
+  type        = string
+  default     = null
+}
