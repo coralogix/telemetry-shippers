@@ -136,4 +136,9 @@ variable "obi_config_path" {
   description = "Path to the rendered OBI configuration file (obi/obi-config.yaml)."
   type        = string
   default     = ""
+
+  validation {
+    condition     = !var.enable_obi || var.obi_config_path != ""
+    error_message = "When enable_obi is true, obi_config_path must be set (for example to the rendered obi/obi-config.yaml)."
+  }
 }
