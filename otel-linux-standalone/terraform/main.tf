@@ -17,6 +17,11 @@ locals {
   name_prefix     = "eco-system-linux-collector"
   otel_config     = trimspace(file(var.otel_config_path))
   otel_config_b64 = base64gzip(local.otel_config)
+
+  # OBI config is only read when OBI is enabled and a path is provided.
+  obi_config     = var.enable_obi && var.obi_config_path != "" ? trimspace(file(var.obi_config_path)) : ""
+  obi_config_b64 = base64gzip(local.obi_config)
+
   common_tags = merge({
     Project   = "eco-system-linux-standalone"
     ManagedBy = "terraform"
@@ -35,6 +40,10 @@ locals {
     telemetrygen_service_name = var.telemetrygen_service_name
     telemetrygen_duration     = var.telemetrygen_duration
     coralogix_api_key         = var.coralogix_api_key
+    enable_obi                = var.enable_obi
+    obi_version               = var.obi_version
+    obi_context_propagation   = var.obi_context_propagation
+    obi_config_b64            = local.obi_config_b64
   })
 }
 

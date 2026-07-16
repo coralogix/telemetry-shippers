@@ -107,3 +107,33 @@ variable "coralogix_api_key" {
   type        = string
   default     = ""
 }
+
+# ---------------------------------------------------------------------------
+# OpenTelemetry eBPF Instrumentation (OBI)
+# ---------------------------------------------------------------------------
+# When enabled, OBI is installed as an `obi.service` systemd unit (running as
+# root) that captures application spans & metrics via eBPF and ships them to the
+# local collector over OTLP.
+variable "enable_obi" {
+  description = "Install and run the OpenTelemetry eBPF Instrumentation (OBI) systemd unit alongside the collector."
+  type        = bool
+  default     = false
+}
+
+variable "obi_version" {
+  description = "OBI release version (git tag) to download the binary tarball for."
+  type        = string
+  default     = "v0.10.0"
+}
+
+variable "obi_context_propagation" {
+  description = "OBI eBPF distributed context propagation mode (OTEL_EBPF_BPF_CONTEXT_PROPAGATION). Set to \"disabled\" to turn off."
+  type        = string
+  default     = "headers,tcp"
+}
+
+variable "obi_config_path" {
+  description = "Path to the rendered OBI configuration file (obi/obi-config.yaml)."
+  type        = string
+  default     = ""
+}

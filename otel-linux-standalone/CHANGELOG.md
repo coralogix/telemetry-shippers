@@ -2,6 +2,10 @@
 
 ## otel-linux-standalone
 
+### v0.0.46 / 2026-07-16
+
+- [Feat] Add opt-in OpenTelemetry eBPF Instrumentation (OBI) support. Set the Terraform `enable_obi` variable to install OBI (`v0.10.0`) as an `obi.service` systemd unit running as root alongside the collector; it ships application spans & metrics to the local collector over OTLP. The OBI config is rendered with `make obi-config` into `obi/obi-config.yaml`. See `obi/README.md`.
+
 ### v0.0.45 / 2026-07-15
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.1

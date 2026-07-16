@@ -1,0 +1,19 @@
+{{- /*
+Renders the OpenTelemetry eBPF Instrumentation (OBI) config as a ConfigMap so
+that `make obi-config` can extract it (via `--set obi.enabled=true`) into
+obi/obi-config.yaml. It is gated behind .Values.obi.enabled so the default
+`make otel-config` render is unaffected.
+*/ -}}
+{{- if .Values.obi.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-obi
+  labels:
+    app.kubernetes.io/name: opentelemetry-ebpf-instrumentation
+    app.kubernetes.io/part-of: obi
+    app.kubernetes.io/component: config
+data:
+  obi-config.yml: |
+{{ .Values.obi.config | toYaml | indent 4 }}
+{{- end }}
