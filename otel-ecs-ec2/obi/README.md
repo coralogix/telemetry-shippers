@@ -49,13 +49,13 @@ make obi-config
 
 Terraform variables (see `terraform/variables.tf`):
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `enable_obi` | `false` | Run the OBI sidecar. |
-| `obi_image` | `ghcr.io/open-telemetry/opentelemetry-ebpf-instrumentation/ebpf-instrument` | OBI image repository. |
-| `obi_image_version` | `v0.10.0` | OBI image tag (kept in sync with k8s-helm). |
-| `obi_context_propagation` | `headers,tcp` | eBPF distributed context propagation mode; `disabled` to turn off. |
-| `obi_config` | `null` | Full config override. When set, replaces `obi/obi-config.yaml` verbatim. |
+| Variable                  | Default                                                                     | Purpose                                                                  |
+|---------------------------|-----------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| `enable_obi`              | `false`                                                                     | Run the OBI sidecar.                                                     |
+| `obi_image`               | `ghcr.io/open-telemetry/opentelemetry-ebpf-instrumentation/ebpf-instrument` | OBI image repository.                                                    |
+| `obi_image_version`       | `v0.10.0`                                                                   | OBI image tag (kept in sync with k8s-helm).                              |
+| `obi_context_propagation` | `headers,tcp`                                                               | eBPF distributed context propagation mode; `disabled` to turn off.       |
+| `obi_config`              | `null`                                                                      | Full config override. When set, replaces `obi/obi-config.yaml` verbatim. |
 
 ### Scoping what gets instrumented
 

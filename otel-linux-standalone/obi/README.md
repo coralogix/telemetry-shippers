@@ -56,12 +56,12 @@ make obi-config
 
 Make / Terraform variables:
 
-| Make var | Terraform var | Default | Purpose |
-| --- | --- | --- | --- |
-| `ENABLE_OBI` | `enable_obi` | `false` | Install & run the OBI systemd unit. |
-| `OBI_VERSION` | `obi_version` | `v0.10.0` | OBI release tag (kept in sync with k8s-helm). |
-| `OBI_CONTEXT_PROPAGATION` | `obi_context_propagation` | `headers,tcp` | eBPF context propagation mode; `disabled` to turn off. |
-| — | `obi_config_path` | rendered `obi/obi-config.yaml` | Path to the OBI config injected into the host. |
+| Make var                  | Terraform var             | Default                        | Purpose                                                |
+|---------------------------|---------------------------|--------------------------------|--------------------------------------------------------|
+| `ENABLE_OBI`              | `enable_obi`              | `false`                        | Install & run the OBI systemd unit.                    |
+| `OBI_VERSION`             | `obi_version`             | `v0.10.0`                      | OBI release tag (kept in sync with k8s-helm).          |
+| `OBI_CONTEXT_PROPAGATION` | `obi_context_propagation` | `headers,tcp`                  | eBPF context propagation mode; `disabled` to turn off. |
+| —                         | `obi_config_path`         | rendered `obi/obi-config.yaml` | Path to the OBI config injected into the host.         |
 
 ### Scoping what gets instrumented
 
