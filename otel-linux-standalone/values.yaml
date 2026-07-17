@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "linux"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.45"
+  version: "0.0.46"
   # deploymentEnvironmentName: "development"
 
 opentelemetry-agent:
@@ -18,7 +18,7 @@ opentelemetry-agent:
       enabled: true
     fleetManagement:
       enabled: true
-      agentType: "agent"
+      agentType: "standalone"
     hostMetrics:
       enabled: true
       # Enables process metrics scraping.

@@ -4,7 +4,7 @@ global:
   defaultSubsystemName: "macos"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.45"
+  version: "0.0.46"
 
 opentelemetry-agent:
   enabled: true
@@ -17,7 +17,7 @@ opentelemetry-agent:
       enabled: true
     fleetManagement:
       enabled: true
-      agentType: "agent"
+      agentType: "standalone"
       customAttributes: {}
     
     hostMetrics:
