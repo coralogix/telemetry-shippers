@@ -133,14 +133,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.45
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.45
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.45
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -159,13 +159,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.45
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.45
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -188,7 +188,7 @@ extensions:
     agent_description:
       include_resource_attributes: true
       non_identifying_attributes:
-        cx.agent.type: agent
+        cx.agent.type: standalone
         helm.chart.opentelemetry-agent.version: 0.135.1
     server:
       http:
@@ -775,4 +775,3 @@ service:
               without_scope_info: false
               without_type_suffix: false
               without_units: false
-

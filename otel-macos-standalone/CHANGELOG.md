@@ -2,6 +2,10 @@
 
 ## otel-macos-standalone
 
+### v0.0.46 / 2026-07-17
+
+- [Breaking] Change the default `presets.fleetManagement.agentType` from `agent` to `standalone`. Existing Fleet Manager selectors targeting `cx.agent.type: agent` must be updated to `standalone` for newly installed or upgraded hosts.
+
 ### v0.0.45 / 2026-07-15
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.1
@@ -157,7 +161,6 @@
 
 #### Changes from opentelemetry-collector 0.130.15:
 - [Fix] Use `syslog_parser` for macOS system log parsing logic.
-
 ### v0.0.25 / 2026-04-22
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.130.14
