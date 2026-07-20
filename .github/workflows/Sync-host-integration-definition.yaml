@@ -174,7 +174,8 @@ jobs:
         if: "${{ env.new_version_exist == 'false' }}"
         run: |
           check_status() {
-            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS")'
+            # NEUTRAL/SKIPPED = skipped checks (e.g. Validate Configs); treat as pass
+            gh pr checks ${{ env.branch_name }} --json state --jq 'all(.[]; .state == "SUCCESS" or .state == "NEUTRAL" or .state == "SKIPPED")'
           }
 
           max_wait_time=$((10 * 60))
