@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.329 / 2026-07-21
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.135.2
+
+#### Changes from opentelemetry-collector 0.135.2:
+- [Fix] The `semconv` preset now maps the legacy `http.status_code` attribute to `http.response.status_code` so span metrics carry the status code for spans using the old HTTP semantic convention.
+
 ### v0.0.328 / 2026-07-15
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.1

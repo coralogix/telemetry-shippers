@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.47 / 2026-07-21
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.135.2
+
+#### Changes from opentelemetry-collector 0.135.2:
+- [Fix] The `semconv` preset now maps the legacy `http.status_code` attribute to `http.response.status_code` so span metrics carry the status code for spans using the old HTTP semantic convention.
+
 ### v0.0.46 / 2026-07-17
 
 - [Breaking] Change the default `presets.fleetManagement.agentType` from `agent` to `standalone`. Existing Fleet Manager selectors targeting `cx.agent.type: agent` must be updated to `standalone` for newly installed or upgraded hosts.

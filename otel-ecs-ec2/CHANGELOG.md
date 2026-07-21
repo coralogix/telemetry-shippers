@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.41 / 2026-07-21
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.2`.
+
+#### Changes from opentelemetry-collector 0.135.2:
+- [Fix] The `semconv` preset now maps the legacy `http.status_code` attribute to `http.response.status_code` so span metrics carry the status code for spans using the old HTTP semantic convention.
+
 ### v0.0.40 / 2026-07-15
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.1`.
