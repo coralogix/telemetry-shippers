@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.329 / 2026-07-21
+
+- [Fix] Populate the `http.response.status_code` span-metrics dimension from the legacy `http.status_code` attribute so APM error tracking works for spans still using the old HTTP semantic convention.
+
 ### v0.0.328 / 2026-07-15
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.1

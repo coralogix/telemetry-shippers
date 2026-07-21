@@ -260,6 +260,8 @@ opentelemetry-agent:
       enabled: true
       collectionInterval: "{{.Values.global.collectionInterval}}"
       metricsExpiration: 5m
+      transformStatements:
+        - set(span.attributes["http.response.status_code"], span.attributes["http.status_code"]) where span.attributes["http.response.status_code"] == nil and span.attributes["http.status_code"] != nil
       # histogramBuckets:
       #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
     transactions:
