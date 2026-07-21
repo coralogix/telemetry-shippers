@@ -133,14 +133,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.47
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.47
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.47
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -159,13 +159,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.47
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.46
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.47
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -189,7 +189,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: standalone
-        helm.chart.opentelemetry-agent.version: 0.135.1
+        helm.chart.opentelemetry-agent.version: 0.135.2
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -560,6 +560,9 @@ processors:
       statements:
       - set(span.attributes["http.method"], span.attributes["http.request.method"])
         where span.attributes["http.request.method"] != nil
+      - set(span.attributes["http.response.status_code"], span.attributes["http.status_code"])
+        where span.attributes["http.response.status_code"] == nil and span.attributes["http.status_code"]
+        != nil
   transform/spanmetrics:
     error_mode: silent
     metric_statements:
@@ -775,3 +778,4 @@ service:
               without_scope_info: false
               without_type_suffix: false
               without_units: false
+

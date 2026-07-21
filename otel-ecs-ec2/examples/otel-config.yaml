@@ -133,14 +133,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.41
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.41
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.41
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -160,13 +160,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.41
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.41
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -191,7 +191,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-agent.version: 0.135.1
+        helm.chart.opentelemetry-agent.version: 0.135.2
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -497,6 +497,9 @@ processors:
       statements:
       - set(span.attributes["http.method"], span.attributes["http.request.method"])
         where span.attributes["http.request.method"] != nil
+      - set(span.attributes["http.response.status_code"], span.attributes["http.status_code"])
+        where span.attributes["http.response.status_code"] == nil and span.attributes["http.status_code"]
+        != nil
   transform/spanmetrics:
     error_mode: silent
     metric_statements:
