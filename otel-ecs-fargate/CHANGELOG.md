@@ -8,6 +8,10 @@
 
 <!-- * [Update/Bug fix] message that describes the changes that you apply -->
 
+### 1.1.1 / 2026-07-21
+
+* [Bug fix] Map the legacy `http.status_code` attribute to `http.response.status_code` in the `semconv` transform so span metrics carry the status code for spans using the old HTTP semantic convention.
+
 ### 1.1.0 / 2026-06-30
 
 * [UPDATE] Use `otlp` v1.10.0 for profiles ingestion

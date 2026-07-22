@@ -555,6 +555,8 @@ processors:
       statements:
       - set(attributes["http.method"], attributes["http.request.method"]) where attributes["http.request.method"]
         != nil
+      - set(attributes["http.response.status_code"], attributes["http.status_code"]) where attributes["http.response.status_code"]
+        == nil and attributes["http.status_code"] != nil
   transform/spanmetrics:
     error_mode: silent
     metric_statements:
