@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.48 / 2026-07-23
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.135.3
+
+#### Changes from opentelemetry-collector 0.135.3:
+- [Feat] Add `graphql.operation.type` (query/mutation/subscription) as a span-metrics dimension so GraphQL traffic can be aggregated by operation type.
+
 ### v0.0.47 / 2026-07-21
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.2
