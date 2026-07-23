@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.42 / 2026-07-23
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.3`.
+
+#### Changes from opentelemetry-collector 0.135.3:
+- [Feat] Add `graphql.operation.type` (query/mutation/subscription) as a span-metrics dimension so GraphQL traffic can be aggregated by operation type.
+
 ### v0.0.41 / 2026-07-21
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.2`.

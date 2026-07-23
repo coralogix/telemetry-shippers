@@ -14,6 +14,7 @@ connectors:
     - name: db.operation.name
     - name: db.collection.name
     - name: db.system
+    - name: graphql.operation.type
     - name: http.response.status_code
     - name: rpc.grpc.status_code
     - name: service.version
@@ -133,14 +134,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.47
+        X-Coralogix-Distribution: helm-otel-macos/0.0.48
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.47
+        X-Coralogix-Distribution: helm-otel-macos/0.0.48
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.47
+        X-Coralogix-Distribution: helm-otel-macos/0.0.48
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -159,13 +160,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.47
+        X-Coralogix-Distribution: helm-otel-macos/0.0.48
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.47
+        X-Coralogix-Distribution: helm-otel-macos/0.0.48
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -189,7 +190,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: standalone
-        helm.chart.opentelemetry-agent.version: 0.135.2
+        helm.chart.opentelemetry-agent.version: 0.135.3
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
