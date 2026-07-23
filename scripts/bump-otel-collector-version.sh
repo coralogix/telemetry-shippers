@@ -2,11 +2,15 @@
 #
 # bump-otel-collector-version.sh
 #
-# Bumps the opentelemetry-collector chart dependency across all integration charts.
+# Bumps a helm chart dependency across integration charts.
 # Updates Chart.yaml, values.yaml, and CHANGELOG.md for each chart.
+# Defaults to the opentelemetry-collector dependency; use --dependency-name
+# and --charts to bump a different dependency (e.g. opentelemetry-ebpf-instrumentation).
 #
 # Options:
-#   --version VERSION       New opentelemetry-collector chart version (required)
+#   --version VERSION       New chart dependency version (required)
+#   --dependency-name NAME  Dependency to bump (default: opentelemetry-collector)
+#   --charts "A B C"        Space-separated charts to process (default: all collector consumers)
 #   --changelog-file FILE   File containing changelog entries to copy (optional)
 #   --source-commit SHA     Source commit SHA for reference (optional)
 #   --source-pr NUMBER      Source PR number for reference (optional)
@@ -22,6 +26,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 NEW_VERSION=""
+DEPENDENCY_NAME="opentelemetry-collector"
 CHANGELOG_FILE=""
 SOURCE_COMMIT=""
 SOURCE_PR=""
@@ -91,6 +96,14 @@ parse_args() {
       NEW_VERSION="$2"
       shift 2
       ;;
+    --dependency-name)
+      DEPENDENCY_NAME="$2"
+      shift 2
+      ;;
+    --charts)
+      ALL_CHARTS="$2"
+      shift 2
+      ;;
     --changelog-file)
       CHANGELOG_FILE="$2"
       shift 2
@@ -154,7 +167,7 @@ get_current_chart_version() {
 
 get_dependency_version() {
   local chart_yaml="$1"
-  yq '.dependencies[] | select(.name == "opentelemetry-collector") | .version' "$chart_yaml" | head -1 | tr -d '"'
+  yq ".dependencies[] | select(.name == \"$DEPENDENCY_NAME\") | .version" "$chart_yaml" | head -1 | tr -d '"'
 }
 
 update_chart_yaml() {
@@ -185,7 +198,7 @@ update_chart_yaml() {
   fi
 
   yq -i ".version = \"$new_chart_version\"" "$chart_yaml"
-  yq -i "(.dependencies[] | select(.name == \"opentelemetry-collector\") | .version) = \"$NEW_VERSION\"" "$chart_yaml"
+  yq -i "(.dependencies[] | select(.name == \"$DEPENDENCY_NAME\") | .version) = \"$NEW_VERSION\"" "$chart_yaml"
 
   echo "$new_chart_version"
 }
@@ -244,9 +257,9 @@ update_changelog() {
   entry_file=$(mktemp)
 
   local header_version="v${new_chart_version}"
-  local change_line="- [Chore] Bump chart dependency to opentelemetry-collector ${NEW_VERSION}"
+  local change_line="- [Chore] Bump chart dependency to ${DEPENDENCY_NAME} ${NEW_VERSION}"
 
-  if [[ "$chart" == "otel-ecs-ec2" ]]; then
+  if [[ "$chart" == "otel-ecs-ec2" && "$DEPENDENCY_NAME" == "opentelemetry-collector" ]]; then
     change_line="- [Change] Update Helm dependency \`opentelemetry-agent\` to chart version \`${NEW_VERSION}\`."
   fi
 
@@ -421,7 +434,7 @@ generate_summary() {
   log_info "Summary"
   log_info "=========================================="
   echo "" >&2
-  echo "New opentelemetry-collector version: $NEW_VERSION" >&2
+  echo "New $DEPENDENCY_NAME version: $NEW_VERSION" >&2
   echo "" >&2
   echo "Charts:" >&2
 
@@ -493,7 +506,7 @@ generate_markdown_summary() {
   local has_failures=false
 
   {
-    echo "## OpenTelemetry Collector Bump Summary"
+    echo "## ${DEPENDENCY_NAME} Bump Summary"
     echo ""
     echo "**Version:** \`$NEW_VERSION\`"
 
@@ -597,7 +610,7 @@ main() {
     exit 1
   }
 
-  log_info "Bumping opentelemetry-collector to version $NEW_VERSION"
+  log_info "Bumping $DEPENDENCY_NAME to version $NEW_VERSION"
   if [[ "$DRY_RUN" == "true" ]]; then
     log_warn "DRY RUN mode enabled"
   fi
