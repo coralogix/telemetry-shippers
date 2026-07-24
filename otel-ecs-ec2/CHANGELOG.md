@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.43 / 2026-07-24
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.4`.
+
+#### Changes from opentelemetry-collector 0.135.4:
+- [Feat] Default spanMetrics and spanMetricsMulti `seriesExpiration` to `5m` so stale per-dimension series expire and free aggregation slots after a transient cardinality spike.
+
 ### v0.0.42 / 2026-07-23
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.3`.

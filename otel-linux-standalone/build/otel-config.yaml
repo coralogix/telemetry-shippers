@@ -38,6 +38,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: ""
+    series_expiration: 5m
   spanmetrics/compact:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
@@ -62,6 +63,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: compact
+    series_expiration: 5m
   spanmetrics/db:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
@@ -91,6 +93,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: db
+    series_expiration: 5m
   spanmetrics/db_compact:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
@@ -119,6 +122,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: db_compact
+    series_expiration: 5m
 exporters:
   coralogix:
     application_name: otel
@@ -134,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.48
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.49
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.48
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.49
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.48
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.49
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -160,13 +164,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.48
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.49
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.48
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.49
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -190,7 +194,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: standalone
-        helm.chart.opentelemetry-agent.version: 0.135.3
+        helm.chart.opentelemetry-agent.version: 0.135.4
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
