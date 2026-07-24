@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.49 / 2026-07-24
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.135.4
+
+#### Changes from opentelemetry-collector 0.135.4:
+- [Feat] Default spanMetrics and spanMetricsMulti `seriesExpiration` to `5m` so stale per-dimension series expire and free aggregation slots after a transient cardinality spike.
+
 ### v0.0.48 / 2026-07-23
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.3
