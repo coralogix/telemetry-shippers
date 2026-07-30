@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.44"
+  version: "0.0.45"
   deploymentEnvironmentName: ""
 
 opentelemetry-agent:
