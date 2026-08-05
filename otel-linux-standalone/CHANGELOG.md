@@ -2,6 +2,10 @@
 
 ## otel-linux-standalone
 
+### v0.0.52 / 2026-08-05
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.136.1
+
 ### v0.0.51 / 2026-08-05
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.0

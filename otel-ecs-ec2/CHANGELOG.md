@@ -1,5 +1,9 @@
 # Changelog
 
+### v0.0.46 / 2026-08-05
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.1`.
+
 ### v0.0.45 / 2026-08-05
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.0`.
