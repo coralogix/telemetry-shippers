@@ -6,6 +6,10 @@
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.0
 
+#### Changes from opentelemetry-collector 0.136.0:
+
+- [Feat] Bump the OpenTelemetry Collector image to v0.156.0.
+
 ### v0.0.332 / 2026-07-29
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.5
