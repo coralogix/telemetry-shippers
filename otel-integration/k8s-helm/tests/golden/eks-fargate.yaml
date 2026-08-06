@@ -6,7 +6,7 @@ metadata:
   name: otel-agent-eks-fargate-monitoring
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -19,7 +19,7 @@ metadata:
   name: otel-agent-eks-fargate
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -32,7 +32,7 @@ metadata:
   name: otel-agent-eks-fargate-monitoring
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -55,14 +55,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -87,7 +87,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
       debug: {}
     extensions:
       health_check:
@@ -298,7 +298,7 @@ metadata:
   name: otel-agent-eks-fargate-script
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -327,7 +327,7 @@ metadata:
   name: otel-agent-eks-fargate-statefulset
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -350,14 +350,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -382,7 +382,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.333
+            X-Coralogix-Distribution: helm-otel-integration/0.0.334
       debug: {}
     extensions:
       health_check:
@@ -634,7 +634,7 @@ kind: ClusterRole
 metadata:
   name: otel-agent-eks-fargate-monitoring
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -667,7 +667,7 @@ kind: ClusterRole
 metadata:
   name: otel-agent-eks-fargate
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -709,7 +709,7 @@ kind: ClusterRoleBinding
 metadata:
   name: otel-agent-eks-fargate-monitoring
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -730,7 +730,7 @@ kind: ClusterRoleBinding
 metadata:
   name: otel-agent-eks-fargate
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -752,7 +752,7 @@ metadata:
   name: otel-agent-eks-fargate-monitoring
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -789,7 +789,7 @@ metadata:
   name: otel-agent-eks-fargate
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -826,7 +826,7 @@ metadata:
   name: otel-agent-eks-fargate-monitoring
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-monitoring-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -845,7 +845,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: cf0733d839ac73161b2dc294373199894e97457521f55df613deb6adcfe970e2
+        checksum/config: b84ea91869698f419a243531ca5bb4e471b7b6a47960c5cf53f833a4c5be5caa
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
@@ -940,7 +940,7 @@ metadata:
   name: otel-agent-eks-fargate
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.0
+    helm.sh/chart: opentelemetry-agent-eks-fargate-0.136.2
     app.kubernetes.io/name: opentelemetry-agent-eks-fargate
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.156.0"
@@ -960,7 +960,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e684d1d8d018e4dc5737028040da7eee9ea2932de80ed92b5db51d078a5c9962
+        checksum/config: d24200e3b2287eb62a3ec42597fd591d750cba460f7f8af703c2ba46af431cd5
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-eks-fargate

@@ -138,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -165,13 +165,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
   coralogix/resource_catalog:
     application_name: resource
     domain: coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -196,7 +196,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-agent.version: 0.136.0
+        helm.chart.opentelemetry-agent.version: 0.136.2
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
@@ -221,11 +221,13 @@ processors:
     traces:
       span:
       - span.kind != SPAN_KIND_CLIENT or span.attributes["db.namespace"] == nil or
-        span.attributes["db.system"] == nil
+        (span.attributes["db.system"] == nil and span.attributes["db.system.name"]
+        == nil)
   filter/db_spanmetrics:
     traces:
       span:
-      - span.attributes["db.system"] == nil
+      - span.attributes["db.system"] == nil and span.attributes["db.system.name"]
+        == nil
   memory_limiter:
     check_interval: 5s
     limit_percentage: 80
@@ -293,6 +295,13 @@ processors:
       statements:
       - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
         "deployment.environment.name"])
+  transform/db:
+    error_mode: silent
+    trace_statements:
+    - context: span
+      statements:
+      - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
+        != nil and attributes["db.system"] == nil
   transform/db_compact:
     trace_statements:
     - context: resource
@@ -301,6 +310,8 @@ processors:
         "deployment.environment.name"])
     - context: span
       statements:
+      - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
+        != nil and attributes["db.system"] == nil
       - keep_keys(span.attributes, ["db.namespace", "db.system"])
   transform/entity-event:
     error_mode: silent
@@ -753,6 +764,7 @@ service:
       - spanmetrics/db
       processors:
       - filter/db_spanmetrics
+      - transform/db
       - batch
       receivers:
       - forward/db
@@ -799,14 +811,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -826,7 +838,7 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.45
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.46
 extensions:
   health_check:
     endpoint: ${env:MY_POD_IP}:13133
@@ -836,7 +848,7 @@ extensions:
       non_identifying_attributes:
         cx.agent.type: agent
         cx.cluster.name: ''
-        helm.chart.opentelemetry-ebpf-profiler.version: 0.136.0
+        helm.chart.opentelemetry-ebpf-profiler.version: 0.136.2
     server:
       http:
         endpoint: https://ingress.coralogix.com/opamp/v1
