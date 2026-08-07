@@ -1,5 +1,18 @@
 # Changelog
 
+### v0.0.46 / 2026-08-07
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.3`.
+
+#### Changes from opentelemetry-collector 0.136.3:
+- [Fix] Remove trailing whitespace from Helm 4 rendered manifests.
+
+#### Changes from opentelemetry-collector 0.136.2:
+- [Feat] Report allocatable pods when the `clusterMetrics` preset is enabled.
+
+#### Changes from opentelemetry-collector 0.136.1:
+- [Fix] `presets.spanMetrics.dbMetrics`: recognise the current semantic convention `db.system.name` in addition to the deprecated `db.system`. `filter/db_spanmetrics` previously dropped every span whose `db.system` was unset, which discarded **all** database spans produced by eBPF instrumentation (OBI emits only `db.system.name`), so no `db_calls_total` / `db_duration_ms_*` were ever generated and the Database Catalog stayed empty. The filter now keeps a span when either attribute is present, and `transform/db` — which runs after the filter and is now always wired when `dbMetrics` is enabled — normalises `db.system` from `db.system.name` before any user-supplied `dbMetrics.transformStatements`. The same fix is applied to the compact DB pipeline and to the equivalent `spanMetricsMulti` pipelines.
+
 ### v0.0.45 / 2026-08-05
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.0`.
