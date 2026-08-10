@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.331"
+  version: "0.0.332"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -177,6 +177,8 @@ opentelemetry-agent:
   #   name: ""
   #   # Sets the priority value of the priority class.
   #   priorityValue: 1000000000
+  #   # Sets whether this priority class can preempt lower-priority pods.
+  #   preemptionPolicy: PreemptLowerPriority
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
 
@@ -483,6 +485,8 @@ opentelemetry-cluster-collector:
   #   name: ""
   #   # Sets the priority value of the priority class.
   #   priorityValue: 1000000000
+  #   # Sets whether this priority class can preempt lower-priority pods.
+  #   preemptionPolicy: PreemptLowerPriority
   replicaCount: 1
   presets:
     fleetManagement:

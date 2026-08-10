@@ -77,6 +77,8 @@ opentelemetry-agent-windows:
     name: ""
     # Sets the priority value of the priority class.
     priorityValue: 1000000000
+    # Sets whether this priority class can preempt lower-priority pods.
+    preemptionPolicy: PreemptLowerPriority
   hostNetwork: true
   dnsPolicy: "ClusterFirstWithHostNet"
 

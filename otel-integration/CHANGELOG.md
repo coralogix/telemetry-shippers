@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.332 / 2026-08-10
+
+- [Feat] Bump the OpenTelemetry Collector chart dependency to 0.136.5 and expose `priorityClass.preemptionPolicy`, allowing created PriorityClasses to use `PreemptLowerPriority` or `Never`.
+
+#### Changes from opentelemetry-collector 0.136.5:
+- [Feat] Add `priorityClass.preemptionPolicy` support, allowing created PriorityClasses to use either Kubernetes preemption behavior: `PreemptLowerPriority` or `Never`.
+
 ### v0.0.331 / 2026-07-24
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.135.4
@@ -61,7 +68,6 @@
 - [Chore] Updates `stats.enabled: true` now also adds the "stats" metrics feature to `otel_metrics_export.features`; previously it only mounted tracefs, so stat probes loaded as no-op stubs and no stats metrics were ever exported
 - [Chore] Migrates default discovery config from deprecated `services`/`exclude_services` to `instrument`/`exclude_instrument` with glob syntax
 - [Chore] Fixes default `k8s_namespace` pattern from `.` (matches any single character) to `".*"` (matches any namespace)
-
 ### v0.0.323 / 2026-07-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.134.3
