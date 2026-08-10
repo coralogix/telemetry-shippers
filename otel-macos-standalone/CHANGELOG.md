@@ -2,6 +2,15 @@
 
 ## otel-macos-standalone
 
+### v0.0.53 / 2026-08-10
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.136.4
+
+#### Changes from opentelemetry-collector 0.136.4:
+- [Fix] `presets.ebpfProfiler`: stop rendering `tracers` on the `profiling` receiver. The option was removed from the receiver in profiler v0.156.0 ([open-telemetry/opentelemetry-ebpf-profiler#1436](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/pull/1436)), so every profiler pod on appVersion 0.156.0 crash-looped with `'config.Config' has invalid keys: tracers`. The key was rendered unconditionally, so it could not be removed via values either.
+- [Feat] `presets.ebpfProfiler.interpreters`: pass per-interpreter configuration through to the receiver, replacing `tracers`. All unwinders stay enabled by default; set e.g. `interpreters.php.disabled: true` to turn one off.
+- [Fix] `validate-configs.sh` now validates configs that use the `profiling` receiver against the `otelcol-ebpf-profiler` distribution instead of ignoring them as "unknown type: profiling" under `otelcol-contrib`. This class of breakage was invisible to CI before.
+
 ### v0.0.52 / 2026-08-07
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.3
