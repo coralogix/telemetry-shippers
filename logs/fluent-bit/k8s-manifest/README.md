@@ -154,6 +154,7 @@ service "fluent-bit" deleted
 | EU2    | `ingress.eu2.coralogix.com` |
 | US1    | `ingress.us1.coralogix.com` |
 | US2    | `ingress.us2.coralogix.com` |
+| US3    | `ingress.us3.coralogix.com` |
 | AP1    | `ingress.ap1.coralogix.com` |
 | AP2    | `ingress.ap2.coralogix.com` |
 | AP3    | `ingress.ap3.coralogix.com` |
