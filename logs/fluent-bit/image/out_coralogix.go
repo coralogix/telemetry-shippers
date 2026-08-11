@@ -47,7 +47,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 
 	// Check Coralogix endpoint
 	if endpoint == "" {
-		endpoint = "api.eu1.coralogix.com"
+		endpoint = "api.coralogix.com"
 	}
 
 	// Check Private Key
