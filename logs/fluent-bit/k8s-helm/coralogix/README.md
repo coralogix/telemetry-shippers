@@ -63,11 +63,11 @@ helm upgrade fluent-bit-coralogix coralogix-charts-virtual/fluent-bit-coralogix 
 
 | Region | Logs Endpoint               |
 |--------|-----------------------------|
-| EU     | `ingress.coralogix.com`     |
+| EU     | `ingress.eu1.coralogix.com` |
 | EU2    | `ingress.eu2.coralogix.com` |
-| US     | `ingress.coralogix.us`      |
-| SG     | `ingress.coralogixsg.com`   |
-| IN     | `ingress.coralogix.in`      |
+| US     | `ingress.us1.coralogix.com` |
+| SG     | `ingress.ap2.coralogix.com` |
+| IN     | `ingress.ap1.coralogix.com` |
 
 **NOTE**
 We suggest using dynamic app_name and sub_system, since it's more agile than using static values.

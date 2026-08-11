@@ -576,7 +576,7 @@ install_chart() {
     # Build the helm command
     local helm_cmd="helm upgrade --install ${HELM_RELEASE_NAME} . \
       --set global.clusterName=\"${CLUSTER_NAME}\" \
-      --set global.domain=\"coralogix.com\" \
+      --set global.domain=\"eu1.coralogix.com\" \
       --set global.hostedEndpoint=\"${HOSTENDPOINT}\""
 
     # Add values files

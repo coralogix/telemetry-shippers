@@ -20,7 +20,7 @@ metadata:
     app.kubernetes.io/instance: fluentd-http
   name: fluentd-env
 data:
-  ENDPOINT: ingress.coralogix.com
+  ENDPOINT: ingress.eu1.coralogix.com
   LOG_LEVEL: error
 ```
 
@@ -171,11 +171,11 @@ configmap "fluentd-env" deleted
 
 | Region | Logs Endpoint               |
 |--------|-----------------------------|
-| EU     | `ingress.coralogix.com`     |
+| EU     | `ingress.eu1.coralogix.com` |
 | EU2    | `ingress.eu2.coralogix.com` |
-| US     | `ingress.coralogix.us`      |
-| SG     | `ingress.coralogixsg.com`   |
-| IN     | `ingress.coralogix.in`      |
+| US     | `ingress.us1.coralogix.com` |
+| SG     | `ingress.ap2.coralogix.com` |
+| IN     | `ingress.ap1.coralogix.com` |
 
 ## Deploy to different namespace
 

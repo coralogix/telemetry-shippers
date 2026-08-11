@@ -23,7 +23,7 @@ import (
 //
 //	helm upgrade --install otel-integration-agent-e2e . \
 //	  --set global.clusterName="otel-integration-agent-e2e" \
-//	  --set global.domain="coralogix.com" \
+//	  --set global.domain="eu1.coralogix.com" \
 //	  --set global.hostedEndpoint=$HOSTENDPOINT \
 //	  -f ./values.yaml \
 //	  -f ./e2e-test/testdata/values-e2e-head-sampling.yaml

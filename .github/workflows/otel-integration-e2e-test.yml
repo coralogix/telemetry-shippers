@@ -45,7 +45,7 @@ jobs:
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
-          --set global.domain="coralogix.com"  \
+          --set global.domain="eu1.coralogix.com"  \
           --set global.hostedEndpoint=$HOSTENDPOINT \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml \
@@ -165,7 +165,7 @@ jobs:
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
-          --set global.domain="coralogix.com"  \
+          --set global.domain="eu1.coralogix.com"  \
           --set global.hostedEndpoint=$HOSTENDPOINT \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-fleet-manager-supervisor.yaml
@@ -186,7 +186,7 @@ jobs:
           cd ./otel-integration/k8s-helm
           helm upgrade --install otel-integration-agent-e2e . \
           --set global.clusterName="otel-integration-agent-e2e" \
-          --set global.domain="coralogix.com"  \
+          --set global.domain="eu1.coralogix.com"  \
           --set global.hostedEndpoint=$HOSTENDPOINT \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-fleet-manager-supervisor-non-minimal.yaml
@@ -245,7 +245,7 @@ jobs:
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
             --set global.clusterName="otel-integration-agent-e2e" \
-            --set global.domain="coralogix.com"  \
+            --set global.domain="eu1.coralogix.com"  \
             --set global.hostedEndpoint=$HOSTENDPOINT \
             -f ./values.yaml \
             -f ./tail-sampling-values.yaml \
@@ -307,7 +307,7 @@ jobs:
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
             --set global.clusterName="otel-integration-agent-e2e" \
-            --set global.domain="coralogix.com"  \
+            --set global.domain="eu1.coralogix.com"  \
             --set global.hostedEndpoint=$HOSTENDPOINT \
             -f ./values.yaml \
             -f ./e2e-test/testdata/values-e2e-span-metrics.yaml
@@ -386,7 +386,7 @@ jobs:
           helm dependency build
           helm upgrade --install otel-integration-agent-e2e . \
             --set global.clusterName="otel-integration-agent-e2e" \
-            --set global.domain="coralogix.com"  \
+            --set global.domain="eu1.coralogix.com"  \
             --set global.hostedEndpoint=$HOSTENDPOINT \
             -f ./values.yaml \
             -f ./values-crd-override.yaml \

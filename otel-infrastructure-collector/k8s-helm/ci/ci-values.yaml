@@ -1,5 +1,5 @@
 global:
-  domain: "coralogix.com"
+  domain: "eu1.coralogix.com"
   traces:
     endpoint: ""
   metrics:

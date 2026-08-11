@@ -28,7 +28,7 @@ metadata:
     app.kubernetes.io/instance: fluent-bit-http
   name: fluent-bit-env
 data:
-  ENDPOINT: ingress.coralogix.com
+  ENDPOINT: ingress.eu1.coralogix.com
   LOG_LEVEL: error
 ```
 
@@ -148,15 +148,15 @@ service "fluent-bit" deleted
 
 ## Coralogix Endpoints
 
-| Region | Logs Endpoint                 |
-|--------|-------------------------------|
-| EU1    | `ingress.coralogix.com`       |
-| EU2    | `ingress.eu2.coralogix.com`   |
-| US1    | `ingress.coralogix.us`        |
-| US2    | `ingress.cx498.coralogix.com` |
-| AP1    | `ingress.coralogix.in`        |
-| AP2    | `ingress.coralogixsg.com`     |
-| AP3    | `ingress.ap3.coralogix.com`   |
+| Region | Logs Endpoint               |
+|--------|-----------------------------|
+| EU1    | `ingress.eu1.coralogix.com` |
+| EU2    | `ingress.eu2.coralogix.com` |
+| US1    | `ingress.us1.coralogix.com` |
+| US2    | `ingress.us2.coralogix.com` |
+| AP1    | `ingress.ap1.coralogix.com` |
+| AP2    | `ingress.ap2.coralogix.com` |
+| AP3    | `ingress.ap3.coralogix.com` |
 
 ## Dashboard
 

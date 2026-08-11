@@ -907,7 +907,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 > [!NOTE]
-> The `global.domain` value must be set to your [Coralogix endpoint domain](https://coralogix.com/docs/integrations/coralogix-endpoints/) (e.g., `coralogix.com`, `coralogix.us`, `coralogix.in`, etc.). If you have the domain stored in the `CORALOGIX_DOMAIN` environment variable, you can use `--set global.domain=$CORALOGIX_DOMAIN`.
+> The `global.domain` value must be set to your [Coralogix endpoint domain](https://coralogix.com/docs/integrations/coralogix-endpoints/) (e.g., `eu1.coralogix.com`, `us1.coralogix.com`, `ap1.coralogix.com`, etc.). If you have the domain stored in the `CORALOGIX_DOMAIN` environment variable, you can use `--set global.domain=$CORALOGIX_DOMAIN`.
 
 #### Configuration
 
