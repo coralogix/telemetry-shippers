@@ -3,6 +3,15 @@
 ### v0.0.48 / 2026-08-11
 
 - [Change] Migrated the default Coralogix domain from the legacy `coralogix.com` to the regional `eu1.coralogix.com`.
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.5`.
+
+#### Changes from opentelemetry-collector 0.136.5:
+- [Feat] Add optional `priorityClass.preemptionPolicy` support, allowing created PriorityClasses to use either Kubernetes preemption behavior: `PreemptLowerPriority` or `Never` when explicitly configured.
+
+#### Changes from opentelemetry-collector 0.136.4:
+- [Fix] `presets.ebpfProfiler`: stop rendering `tracers` on the `profiling` receiver. The option was removed from the receiver in profiler v0.156.0 ([open-telemetry/opentelemetry-ebpf-profiler#1436](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/pull/1436)), so every profiler pod on appVersion 0.156.0 crash-looped with `'config.Config' has invalid keys: tracers`. The key was rendered unconditionally, so it could not be removed via values either.
+- [Feat] `presets.ebpfProfiler.interpreters`: pass per-interpreter configuration through to the receiver, replacing `tracers`. All unwinders stay enabled by default; set e.g. `interpreters.php.disabled: true` to turn one off.
+- [Fix] `validate-configs.sh` now validates configs that use the `profiling` receiver against the `otelcol-ebpf-profiler` distribution instead of ignoring them as "unknown type: profiling" under `otelcol-contrib`. This class of breakage was invisible to CI before.
 
 ### v0.0.47 / 2026-08-10
 

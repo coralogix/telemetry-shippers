@@ -6,7 +6,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.136.4
+    helm.sh/chart: opentelemetry-agent-0.136.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.156.0"
@@ -19,7 +19,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.136.4
+    helm.sh/chart: opentelemetry-agent-0.136.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.156.0"
@@ -224,7 +224,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.136.4
+            helm.chart.opentelemetry-agent.version: 0.136.5
         server:
           http:
             endpoint: https://ingress.eu1.coralogix.com/opamp/v1
@@ -830,7 +830,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.136.4
+    helm.sh/chart: opentelemetry-agent-0.136.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.156.0"
@@ -846,7 +846,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2b18b79fd49525217d92629c879afd90e7a4a86ecc4a5ec04c38ac5ad224aa3b
+        checksum/config: c5197c7d32751468ec3ad2ce3f7b9c54cccb52c6ca6cfb9261f4cf0a52152095
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
