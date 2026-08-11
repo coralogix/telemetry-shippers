@@ -2,6 +2,10 @@
 
 ## otel-windows-standalone
 
+### v0.0.53 / 2026-08-11
+
+- [Chore] Version bump only, to keep the standalone charts in lockstep. This chart already defaulted to `eu2.coralogix.com`, so the domain migration does not change its behaviour.
+
 ### v0.0.52 / 2026-08-07
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.3

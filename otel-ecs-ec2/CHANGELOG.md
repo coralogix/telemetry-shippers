@@ -1,5 +1,9 @@
 # Changelog
 
+### v0.0.48 / 2026-08-11
+
+- [Change] Migrated the default Coralogix domain from the legacy `coralogix.com` to the regional `eu1.coralogix.com`.
+
 ### v0.0.47 / 2026-08-10
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.4`.

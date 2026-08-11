@@ -179,14 +179,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -206,13 +206,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
       coralogix/resource_catalog:
         application_name: resource
         domain: eu1.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -865,14 +865,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -892,7 +892,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.47
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.48
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
@@ -1005,7 +1005,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ece903793727c75579d48a3bc7984c2a9b5cbaa8b00c55a283051e8bd1631bf7
+        checksum/config: 2b18b79fd49525217d92629c879afd90e7a4a86ecc4a5ec04c38ac5ad224aa3b
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -1140,7 +1140,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 9ccd9f5075774c51f1c0589abd8cc7407683375f082931ddc37d64ddb67b271d
+        checksum/config: b52f43bb57f3288bb6c6b448cb8d614fb436330e992a388e51e5f957cb01a563
         
       labels:
         app.kubernetes.io/name: opentelemetry-ebpf-profiler
