@@ -4,7 +4,7 @@
 
 ### v0.0.332 / 2026-08-10
 
-- [Feat] Bump the OpenTelemetry Collector chart dependency to 0.136.5 and expose `priorityClass.preemptionPolicy`, allowing created PriorityClasses to use `PreemptLowerPriority` or `Never`.
+- [Feat] Bump the OpenTelemetry Collector chart dependency to 0.136.5 and expose optional `priorityClass.preemptionPolicy`, allowing created PriorityClasses to use `PreemptLowerPriority` or `Never` when explicitly configured.
 
 #### Changes from opentelemetry-collector 0.136.5:
 - [Feat] Add `priorityClass.preemptionPolicy` support, allowing created PriorityClasses to use either Kubernetes preemption behavior: `PreemptLowerPriority` or `Never`.
