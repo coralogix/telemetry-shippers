@@ -2,6 +2,10 @@
 
 ## otel-macos-standalone
 
+### v0.0.53 / 2026-08-11
+
+- [Change] Migrated the default Coralogix domain from the legacy `coralogix.com` to the regional `eu1.coralogix.com`.
+
 ### v0.0.52 / 2026-08-07
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.3

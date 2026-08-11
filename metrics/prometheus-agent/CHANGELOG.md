@@ -2,6 +2,9 @@
 
 ## Prometheus-Agent
 
+### v0.0.19 / 2026-08-11
+* [CHANGE] Migrated the default `remoteWrite` URL from the legacy `ingress.coralogix.com` to the regional `ingress.eu1.coralogix.com`.
+
 ### v0.0.18 / 2024-04-19
 * [FIX] Add README example for externalLabels key
 

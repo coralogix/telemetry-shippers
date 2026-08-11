@@ -1,10 +1,10 @@
 global:
-  domain: "coralogix.com"
+  domain: "eu1.coralogix.com"
   defaultApplicationName: "otel"
   defaultSubsystemName: "macos"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.52"
+  version: "0.0.53"
 
 opentelemetry-agent:
   enabled: true

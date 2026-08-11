@@ -5,9 +5,9 @@ variable "name_prefix" {
 }
 
 variable "coralogix_domain" {
-  description = "Coralogix domain (e.g., coralogix.com, eu2.coralogix.com)"
+  description = "Coralogix domain (e.g., eu1.coralogix.com, eu2.coralogix.com)"
   type        = string
-  default     = "coralogix.com"
+  default     = "eu1.coralogix.com"
 }
 
 variable "coralogix_private_key" {

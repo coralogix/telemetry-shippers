@@ -119,7 +119,7 @@ exporters:
     application_name_attributes:
     - aws.ecs.cluster
     - aws.ecs.task.definition.family
-    domain: coralogix.com
+    domain: eu1.coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
@@ -142,7 +142,7 @@ exporters:
         X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
   coralogix/resource_catalog:
     application_name: resource
-    domain: coralogix.com
+    domain: eu1.coralogix.com
     logs:
       headers:
         X-Coralogix-Distribution: ecs-fargate-integration/1.1.0
@@ -160,7 +160,7 @@ extensions:
         cx.cluster.name: 'ecs-fargate'
     server:
       http:
-        endpoint: https://ingress.coralogix.com/opamp/v1
+        endpoint: https://ingress.eu1.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m

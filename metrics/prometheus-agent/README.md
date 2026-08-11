@@ -86,7 +86,7 @@ prometheus:
         maxSamplesPerSend: 1000
         maxShards: 200
       remoteTimeout: 120s
-      url: https://ingress.coralogix.com/prometheus/v1
+      url: https://ingress.eu1.coralogix.com/prometheus/v1
 ```
 
 Install the chart:

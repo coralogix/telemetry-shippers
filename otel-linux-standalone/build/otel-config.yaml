@@ -129,7 +129,7 @@ exporters:
     application_name_attributes:
     - cx.application.name
     - service.namespace
-    domain: coralogix.com
+    domain: eu1.coralogix.com
     domain_settings:
       keepalive:
         enabled: true
@@ -138,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.52
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.52
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.52
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -164,13 +164,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.52
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
   coralogix/resource_catalog:
     application_name: resource
-    domain: coralogix.com
+    domain: eu1.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.52
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -197,7 +197,7 @@ extensions:
         helm.chart.opentelemetry-agent.version: 0.136.3
     server:
       http:
-        endpoint: https://ingress.coralogix.com/opamp/v1
+        endpoint: https://ingress.eu1.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
