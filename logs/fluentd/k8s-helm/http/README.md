@@ -55,12 +55,13 @@ Therefore, the PodSecurityPolicy is disabled in this chart since version 0.0.11.
 
 | Region | Logs Endpoint               |
 |--------|-----------------------------|
-| EU     | `ingress.eu1.coralogix.com` |
+| EU1    | `ingress.eu1.coralogix.com` |
 | EU2    | `ingress.eu2.coralogix.com` |
-| US     | `ingress.us1.coralogix.com` |
+| US1    | `ingress.us1.coralogix.com` |
 | US2    | `ingress.us2.coralogix.com` |
-| SG     | `ingress.ap2.coralogix.com` |
-| IN     | `ingress.ap1.coralogix.com` |
+| AP1    | `ingress.ap1.coralogix.com` |
+| AP2    | `ingress.ap2.coralogix.com` |
+| AP3    | `ingress.ap3.coralogix.com` |
 
 ## Disable Systemd Logs
 
