@@ -138,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.54
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.54
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.54
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -164,13 +164,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.54
   coralogix/resource_catalog:
     application_name: resource
     domain: eu1.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.53
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.54
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
