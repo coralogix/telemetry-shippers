@@ -297,7 +297,7 @@ spec:
             - name: K8S_CLUSTER_NAME
               value: "fargate-lab"
             - name: CORALOGIX_DOMAIN
-              value: "coralogix.com"
+              value: "eu1.coralogix.com"
             - name: CX_APPLICATION
               value: "EKS"
             - name: CX_SUBSYSTEM

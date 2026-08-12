@@ -6,14 +6,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.135.1
+    helm.sh/chart: opentelemetry-agent-0.136.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.155.0"
+    app.kubernetes.io/version: "0.156.0"
     app.kubernetes.io/managed-by: Helm
-    
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/serviceaccount.yaml
 apiVersion: v1
@@ -22,14 +19,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.135.1
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.136.5
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.155.0"
+    app.kubernetes.io/version: "0.156.0"
     app.kubernetes.io/managed-by: Helm
-    
-
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/configmap-agent.yaml
 apiVersion: v1
@@ -38,12 +32,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.135.1
+    helm.sh/chart: opentelemetry-agent-0.136.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.155.0"
+    app.kubernetes.io/version: "0.156.0"
     app.kubernetes.io/managed-by: Helm
-    
 data:
   relay: |
     connectors:
@@ -62,6 +55,7 @@ data:
         - name: db.operation.name
         - name: db.collection.name
         - name: db.system
+        - name: graphql.operation.type
         - name: http.response.status_code
         - name: rpc.grpc.status_code
         - name: service.version
@@ -85,6 +79,7 @@ data:
         metrics_expiration: 5m
         metrics_flush_interval: '30s'
         namespace: ""
+        series_expiration: 5m
       spanmetrics/compact:
         add_resource_attributes: true
         aggregation_cardinality_limit: 100000
@@ -109,6 +104,7 @@ data:
         metrics_expiration: 5m
         metrics_flush_interval: '30s'
         namespace: compact
+        series_expiration: 5m
       spanmetrics/db:
         add_resource_attributes: true
         aggregation_cardinality_limit: 100000
@@ -138,6 +134,7 @@ data:
         metrics_expiration: 5m
         metrics_flush_interval: '30s'
         namespace: db
+        series_expiration: 5m
       spanmetrics/db_compact:
         add_resource_attributes: true
         aggregation_cardinality_limit: 100000
@@ -166,13 +163,14 @@ data:
         metrics_expiration: 5m
         metrics_flush_interval: '30s'
         namespace: db_compact
+        series_expiration: 5m
     exporters:
       coralogix:
         application_name: otel
         application_name_attributes:
         - aws.ecs.cluster.name
         - aws.ecs.task.definition.family
-        domain: coralogix.com
+        domain: eu1.coralogix.com
         domain_settings:
           keepalive:
             enabled: true
@@ -181,14 +179,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -208,13 +206,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
       coralogix/resource_catalog:
         application_name: resource
-        domain: coralogix.com
+        domain: eu1.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -239,10 +237,10 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.135.1
+            helm.chart.opentelemetry-agent.version: 0.136.5
         server:
           http:
-            endpoint: https://ingress.coralogix.com/opamp/v1
+            endpoint: https://ingress.eu1.coralogix.com/opamp/v1
             headers:
               Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
             polling_interval: 2m
@@ -264,11 +262,13 @@ data:
         traces:
           span:
           - span.kind != SPAN_KIND_CLIENT or span.attributes["db.namespace"] == nil or
-            span.attributes["db.system"] == nil
+            (span.attributes["db.system"] == nil and span.attributes["db.system.name"]
+            == nil)
       filter/db_spanmetrics:
         traces:
           span:
-          - span.attributes["db.system"] == nil
+          - span.attributes["db.system"] == nil and span.attributes["db.system.name"]
+            == nil
       memory_limiter:
         check_interval: 5s
         limit_percentage: 80
@@ -336,6 +336,13 @@ data:
           statements:
           - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
             "deployment.environment.name"])
+      transform/db:
+        error_mode: silent
+        trace_statements:
+        - context: span
+          statements:
+          - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
+            != nil and attributes["db.system"] == nil
       transform/db_compact:
         trace_statements:
         - context: resource
@@ -344,6 +351,8 @@ data:
             "deployment.environment.name"])
         - context: span
           statements:
+          - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
+            != nil and attributes["db.system"] == nil
           - keep_keys(span.attributes, ["db.namespace", "db.system"])
       transform/entity-event:
         error_mode: silent
@@ -545,6 +554,9 @@ data:
           statements:
           - set(span.attributes["http.method"], span.attributes["http.request.method"])
             where span.attributes["http.request.method"] != nil
+          - set(span.attributes["http.response.status_code"], span.attributes["http.status_code"])
+            where span.attributes["http.response.status_code"] == nil and span.attributes["http.status_code"]
+            != nil
       transform/spanmetrics:
         error_mode: silent
         metric_statements:
@@ -793,6 +805,7 @@ data:
           - spanmetrics/db
           processors:
           - filter/db_spanmetrics
+          - transform/db
           - batch
           receivers:
           - forward/db
@@ -822,7 +835,6 @@ data:
         resource:
           cx.agent.type: agent
           service.name: opentelemetry-collector
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/configmap-agent.yaml
 apiVersion: v1
@@ -831,12 +843,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.135.1
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.136.5
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.155.0"
+    app.kubernetes.io/version: "0.156.0"
     app.kubernetes.io/managed-by: Helm
-    
 data:
   relay: |
     exporters:
@@ -845,7 +856,7 @@ data:
         application_name_attributes:
         - aws.ecs.cluster.name
         - aws.ecs.task.definition.family
-        domain: coralogix.com
+        domain: eu1.coralogix.com
         domain_settings:
           keepalive:
             enabled: true
@@ -854,14 +865,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -881,7 +892,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.40
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.49
     extensions:
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
@@ -891,10 +902,10 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-ebpf-profiler.version: 0.135.1
+            helm.chart.opentelemetry-ebpf-profiler.version: 0.136.5
         server:
           http:
-            endpoint: https://ingress.coralogix.com/opamp/v1
+            endpoint: https://ingress.eu1.coralogix.com/opamp/v1
             headers:
               Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
             polling_interval: 2m
@@ -950,7 +961,6 @@ data:
         probabilistic_threshold: 100
         reporter_interval: '30s'
         samples_per_second: 20
-        tracers: all
         verbose_mode: false
     service:
       extensions:
@@ -971,7 +981,6 @@ data:
       telemetry:
         logs:
           encoding: json
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-agent/templates/daemonset.yaml
 apiVersion: apps/v1
@@ -980,12 +989,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.135.1
+    helm.sh/chart: opentelemetry-agent-0.136.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.155.0"
+    app.kubernetes.io/version: "0.156.0"
     app.kubernetes.io/managed-by: Helm
-    
 spec:
   selector:
     matchLabels:
@@ -997,7 +1005,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a2d2b1790363c6df2b2a9708d09a7d30b6d2bc6a9c7c5dbfb27453c2aa7e9774
+        checksum/config: 4322b61eb7401de7599f80f2a502b80b12ac4c01f4735c3f38b1da48da93151e
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -1108,7 +1116,6 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       hostNetwork: true
-
 ---
 # Source: ecs-ec2-integration/charts/opentelemetry-ebpf-profiler/templates/daemonset.yaml
 apiVersion: apps/v1
@@ -1117,12 +1124,11 @@ metadata:
   name: ecs-ec2-example-opentelemetry-ebpf-profiler-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-ebpf-profiler-0.135.1
+    helm.sh/chart: opentelemetry-ebpf-profiler-0.136.5
     app.kubernetes.io/name: opentelemetry-ebpf-profiler
     app.kubernetes.io/instance: ecs-ec2-example
-    app.kubernetes.io/version: "0.155.0"
+    app.kubernetes.io/version: "0.156.0"
     app.kubernetes.io/managed-by: Helm
-    
 spec:
   selector:
     matchLabels:
@@ -1134,7 +1140,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 02258bdd0ee2b2fd9df1bfa8b5f2935a4009ffecd3e885be175bdf5a3416e2dc
+        checksum/config: f0287aa7f4a509ccf496a8436ddca3ebb0d3f89c8e705551a3dd482a65b8302e
         
       labels:
         app.kubernetes.io/name: opentelemetry-ebpf-profiler
@@ -1156,7 +1162,7 @@ spec:
             runAsUser: 0
             runAsGroup: 0
             privileged: true
-          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.155.0"
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-ebpf-profiler:0.156.0"
           imagePullPolicy: IfNotPresent
           ports:
             - name: otlp

@@ -10,7 +10,7 @@ This script deploys the Coralogix OpenTelemetry Collector as:
 
 Both support **local configuration mode** (configuration file provided locally) and **supervisor mode** (remote configuration via Fleet Management).
 
-<!-- split title=&#34;Linux Installation&#34; path=&#34;installation/linux/index.md&#34; -->
+<!-- split title="Linux Installation" path="installation/linux/index.md" -->
 
 # Linux Installation
 
@@ -293,7 +293,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 <!-- /split -->
 
-<!-- split title=&#34;macOS Installation&#34; path=&#34;installation/macos/index.md&#34; -->
+<!-- split title="macOS Installation" path="installation/macos/index.md" -->
 
 # macOS Installation
 

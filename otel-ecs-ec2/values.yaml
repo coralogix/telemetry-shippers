@@ -1,11 +1,11 @@
 global:
-  domain: "coralogix.com"
+  domain: "eu1.coralogix.com"
   clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.40"
+  version: "0.0.49"
   deploymentEnvironmentName: ""
 
 opentelemetry-agent:

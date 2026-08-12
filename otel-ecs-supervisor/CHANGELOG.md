@@ -2,6 +2,14 @@
 
 ## ecs-ec2-integration
 
+### 0.0.11 / 2026-08-11
+
+* [IMPROVEMENT] Migrated the `coralogix_domain` default from the legacy `coralogix.com` to the regional `eu1.coralogix.com`. ([#990](https://github.com/coralogix/telemetry-shippers/pull/990))
+
+### 0.0.10 / 2026-07-29
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.12.0`.
+
 ### 0.0.9 / 2026-07-15
 
 * [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.11.0`.

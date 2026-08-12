@@ -1,8 +1,80 @@
 # Changelog
 
-### v0.0.41 / 2026-07-16
+### v0.0.50 / 2026-08-12
 
 - [Feat] Add opt-in OpenTelemetry eBPF Instrumentation (OBI) support. Set the Terraform `enable_obi` variable to run OBI (`ghcr.io/open-telemetry/opentelemetry-ebpf-instrumentation/ebpf-instrument:v0.10.0`) as a privileged sidecar in the collector task; it ships application spans & metrics to the node-local collector over OTLP. The OBI config is rendered with `make obi-config` into `obi/obi-config.yaml`. See `obi/README.md`.
+
+### v0.0.49 / 2026-08-12
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.5`.
+
+#### Changes from opentelemetry-collector 0.136.5:
+- [Feat] Add optional `priorityClass.preemptionPolicy` support, allowing created PriorityClasses to use either Kubernetes preemption behavior: `PreemptLowerPriority` or `Never` when explicitly configured.
+
+#### Changes from opentelemetry-collector 0.136.4:
+- [Fix] `presets.ebpfProfiler`: stop rendering `tracers` on the `profiling` receiver. The option was removed from the receiver in profiler v0.156.0 ([open-telemetry/opentelemetry-ebpf-profiler#1436](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/pull/1436)), so every profiler pod on appVersion 0.156.0 crash-looped with `'config.Config' has invalid keys: tracers`. The key was rendered unconditionally, so it could not be removed via values either.
+- [Feat] `presets.ebpfProfiler.interpreters`: pass per-interpreter configuration through to the receiver, replacing `tracers`. All unwinders stay enabled by default; set e.g. `interpreters.php.disabled: true` to turn one off.
+- [Fix] `validate-configs.sh` now validates configs that use the `profiling` receiver against the `otelcol-ebpf-profiler` distribution instead of ignoring them as "unknown type: profiling" under `otelcol-contrib`. This class of breakage was invisible to CI before.
+
+### v0.0.48 / 2026-08-11
+
+- [Change] Migrated the default Coralogix domain from the legacy `coralogix.com` to the regional `eu1.coralogix.com`.
+
+### v0.0.47 / 2026-08-10
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.4`.
+
+#### Changes from opentelemetry-collector 0.136.4:
+- [Fix] `presets.ebpfProfiler`: stop rendering `tracers` on the `profiling` receiver. The option was removed from the receiver in profiler v0.156.0 ([open-telemetry/opentelemetry-ebpf-profiler#1436](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/pull/1436)), so every profiler pod on appVersion 0.156.0 crash-looped with `'config.Config' has invalid keys: tracers`. The key was rendered unconditionally, so it could not be removed via values either.
+- [Feat] `presets.ebpfProfiler.interpreters`: pass per-interpreter configuration through to the receiver, replacing `tracers`. All unwinders stay enabled by default; set e.g. `interpreters.php.disabled: true` to turn one off.
+- [Fix] `validate-configs.sh` now validates configs that use the `profiling` receiver against the `otelcol-ebpf-profiler` distribution instead of ignoring them as "unknown type: profiling" under `otelcol-contrib`. This class of breakage was invisible to CI before.
+
+### v0.0.46 / 2026-08-07
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.3`.
+
+#### Changes from opentelemetry-collector 0.136.3:
+- [Fix] Remove trailing whitespace from Helm 4 rendered manifests.
+
+#### Changes from opentelemetry-collector 0.136.2:
+- [Feat] Report allocatable pods when the `clusterMetrics` preset is enabled.
+
+#### Changes from opentelemetry-collector 0.136.1:
+- [Fix] `presets.spanMetrics.dbMetrics`: recognise the current semantic convention `db.system.name` in addition to the deprecated `db.system`. `filter/db_spanmetrics` previously dropped every span whose `db.system` was unset, which discarded **all** database spans produced by eBPF instrumentation (OBI emits only `db.system.name`), so no `db_calls_total` / `db_duration_ms_*` were ever generated and the Database Catalog stayed empty. The filter now keeps a span when either attribute is present, and `transform/db` — which runs after the filter and is now always wired when `dbMetrics` is enabled — normalises `db.system` from `db.system.name` before any user-supplied `dbMetrics.transformStatements`. The same fix is applied to the compact DB pipeline and to the equivalent `spanMetricsMulti` pipelines.
+
+### v0.0.45 / 2026-08-05
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.136.0`.
+
+### v0.0.44 / 2026-07-29
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.5`.
+
+#### Changes from opentelemetry-collector 0.135.5:
+- [Feat] Add `presets.pprofReceiver` preset wrapping the upstream contrib `pprofreceiver` (alpha). Three independent modes: `pull` (annotation-based discovery via `receiver_creator` + `k8s_observer`, scraping `/debug/pprof/*` endpoints on pods opted in with `pprof.coralogix.com/scrape: "true"`), `push` (HTTP server accepting `POST /v1/pprof`, port auto-published on the chart-managed Service), and `self` (in-process self-profiling of the collector). Requires `presets.profilesCollection.enabled = true`.
+- [Feat] Apply `presets.profilesCollection` in deployment/statefulset modes as well as daemonset, so the profiles pipeline (and the new pprofReceiver preset) work in cluster-collector deployments. Previously profilesCollection only took effect in daemonset mode.
+- [Feat] Add `k8s.pod.uid` as a third `pod_association` source on `k8sattributes/profiles` so pull-mode pprof profiles (where there is no inbound connection IP) can still be enriched with Kubernetes metadata.
+
+### v0.0.43 / 2026-07-24
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.4`.
+
+#### Changes from opentelemetry-collector 0.135.4:
+- [Feat] Default spanMetrics and spanMetricsMulti `seriesExpiration` to `5m` so stale per-dimension series expire and free aggregation slots after a transient cardinality spike.
+
+### v0.0.42 / 2026-07-23
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.3`.
+
+#### Changes from opentelemetry-collector 0.135.3:
+- [Feat] Add `graphql.operation.type` (query/mutation/subscription) as a span-metrics dimension so GraphQL traffic can be aggregated by operation type.
+
+### v0.0.41 / 2026-07-21
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.135.2`.
+
+#### Changes from opentelemetry-collector 0.135.2:
+- [Fix] The `semconv` preset now maps the legacy `http.status_code` attribute to `http.response.status_code` so span metrics carry the status code for spans using the old HTTP semantic convention.
 
 ### v0.0.40 / 2026-07-15
 

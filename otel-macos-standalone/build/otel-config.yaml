@@ -14,6 +14,7 @@ connectors:
     - name: db.operation.name
     - name: db.collection.name
     - name: db.system
+    - name: graphql.operation.type
     - name: http.response.status_code
     - name: rpc.grpc.status_code
     - name: service.version
@@ -37,6 +38,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: ""
+    series_expiration: 5m
   spanmetrics/compact:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
@@ -61,6 +63,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: compact
+    series_expiration: 5m
   spanmetrics/db:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
@@ -90,6 +93,7 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: db
+    series_expiration: 5m
   spanmetrics/db_compact:
     add_resource_attributes: true
     aggregation_cardinality_limit: 100000
@@ -118,13 +122,14 @@ connectors:
     metrics_expiration: 5m
     metrics_flush_interval: '30s'
     namespace: db_compact
+    series_expiration: 5m
 exporters:
   coralogix:
     application_name: otel
     application_name_attributes:
     - cx.application.name
     - service.namespace
-    domain: coralogix.com
+    domain: eu1.coralogix.com
     domain_settings:
       keepalive:
         enabled: true
@@ -133,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.45
+        X-Coralogix-Distribution: helm-otel-macos/0.0.54
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.45
+        X-Coralogix-Distribution: helm-otel-macos/0.0.54
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.45
+        X-Coralogix-Distribution: helm-otel-macos/0.0.54
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -159,13 +164,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.45
+        X-Coralogix-Distribution: helm-otel-macos/0.0.54
   coralogix/resource_catalog:
     application_name: resource
-    domain: coralogix.com
+    domain: eu1.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.45
+        X-Coralogix-Distribution: helm-otel-macos/0.0.54
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -188,11 +193,11 @@ extensions:
     agent_description:
       include_resource_attributes: true
       non_identifying_attributes:
-        cx.agent.type: agent
-        helm.chart.opentelemetry-agent.version: 0.135.1
+        cx.agent.type: standalone
+        helm.chart.opentelemetry-agent.version: 0.136.5
     server:
       http:
-        endpoint: https://ingress.coralogix.com/opamp/v1
+        endpoint: https://ingress.eu1.coralogix.com/opamp/v1
         headers:
           Authorization: Bearer ${env:CORALOGIX_PRIVATE_KEY}
         polling_interval: 2m
@@ -212,11 +217,13 @@ processors:
     traces:
       span:
       - span.kind != SPAN_KIND_CLIENT or span.attributes["db.namespace"] == nil or
-        span.attributes["db.system"] == nil
+        (span.attributes["db.system"] == nil and span.attributes["db.system.name"]
+        == nil)
   filter/db_spanmetrics:
     traces:
       span:
-      - span.attributes["db.system"] == nil
+      - span.attributes["db.system"] == nil and span.attributes["db.system.name"]
+        == nil
   groupbytrace/transactions:
     wait_duration: 30s
   memory_limiter:
@@ -276,6 +283,13 @@ processors:
       statements:
       - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
         "deployment.environment.name"])
+  transform/db:
+    error_mode: silent
+    trace_statements:
+    - context: span
+      statements:
+      - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
+        != nil and attributes["db.system"] == nil
   transform/db_compact:
     trace_statements:
     - context: resource
@@ -284,6 +298,8 @@ processors:
         "deployment.environment.name"])
     - context: span
       statements:
+      - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
+        != nil and attributes["db.system"] == nil
       - keep_keys(span.attributes, ["db.namespace", "db.system"])
   transform/entity-event:
     error_mode: silent
@@ -446,6 +462,9 @@ processors:
       statements:
       - set(span.attributes["http.method"], span.attributes["http.request.method"])
         where span.attributes["http.request.method"] != nil
+      - set(span.attributes["http.response.status_code"], span.attributes["http.status_code"])
+        where span.attributes["http.response.status_code"] == nil and span.attributes["http.status_code"]
+        != nil
   transform/spanmetrics:
     error_mode: silent
     metric_statements:
@@ -659,6 +678,7 @@ service:
       - spanmetrics/db
       processors:
       - filter/db_spanmetrics
+      - transform/db
       - batch
       receivers:
       - forward/db

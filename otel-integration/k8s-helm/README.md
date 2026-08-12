@@ -1,4 +1,4 @@
-<!-- split path=&#34;kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md&#34; -->
+<!-- split path="kubernetes-observability/kubernetes-observability-using-opentelemetry/index.md" -->
 
 # Kubernetes observability using OpenTelemetry
 
@@ -78,7 +78,7 @@ View our **basic configuration** instructions [here](https://coralogix.com/docs/
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md&#34; -->
+<!-- split path="kubernetes-observability/kubernetes-complete-observability-basic-configuration/index.md" -->
 
 # Kubernetes Complete Observability: Basic configuration
 
@@ -251,7 +251,7 @@ This is a known validation bug in Helm (see this [issue](https://github.com/helm
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/advanced-configuration/index.md&#34; -->
+<!-- split path="kubernetes-observability/advanced-configuration/index.md" -->
 
 # Kubernetes complete observability: Advanced configuration
 
@@ -907,7 +907,7 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 ```
 
 > [!NOTE]
-> The `global.domain` value must be set to your [Coralogix endpoint domain](https://coralogix.com/docs/integrations/coralogix-endpoints/) (e.g., `coralogix.com`, `coralogix.us`, `coralogix.in`, etc.). If you have the domain stored in the `CORALOGIX_DOMAIN` environment variable, you can use `--set global.domain=$CORALOGIX_DOMAIN`.
+> The `global.domain` value must be set to your [Coralogix endpoint domain](https://coralogix.com/docs/integrations/coralogix-endpoints/) (e.g., `eu1.coralogix.com`, `us1.coralogix.com`, `ap1.coralogix.com`, etc.). If you have the domain stored in the `CORALOGIX_DOMAIN` environment variable, you can use `--set global.domain=$CORALOGIX_DOMAIN`.
 
 #### Configuration
 
@@ -1622,7 +1622,7 @@ To enable the Coralogix Operator, set `coralogix-operator.enabled` to `true` in 
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/how-to-use-it/index.md&#34; -->
+<!-- split path="kubernetes-observability/how-to-use-it/index.md" -->
 
 # How to use it
 
@@ -2046,7 +2046,7 @@ Example:
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/troubleshooting/index.md&#34; -->
+<!-- split path="kubernetes-observability/troubleshooting/index.md" -->
 
 # Troubleshooting
 
@@ -2174,7 +2174,7 @@ service:
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/filtering-and-reducing-costs/index.md&#34; -->
+<!-- split path="kubernetes-observability/filtering-and-reducing-costs/index.md" -->
 
 # Filtering and reducing costs
 
@@ -2321,7 +2321,7 @@ processors:
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/performance-of-the-collector/index.md&#34; -->
+<!-- split path="kubernetes-observability/performance-of-the-collector/index.md" -->
 
 # Performance of the Collector
 
@@ -2347,7 +2347,7 @@ tracerProvider.addSpanProcessor(new BatchSpanProcessor(exporter));
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/infrastructure-monitoring/index.md&#34; -->
+<!-- split path="kubernetes-observability/infrastructure-monitoring/index.md" -->
 
 # Infrastructure monitoring
 
@@ -2385,7 +2385,7 @@ This configuration is filtering out any event that has the field `reason` with o
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/integration-presets/index.md&#34; -->
+<!-- split path="kubernetes-observability/integration-presets/index.md" -->
 
 # Integration presets
 
@@ -2481,7 +2481,7 @@ Optional settings:
 
 <!-- /split -->
 
-<!-- split path=&#34;kubernetes-observability/dependencies/index.md&#34; -->
+<!-- split path="kubernetes-observability/dependencies/index.md" -->
 
 # Dependencies
 

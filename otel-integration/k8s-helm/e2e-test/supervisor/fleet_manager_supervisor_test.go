@@ -281,7 +281,7 @@ func setSupervisorConfigEndpoint(t *testing.T, k8sClient *xk8stest.K8sClient, to
 }
 
 func defaultOpampEndpoint() string {
-	return "https://ingress.coralogix.com/opamp/v1"
+	return "https://ingress.eu1.coralogix.com/opamp/v1"
 }
 
 func opampEndpoint(host string, port int) string {

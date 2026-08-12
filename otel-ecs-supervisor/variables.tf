@@ -5,9 +5,9 @@ variable "name_prefix" {
 }
 
 variable "coralogix_domain" {
-  description = "Coralogix domain (e.g., coralogix.com, eu2.coralogix.com)"
+  description = "Coralogix domain (e.g., eu1.coralogix.com, eu2.coralogix.com)"
   type        = string
-  default     = "coralogix.com"
+  default     = "eu1.coralogix.com"
 }
 
 variable "coralogix_private_key" {
@@ -44,7 +44,7 @@ variable "subsystem_name" {
 variable "container_image" {
   description = "Container image for the supervisor"
   type        = string
-  default     = "coralogixrepo/coralogix-otel-supervised-cdot:v0.11.0"
+  default     = "coralogixrepo/coralogix-otel-supervised-cdot:v0.12.0"
 }
 
 variable "use_entrypoint_script" {
