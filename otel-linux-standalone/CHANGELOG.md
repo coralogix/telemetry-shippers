@@ -4,7 +4,7 @@
 
 ### v0.0.55 / 2026-08-12
 
-- [Feat] Add opt-in OpenTelemetry eBPF Instrumentation (OBI) support. Set the Terraform `enable_obi` variable to install OBI (`v0.10.0`) as an `obi.service` systemd unit running as root alongside the collector; it ships application spans & metrics to the local collector over OTLP. The OBI config is rendered with `make obi-config` into `obi/obi-config.yaml`. See `obi/README.md`.
+- [Feat] Add opt-in OpenTelemetry eBPF Instrumentation (OBI) support. Set the Terraform `enable_obi` variable to install OBI (`v0.10.0`) as an `obi.service` systemd unit running as root alongside the collector; it ships application spans & metrics to the local collector over OTLP. The OBI config is rendered from the `opentelemetry-ebpf-instrumentation` subchart (the same chart used by the k8s-helm integration) with `make obi-config` into `obi/obi-config.yaml`. See `obi/README.md`.
 
 ### v0.0.54 / 2026-08-12
 

@@ -40,8 +40,10 @@ user-data), which OBI needs.
 
 ## Configuration
 
-The config is authored in the chart's `values.yaml` (`obi.config`) and rendered
-into `obi/obi-config.yaml`:
+The config is rendered from the `opentelemetry-ebpf-instrumentation` subchart (the
+same chart the k8s-helm integration uses); host-specific overrides live in the
+chart's `values.yaml` under `opentelemetry-ebpf-instrumentation.config.data`.
+Regenerate `obi/obi-config.yaml` with:
 
 ```bash
 make obi-config
@@ -72,9 +74,9 @@ discovery:
     - exe_path: "*obi*"
 ```
 
-To narrow it, edit `obi.config.discovery` in `values.yaml`, re-run
-`make obi-config`, and `terraform apply` — or pass a complete config via the
-`obi_config` Terraform variable.
+To narrow it, edit `opentelemetry-ebpf-instrumentation.config.data.discovery` in
+`values.yaml`, re-run `make obi-config`, and `terraform apply` — or pass a complete
+config via the `obi_config` Terraform variable.
 
 ## Notes
 

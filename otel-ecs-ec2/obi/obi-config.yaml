@@ -1,15 +1,17 @@
 attributes:
+  kubernetes:
+    enable: false
   select:
     '*':
       include:
-      - gen_ai.*
+        - gen_ai.*
 discovery:
   exclude_instrument:
-  - exe_path: '*ebpf-instrument*'
-  - exe_path: '*otelcol*'
-  - exe_path: '*obi*'
+    - exe_path: '*ebpf-instrument*'
+    - exe_path: '*otelcol*'
+    - exe_path: '*obi*'
   instrument:
-  - open_ports: 1-65535
+    - open_ports: 1-65535
 ebpf:
   buffer_sizes:
     http: 2048
@@ -56,4 +58,3 @@ otel_traces_export:
 prometheus_export:
   path: /metrics
   port: 9090
-

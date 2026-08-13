@@ -12,6 +12,11 @@ dependencies:
     version: "0.136.5"
     repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
     condition: opentelemetry-agent.enabled
+  - name: opentelemetry-ebpf-instrumentation
+    alias: opentelemetry-ebpf-instrumentation
+    version: "0.1.18"
+    repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+    condition: opentelemetry-ebpf-instrumentation.enabled
 sources:
   - https://github.com/coralogix/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
