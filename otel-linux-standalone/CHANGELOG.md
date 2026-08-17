@@ -2,6 +2,16 @@
 
 ## otel-linux-standalone
 
+### v0.0.55 / 2026-08-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.136.7
+
+#### Changes from opentelemetry-collector 0.136.7:
+- [Fix] `presets.clusterMetrics.customMetrics`: stop enabling the `k8s.container.status.reason` metric on the `k8s_cluster` receiver.
+
+#### Changes from opentelemetry-collector 0.136.6:
+- [Feat] `presets.clusterMetrics.customMetrics`: enable the `k8s.container.status.reason` metric on the `k8s_cluster` receiver. Container state is reported on two independent axes — `waiting` (`CrashLoopBackOff`, `CreateContainerConfigError`, `ImagePullBackOff`) and `terminated` (`Error`, `OOMKilled`, `Completed`) — and only the terminated axis was previously collected, via the `k8s.container.status.last_terminated_reason` resource attribute. Nothing in the emitted data could therefore contradict `k8s.pod.phase`, which reports `Running` for a crash-looping pod by construction: the `Failed` phase requires that no container will be restarted, and `restartPolicy: Always` is mandatory for Deployment/StatefulSet/DaemonSet pods. The existing `k8s.pod.status_reason` metric does not close the gap either — it covers only pod-level terminal reasons (`Evicted`, `NodeAffinity`, `NodeLost`, `Shutdown`, `UnexpectedAdmissionError`). Consumers can now read the live container-level reason directly. Note that the metric is one-hot encoded: every container emits a series for each possible reason at all times, valued `1` for the current reason and `0` for the others, so cardinality is a fixed multiple of container count.
+
 ### v0.0.54 / 2026-08-12
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.5
