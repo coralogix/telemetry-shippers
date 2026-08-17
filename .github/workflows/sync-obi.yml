@@ -47,13 +47,32 @@ jobs:
 
       - name: Get version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
+          PAYLOAD_PR_URL: ${{ github.event.client_payload.pr_url }}
         run: |
-          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
-            VERSION="${{ github.event.client_payload.version }}"
-            SOURCE_PR="${{ github.event.client_payload.pr_url }}"
+          if [[ "$EVENT_NAME" == "repository_dispatch" ]]; then
+            VERSION="$PAYLOAD_VERSION"
+            SOURCE_PR="$PAYLOAD_PR_URL"
           else
-            VERSION="${{ inputs.version }}"
+            VERSION="$INPUT_VERSION"
             SOURCE_PR=""
+          fi
+          # Validate untrusted fields at this single trust boundary. The strict
+          # patterns also forbid newlines, so a payload cannot forge extra
+          # $GITHUB_OUTPUT lines nor inject into the downstream run: steps that
+          # inline steps.version.outputs.*.
+          SEMVER_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
+          PR_URL_RE='^https://github\.com/[A-Za-z0-9._/-]+$'
+          if [[ ! "$VERSION" =~ $SEMVER_RE ]]; then
+            echo "::error::Invalid version '$VERSION' - expected semver like 1.2.3"
+            exit 1
+          fi
+          if [[ -n "$SOURCE_PR" && ! "$SOURCE_PR" =~ $PR_URL_RE ]]; then
+            echo "::error::Invalid source PR URL '$SOURCE_PR'"
+            exit 1
           fi
           echo "value=$VERSION" >> $GITHUB_OUTPUT
           echo "source_pr=$SOURCE_PR" >> $GITHUB_OUTPUT
@@ -223,9 +242,7 @@ jobs:
       - name: Ensure labels exist
         if: steps.changelog.outputs.status != 'skip'
         run: |
-          for label in obi-bump chart:otel-integration; do
-            gh label create "$label" --description "Auto-created for OBI chart sync" --color "0E8A16" 2>/dev/null || true
-          done
+          gh label create obi-bump --description "Auto-created for OBI chart sync" --color "0E8A16" 2>/dev/null || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -237,6 +254,6 @@ jobs:
             --head "$branch_name" \
             --title "chore: bump ${DEPENDENCY_NAME} to ${{ steps.version.outputs.value }}" \
             --body-file /tmp/pr-body.md \
-            --label "obi-bump,chart:otel-integration"
+            --label obi-bump
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
