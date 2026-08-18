@@ -1020,15 +1020,18 @@ opentelemetry-ebpf-profiler:
 
 opentelemetry-ebpf-instrumentation:
   enabled: false
-  # Memory scales with the number of processes and TCP connections tracked on
-  # the node, not with cluster size. Derived from measured usage across
-  # Coralogix clusters: p50 566Mi, p90 934Mi, p95 of per-node peak 1.4Gi.
+  # OBI preallocates its BPF maps at startup: a measured 338Mi across 204 maps,
+  # charged to the container cgroup on every node whether idle or not. The
+  # request must sit above that floor. Beyond it, memory scales with the number
+  # of processes and TCP connections tracked on the node, not with cluster size.
+  # Measured across Coralogix clusters: p50 566Mi, p90 934Mi, p95 of per-node
+  # peak 1.4Gi.
   # No CPU limit: OBI is event driven off a BPF ring buffer, so throttling
   # stalls the drain and silently drops events.
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 512Mi
     limits:
       memory: 2Gi
   k8sCache:
