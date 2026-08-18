@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.337 / 2026-08-18
+
+- [Feat] Set default resource requests and a memory limit for the eBPF instrumentation (OBI) DaemonSet (requests 100m CPU / 512Mi, limit 2Gi) and requests for its k8s cache Deployment (10m CPU / 64Mi). Previously both ran in BestEffort QoS with no bound on memory growth. Values derived from measured per-node usage; no CPU limit is set, as throttling OBI's ring buffer drain drops events.
+
 ### v0.0.336 / 2026-08-12
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.5
