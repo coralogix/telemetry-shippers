@@ -867,7 +867,7 @@ spec:
             runAsUser: 0
             runAsGroup: 0
             privileged: true
-          image: "coralogixrepo/coralogix-otel-collector:v0.5.12"
+          image: "coralogixrepo/coralogix-otel-collector:v0.5.13"
           imagePullPolicy: IfNotPresent
           ports:
             - name: jaeger-binary
