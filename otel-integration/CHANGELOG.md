@@ -2,6 +2,12 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.340 / 2026-08-24
+
+- [Feat] Bump `opentelemetry-autoinstrumentation` (OpenTelemetry Operator) to chart 0.122.0 / operator 0.158.0.
+- [Feat] Add Apache HTTPD and nginx auto-instrumentation defaults that export to the node-local agent via `http://$(OTEL_NODE_IP):4317`.
+- [Chore] Bump auto-instrumentation images: Java `2.28.1` → `2.30.0`, Python `0.63b1` → `0.64b0`, .NET `1.15.0` → `1.16.0`, and add Apache HTTPD/nginx `1.0.4`.
+
 ### v0.0.339 / 2026-08-23
 
 - [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.23
