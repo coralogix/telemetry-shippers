@@ -835,7 +835,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a991326a3312f3319ff8177900a25e3335c56ffccaf920b679e198d0ccdadd72
+        checksum/config: 286217d07c6d9efae7fda25b8cd2134fe0195a867b09eb11726a38131de1c69b
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
@@ -949,7 +949,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: fd68c468209dde29376d7dc1790a76be7a664385617ee0ea40fe5210aa884670
+        checksum/config: 5eed9ce00a930f1104f27b7f26604fc113106aca8c7f912f86ce9cacec1129fb
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-eks-fargate
