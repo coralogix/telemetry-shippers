@@ -2,6 +2,9 @@
 
 ## ecs-ec2-integration
 
+### 0.0.12 / 2026-08-25
+- [IMPROVEMENT] Use `30s` as config apply timeout for the Supervisor. ([#1008](https://github.com/coralogix/telemetry-shippers/pull/1008))
+
 ### 0.0.11 / 2026-08-11
 
 * [IMPROVEMENT] Migrated the `coralogix_domain` default from the legacy `coralogix.com` to the regional `eu1.coralogix.com`. ([#990](https://github.com/coralogix/telemetry-shippers/pull/990))
