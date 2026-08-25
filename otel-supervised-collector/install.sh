@@ -184,6 +184,7 @@ capabilities:
 agent:
   executable: /usr/local/bin/otelcol-contrib
   passthrough_logs: true
+  config_apply_timeout: 30s
 
   description:
     non_identifying_attributes:
