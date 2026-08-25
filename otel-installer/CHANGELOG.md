@@ -2,11 +2,6 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
-## [0.2.1] - 2026-08-25
-
-### Changed
-- Set the Supervisor configuration apply timeout to 30 seconds in the standalone, Docker, and Windows installers.
-
 ## [0.2.0] - 2026-03-31
 
 ### Changed
