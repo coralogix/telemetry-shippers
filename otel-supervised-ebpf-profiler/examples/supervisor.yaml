@@ -20,6 +20,7 @@ capabilities:
 agent:
   executable: /otelcol-ebpf-profiler
   passthrough_logs: true
+  config_apply_timeout: 30s
 
   # Enable alpha profiles pipeline support in the Collector.
   args:
