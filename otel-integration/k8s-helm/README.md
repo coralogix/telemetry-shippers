@@ -1896,14 +1896,16 @@ To do that, you can add the configuration below. It will take care of defining t
 
 > [!IMPORTANT] Correlation might be broken if the transform statements below are applied only at the `dbMetrics` level.
 
+The `server.address`, `network.peer.name` and `net.peer.name` fallbacks are guarded on `db.system != nil`. Without that guard they also fire on plain HTTP and gRPC client spans, which carry those attributes too, giving every outgoing call a `db.namespace` equal to its peer host. Since `db.namespace` is a dimension of the general `spanmetrics` connector, that value becomes a metric label on `duration_ms_*` and `calls_total`, and the spans themselves are rewritten because the processor runs in the `traces` pipeline.
+
 ```yaml
     spanMetrics:
       enabled: true
       transformStatements:
       - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil
-      - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil
+      - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"] == nil and attributes["db.system"] != nil
+      - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"] == nil and attributes["db.system"] != nil
+      - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"] == nil and attributes["db.system"] != nil
       - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"] == nil
       - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"] == nil
       - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"] == nil

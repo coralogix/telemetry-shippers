@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.341 / 2026-08-25
+
+- [Fix] Guard the documented `spanMetrics.transformStatements` `db.namespace` fallbacks on `db.system != nil`. The `server.address`, `network.peer.name` and `net.peer.name` fallbacks also matched plain HTTP and gRPC client spans, giving every outgoing call a `db.namespace` equal to its peer host, both as a `duration_ms_*` / `calls_total` label and on the span itself
+
 ### v0.0.340 / 2026-08-24
 
 - [Feat] Bump `opentelemetry-autoinstrumentation` (OpenTelemetry Operator) to chart 0.122.0 / operator 0.158.0.
