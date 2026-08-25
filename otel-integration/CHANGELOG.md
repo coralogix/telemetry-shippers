@@ -2,6 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.341 / 2026-08-25
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.24
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.24:
+- [Feature] Add a `presets.runtimeMetrics` preset, exporting application runtime metrics (Go memory limits, completed GC cycles, GOMAXPROCS and GOGC; HotSpot JVM heap used/committed/limit; Node.js event loop). It is enabled by default for every language OBI supports, adding the `application_runtime` metrics feature. `presets.runtimeMetrics.languages` narrows it to a list of detected languages, named as OBI names them, by giving every `discovery.instrument` selector a language-scoped copy carrying the feature, so it never widens the set of instrumented processes; a selector that already sets `languages` is left untouched. Note that Node.js runtime metrics are collected by injecting a JavaScript agent into every discovered Node.js process through the Node.js inspector, and that agent writes progress lines to the process' own stdout: `languages: [go, java]` leaves Node.js processes alone, and `nodejs.enabled: false` turns the injector off entirely
+- [Change] The `runtimeMetrics.go.enabled` / `runtimeMetrics.jvm.enabled` values are replaced by `presets.runtimeMetrics`, and runtime metrics are now exported by default. `runtimeMetrics.jvm.samplingInterval` moves to `presets.runtimeMetrics.jvm.samplingInterval`. The previous per-language split was cosmetic: both flags mapped to the single `application_runtime` feature, and the `jvm_runtime_metrics.enabled` key the chart rendered does not exist in the OBI configuration
+- [Feature] Add a `presets.logEnricher` preset, injecting the active trace context into the logs written by the instrumented processes. It is disabled by default; enabling it enriches the workloads selected by `config.data.discovery.instrument`, and `presets.logEnricher.plainText.enabled: false` keeps the enrichment to JSON logs only, leaving plain-text output untouched
+- [Fix] Enabling `stats` no longer drops application metrics. The chart appended `stats` to an empty feature list, rendering `features: [stats]`, which replaced the OBI default of `[application]`
+
 ### v0.0.340 / 2026-08-24
 
 - [Feat] Bump `opentelemetry-autoinstrumentation` (OpenTelemetry Operator) to chart 0.122.0 / operator 0.158.0.
