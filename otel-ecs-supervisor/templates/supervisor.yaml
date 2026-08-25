@@ -16,6 +16,7 @@ capabilities:
 
 agent:
   executable: /otelcol-contrib
+  config_apply_timeout: 30s
   # This adds CLI arguments to the Collector.
   args:
     - ''
