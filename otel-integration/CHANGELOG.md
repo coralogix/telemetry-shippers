@@ -2,6 +2,19 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.342 / 2026-08-25
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.25
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.25:
+- [Feature] Enable peer name resolution by default with `name_resolver.sources: [k8s, rdns]`: peer/host IPs resolve to names from the Kubernetes informer metadata and from the DNS answers OBI already captures. Both sources are in-memory and generate no lookups; the active `dns` source stays disabled since it issues blocking PTR queries from the span pipeline
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.24:
+- [Feature] Add a `presets.runtimeMetrics` preset, exporting application runtime metrics (Go memory limits, completed GC cycles, GOMAXPROCS and GOGC; HotSpot JVM heap used/committed/limit; Node.js event loop). It is enabled by default for every language OBI supports, adding the `application_runtime` metrics feature. `presets.runtimeMetrics.languages` narrows it to a list of detected languages, named as OBI names them, by giving every `discovery.instrument` selector a language-scoped copy carrying the feature, so it never widens the set of instrumented processes; a selector that already sets `languages` is left untouched. Note that Node.js runtime metrics are collected by injecting a JavaScript agent into every discovered Node.js process through the Node.js inspector, and that agent writes progress lines to the process' own stdout: `languages: [go, java]` leaves Node.js processes alone, and `nodejs.enabled: false` turns the injector off entirely
+- [Change] The `runtimeMetrics.go.enabled` / `runtimeMetrics.jvm.enabled` values are replaced by `presets.runtimeMetrics`, and runtime metrics are now exported by default. `runtimeMetrics.jvm.samplingInterval` moves to `presets.runtimeMetrics.jvm.samplingInterval`. The previous per-language split was cosmetic: both flags mapped to the single `application_runtime` feature, and the `jvm_runtime_metrics.enabled` key the chart rendered does not exist in the OBI configuration
+- [Feature] Add a `presets.logEnricher` preset, injecting the active trace context into the logs written by the instrumented processes. It is disabled by default; enabling it enriches the workloads selected by `config.data.discovery.instrument`, and `presets.logEnricher.plainText.enabled: false` keeps the enrichment to JSON logs only, leaving plain-text output untouched
+- [Fix] Enabling `stats` no longer drops application metrics. The chart appended `stats` to an empty feature list, rendering `features: [stats]`, which replaced the OBI default of `[application]`
+
 ### v0.0.341 / 2026-08-25
 
 - [Fix] Guard the documented `spanMetrics.transformStatements` `db.namespace` fallbacks on `db.system != nil`. The `server.address`, `network.peer.name` and `net.peer.name` fallbacks also matched plain HTTP and gRPC client spans, giving every outgoing call a `db.namespace` equal to its peer host, both as a `duration_ms_*` / `calls_total` label and on the span itself
