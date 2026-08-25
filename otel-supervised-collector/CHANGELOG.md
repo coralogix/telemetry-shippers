@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.12.1 - 2026-08-25
+
+- [fix] Set the Supervisor configuration apply timeout to 30 seconds.
+
 ## v0.12.0 - 2026-07-29
 
 - [chore] Bump Collector to version 0.156.0.
