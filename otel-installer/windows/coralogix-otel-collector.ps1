@@ -1146,6 +1146,7 @@ capabilities:
 agent:
   executable: $($BINARY_PATH -replace '\\', '/')
   passthrough_logs: true
+  config_apply_timeout: 30s
   description:
     non_identifying_attributes:
       service.name: "opentelemetry-collector"
