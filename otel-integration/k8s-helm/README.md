@@ -205,10 +205,14 @@ Supported annotations:
 instrumentation.opentelemetry.io/inject-java: "true"
 instrumentation.opentelemetry.io/inject-python: "true"
 instrumentation.opentelemetry.io/inject-dotnet: "true"
+instrumentation.opentelemetry.io/inject-apache-httpd: "true"
+instrumentation.opentelemetry.io/inject-nginx: "true"
 instrumentation.opentelemetry.io/inject-sdk: "true"
 ```
 
-Java and .NET use OTLP/gRPC to `http://$(OTEL_NODE_IP):4317`. Python uses OTLP HTTP/protobuf to `http://$(OTEL_NODE_IP):4318`.
+Java, .NET, Apache HTTPD, and nginx use OTLP/gRPC to `http://$(OTEL_NODE_IP):4317`. Python uses OTLP HTTP/protobuf to `http://$(OTEL_NODE_IP):4318`.
+
+Nginx instrumentation currently supports Nginx 1.22.0, 1.23.0, and 1.23.1.
 
 #### SDK-only Injection
 
