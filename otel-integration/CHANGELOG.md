@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.343 / 2026-08-26
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.25
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.25:
+- [Feature] Enable peer name resolution by default with `name_resolver.sources: [k8s, rdns]`: peer/host IPs resolve to names from the Kubernetes informer metadata and from the DNS answers OBI already captures. Both sources are in-memory and generate no lookups; the active `dns` source stays disabled since it issues blocking PTR queries from the span pipeline
+
 ### v0.0.342 / 2026-08-25
 
 - [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.24
