@@ -242,6 +242,77 @@ for svc in demo-logger.service demo-mysql-metrics.service demo-backend-metrics.s
 done
 %{ endif }
 
+%{ if enable_obi }
+# ---------------------------------------------------------------------------
+# OpenTelemetry eBPF Instrumentation (OBI)
+# Installs the OBI release binary and runs it as a systemd unit (as root),
+# capturing application spans & metrics via eBPF and exporting to the local
+# collector over OTLP.
+# ---------------------------------------------------------------------------
+apt-get install -y tar
+
+OBI_VERSION="${obi_version}"
+ARCH="$(dpkg --print-architecture)"
+case "$ARCH" in
+  amd64) OBI_ARCH="amd64" ;;
+  arm64) OBI_ARCH="arm64" ;;
+  *) echo "Unsupported architecture for OBI: $ARCH" >&2; exit 1 ;;
+esac
+
+OBI_TARBALL="obi-$${OBI_VERSION}-linux-$${OBI_ARCH}.tar.gz"
+curl -fsSL -o "/tmp/$${OBI_TARBALL}" \
+  "https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/releases/download/$${OBI_VERSION}/$${OBI_TARBALL}"
+
+mkdir -p /tmp/obi-extract
+tar -C /tmp/obi-extract -xzf "/tmp/$${OBI_TARBALL}"
+install -m 0755 /tmp/obi-extract/obi /usr/local/bin/obi
+rm -rf /tmp/obi-extract "/tmp/$${OBI_TARBALL}"
+
+install -d -m 0755 /etc/obi
+cat <<'EOF' >/tmp/obi-config.b64
+${obi_config_b64}
+EOF
+base64 -d /tmp/obi-config.b64 | gunzip > /etc/obi/obi-config.yml
+rm /tmp/obi-config.b64
+chmod 0644 /etc/obi/obi-config.yml
+
+cat <<'EOF' >/etc/systemd/system/obi.service
+[Unit]
+Description=OpenTelemetry eBPF Instrumentation (OBI)
+After=otelcol-contrib.service network-online.target
+Wants=network-online.target
+Requires=otelcol-contrib.service
+
+[Service]
+Type=simple
+User=root
+Environment=OTEL_EBPF_CONFIG_PATH=/etc/obi/obi-config.yml
+%{ if obi_context_propagation != "disabled" }Environment=OTEL_EBPF_BPF_CONTEXT_PROPAGATION=${obi_context_propagation}%{ endif }
+ExecStart=/usr/local/bin/obi
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=obi
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable obi.service
+# Do not fail the whole bootstrap if OBI can't start (kernel/eBPF dependent).
+systemctl restart obi.service || true
+sleep 5
+if systemctl is-active --quiet obi.service; then
+  echo "obi.service is active"
+else
+  echo "WARNING: obi.service failed to start; inspect the journal below" >&2
+fi
+systemctl status obi.service --no-pager || true
+journalctl -u obi.service -n 30 --no-pager || true
+%{ endif }
+
 %{ if enable_telemetrygen }
 # Install telemetrygen alongside the collector for local traffic generation
 apt-get install -y git tar

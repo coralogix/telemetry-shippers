@@ -1,7 +1,7 @@
 apiVersion: v2
 name: windows-standalone
 description: Standalone Windows OpenTelemetry Collector configuration
-version: 0.0.54
+version: 0.0.55
 keywords:
   - OpenTelemetry Collector
   - Coralogix

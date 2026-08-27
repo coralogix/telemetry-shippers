@@ -96,6 +96,38 @@ Verify profiler startup from CloudWatch logs:
 aws logs tail /ecs/coralogix-otel-agent-<suffix> --since 15m
 ```
 
+## OBI (eBPF Instrumentation) Usage (ECS EC2)
+
+[OBI](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation) captures
+application spans & metrics via eBPF (zero-code). When enabled it runs as a
+privileged sidecar in the collector task and exports to the node-local collector.
+See [`../obi/README.md`](../obi/README.md) for the full description.
+
+Render the OBI config (only needed if you change `obi.config` in `../values.yaml`):
+
+```bash
+cd ..
+make obi-config      # writes obi/obi-config.yaml
+```
+
+Deploy with OBI enabled:
+
+```bash
+cd terraform
+AWS_PROFILE=research \
+AWS_REGION=eu-central-1 \
+CLUSTER_NAME=otel-ecs-ec2-obi \
+API_KEY="$API_KEY" \
+ENABLE_OBI=true \
+make apply
+```
+
+Verify the OBI sidecar started from CloudWatch logs:
+
+```bash
+aws logs tail /ecs/coralogix-obi-<suffix> --since 15m
+```
+
 ## Outputs
 
 Applying the module surfaces several useful identifiers:

@@ -18,3 +18,10 @@ validators:
     type: ignore
   - regex: '^https:\/\/opentelemetry\.io\/docs\/collector\/configuration\/$'
     type: ignore
+  # Ignore opentelemetry.io / kubernetes.io docs links: these upstream sites rate-limit
+  # and frequently time out the validator (same rationale as GitHub above), and they
+  # restructure doc paths often (301 redirects). Validated manually.
+  - regex: '(^http[s]?:\/\/)(www\.)?(opentelemetry\.io\/).*'
+    type: 'ignore'
+  - regex: '(^http[s]?:\/\/)(www\.)?(kubernetes\.io\/).*'
+    type: 'ignore'

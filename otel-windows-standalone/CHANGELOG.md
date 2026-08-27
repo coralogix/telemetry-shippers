@@ -2,6 +2,10 @@
 
 ## otel-windows-standalone
 
+### v0.0.55 / 2026-08-12
+
+- [Chore] Version bump to keep standalone chart versions aligned (OBI support added to `otel-linux-standalone` v0.0.55).
+
 ### v0.0.54 / 2026-08-12
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.5

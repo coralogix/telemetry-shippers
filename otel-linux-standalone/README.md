@@ -31,8 +31,16 @@ Most settings can be overridden via environment variables when invoking `make`:
 make deploy SSH_PUBLIC_KEY_PATH=~/.ssh/another-key.pub SSH_PRIVATE_KEY_PATH=~/.ssh/another-key INSTANCE_TYPE=t3.medium
 ```
 
+## eBPF Instrumentation (OBI)
+
+Optionally run [OBI](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation)
+alongside the collector to capture application spans & metrics via eBPF (zero-code).
+It is disabled by default; enable with `ENABLE_OBI=true make deploy`. See
+[`obi/README.md`](obi/README.md) for details and configuration.
+
 ## Generated configuration
 - `make otel-config` writes `build/otel-config.yaml`.
+- `make obi-config` writes `obi/obi-config.yaml` (the OBI config, used when `ENABLE_OBI=true`).
 - The config enables:
   - journald log ingestion
   - EC2 resource detection (`resourcedetection/ec2`)

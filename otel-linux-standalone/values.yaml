@@ -170,3 +170,45 @@ opentelemetry-agent:
           exporters: []
         traces:
           exporters: []
+
+# OpenTelemetry eBPF Instrumentation (OBI)
+# ----------------------------------------
+# OBI is rendered from the shared `opentelemetry-ebpf-instrumentation` subchart —
+# the same chart the k8s-helm integration uses — so the OBI config is produced via
+# Helm exactly like the collector config, and the onboarding UI/backend can render
+# it the same way. The subchart supplies the base config (ebpf buffer sizes,
+# payload_extraction incl. GenAI, redis_db_cache, prometheus_export, health_check,
+# gen_ai attribute select); this section only applies the host (non-k8s) overrides:
+# host-process discovery (open_ports/exe_path) instead of the Kubernetes namespace
+# selector, export to the local collector on 127.0.0.1, and Kubernetes-specific
+# bits disabled.
+#
+# Render the OBI config with `make obi-config`. On a standalone Linux host OBI runs
+# as a systemd unit (obi.service) as root (see terraform/); enable it via the
+# Terraform `enable_obi` variable. Disabled by default (only gates rendering of the
+# OBI ConfigMap).
+opentelemetry-ebpf-instrumentation:
+  enabled: false
+  config:
+    data:
+      # Host-process discovery replaces the Kubernetes namespace selector.
+      discovery:
+        instrument:
+          # Instrument every process with a listening port. Narrow this (e.g. a
+          # port range or exe_path globs) to scope instrumentation.
+          - open_ports: "1-65535"
+        exclude_instrument:
+          - exe_path: "*ebpf-instrument*"
+          - exe_path: "*otelcol*"
+          - exe_path: "*obi*"
+      # Export to the local collector (traces gRPC 4317 / metrics HTTP 4318).
+      otel_traces_export:
+        endpoint: "http://127.0.0.1:4317"
+      otel_metrics_export:
+        endpoint: "http://127.0.0.1:4318"
+      # Drop the Kubernetes-only config from the subchart defaults. The subchart's
+      # k8s network `filter` cannot be removed via values (Helm won't overwrite a
+      # table with null), so it is stripped in `make obi-config`.
+      attributes:
+        kubernetes:
+          enable: false
