@@ -230,8 +230,8 @@ func validateTransactionStructure(t *testing.T, spansByName map[string]ptrace.Sp
 		{name: "transactions-db-child", transaction: "transactions-root", isRoot: false},
 		{name: "transactions-internal-child", transaction: "transactions-root", isRoot: false},
 		{name: "transactions-producer-child", transaction: "transactions-root", isRoot: false},
-		{name: "transactions-consumer", transaction: "transactions-consumer", isRoot: true},
-		{name: "transactions-consumer-worker", transaction: "transactions-consumer", isRoot: false},
+		{name: "transactions-consumer", transaction: "transactions-root", isRoot: false},
+		{name: "transactions-consumer-worker", transaction: "transactions-root", isRoot: false},
 		{name: "transactions-prelabeled", transaction: "pre-set-transaction", isRoot: true},
 	}
 
