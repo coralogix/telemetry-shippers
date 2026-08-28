@@ -94,6 +94,8 @@
 ### v0.0.335 / 2026-08-10
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.136.4
+- [Chore] Add an `otel-ebpf-profiler` golden case covering the `opentelemetry-ebpf-profiler` sub-chart (the configuration the wizard generates). The existing `ebpf-profiler` case only covers the legacy `coralogix-ebpf-profiler` sub-chart, so the path that broke in 0.0.333 had no coverage.
+- [Chore] Add `check-collector-config-validity.sh`: the collector config embedded in each golden render is now fed to `otelcol validate` inside the exact image the chart renders. Golden diffs cannot catch an upstream config-key removal — the YAML stays identical while the binary starts rejecting it.
 
 #### Changes from opentelemetry-collector 0.136.4:
 - [Fix] `presets.ebpfProfiler`: stop rendering `tracers` on the `profiling` receiver. The option was removed from the receiver in profiler v0.156.0 ([open-telemetry/opentelemetry-ebpf-profiler#1436](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/pull/1436)), so every profiler pod on appVersion 0.156.0 crash-looped with `'config.Config' has invalid keys: tracers`. The key was rendered unconditionally, so it could not be removed via values either.
