@@ -2,6 +2,18 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.345 / 2026-09-06
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.26
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.26:
+- [Change] Bump OBI image to v0.13.0
+- [Fix] Note for upgraders: v0.13.0 fixes a group of memory-safety bugs in the socket-layer context propagation. The header injector no longer acts on a leftover message buffer, which could write a `traceparent` into the middle of a TLS stream and reset the instrumented connection; message-buffer reads are bounded by the mapped data window, so a failed pull no longer copies adjacent kernel memory into span payloads, and sends of 8 KiB or more are captured again. Installs running `presets.contextPropagation` should take this image
+- [Change] Note for upgraders: `service.name` and `service.namespace` are no longer default metric attributes. They remain resource attributes, so the OTLP metrics this chart exports still carry the service identity and the Coralogix pipeline is unaffected. Prometheus scrapers lose the `service_name` / `service_namespace` labels on application metric series; restore them with `config.data.attributes.extra_group_attributes.app: [service.name, service.namespace]`, or join through `target_info`
+- [Change] Note for upgraders: Go runtime metric probes now require the `application_runtime` feature. The `presets.runtimeMetrics` preset already adds it, so a default install keeps Go runtime metrics; installs that configure `metrics.features` by hand must include it
+- [Change] Note for upgraders: `error.type` values are unified across spans and metrics, and TCP client/server roles are classified by the local port, which corrects previously swapped roles for same-namespace clients
+- [Feature] The image adds runtime metrics for Python, the JVM and Node.js, Aerospike server spans, Go 1.27 support, `db.response.status_code`, `db.namespace` and `server.port` on database duration metrics, `messaging.operation.name` on messaging spans, and IPv6 reverse DNS
+
 ### v0.0.344 / 2026-08-27
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.137.0
