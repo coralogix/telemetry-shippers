@@ -2498,7 +2498,7 @@ spec:
           securityContext:
             windowsOptions:
               runAsUserName: "NT AUTHORITY\\SYSTEM"
-          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.159.0-windows-2019-amd64"
+          image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.160.0-windows-2019-amd64"
           imagePullPolicy: Always
           ports:
             - name: jaeger-binary
@@ -2746,6 +2746,12 @@ spec:
             httpGet:
               path: /
               port: 13133
+          startupProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 12
+            httpGet:
+              port: 13133
           readinessProbe:
             httpGet:
               path: /
@@ -2895,7 +2901,7 @@ spec:
           startupProbe:
             initialDelaySeconds: 30
             periodSeconds: 15
-            failureThreshold: 4
+            failureThreshold: 12
             httpGet:
               port: 13133
           readinessProbe:

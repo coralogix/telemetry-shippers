@@ -2362,6 +2362,12 @@ spec:
             httpGet:
               path: /
               port: 13133
+          startupProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 12
+            httpGet:
+              port: 13133
           readinessProbe:
             httpGet:
               path: /
@@ -2510,7 +2516,7 @@ spec:
           startupProbe:
             initialDelaySeconds: 30
             periodSeconds: 15
-            failureThreshold: 4
+            failureThreshold: 12
             httpGet:
               port: 13133
           readinessProbe:
