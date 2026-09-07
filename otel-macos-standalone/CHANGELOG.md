@@ -2,6 +2,15 @@
 
 ## otel-macos-standalone
 
+### v0.0.56 / 2026-09-07
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.138.0
+
+#### Changes from opentelemetry-collector 0.138.0:
+- [Feat] Bump the OpenTelemetry Collector image to v0.160.0.
+- [Feat] Upgrade Supervisor-based images to v0.14.0.
+- [Fix] Remove the unsupported `k8sattributes.extract.deployment_name_from_replicaset` option to prevent Collector startup failures.
+
 ### v0.0.55 / 2026-08-27
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.137.0

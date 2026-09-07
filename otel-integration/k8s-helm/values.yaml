@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.345"
+  version: "0.0.346"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -457,6 +457,13 @@ opentelemetry-agent:
   tolerations:
     - operator: Exists
 
+  startupProbe:
+    failureThreshold: 12
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    httpGet:
+      port: 13133
+
   resources:
     requests:
       cpu: 100m
@@ -655,7 +662,7 @@ opentelemetry-cluster-collector:
   tolerations: []
 
   startupProbe:
-    failureThreshold: 4
+    failureThreshold: 12
     initialDelaySeconds: 30
     periodSeconds: 15
     httpGet:
