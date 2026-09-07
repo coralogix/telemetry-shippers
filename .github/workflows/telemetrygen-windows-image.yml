@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write # OIDC token for the JFrog exchange
 
 env:
   REGISTRY_ORG: cgx.jfrog.io/coralogix-docker-images
@@ -18,6 +19,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Set up JFrog CLI
+        # Exchanges this job's GitHub OIDC JWT for a short-lived Artifactory token.
+        # Replaces the JFROG_USER / JFROG_PASSWORD secret pair. The action calls
+        # core.setSecret() on both outputs, so they stay masked in the log.
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://cgx.jfrog.io
+        with:
+          oidc-provider-name: github
+          oidc-audience: jfrog-github
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -25,8 +37,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: cgx.jfrog.io
-          username: ${{ secrets.JFROG_USER }}
-          password: ${{ secrets.JFROG_PASSWORD }}
+          username: ${{ steps.jfrog.outputs.oidc-user }}
+          password: ${{ steps.jfrog.outputs.oidc-token }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
