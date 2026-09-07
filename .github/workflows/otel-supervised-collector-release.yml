@@ -37,6 +37,7 @@ jobs:
         # Replaces the JFROG_USER / JFROG_PASSWORD secret pair. The action calls
         # core.setSecret() on both outputs, so they stay masked in the log.
         id: jfrog
+        if: github.event.inputs.push_image == 'true' && github.event.inputs.registry_org == 'cgx.jfrog.io/coralogix-docker-images'
         uses: jfrog/setup-jfrog-cli@v4
         env:
           JF_URL: https://cgx.jfrog.io
