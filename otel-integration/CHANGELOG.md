@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.347 / 2026-09-08
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.138.1
+
+#### Changes from opentelemetry-collector 0.138.1:
+- [Feat] Map `initContainers` values into the generated `OpenTelemetryCollector` CR so init containers are honored when `collectorCRD.generate=true`.
+
 ### v0.0.346 / 2026-09-07
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.138.0

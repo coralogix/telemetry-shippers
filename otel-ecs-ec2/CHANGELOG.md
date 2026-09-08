@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.52 / 2026-09-08
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.138.1`.
+
+#### Changes from opentelemetry-collector 0.138.1:
+- [Feat] Map `initContainers` values into the generated `OpenTelemetryCollector` CR so init containers are honored when `collectorCRD.generate=true`.
+
 ### v0.0.51 / 2026-09-07
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.138.0`.
