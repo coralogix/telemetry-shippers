@@ -11,7 +11,6 @@ on:
 
 env:
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
-  ARTIFACTORY_USERNAME: integrations-actions
   CHARTS: otel-linux-standalone otel-windows-standalone otel-macos-standalone
 
 jobs:
@@ -19,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # OIDC token for the JFrog exchange
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,14 +44,26 @@ jobs:
           fi
           echo "value=$LINUX" >> $GITHUB_OUTPUT
 
+      - name: Set up JFrog CLI
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://cgx.jfrog.io
+        with:
+          oidc-provider-name: github
+          oidc-audience: jfrog-github
+
       - name: Check if version already published
         id: check
+        env:
+          ARTIFACTORY_USERNAME: ${{ steps.jfrog.outputs.oidc-user }}
+          ARTIFACTORY_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
         run: |
           VERSION="${{ steps.version.outputs.value }}"
           ALL_PUBLISHED=true
           for chart_name in linux-standalone windows-standalone macos-standalone; do
             url="${{ env.ARTIFACTORY_URL }}coralogix-charts/${chart_name}-${VERSION}.tgz"
-            if ! curl -sfI -u "${{ env.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}" "$url" > /dev/null; then
+            if ! curl -sfI -u "$ARTIFACTORY_USERNAME:$ARTIFACTORY_TOKEN" "$url" > /dev/null; then
               echo "Not published: ${chart_name}-${VERSION}.tgz"
               ALL_PUBLISHED=false
               break
@@ -66,9 +78,12 @@ jobs:
           fi
 
       - name: Setup Helm repos
+        env:
+          ARTIFACTORY_USERNAME: ${{ steps.jfrog.outputs.oidc-user }}
+          ARTIFACTORY_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
         if: steps.check.outputs.skip != 'true'
         run: |
-          helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
+          helm repo add coralogix-charts-virtual "${ARTIFACTORY_URL}coralogix-charts-virtual" --username "$ARTIFACTORY_USERNAME" --password "$ARTIFACTORY_TOKEN"
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
@@ -94,12 +109,6 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Setup JFrog CLI
-        if: steps.check.outputs.skip != 'true'
-        uses: jfrog/setup-jfrog-cli@v2.1.0
-        with:
-          version: 2.12.1
-
       - name: Upload all charts to Artifactory
         id: upload
         if: steps.check.outputs.skip != 'true'
@@ -109,7 +118,7 @@ jobs:
           for chart in $CHARTS; do
             chart_name="${chart#otel-}"
             echo "::group::Upload: ${chart_name}"
-            (cd $chart && jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${chart_name}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }})
+            (cd $chart && jf rt upload "${chart_name}-*.tgz" coralogix-charts)
             UPLOADED="${UPLOADED} ${chart_name}"
             echo "uploaded=${UPLOADED}" >> $GITHUB_OUTPUT
             echo "::endgroup::"
@@ -127,9 +136,7 @@ jobs:
           for chart_name in $UPLOADED; do
             artifact_path="coralogix-charts/${chart_name}-${VERSION}.tgz"
             echo "::group::Delete: ${artifact_path}"
-            jfrog rt delete \
-              --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} \
-              --url ${{ env.ARTIFACTORY_URL }} \
+            jf rt delete \
               --quiet \
               "${artifact_path}" || echo "::warning::Failed to delete ${artifact_path} - manual cleanup may be required"
             echo "::endgroup::"
