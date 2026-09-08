@@ -7,6 +7,13 @@ on:
       - 'otel-ecs-ec2/Chart.yaml'
   workflow_dispatch:
 
+# cloudformation-coralogix-aws also writes to this integration's directory when the template
+# changes, overwriting template.yaml in the latest revision. This serialises our own runs; the
+# cross-repo case surfaces as a pull request conflict rather than a corrupt manifest.
+concurrency:
+  group: sync-ecs-ec2-from-chart
+  cancel-in-progress: false
+
 jobs:
   Get_version:
     runs-on: ubuntu-latest
@@ -96,7 +103,19 @@ jobs:
           mkdir -p "$new_dir"
           cp "$base_dir/commands.yaml" "$new_dir/"
           cp "$base_dir/fields.yaml" "$new_dir/"
-          cp "$base_dir/template.yaml" "$new_dir/"
+
+          # The template is owned by cloudformation-coralogix-aws, so take it from there rather
+          # than copying the previous revision's forward -- copying forward is what let the two
+          # diverge. Fetched as a single file because a nested checkout would land inside this
+          # repo's tree and be swept up by the commit action's file_pattern.
+          gh api "repos/coralogix/cloudformation-coralogix-aws/contents/opentelemetry/ecs-ec2/template.yaml" \
+            -H "Accept: application/vnd.github.raw" > "$new_dir/template.yaml"
+
+          if [ ! -s "$new_dir/template.yaml" ]; then
+            echo "::error::Fetched ecs-ec2 template is empty"
+            exit 1
+          fi
+          echo "Fetched template: $(wc -c < "$new_dir/template.yaml") bytes"
           
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           
