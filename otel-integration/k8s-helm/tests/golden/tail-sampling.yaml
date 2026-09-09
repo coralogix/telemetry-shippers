@@ -6,7 +6,7 @@ metadata:
   name: coralogix-opentelemetry
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.138.0
+    helm.sh/chart: opentelemetry-agent-0.138.1
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -19,7 +19,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.138.0
+    helm.sh/chart: opentelemetry-cluster-collector-0.138.1
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -32,7 +32,7 @@ metadata:
   name: coralogix-opentelemetry-gateway
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-gateway-0.138.0
+    helm.sh/chart: opentelemetry-gateway-0.138.1
     app.kubernetes.io/name: opentelemetry-gateway
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -45,7 +45,7 @@ metadata:
   name: coralogix-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.138.0
+    helm.sh/chart: opentelemetry-agent-0.138.1
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -192,14 +192,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -221,13 +221,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -263,7 +263,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: 'golden-render'
-            helm.chart.opentelemetry-agent.version: 0.138.0
+            helm.chart.opentelemetry-agent.version: 0.138.1
         server:
           http:
             endpoint: https://ingress.eu2.coralogix.com/opamp/v1
@@ -1058,7 +1058,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.138.0
+    helm.sh/chart: opentelemetry-cluster-collector-0.138.1
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -1080,14 +1080,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -1109,13 +1109,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -1143,7 +1143,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: cluster-collector
             cx.cluster.name: 'golden-render'
-            helm.chart.opentelemetry-cluster-collector.version: 0.138.0
+            helm.chart.opentelemetry-cluster-collector.version: 0.138.1
         server:
           http:
             endpoint: https://ingress.eu2.coralogix.com/opamp/v1
@@ -1765,7 +1765,7 @@ metadata:
   name: coralogix-opentelemetry-gateway
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-gateway-0.138.0
+    helm.sh/chart: opentelemetry-gateway-0.138.1
     app.kubernetes.io/name: opentelemetry-gateway
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -1787,14 +1787,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -1816,7 +1816,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.346
+            X-Coralogix-Distribution: helm-otel-integration/0.0.347
       debug: {}
     extensions:
       health_check:
@@ -1827,7 +1827,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: gateway
             cx.cluster.name: 'golden-render'
-            helm.chart.opentelemetry-gateway.version: 0.138.0
+            helm.chart.opentelemetry-gateway.version: 0.138.1
         server:
           http:
             endpoint: https://ingress.eu2.coralogix.com/opamp/v1
@@ -2032,7 +2032,7 @@ kind: ClusterRole
 metadata:
   name: coralogix-opentelemetry-agent
   labels:
-    helm.sh/chart: opentelemetry-agent-0.138.0
+    helm.sh/chart: opentelemetry-agent-0.138.1
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2060,7 +2060,7 @@ kind: ClusterRole
 metadata:
   name: coralogix-opentelemetry-collector
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.138.0
+    helm.sh/chart: opentelemetry-cluster-collector-0.138.1
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2154,7 +2154,7 @@ kind: ClusterRoleBinding
 metadata:
   name: coralogix-opentelemetry-agent
   labels:
-    helm.sh/chart: opentelemetry-agent-0.138.0
+    helm.sh/chart: opentelemetry-agent-0.138.1
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2174,7 +2174,7 @@ kind: ClusterRoleBinding
 metadata:
   name: coralogix-opentelemetry-collector
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.138.0
+    helm.sh/chart: opentelemetry-cluster-collector-0.138.1
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2195,7 +2195,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.138.0
+    helm.sh/chart: opentelemetry-cluster-collector-0.138.1
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2223,7 +2223,7 @@ metadata:
   name: coralogix-opentelemetry-gateway
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-gateway-0.138.0
+    helm.sh/chart: opentelemetry-gateway-0.138.1
     app.kubernetes.io/name: opentelemetry-gateway
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2252,7 +2252,7 @@ metadata:
   name: coralogix-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.138.0
+    helm.sh/chart: opentelemetry-agent-0.138.1
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2268,7 +2268,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 07954cb187ab40674a2f3b81abecbffc411ed1d0cc64092833daa5cf62eb613c
+        checksum/config: 87437e33d286a69a4d9d70d80cfad73c3cbe42a7f90d8e17e0368583632bccc5
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -2442,7 +2442,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.138.0
+    helm.sh/chart: opentelemetry-cluster-collector-0.138.1
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2460,7 +2460,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 57adad6507e80a11530ab582e02c1a218117d96b542484b914ceddfea42bd184
+        checksum/config: 8c0cf7a5301ba7b89d17b62fc69180498c561ce75aa87fafac2ba11a575a0fda
 
       labels:
         app.kubernetes.io/name: opentelemetry-cluster-collector
@@ -2565,7 +2565,7 @@ metadata:
   name: coralogix-opentelemetry-gateway
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-gateway-0.138.0
+    helm.sh/chart: opentelemetry-gateway-0.138.1
     app.kubernetes.io/name: opentelemetry-gateway
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.160.0"
@@ -2583,7 +2583,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a3e786cea838aa134b1cf7b5bbd6fd8c6423be397ec653ea77d024b2fa66fea6
+        checksum/config: 5b11c69f1eebdd5163d9428c11e06200f05780adb8c59066dc95d4fc21674810
 
       labels:
         app.kubernetes.io/name: opentelemetry-gateway
