@@ -9,12 +9,12 @@ on:
 
 env:
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
-  ARTIFACTORY_USERNAME: integrations-actions
 
 jobs:
   render:
     permissions:
       contents: read
+      id-token: write # OIDC token for the JFrog exchange
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,9 +29,21 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
+      - name: Set up JFrog CLI
+        id: jfrog
+        uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: https://cgx.jfrog.io
+        with:
+          oidc-provider-name: github
+          oidc-audience: jfrog-github
+
       - name: Setup Helm repos
+        env:
+          ARTIFACTORY_USERNAME: ${{ steps.jfrog.outputs.oidc-user }}
+          ARTIFACTORY_TOKEN: ${{ steps.jfrog.outputs.oidc-token }}
         run: |
-          helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
+          helm repo add coralogix-charts-virtual "${ARTIFACTORY_URL}coralogix-charts-virtual" --username "$ARTIFACTORY_USERNAME" --password "$ARTIFACTORY_TOKEN"
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
