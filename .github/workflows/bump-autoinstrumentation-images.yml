@@ -55,6 +55,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # GH_TOKEN is a PAT/App token. GITHUB_TOKEN pushes do not start
+          # pull_request workflows, so generated bump PRs would skip e2e and checks.
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Resolve flags
         id: flags
@@ -96,7 +99,7 @@ jobs:
         id: pr
         if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           OPERATOR_TAG: ${{ steps.bump.outputs.operator_tag }}
         run: |
           set -euo pipefail
