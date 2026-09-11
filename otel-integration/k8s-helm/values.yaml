@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.347"
+  version: "0.0.348"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -72,7 +72,7 @@ opentelemetry-autoinstrumentation:
               value: none
           java:
             # Image must be set explicitly because this no-CRD mode does not use CRD defaulting.
-            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.30.0
+            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.31.1
             env:
               - name: OTEL_EXPORTER_OTLP_ENDPOINT
                 value: http://$(OTEL_NODE_IP):4317
@@ -80,7 +80,7 @@ opentelemetry-autoinstrumentation:
                 value: grpc
           python:
             # Python uses HTTP/protobuf on 4318; Java and .NET use gRPC on 4317.
-            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.64b0
+            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.65b0
             env:
               - name: OTEL_EXPORTER_OTLP_ENDPOINT
                 value: http://$(OTEL_NODE_IP):4318
