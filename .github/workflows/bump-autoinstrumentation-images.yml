@@ -1,0 +1,189 @@
+# Bumps otel-integration autoinstrumentation image pins when OpenTelemetry
+# Operator ships a new versions.txt combo. Opens one PR and notifies #eco-system
+# (C07BXNTQVV3) when images actually change, or when the job fails.
+#
+# Slack: set repo/org secret SLACK_ECOSYSTEM_WEBHOOK_URL to an incoming webhook
+# that posts to #eco-system. If the secret is missing, the notify step warns
+# and the bump still succeeds.
+
+name: Bump autoinstrumentation images
+
+on:
+  schedule:
+    - cron: "0 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Compute the delta without opening a PR"
+        type: boolean
+        default: false
+      operator_tag:
+        description: "Operator git tag (default: latest GitHub release)"
+        type: string
+        required: false
+
+concurrency:
+  group: bump-autoinstrumentation
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run bump script tests
+        run: bash scripts/bump-autoinstrumentation-images_test.sh
+
+  bump:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      changed: ${{ steps.bump.outputs.changed }}
+      operator_tag: ${{ steps.bump.outputs.operator_tag }}
+      chart_version: ${{ steps.bump.outputs.chart_version }}
+      delta: ${{ steps.bump.outputs.delta }}
+      pr_url: ${{ steps.pr.outputs.url }}
+      dry_run: ${{ steps.flags.outputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve flags
+        id: flags
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          INPUT_OPERATOR_TAG: ${{ github.event.inputs.operator_tag }}
+        run: |
+          set -euo pipefail
+          dry_run=false
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$INPUT_DRY_RUN" == "true" ]]; then
+            dry_run=true
+          fi
+          tag="${INPUT_OPERATOR_TAG:-}"
+          if [[ -n "$tag" && ! "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid operator_tag '$tag'"
+            exit 1
+          fi
+          echo "dry_run=$dry_run" >> "$GITHUB_OUTPUT"
+          echo "operator_tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Bump images
+        id: bump
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/bump-autoinstrumentation-images.sh
+          args=()
+          if [[ -n "${{ steps.flags.outputs.operator_tag }}" ]]; then
+            args+=(--operator-tag "${{ steps.flags.outputs.operator_tag }}")
+          fi
+          if [[ "${{ steps.flags.outputs.dry_run }}" == "true" ]]; then
+            args+=(--dry-run)
+          fi
+          scripts/bump-autoinstrumentation-images.sh "${args[@]}"
+
+      - name: Create or update pull request
+        id: pr
+        if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPERATOR_TAG: ${{ steps.bump.outputs.operator_tag }}
+        run: |
+          set -euo pipefail
+          branch="chore/bump-autoinstrumentation"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add otel-integration/k8s-helm/values.yaml \
+            otel-integration/k8s-helm/Chart.yaml \
+            otel-integration/CHANGELOG.md \
+            otel-integration/k8s-helm/tests/golden
+          git commit -m "chore: bump autoinstrumentation images to operator ${OPERATOR_TAG}"
+          git push --force-with-lease origin "$branch"
+
+          title="chore: bump autoinstrumentation images to operator ${OPERATOR_TAG}"
+          existing=$(gh pr list --head "$branch" --base master --json number --jq '.[0].number // empty')
+          if [[ -n "$existing" ]]; then
+            gh pr edit "$existing" --title "$title" --body-file /tmp/autoinstr-bump-summary.md
+            url=$(gh pr view "$existing" --json url --jq .url)
+          else
+            url=$(gh pr create \
+              --base master \
+              --head "$branch" \
+              --title "$title" \
+              --body-file /tmp/autoinstr-bump-summary.md)
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Opened $url"
+
+  notify:
+    needs: [test, bump]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Notify #eco-system
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ECOSYSTEM_WEBHOOK_URL }}
+          TEST_RESULT: ${{ needs.test.result }}
+          BUMP_RESULT: ${{ needs.bump.result }}
+          CHANGED: ${{ needs.bump.outputs.changed }}
+          DRY_RUN: ${{ needs.bump.outputs.dry_run }}
+          OPERATOR_TAG: ${{ needs.bump.outputs.operator_tag }}
+          PR_URL: ${{ needs.bump.outputs.pr_url }}
+          DELTA: ${{ needs.bump.outputs.delta }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
+            echo "::warning::SLACK_ECOSYSTEM_WEBHOOK_URL is not set; skipping Slack notification to #eco-system."
+            exit 0
+          fi
+
+          failed=false
+          if [[ "$TEST_RESULT" == "failure" || "$BUMP_RESULT" == "failure" ]]; then
+            failed=true
+          fi
+          updated=false
+          if [[ "$failed" != "true" && "$CHANGED" == "true" && "$DRY_RUN" != "true" ]]; then
+            updated=true
+          fi
+          if [[ "$failed" != "true" && "$updated" != "true" ]]; then
+            echo "No Slack notification (already up to date or dry-run)."
+            exit 0
+          fi
+
+          if [[ "$failed" == "true" ]]; then
+            text="Autoinstrumentation image bump failed for ${GITHUB_REPOSITORY}."
+            extra="Run: ${RUN_URL}"
+          else
+            text="Autoinstrumentation images updated to OpenTelemetry Operator ${OPERATOR_TAG}."
+            extra="PR: ${PR_URL}"
+          fi
+
+          export text extra
+          python3 - <<'PY' >/tmp/slack-payload.json
+          import json, os
+          body = "\n".join(part for part in (
+              os.environ.get("text", ""),
+              os.environ.get("extra", ""),
+              (os.environ.get("DELTA") or "").strip(),
+          ) if part)
+          print(json.dumps({"text": body}))
+          PY
+
+          curl --fail-with-body -sS -X POST \
+            -H 'Content-type: application/json' \
+            --data @/tmp/slack-payload.json \
+            "$SLACK_WEBHOOK_URL"

@@ -214,6 +214,8 @@ Java, .NET, Apache HTTPD, and nginx use OTLP/gRPC to `http://$(OTEL_NODE_IP):431
 
 Nginx instrumentation currently supports Nginx 1.22.0, 1.23.0, and 1.23.1.
 
+Image tags for Java, Python, .NET, Apache HTTPD, and nginx are pinned in `values.yaml` (no-CRD mode does not apply operator CRD defaults). `.github/workflows/bump-autoinstrumentation-images.yml` opens a PR when an [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator/releases) release publishes a newer `versions.txt` combo, and posts to Slack `#eco-system` on a successful bump or a job failure.
+
 #### SDK-only Injection
 
 The `inject-sdk` annotation enables SDK-only injection mode for applications that are already manually instrumented or cannot be auto-instrumented with language-specific agents. This mode injects only OpenTelemetry SDK environment variables without adding init containers or modifying the application binary.
