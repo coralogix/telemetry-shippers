@@ -212,7 +212,7 @@ insert_changelog_entry() {
   } >"$entry_file"
 
   local first_version_line
-  first_version_line=$(grep -En "^### v?[0-9]" "$CHANGELOG_FILE" | head -1 | cut -d: -f1)
+  first_version_line=$(grep -Enm1 "^### v?[0-9]" "$CHANGELOG_FILE" | cut -d: -f1)
   if [[ -z "$first_version_line" ]]; then
     cat "$entry_file" >>"$CHANGELOG_FILE"
   else

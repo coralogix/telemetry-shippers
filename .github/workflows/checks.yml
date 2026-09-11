@@ -120,6 +120,8 @@ jobs:
   bump-autoinstrumentation-script:
     runs-on: ubuntu-latest
     name: Autoinstrumentation bump script tests
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/bump-autoinstrumentation-images_test.sh

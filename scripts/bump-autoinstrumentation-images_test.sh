@@ -84,8 +84,14 @@ EOF
 workdir=$(mktemp -d)
 trap 'rm -rf "$workdir"' EXIT
 
-# Catch-up from lagged pins.
+# Catch-up from lagged pins. A long changelog must not SIGPIPE under pipefail.
 make_fixture "$workdir/lag"
+{
+  echo ""
+  for i in $(seq 1 400); do
+    printf '### v0.0.%s / 2020-01-01\n\n- [Chore] filler\n\n' "$i"
+  done
+} >>"$workdir/lag/CHANGELOG.md"
 out="$workdir/lag.out"
 "$BUMP" \
   --versions-file "$workdir/lag/versions-newer.txt" \
