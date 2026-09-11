@@ -2,6 +2,9 @@ name: checks
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   check-docs:
     runs-on: ubuntu-latest
