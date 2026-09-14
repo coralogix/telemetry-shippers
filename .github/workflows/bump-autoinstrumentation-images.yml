@@ -95,34 +95,55 @@ jobs:
           fi
           scripts/bump-autoinstrumentation-images.sh "${args[@]}"
 
+      # Point the bot branch at current master without creating a commit.
+      # The signed commit is created in the next step via GraphQL.
+      - name: Publish bot branch from master
+        id: branch
+        if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="chore/bump-autoinstrumentation"
+          git checkout -B "$branch"
+          git add otel-integration/k8s-helm/values.yaml \
+            otel-integration/k8s-helm/Chart.yaml \
+            otel-integration/CHANGELOG.md \
+            otel-integration/k8s-helm/tests/golden
+          git push --force origin "HEAD:refs/heads/${branch}"
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+
+      # createCommitOnBranch signs the commit with GitHub's key (Verified).
+      # A local git commit + push is unsigned even if user.name is github-actions[bot].
+      - name: Commit changes (GitHub-verified)
+        if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
+        uses: planetscale/ghcommit-action@v0.1.43
+        with:
+          commit_message: chore: bump autoinstrumentation images to operator ${{ steps.bump.outputs.operator_tag }}
+          repo: ${{ github.repository }}
+          branch: chore/bump-autoinstrumentation
+          file_pattern: '*.yaml *.md **/*.yaml **/*.md'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
       - name: Create or update pull request
         id: pr
         if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           OPERATOR_TAG: ${{ steps.bump.outputs.operator_tag }}
+          BRANCH: chore/bump-autoinstrumentation
         run: |
           set -euo pipefail
-          branch="chore/bump-autoinstrumentation"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$branch"
-          git add otel-integration/k8s-helm/values.yaml \
-            otel-integration/k8s-helm/Chart.yaml \
-            otel-integration/CHANGELOG.md \
-            otel-integration/k8s-helm/tests/golden
-          git commit -m "chore: bump autoinstrumentation images to operator ${OPERATOR_TAG}"
-          git push --force-with-lease origin "$branch"
-
           title="chore: bump autoinstrumentation images to operator ${OPERATOR_TAG}"
-          existing=$(gh pr list --head "$branch" --base master --json number --jq '.[0].number // empty')
+          existing=$(gh pr list --head "$BRANCH" --base master --json number --jq '.[0].number // empty')
           if [[ -n "$existing" ]]; then
             gh pr edit "$existing" --title "$title" --body-file /tmp/autoinstr-bump-summary.md
             url=$(gh pr view "$existing" --json url --jq .url)
           else
             url=$(gh pr create \
               --base master \
-              --head "$branch" \
+              --head "$BRANCH" \
               --title "$title" \
               --body-file /tmp/autoinstr-bump-summary.md)
           fi
