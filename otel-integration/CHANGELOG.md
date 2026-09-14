@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.348 / 2026-09-11
+
+- [Chore] Bump autoinstrumentation images already published on GHCR (java `2.30.0` -> `2.31.1`, python `0.64b0` -> `0.65b0`). .NET `1.16.0` and Apache/nginx `1.0.4` are unchanged.
+
 ### v0.0.347 / 2026-09-08
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.138.1
