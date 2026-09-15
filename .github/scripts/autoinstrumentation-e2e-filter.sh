@@ -109,6 +109,23 @@ if [[ "$harness_changed" == "true" ]]; then
   exit 0
 fi
 
+# Shared webhook settings (exporter, env, sampler, feature flags) are not
+# language pins. If that subtree changed besides image tags, run every language.
+autoinstr_config_without_images() {
+  local sha="$1"
+  git show "${sha}:${VALUES_FILE}" 2>/dev/null | awk '
+    /^opentelemetry-autoinstrumentation:/ {p=1}
+    p && /^[^[:space:]#]/ && !/^opentelemetry-autoinstrumentation:/ {exit}
+    p && /autoinstrumentation-(java|python|dotnet|apache-httpd):/ {next}
+    p {print}
+  '
+}
+
+if [[ "$(autoinstr_config_without_images "$BASE_SHA")" != "$(autoinstr_config_without_images "$HEAD_SHA")" ]]; then
+  emit_all
+  exit 0
+fi
+
 values_diff=$(git diff -U0 "${BASE_SHA}...${HEAD_SHA}" -- "$VALUES_FILE" || true)
 langs=()
 add_lang() {

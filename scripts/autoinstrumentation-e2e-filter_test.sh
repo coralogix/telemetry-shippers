@@ -130,6 +130,23 @@ assert_eq "harness.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "true"
 assert_eq "harness.go_run" "$(echo "$out" | awk -F= '/^go_run=/{print $2}')" \
   "^TestE2E_InstrumentationWebhookNoCRDs$"
 
+# Shared webhook config (not an image pin) runs every language.
+init_repo "$workdir/exporter"
+base=$(git -C "$workdir/exporter" rev-parse HEAD)
+cat >>"$workdir/exporter/otel-integration/k8s-helm/values.yaml" <<'EOF'
+          exporter:
+            endpoint: http://$(OTEL_NODE_IP):4317
+EOF
+(
+  cd "$workdir/exporter"
+  git_commit "exporter"
+)
+head=$(git -C "$workdir/exporter" rev-parse HEAD)
+out=$(run_filter "$workdir/exporter" "$base" "$head")
+assert_eq "exporter.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "true"
+assert_eq "exporter.go_run" "$(echo "$out" | awk -F= '/^go_run=/{print $2}')" \
+  "^TestE2E_InstrumentationWebhookNoCRDs$"
+
 # README-only does not run.
 init_repo "$workdir/readme"
 base=$(git -C "$workdir/readme" rev-parse HEAD)
