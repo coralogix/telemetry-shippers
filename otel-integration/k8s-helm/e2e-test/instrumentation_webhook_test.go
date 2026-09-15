@@ -110,18 +110,19 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		{
 			name:              "dotnet",
 			annotation:        "instrumentation.opentelemetry.io/inject-dotnet",
-			image:             "mcr.microsoft.com/dotnet/samples:aspnetapp",
+			image:             "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main",
 			port:              8080,
-			path:              "/",
+			path:              "/rolldice",
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-dotnet"},
 			expectedContainer: "app",
 			expectedEnv:       "CORECLR_ENABLE_PROFILING",
 			assertProtocolEnv: true,
-			extraAnnotations: map[string]string{
-				"instrumentation.opentelemetry.io/otel-dotnet-auto-runtime": "linux-musl-x64",
+			requiredNodeArch:  "amd64",
+			skipReason:        "the .NET auto-instrumentation profiler artifacts used by the operator are x64-only",
+			securityContext:   webserverSecurityContext,
+			containerEnv: []map[string]any{
+				{"name": "ASPNETCORE_URLS", "value": "http://+:8080"},
 			},
-			requiredNodeArch: "amd64",
-			skipReason:       "the .NET auto-instrumentation profiler artifacts used by the operator are x64-only",
 		},
 		{
 			name:       "apache",
