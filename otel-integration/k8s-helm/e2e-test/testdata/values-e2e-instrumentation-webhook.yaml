@@ -1,5 +1,14 @@
 opentelemetry-autoinstrumentation:
   enabled: true
+  manager:
+    config:
+      instrumentations:
+        spec:
+          # C++ apache/nginx agents write this endpoint into a static conf file.
+          # Use the agent Service so export does not depend on $(OTEL_NODE_IP)
+          # expansion inside the attach init container.
+          exporter:
+            endpoint: http://coralogix-opentelemetry.default.svc:4317
 
 opentelemetry-agent:
   config:

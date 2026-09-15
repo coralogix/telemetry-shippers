@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.348"
+  version: "0.0.349"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -97,6 +97,10 @@ opentelemetry-autoinstrumentation:
           apacheHttpd:
             # Apache HTTPD and nginx share the same autoinstrumentation image.
             # Supported Nginx versions: 1.22.0, 1.23.0, and 1.23.1.
+            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4
+          # yaml.v2 (operator --config-file) lowercases the field to apachehttpd and
+          # does not honor the CRD json tag apacheHttpd. Keep both spellings in sync.
+          apachehttpd:
             image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4
           nginx:
             # Uses the Apache HTTPD autoinstrumentation image by design.
