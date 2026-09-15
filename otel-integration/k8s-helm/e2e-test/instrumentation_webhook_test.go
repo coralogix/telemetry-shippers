@@ -12,6 +12,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -128,14 +129,11 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		{
 			name:       "apache",
 			annotation: "instrumentation.opentelemetry.io/inject-apache-httpd",
-			image:      "mirror.gcr.io/library/httpd:2.4",
-			port:       8080,
-			path:       "/",
-			command: []string{
-				"sh",
-				"-c",
-				"sed -i 's#Listen 80#Listen 8080#g' /usr/local/apache2/conf/httpd.conf && chmod -R a+rwX /usr/local/apache2 && exec httpd-foreground",
-			},
+			// Same fixture as the operator e2e: httpd:2.4 already listening on 8080, writable as uid 1000.
+			// A custom command overlay races the clone/attach inits (they copy image conf, not the rewritten one).
+			image: "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main",
+			port:  8080,
+			path:  "/",
 			expectedInit: []string{
 				"otel-agent-source-container-clone",
 				"otel-agent-attach-apache",
@@ -143,6 +141,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedContainer: "app",
 			requiredNodeArch:  "amd64",
 			skipReason:        "the Apache HTTPD auto-instrumentation agent is x64/linux glibc only",
+			securityContext:   webserverSecurityContext,
 		},
 		{
 			name:       "nginx",
@@ -247,6 +246,10 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			}
 
 			curlPod(t, k8sClient, ns, instrumentedPod.GetName(), tc.port, tc.path)
+			if tc.name == "nginx" || tc.name == "apache" {
+				// C++ webserver SDK batches; a second request after the module is live is cheap insurance.
+				curlPod(t, k8sClient, ns, instrumentedPod.GetName(), tc.port, tc.path)
+			}
 			requireTraceForPod(t, tracesConsumer, instrumentedPod.GetName(), created.GetName())
 		})
 	}
@@ -459,52 +462,82 @@ func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, name
 		timeout = 3 * time.Minute
 	}
 
-	var readyPod *unstructured.Unstructured
-	lastLog := time.Time{}
-	require.Eventuallyf(t, func() bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
 		pods, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(namespace).List(context.Background(), metav1.ListOptions{
 			LabelSelector: "app=" + deploymentName,
 		})
-		if err != nil {
-			return false
-		}
-		if time.Since(lastLog) > 30*time.Second {
-			logDeploymentPods(t, pods.Items, excludedPodName)
-			lastLog = time.Now()
-		}
-		for i := range pods.Items {
-			pod := &pods.Items[i]
-			if pod.GetName() == excludedPodName {
-				continue
-			}
-			if podIsReady(pod) {
-				readyPod = pod
-				return true
+		if err == nil {
+			for i := range pods.Items {
+				pod := &pods.Items[i]
+				if pod.GetName() == excludedPodName {
+					continue
+				}
+				if podIsReady(pod) {
+					return pod
+				}
 			}
 		}
-		return false
-	}, timeout, 2*time.Second, "deployment %s/%s did not produce a ready pod", namespace, deploymentName)
+		time.Sleep(2 * time.Second)
+	}
 
-	return readyPod
+	t.Fatalf("deployment %s/%s did not produce a ready pod\n%s", namespace, deploymentName, dumpDeploymentStatus(k8sClient, namespace, deploymentName, excludedPodName))
+	return nil
 }
 
-func logDeploymentPods(t *testing.T, pods []unstructured.Unstructured, excludedPodName string) {
-	t.Helper()
-	for i := range pods {
-		pod := &pods[i]
+func dumpDeploymentStatus(k8sClient *xk8stest.K8sClient, namespace, deploymentName, excludedPodName string) string {
+	var b strings.Builder
+	pods, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "app=" + deploymentName,
+	})
+	if err != nil {
+		fmt.Fprintf(&b, "list pods: %v\n", err)
+		return b.String()
+	}
+	if len(pods.Items) == 0 {
+		b.WriteString("no pods matched label app=" + deploymentName + "\n")
+	}
+	for i := range pods.Items {
+		pod := &pods.Items[i]
 		if pod.GetName() == excludedPodName {
+			fmt.Fprintf(&b, "pod %s excluded (previous replica)\n", pod.GetName())
 			continue
 		}
 		phase, _, _ := unstructured.NestedString(pod.Object, "status", "phase")
 		msg, _, _ := unstructured.NestedString(pod.Object, "status", "message")
-		t.Logf("pod %s phase=%s message=%s ready=%v", pod.GetName(), phase, msg, podIsReady(pod))
-		logContainerStatuses(t, pod, "initContainerStatuses")
-		logContainerStatuses(t, pod, "containerStatuses")
+		fmt.Fprintf(&b, "pod %s phase=%s message=%s ready=%v\n", pod.GetName(), phase, msg, podIsReady(pod))
+		appendContainerStatusDump(&b, pod, "initContainerStatuses")
+		appendContainerStatusDump(&b, pod, "containerStatuses")
+		appendInitEnvDump(&b, pod)
 	}
+	rss, err := k8sClient.DynamicClient.Resource(appsV1ReplicaSets()).Namespace(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "app=" + deploymentName,
+	})
+	if err != nil {
+		fmt.Fprintf(&b, "list replicasets: %v\n", err)
+		return b.String()
+	}
+	for i := range rss.Items {
+		rs := rss.Items[i]
+		replicas, _, _ := unstructured.NestedInt64(rs.Object, "status", "replicas")
+		ready, _, _ := unstructured.NestedInt64(rs.Object, "status", "readyReplicas")
+		fmt.Fprintf(&b, "replicaset %s replicas=%d ready=%d\n", rs.GetName(), replicas, ready)
+		conds, found, _ := unstructured.NestedSlice(rs.Object, "status", "conditions")
+		if !found {
+			continue
+		}
+		for _, raw := range conds {
+			cond, ok := raw.(map[string]any)
+			if !ok {
+				continue
+			}
+			fmt.Fprintf(&b, "  condition type=%v status=%v reason=%v message=%v\n", cond["type"], cond["status"], cond["reason"], cond["message"])
+		}
+	}
+	return b.String()
 }
 
-func logContainerStatuses(t *testing.T, pod *unstructured.Unstructured, field string) {
-	t.Helper()
+func appendContainerStatusDump(b *strings.Builder, pod *unstructured.Unstructured, field string) {
 	statuses, found, _ := unstructured.NestedSlice(pod.Object, "status", field)
 	if !found {
 		return
@@ -514,8 +547,40 @@ func logContainerStatuses(t *testing.T, pod *unstructured.Unstructured, field st
 		if !ok {
 			continue
 		}
-		t.Logf("  %s %v ready=%v state=%v", field, status["name"], status["ready"], status["state"])
+		fmt.Fprintf(b, "  %s %v ready=%v state=%v\n", field, status["name"], status["ready"], status["state"])
 	}
+}
+
+func appendInitEnvDump(b *strings.Builder, pod *unstructured.Unstructured) {
+	inits, found, _ := unstructured.NestedSlice(pod.Object, "spec", "initContainers")
+	if !found {
+		return
+	}
+	for _, raw := range inits {
+		container, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := container["name"].(string)
+		if !strings.Contains(name, "otel-agent-attach") {
+			continue
+		}
+		envs, _, _ := unstructured.NestedSlice(container, "env")
+		names := make([]string, 0, len(envs))
+		for _, envRaw := range envs {
+			env, ok := envRaw.(map[string]any)
+			if !ok {
+				continue
+			}
+			envName, _ := env["name"].(string)
+			names = append(names, envName)
+		}
+		fmt.Fprintf(b, "  attach env order=%v\n", names)
+	}
+}
+
+func appsV1ReplicaSets() schema.GroupVersionResource {
+	return schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "replicasets"}
 }
 
 func podIsReady(pod *unstructured.Unstructured) bool {
@@ -623,32 +688,46 @@ func requireNoTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink,
 func requireTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink, podName, workloadName string) {
 	t.Helper()
 
-	require.Eventuallyf(t, func() bool {
-		return tracesContainPod(tracesConsumer.AllTraces(), podName, workloadName)
-	}, instrumentationWebhookTraceTimeout, 2*time.Second, "did not receive traces for instrumented pod %s (workload %s); resources=%v", podName, workloadName, traceResourceSummaries(tracesConsumer.AllTraces()))
+	deadline := time.Now().Add(instrumentationWebhookTraceTimeout)
+	for time.Now().Before(deadline) {
+		if tracesContainPod(tracesConsumer.AllTraces(), podName, workloadName) {
+			return
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	t.Fatalf("did not receive traces for instrumented pod %s (workload %s); resources=%v", podName, workloadName, traceResourceSummaries(tracesConsumer.AllTraces()))
 }
 
 func tracesContainPod(batches []ptrace.Traces, podName, workloadName string) bool {
 	for _, batch := range batches {
 		for i := 0; i < batch.ResourceSpans().Len(); i++ {
-			resource := batch.ResourceSpans().At(i).Resource()
-			if attr, ok := resource.Attributes().Get("k8s.pod.name"); ok && attr.AsString() == podName {
+			if resourceHasIdentity(batch.ResourceSpans().At(i).Resource().Attributes(), podName, workloadName) {
 				return true
-			}
-			if attr, ok := resource.Attributes().Get("service.name"); ok {
-				name := attr.AsString()
-				if name == podName || (workloadName != "" && name == workloadName) {
-					return true
-				}
-			}
-			if workloadName != "" {
-				if attr, ok := resource.Attributes().Get("k8s.deployment.name"); ok && attr.AsString() == workloadName {
-					return true
-				}
 			}
 		}
 	}
 	return false
+}
+
+func resourceHasIdentity(attrs pcommon.Map, podName, workloadName string) bool {
+	matched := false
+	attrs.Range(func(_ string, v pcommon.Value) bool {
+		val := v.AsString()
+		if val == "" {
+			return true
+		}
+		if val == podName || strings.Contains(val, podName) {
+			matched = true
+			return false
+		}
+		if workloadName != "" && (val == workloadName || strings.Contains(val, workloadName)) {
+			matched = true
+			return false
+		}
+		return true
+	})
+	return matched
 }
 
 func traceResourceSummaries(batches []ptrace.Traces) []string {
@@ -656,19 +735,19 @@ func traceResourceSummaries(batches []ptrace.Traces) []string {
 	for _, batch := range batches {
 		for i := 0; i < batch.ResourceSpans().Len(); i++ {
 			attrs := batch.ResourceSpans().At(i).Resource().Attributes()
-			parts := make([]string, 0, 3)
-			for _, key := range []string{"k8s.pod.name", "k8s.deployment.name", "service.name"} {
-				if attr, ok := attrs.Get(key); ok {
-					parts = append(parts, key+"="+attr.AsString())
-				}
+			parts := make([]string, 0, attrs.Len())
+			attrs.Range(func(k string, v pcommon.Value) bool {
+				parts = append(parts, k+"="+v.AsString())
+				return true
+			})
+			if len(parts) == 0 {
+				parts = append(parts, "(empty resource)")
 			}
-			if len(parts) > 0 {
-				out = append(out, strings.Join(parts, ","))
+			out = append(out, strings.Join(parts, ","))
+			if len(out) == 8 {
+				return out
 			}
 		}
-	}
-	if len(out) > 8 {
-		out = out[:8]
 	}
 	return out
 }
