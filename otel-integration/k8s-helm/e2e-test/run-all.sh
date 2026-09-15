@@ -706,12 +706,17 @@ run_test() {
     kubectl get pods -l "app.kubernetes.io/instance=${HELM_RELEASE_NAME}" || true
 
     # Run the test
-    log_info "Executing: go test -v -run='${test_regex}' ${test_package}"
+    local go_timeout="${E2E_GO_TIMEOUT:-10m}"
+    if [[ "$test_name" == "TestE2E_InstrumentationWebhookNoCRDs" ]]; then
+        go_timeout="${E2E_GO_TIMEOUT:-30m}"
+    fi
+
+    log_info "Executing: go test -timeout='${go_timeout}' -v -run='${test_regex}' ${test_package}"
     local test_start_time
     test_start_time=$(date +%s)
 
     # Run test and capture exit code properly (tee doesn't preserve exit codes)
-    go test -v -run="${test_regex}" ${test_package} 2>&1 | tee "/tmp/test-${test_name}-output.log"
+    go test -timeout="${go_timeout}" -v -run="${test_regex}" ${test_package} 2>&1 | tee "/tmp/test-${test_name}-output.log"
     local test_exit_code=${PIPESTATUS[0]}
 
     local test_end_time

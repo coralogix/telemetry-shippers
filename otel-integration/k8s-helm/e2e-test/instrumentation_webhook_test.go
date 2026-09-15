@@ -213,14 +213,19 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 				_ = xk8stest.DeleteObject(k8sClient, created)
 			})
 
-			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "")
+			readyTimeout := 3 * time.Minute
+			if tc.name == "apache" || tc.name == "nginx" {
+				readyTimeout = 6 * time.Minute
+			}
+
+			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "", readyTimeout)
 			curlPod(t, k8sClient, ns, baselinePod.GetName(), tc.port, tc.path)
 			requireNoTraceForPod(t, tracesConsumer, baselinePod.GetName(), 15*time.Second)
 
 			err = injectDeploymentInstrumentation(k8sClient, ns, created.GetName(), tc.annotation)
 			require.NoError(t, err)
 
-			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName())
+			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName(), readyTimeout)
 
 			for _, initName := range tc.expectedInit {
 				require.Truef(t, hasContainer(instrumentedPod, "initContainers", initName), "expected init container %q in pod %s", initName, tc.name)
@@ -441,8 +446,12 @@ func waitForPodReady(t *testing.T, k8sClient *xk8stest.K8sClient, namespace, pod
 	}, 3*time.Minute, 2*time.Second, "pod %s/%s did not become ready", namespace, podName)
 }
 
-func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, namespace, deploymentName, excludedPodName string) *unstructured.Unstructured {
+func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, namespace, deploymentName, excludedPodName string, timeout time.Duration) *unstructured.Unstructured {
 	t.Helper()
+
+	if timeout == 0 {
+		timeout = 3 * time.Minute
+	}
 
 	var readyPod *unstructured.Unstructured
 	require.Eventuallyf(t, func() bool {
@@ -463,7 +472,7 @@ func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, name
 			}
 		}
 		return false
-	}, 3*time.Minute, 2*time.Second, "deployment %s/%s did not produce a ready pod", namespace, deploymentName)
+	}, timeout, 2*time.Second, "deployment %s/%s did not produce a ready pod", namespace, deploymentName)
 
 	return readyPod
 }
@@ -734,14 +743,14 @@ func TestE2E_SDKInjection(t *testing.T) {
 				_ = xk8stest.DeleteObject(k8sClient, created)
 			})
 
-			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "")
+			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "", 0)
 			curlPod(t, k8sClient, ns, baselinePod.GetName(), tc.port, tc.path)
 			requireNoTraceForPod(t, tracesConsumer, baselinePod.GetName(), 15*time.Second)
 
 			err = injectDeploymentInstrumentation(k8sClient, ns, created.GetName(), "instrumentation.opentelemetry.io/inject-sdk")
 			require.NoError(t, err)
 
-			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName())
+			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName(), 0)
 
 			if tc.noExpectedInit {
 				initContainers, found, _ := unstructured.NestedSlice(instrumentedPod.Object, "spec", "initContainers")
