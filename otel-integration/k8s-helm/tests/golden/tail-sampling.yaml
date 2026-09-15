@@ -2268,7 +2268,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 87437e33d286a69a4d9d70d80cfad73c3cbe42a7f90d8e17e0368583632bccc5
+        checksum/config: d30f8a24926a06b07e8bf656a1e7341985f7e221558b4869eed08b9ee086123b
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -2460,7 +2460,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 8c0cf7a5301ba7b89d17b62fc69180498c561ce75aa87fafac2ba11a575a0fda
+        checksum/config: 5fa04fa9401f64b76d867d46c5bb027c546a98f395961dfb5ddf7c86592d184c
 
       labels:
         app.kubernetes.io/name: opentelemetry-cluster-collector
@@ -2583,7 +2583,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5b11c69f1eebdd5163d9428c11e06200f05780adb8c59066dc95d4fc21674810
+        checksum/config: a4d9bbbb80f1df726fd7653f81ceecbb620816f6bda9b46fd8bc8a319cd5036c
 
       labels:
         app.kubernetes.io/name: opentelemetry-gateway
