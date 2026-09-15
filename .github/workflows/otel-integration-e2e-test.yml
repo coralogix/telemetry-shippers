@@ -6,9 +6,40 @@ on:
   pull_request:
     paths:
     - 'otel-integration/k8s-helm/**'
+    - '.github/scripts/autoinstrumentation-e2e-filter.sh'
+    - '.github/workflows/otel-integration-e2e-test.yml'
+  workflow_dispatch:
 
 jobs:
+  autoinstrumentation-e2e-filter:
+    name: Detect autoinstrumentation E2E
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+      go_run: ${{ steps.filter.outputs.go_run }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          chmod +x .github/scripts/autoinstrumentation-e2e-filter.sh
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            .github/scripts/autoinstrumentation-e2e-filter.sh --all --github-output "$GITHUB_OUTPUT"
+          else
+            .github/scripts/autoinstrumentation-e2e-filter.sh \
+              --base "$BASE_SHA" \
+              --head "$HEAD_SHA" \
+              --github-output "$GITHUB_OUTPUT"
+          fi
+
   otel-integration-agent-test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -69,6 +100,8 @@ jobs:
           done
 
   otel-integration-instrumentation-webhook-test:
+    needs: autoinstrumentation-e2e-filter
+    if: needs.autoinstrumentation-e2e-filter.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -85,6 +118,8 @@ jobs:
           create-kind-cluster: "true"
           cluster-name: "otel-integration-agent-e2e"
       - name: Run Instrumentation Webhook E2E test
+        env:
+          E2E_GO_RUN: ${{ needs.autoinstrumentation-e2e-filter.outputs.go_run }}
         run: |
           cd ./otel-integration/k8s-helm/e2e-test/
           chmod +x ./run-all.sh
@@ -99,6 +134,7 @@ jobs:
           done
 
   otel-integration-target-allocator-test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -129,6 +165,7 @@ jobs:
           done
 
   otel-integration-supervisor-test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -209,6 +246,7 @@ jobs:
           done
 
   otel-integration-tail-sampling-test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -271,6 +309,7 @@ jobs:
           done
 
   otel-integration-span-metrics-test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -331,6 +370,7 @@ jobs:
           done
 
   otel-integration-operator-test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

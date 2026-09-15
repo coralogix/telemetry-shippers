@@ -674,6 +674,9 @@ run_test() {
     elif [[ "$test_name" == "TestE2E_SpanMetricsConnector" ]]; then
         test_regex='^TestE2E_SpanMetrics_.*$'
     fi
+    if [ -n "${E2E_GO_RUN:-}" ]; then
+        test_regex="${E2E_GO_RUN}"
+    fi
 
     log_test "========================================"
     log_test "Running test: ${test_name}"
