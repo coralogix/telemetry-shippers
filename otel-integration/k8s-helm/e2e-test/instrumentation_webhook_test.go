@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -127,9 +128,14 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		{
 			name:       "apache",
 			annotation: "instrumentation.opentelemetry.io/inject-apache-httpd",
-			image:      "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main",
+			image:      "mirror.gcr.io/library/httpd:2.4",
 			port:       8080,
 			path:       "/",
+			command: []string{
+				"sh",
+				"-c",
+				"sed -i 's#Listen 80#Listen 8080#g' /usr/local/apache2/conf/httpd.conf && chmod -R a+rwX /usr/local/apache2 && exec httpd-foreground",
+			},
 			expectedInit: []string{
 				"otel-agent-source-container-clone",
 				"otel-agent-attach-apache",
@@ -137,7 +143,6 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedContainer: "app",
 			requiredNodeArch:  "amd64",
 			skipReason:        "the Apache HTTPD auto-instrumentation agent is x64/linux glibc only",
-			securityContext:   webserverSecurityContext,
 		},
 		{
 			name:       "nginx",
@@ -242,7 +247,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			}
 
 			curlPod(t, k8sClient, ns, instrumentedPod.GetName(), tc.port, tc.path)
-			requireTraceForPod(t, tracesConsumer, instrumentedPod.GetName())
+			requireTraceForPod(t, tracesConsumer, instrumentedPod.GetName(), created.GetName())
 		})
 	}
 }
@@ -455,12 +460,17 @@ func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, name
 	}
 
 	var readyPod *unstructured.Unstructured
+	lastLog := time.Time{}
 	require.Eventuallyf(t, func() bool {
 		pods, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(namespace).List(context.Background(), metav1.ListOptions{
 			LabelSelector: "app=" + deploymentName,
 		})
 		if err != nil {
 			return false
+		}
+		if time.Since(lastLog) > 30*time.Second {
+			logDeploymentPods(t, pods.Items, excludedPodName)
+			lastLog = time.Now()
 		}
 		for i := range pods.Items {
 			pod := &pods.Items[i]
@@ -476,6 +486,36 @@ func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, name
 	}, timeout, 2*time.Second, "deployment %s/%s did not produce a ready pod", namespace, deploymentName)
 
 	return readyPod
+}
+
+func logDeploymentPods(t *testing.T, pods []unstructured.Unstructured, excludedPodName string) {
+	t.Helper()
+	for i := range pods {
+		pod := &pods[i]
+		if pod.GetName() == excludedPodName {
+			continue
+		}
+		phase, _, _ := unstructured.NestedString(pod.Object, "status", "phase")
+		msg, _, _ := unstructured.NestedString(pod.Object, "status", "message")
+		t.Logf("pod %s phase=%s message=%s ready=%v", pod.GetName(), phase, msg, podIsReady(pod))
+		logContainerStatuses(t, pod, "initContainerStatuses")
+		logContainerStatuses(t, pod, "containerStatuses")
+	}
+}
+
+func logContainerStatuses(t *testing.T, pod *unstructured.Unstructured, field string) {
+	t.Helper()
+	statuses, found, _ := unstructured.NestedSlice(pod.Object, "status", field)
+	if !found {
+		return
+	}
+	for _, raw := range statuses {
+		status, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		t.Logf("  %s %v ready=%v state=%v", field, status["name"], status["ready"], status["state"])
+	}
 }
 
 func podIsReady(pod *unstructured.Unstructured) bool {
@@ -576,31 +616,61 @@ func requireNoTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink,
 	t.Helper()
 
 	require.Neverf(t, func() bool {
-		return tracesContainPod(tracesConsumer.AllTraces(), podName)
+		return tracesContainPod(tracesConsumer.AllTraces(), podName, "")
 	}, duration, time.Second, "received traces for uninstrumented pod %s", podName)
 }
 
-func requireTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink, podName string) {
+func requireTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink, podName, workloadName string) {
 	t.Helper()
 
 	require.Eventuallyf(t, func() bool {
-		return tracesContainPod(tracesConsumer.AllTraces(), podName)
-	}, instrumentationWebhookTraceTimeout, 2*time.Second, "did not receive traces for instrumented pod %s", podName)
+		return tracesContainPod(tracesConsumer.AllTraces(), podName, workloadName)
+	}, instrumentationWebhookTraceTimeout, 2*time.Second, "did not receive traces for instrumented pod %s (workload %s); resources=%v", podName, workloadName, traceResourceSummaries(tracesConsumer.AllTraces()))
 }
 
-func tracesContainPod(batches []ptrace.Traces, podName string) bool {
+func tracesContainPod(batches []ptrace.Traces, podName, workloadName string) bool {
 	for _, batch := range batches {
 		for i := 0; i < batch.ResourceSpans().Len(); i++ {
 			resource := batch.ResourceSpans().At(i).Resource()
 			if attr, ok := resource.Attributes().Get("k8s.pod.name"); ok && attr.AsString() == podName {
 				return true
 			}
-			if attr, ok := resource.Attributes().Get("service.name"); ok && attr.AsString() == podName {
-				return true
+			if attr, ok := resource.Attributes().Get("service.name"); ok {
+				name := attr.AsString()
+				if name == podName || (workloadName != "" && name == workloadName) {
+					return true
+				}
+			}
+			if workloadName != "" {
+				if attr, ok := resource.Attributes().Get("k8s.deployment.name"); ok && attr.AsString() == workloadName {
+					return true
+				}
 			}
 		}
 	}
 	return false
+}
+
+func traceResourceSummaries(batches []ptrace.Traces) []string {
+	var out []string
+	for _, batch := range batches {
+		for i := 0; i < batch.ResourceSpans().Len(); i++ {
+			attrs := batch.ResourceSpans().At(i).Resource().Attributes()
+			parts := make([]string, 0, 3)
+			for _, key := range []string{"k8s.pod.name", "k8s.deployment.name", "service.name"} {
+				if attr, ok := attrs.Get(key); ok {
+					parts = append(parts, key+"="+attr.AsString())
+				}
+			}
+			if len(parts) > 0 {
+				out = append(out, strings.Join(parts, ","))
+			}
+		}
+	}
+	if len(out) > 8 {
+		out = out[:8]
+	}
+	return out
 }
 
 func hasContainer(obj *unstructured.Unstructured, field, name string) bool {
