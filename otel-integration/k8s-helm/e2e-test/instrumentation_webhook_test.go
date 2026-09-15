@@ -146,7 +146,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		{
 			name:       "nginx",
 			annotation: "instrumentation.opentelemetry.io/inject-nginx",
-			image:      "mirror.gcr.io/nginxinc/nginx-unprivileged:1.25.3",
+			image:      "mirror.gcr.io/nginxinc/nginx-unprivileged:1.23.1",
 			port:       8765,
 			path:       "/",
 			expectedInit: []string{
