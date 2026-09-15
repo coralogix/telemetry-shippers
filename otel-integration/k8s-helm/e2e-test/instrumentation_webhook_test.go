@@ -59,6 +59,12 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 	})
 	defer shutdownSink()
 
+	webserverSecurityContext := map[string]any{
+		"runAsUser":  int64(1000),
+		"runAsGroup": int64(3000),
+		"fsGroup":    int64(3000),
+	}
+
 	tests := []struct {
 		name              string
 		annotation        string
@@ -69,9 +75,15 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		expectedInit      []string
 		expectedContainer string
 		expectedEnv       string
+		assertProtocolEnv bool
 		extraAnnotations  map[string]string
 		requiredNodeArch  string
 		skipReason        string
+		securityContext   map[string]any
+		containerEnv      []map[string]any
+		volumes           []any
+		volumeMounts      []any
+		createNginxConf   bool
 	}{
 		{
 			name:              "java",
@@ -82,6 +94,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-java"},
 			expectedContainer: "app",
 			expectedEnv:       "JAVA_TOOL_OPTIONS",
+			assertProtocolEnv: true,
 		},
 		{
 			name:              "python",
@@ -92,6 +105,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-python"},
 			expectedContainer: "app",
 			expectedEnv:       "PYTHONPATH",
+			assertProtocolEnv: true,
 		},
 		{
 			name:              "dotnet",
@@ -102,11 +116,68 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-dotnet"},
 			expectedContainer: "app",
 			expectedEnv:       "CORECLR_ENABLE_PROFILING",
+			assertProtocolEnv: true,
 			extraAnnotations: map[string]string{
 				"instrumentation.opentelemetry.io/otel-dotnet-auto-runtime": "linux-musl-x64",
 			},
 			requiredNodeArch: "amd64",
 			skipReason:       "the .NET auto-instrumentation profiler artifacts used by the operator are x64-only",
+		},
+		{
+			name:       "apache",
+			annotation: "instrumentation.opentelemetry.io/inject-apache-httpd",
+			image:      "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main",
+			port:       8080,
+			path:       "/",
+			expectedInit: []string{
+				"otel-agent-source-container-clone",
+				"otel-agent-attach-apache",
+			},
+			expectedContainer: "app",
+			requiredNodeArch:  "amd64",
+			skipReason:        "the Apache HTTPD auto-instrumentation agent is x64/linux glibc only",
+			securityContext:   webserverSecurityContext,
+		},
+		{
+			name:       "nginx",
+			annotation: "instrumentation.opentelemetry.io/inject-nginx",
+			image:      "mirror.gcr.io/nginxinc/nginx-unprivileged:1.25.3",
+			port:       8765,
+			path:       "/",
+			expectedInit: []string{
+				"otel-agent-source-container-clone",
+				"otel-agent-attach-nginx",
+			},
+			expectedContainer: "app",
+			requiredNodeArch:  "amd64",
+			skipReason:        "the nginx auto-instrumentation agent is x64/linux glibc only",
+			securityContext:   webserverSecurityContext,
+			containerEnv: []map[string]any{
+				{"name": "LD_LIBRARY_PATH", "value": "/opt"},
+			},
+			volumeMounts: []any{
+				map[string]any{
+					"name":      "nginx-conf",
+					"mountPath": "/etc/nginx/nginx.conf",
+					"subPath":   "nginx.conf",
+					"readOnly":  true,
+				},
+			},
+			volumes: []any{
+				map[string]any{
+					"name": "nginx-conf",
+					"configMap": map[string]any{
+						"name": "nginx-conf",
+						"items": []any{
+							map[string]any{
+								"key":  "nginx.conf",
+								"path": "nginx.conf",
+							},
+						},
+					},
+				},
+			},
+			createNginxConf: true,
 		},
 	}
 
@@ -119,7 +190,23 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 				t.Skipf("%s signal test requires a %s node: %s", tc.name, tc.requiredNodeArch, tc.skipReason)
 			}
 
-			deployment := instrumentationWebhookDeployment(tc.name, ns, "", tc.image, tc.port, tc.path, tc.command, tc.extraAnnotations, tc.requiredNodeArch)
+			if tc.createNginxConf {
+				createNginxConfConfigMap(t, k8sClient, ns)
+			}
+
+			deployment := instrumentationWebhookDeploymentFromSpec(ns, webhookAppSpec{
+				name:             tc.name,
+				image:            tc.image,
+				port:             tc.port,
+				path:             tc.path,
+				command:          tc.command,
+				extraAnnotations: tc.extraAnnotations,
+				nodeArch:         tc.requiredNodeArch,
+				securityContext:  tc.securityContext,
+				containerEnv:     tc.containerEnv,
+				volumes:          tc.volumes,
+				volumeMounts:     tc.volumeMounts,
+			})
 			created, err := k8sClient.DynamicClient.Resource(appsV1Deployments()).Namespace(ns).Create(context.Background(), deployment, metav1.CreateOptions{})
 			require.NoError(t, err)
 			t.Cleanup(func() {
@@ -143,6 +230,8 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			}
 			if tc.expectedEnv != "" {
 				require.Truef(t, containerHasEnv(instrumentedPod, tc.expectedContainer, tc.expectedEnv), "expected env %q on container %q in pod %s", tc.expectedEnv, tc.expectedContainer, tc.name)
+			}
+			if tc.assertProtocolEnv {
 				require.Truef(t, containerHasEnv(instrumentedPod, tc.expectedContainer, "OTEL_EXPORTER_OTLP_PROTOCOL"), "expected protocol env on container %q in pod %s", tc.expectedContainer, tc.name)
 			}
 
@@ -190,28 +279,56 @@ func waitForInstrumentationWebhookManager(k8sClient *xk8stest.K8sClient) error {
 	})
 }
 
+type webhookAppSpec struct {
+	name             string
+	annotation       string
+	image            string
+	port             int
+	path             string
+	command          []string
+	extraAnnotations map[string]string
+	nodeArch         string
+	securityContext  map[string]any
+	containerEnv     []map[string]any
+	volumes          []any
+	volumeMounts     []any
+}
+
 func instrumentationWebhookDeployment(name, namespace, annotation, image string, port int, path string, command []string, extraAnnotations map[string]string, nodeArch string) *unstructured.Unstructured {
-	appName := "instwebhook-" + name
+	return instrumentationWebhookDeploymentFromSpec(namespace, webhookAppSpec{
+		name:             name,
+		annotation:       annotation,
+		image:            image,
+		port:             port,
+		path:             path,
+		command:          command,
+		extraAnnotations: extraAnnotations,
+		nodeArch:         nodeArch,
+	})
+}
+
+func instrumentationWebhookDeploymentFromSpec(namespace string, spec webhookAppSpec) *unstructured.Unstructured {
+	appName := "instwebhook-" + spec.name
 	annotations := map[string]any{}
-	if annotation != "" {
-		annotations[annotation] = "true"
+	if spec.annotation != "" {
+		annotations[spec.annotation] = "true"
 	}
-	for k, v := range extraAnnotations {
+	for k, v := range spec.extraAnnotations {
 		annotations[k] = v
 	}
 	container := map[string]any{
 		"name":  "app",
-		"image": image,
+		"image": spec.image,
 		"ports": []any{
 			map[string]any{
 				"name":          "http",
-				"containerPort": port,
+				"containerPort": spec.port,
 			},
 		},
 		"readinessProbe": map[string]any{
 			"httpGet": map[string]any{
-				"path": path,
-				"port": port,
+				"path": spec.path,
+				"port": spec.port,
 			},
 			"initialDelaySeconds": int64(5),
 			"periodSeconds":       int64(5),
@@ -219,8 +336,18 @@ func instrumentationWebhookDeployment(name, namespace, annotation, image string,
 			"failureThreshold":    int64(12),
 		},
 	}
-	if len(command) > 0 {
-		container["command"] = stringSliceToAny(command)
+	if len(spec.command) > 0 {
+		container["command"] = stringSliceToAny(spec.command)
+	}
+	if len(spec.containerEnv) > 0 {
+		envs := make([]any, 0, len(spec.containerEnv))
+		for _, env := range spec.containerEnv {
+			envs = append(envs, env)
+		}
+		container["env"] = envs
+	}
+	if len(spec.volumeMounts) > 0 {
+		container["volumeMounts"] = spec.volumeMounts
 	}
 
 	podSpec := map[string]any{
@@ -228,10 +355,16 @@ func instrumentationWebhookDeployment(name, namespace, annotation, image string,
 			container,
 		},
 	}
-	if nodeArch != "" {
+	if spec.nodeArch != "" {
 		podSpec["nodeSelector"] = map[string]any{
-			"kubernetes.io/arch": nodeArch,
+			"kubernetes.io/arch": spec.nodeArch,
 		}
+	}
+	if spec.securityContext != nil {
+		podSpec["securityContext"] = spec.securityContext
+	}
+	if len(spec.volumes) > 0 {
+		podSpec["volumes"] = spec.volumes
 	}
 
 	return &unstructured.Unstructured{Object: map[string]any{
@@ -262,6 +395,30 @@ func instrumentationWebhookDeployment(name, namespace, annotation, image string,
 			},
 		},
 	}}
+}
+
+func createNginxConfConfigMap(t *testing.T, k8sClient *xk8stest.K8sClient, namespace string) {
+	t.Helper()
+
+	conf, err := os.ReadFile("testdata/nginx-e2e.conf")
+	require.NoError(t, err)
+
+	cm := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
+		"metadata": map[string]any{
+			"name":      "nginx-conf",
+			"namespace": namespace,
+		},
+		"data": map[string]any{
+			"nginx.conf": string(conf),
+		},
+	}}
+	created, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("configmaps")).Namespace(namespace).Create(context.Background(), cm, metav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = xk8stest.DeleteObject(k8sClient, created)
+	})
 }
 
 func stringSliceToAny(values []string) []any {
