@@ -146,7 +146,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		{
 			name:       "nginx",
 			annotation: "instrumentation.opentelemetry.io/inject-nginx",
-			image:      "mirror.gcr.io/nginxinc/nginx-unprivileged:1.23.1",
+			image:      "mirror.gcr.io/nginxinc/nginx-unprivileged:1.25.3",
 			port:       8765,
 			path:       "/",
 			expectedInit: []string{
@@ -547,7 +547,7 @@ func appendContainerStatusDump(b *strings.Builder, pod *unstructured.Unstructure
 		if !ok {
 			continue
 		}
-		fmt.Fprintf(b, "  %s %v ready=%v state=%v\n", field, status["name"], status["ready"], status["state"])
+		fmt.Fprintf(b, "  %s %v ready=%v state=%v lastState=%v\n", field, status["name"], status["ready"], status["state"], status["lastState"])
 	}
 }
 

@@ -214,7 +214,7 @@ Java, .NET, Apache HTTPD, and nginx use OTLP/gRPC to `http://$(OTEL_NODE_IP):431
 
 The webhook E2E (`TestE2E_InstrumentationWebhookNoCRDs`) covers Java, Python, .NET, Apache HTTPD, and nginx. CI runs that job only when an autoinstrumentation image pin in `values.yaml` changes, or when the webhook E2E harness itself changes. A Java-only pin bump runs only the Java subtest; an Apache/nginx pin bump (they share one image) runs both webserver subtests. Manual `workflow_dispatch` on the Otel Integration Helm Lint And Install Test workflow runs every language.
 
-The nginx E2E sample uses `nginxinc/nginx-unprivileged:1.23.1` (a glibc build of a version the `1.0.4` webserver agent ships modules for) and Apache uses `e2e-test-app-apache-httpd:main`. Apache HTTPD and nginx auto-instrumentation require x64/linux glibc.
+The nginx E2E sample uses `nginxinc/nginx-unprivileged:1.25.3` and Apache uses `e2e-test-app-apache-httpd:main` (same fixtures as the upstream OpenTelemetry Operator). The `1.0.4` agent injects a module built for that nginx series; 1.23.1 crash-loops after attach. Apache HTTPD and nginx auto-instrumentation require x64/linux glibc.
 
 The operator reads `manager.config` with `gopkg.in/yaml.v2`, which maps the Apache HTTPD block as `apachehttpd` rather than the CRD spelling `apacheHttpd`. `values.yaml` pins the image under both keys.
 
