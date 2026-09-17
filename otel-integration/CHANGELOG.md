@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.350 / 2026-09-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.138.2
+
+#### Changes from opentelemetry-collector 0.138.2:
+- [Feat] Add an opt-in `hardenedMode` preset. On Linux, it replaces the `hostMetrics` preset's full host root mount with specific read-only mounts for `/dev`, `/proc`, `/run/udev/data`, and `/sys`. It disables the filesystem scraper by default to avoid reporting the container filesystem as the host root. Other host filesystems can be enabled through `extraVolumes`, `extraVolumeMounts`, and explicit scraper configuration. Existing behavior remains the default.
+
 ### v0.0.349 / 2026-09-15
 
 - [Fix] Pin the Apache HTTPD auto-instrumentation image as `apachehttpd` so no-CRD webhook config actually injects the attach init image (`yaml.v2` ignores `apacheHttpd`).
