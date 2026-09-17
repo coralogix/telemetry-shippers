@@ -125,3 +125,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/bump-autoinstrumentation-images_test.sh
+      - run: bash scripts/autoinstrumentation-e2e-filter_test.sh

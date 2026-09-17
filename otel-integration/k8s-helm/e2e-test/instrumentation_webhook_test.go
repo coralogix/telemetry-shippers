@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/xk8stest"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,6 +61,12 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 	})
 	defer shutdownSink()
 
+	webserverSecurityContext := map[string]any{
+		"runAsUser":  int64(1000),
+		"runAsGroup": int64(3000),
+		"fsGroup":    int64(3000),
+	}
+
 	tests := []struct {
 		name              string
 		annotation        string
@@ -69,9 +77,15 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 		expectedInit      []string
 		expectedContainer string
 		expectedEnv       string
+		assertProtocolEnv bool
 		extraAnnotations  map[string]string
 		requiredNodeArch  string
 		skipReason        string
+		securityContext   map[string]any
+		containerEnv      []map[string]any
+		volumes           []any
+		volumeMounts      []any
+		createNginxConf   bool
 	}{
 		{
 			name:              "java",
@@ -82,6 +96,7 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-java"},
 			expectedContainer: "app",
 			expectedEnv:       "JAVA_TOOL_OPTIONS",
+			assertProtocolEnv: true,
 		},
 		{
 			name:              "python",
@@ -92,21 +107,82 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-python"},
 			expectedContainer: "app",
 			expectedEnv:       "PYTHONPATH",
+			assertProtocolEnv: true,
 		},
 		{
 			name:              "dotnet",
 			annotation:        "instrumentation.opentelemetry.io/inject-dotnet",
-			image:             "mcr.microsoft.com/dotnet/samples:aspnetapp",
+			image:             "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main",
 			port:              8080,
-			path:              "/",
+			path:              "/rolldice",
 			expectedInit:      []string{"opentelemetry-auto-instrumentation-dotnet"},
 			expectedContainer: "app",
 			expectedEnv:       "CORECLR_ENABLE_PROFILING",
-			extraAnnotations: map[string]string{
-				"instrumentation.opentelemetry.io/otel-dotnet-auto-runtime": "linux-musl-x64",
+			assertProtocolEnv: true,
+			requiredNodeArch:  "amd64",
+			skipReason:        "the .NET auto-instrumentation profiler artifacts used by the operator are x64-only",
+			securityContext:   webserverSecurityContext,
+			containerEnv: []map[string]any{
+				{"name": "ASPNETCORE_URLS", "value": "http://+:8080"},
 			},
-			requiredNodeArch: "amd64",
-			skipReason:       "the .NET auto-instrumentation profiler artifacts used by the operator are x64-only",
+		},
+		{
+			name:       "apache",
+			annotation: "instrumentation.opentelemetry.io/inject-apache-httpd",
+			// Same fixture as the operator e2e: httpd:2.4 already listening on 8080, writable as uid 1000.
+			// A custom command overlay races the clone/attach inits (they copy image conf, not the rewritten one).
+			image: "ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main",
+			port:  8080,
+			path:  "/",
+			expectedInit: []string{
+				"otel-agent-source-container-clone",
+				"otel-agent-attach-apache",
+			},
+			expectedContainer: "app",
+			requiredNodeArch:  "amd64",
+			skipReason:        "the Apache HTTPD auto-instrumentation agent is x64/linux glibc only",
+			securityContext:   webserverSecurityContext,
+		},
+		{
+			name:       "nginx",
+			annotation: "instrumentation.opentelemetry.io/inject-nginx",
+			image:      "mirror.gcr.io/nginxinc/nginx-unprivileged:1.25.3",
+			port:       8765,
+			path:       "/",
+			expectedInit: []string{
+				"otel-agent-source-container-clone",
+				"otel-agent-attach-nginx",
+			},
+			expectedContainer: "app",
+			requiredNodeArch:  "amd64",
+			skipReason:        "the nginx auto-instrumentation agent is x64/linux glibc only",
+			securityContext:   webserverSecurityContext,
+			containerEnv: []map[string]any{
+				{"name": "LD_LIBRARY_PATH", "value": "/opt"},
+			},
+			volumeMounts: []any{
+				map[string]any{
+					"name":      "nginx-conf",
+					"mountPath": "/etc/nginx/nginx.conf",
+					"subPath":   "nginx.conf",
+					"readOnly":  true,
+				},
+			},
+			volumes: []any{
+				map[string]any{
+					"name": "nginx-conf",
+					"configMap": map[string]any{
+						"name": "nginx-conf",
+						"items": []any{
+							map[string]any{
+								"key":  "nginx.conf",
+								"path": "nginx.conf",
+							},
+						},
+					},
+				},
+			},
+			createNginxConf: true,
 		},
 	}
 
@@ -119,21 +195,42 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 				t.Skipf("%s signal test requires a %s node: %s", tc.name, tc.requiredNodeArch, tc.skipReason)
 			}
 
-			deployment := instrumentationWebhookDeployment(tc.name, ns, "", tc.image, tc.port, tc.path, tc.command, tc.extraAnnotations, tc.requiredNodeArch)
+			if tc.createNginxConf {
+				createNginxConfConfigMap(t, k8sClient, ns)
+			}
+
+			deployment := instrumentationWebhookDeploymentFromSpec(ns, webhookAppSpec{
+				name:             tc.name,
+				image:            tc.image,
+				port:             tc.port,
+				path:             tc.path,
+				command:          tc.command,
+				extraAnnotations: tc.extraAnnotations,
+				nodeArch:         tc.requiredNodeArch,
+				securityContext:  tc.securityContext,
+				containerEnv:     tc.containerEnv,
+				volumes:          tc.volumes,
+				volumeMounts:     tc.volumeMounts,
+			})
 			created, err := k8sClient.DynamicClient.Resource(appsV1Deployments()).Namespace(ns).Create(context.Background(), deployment, metav1.CreateOptions{})
 			require.NoError(t, err)
 			t.Cleanup(func() {
 				_ = xk8stest.DeleteObject(k8sClient, created)
 			})
 
-			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "")
+			readyTimeout := 3 * time.Minute
+			if tc.name == "apache" || tc.name == "nginx" {
+				readyTimeout = 6 * time.Minute
+			}
+
+			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "", readyTimeout)
 			curlPod(t, k8sClient, ns, baselinePod.GetName(), tc.port, tc.path)
 			requireNoTraceForPod(t, tracesConsumer, baselinePod.GetName(), 15*time.Second)
 
 			err = injectDeploymentInstrumentation(k8sClient, ns, created.GetName(), tc.annotation)
 			require.NoError(t, err)
 
-			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName())
+			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName(), readyTimeout)
 
 			for _, initName := range tc.expectedInit {
 				require.Truef(t, hasContainer(instrumentedPod, "initContainers", initName), "expected init container %q in pod %s", initName, tc.name)
@@ -143,11 +240,17 @@ func TestE2E_InstrumentationWebhookNoCRDs(t *testing.T) {
 			}
 			if tc.expectedEnv != "" {
 				require.Truef(t, containerHasEnv(instrumentedPod, tc.expectedContainer, tc.expectedEnv), "expected env %q on container %q in pod %s", tc.expectedEnv, tc.expectedContainer, tc.name)
+			}
+			if tc.assertProtocolEnv {
 				require.Truef(t, containerHasEnv(instrumentedPod, tc.expectedContainer, "OTEL_EXPORTER_OTLP_PROTOCOL"), "expected protocol env on container %q in pod %s", tc.expectedContainer, tc.name)
 			}
 
 			curlPod(t, k8sClient, ns, instrumentedPod.GetName(), tc.port, tc.path)
-			requireTraceForPod(t, tracesConsumer, instrumentedPod.GetName())
+			if tc.name == "nginx" || tc.name == "apache" {
+				// C++ webserver SDK batches; a second request after the module is live is cheap insurance.
+				curlPod(t, k8sClient, ns, instrumentedPod.GetName(), tc.port, tc.path)
+			}
+			requireTraceForPod(t, tracesConsumer, instrumentedPod.GetName(), created.GetName())
 		})
 	}
 }
@@ -190,28 +293,56 @@ func waitForInstrumentationWebhookManager(k8sClient *xk8stest.K8sClient) error {
 	})
 }
 
+type webhookAppSpec struct {
+	name             string
+	annotation       string
+	image            string
+	port             int
+	path             string
+	command          []string
+	extraAnnotations map[string]string
+	nodeArch         string
+	securityContext  map[string]any
+	containerEnv     []map[string]any
+	volumes          []any
+	volumeMounts     []any
+}
+
 func instrumentationWebhookDeployment(name, namespace, annotation, image string, port int, path string, command []string, extraAnnotations map[string]string, nodeArch string) *unstructured.Unstructured {
-	appName := "instwebhook-" + name
+	return instrumentationWebhookDeploymentFromSpec(namespace, webhookAppSpec{
+		name:             name,
+		annotation:       annotation,
+		image:            image,
+		port:             port,
+		path:             path,
+		command:          command,
+		extraAnnotations: extraAnnotations,
+		nodeArch:         nodeArch,
+	})
+}
+
+func instrumentationWebhookDeploymentFromSpec(namespace string, spec webhookAppSpec) *unstructured.Unstructured {
+	appName := "instwebhook-" + spec.name
 	annotations := map[string]any{}
-	if annotation != "" {
-		annotations[annotation] = "true"
+	if spec.annotation != "" {
+		annotations[spec.annotation] = "true"
 	}
-	for k, v := range extraAnnotations {
+	for k, v := range spec.extraAnnotations {
 		annotations[k] = v
 	}
 	container := map[string]any{
 		"name":  "app",
-		"image": image,
+		"image": spec.image,
 		"ports": []any{
 			map[string]any{
 				"name":          "http",
-				"containerPort": port,
+				"containerPort": spec.port,
 			},
 		},
 		"readinessProbe": map[string]any{
 			"httpGet": map[string]any{
-				"path": path,
-				"port": port,
+				"path": spec.path,
+				"port": spec.port,
 			},
 			"initialDelaySeconds": int64(5),
 			"periodSeconds":       int64(5),
@@ -219,8 +350,18 @@ func instrumentationWebhookDeployment(name, namespace, annotation, image string,
 			"failureThreshold":    int64(12),
 		},
 	}
-	if len(command) > 0 {
-		container["command"] = stringSliceToAny(command)
+	if len(spec.command) > 0 {
+		container["command"] = stringSliceToAny(spec.command)
+	}
+	if len(spec.containerEnv) > 0 {
+		envs := make([]any, 0, len(spec.containerEnv))
+		for _, env := range spec.containerEnv {
+			envs = append(envs, env)
+		}
+		container["env"] = envs
+	}
+	if len(spec.volumeMounts) > 0 {
+		container["volumeMounts"] = spec.volumeMounts
 	}
 
 	podSpec := map[string]any{
@@ -228,10 +369,16 @@ func instrumentationWebhookDeployment(name, namespace, annotation, image string,
 			container,
 		},
 	}
-	if nodeArch != "" {
+	if spec.nodeArch != "" {
 		podSpec["nodeSelector"] = map[string]any{
-			"kubernetes.io/arch": nodeArch,
+			"kubernetes.io/arch": spec.nodeArch,
 		}
+	}
+	if spec.securityContext != nil {
+		podSpec["securityContext"] = spec.securityContext
+	}
+	if len(spec.volumes) > 0 {
+		podSpec["volumes"] = spec.volumes
 	}
 
 	return &unstructured.Unstructured{Object: map[string]any{
@@ -264,6 +411,30 @@ func instrumentationWebhookDeployment(name, namespace, annotation, image string,
 	}}
 }
 
+func createNginxConfConfigMap(t *testing.T, k8sClient *xk8stest.K8sClient, namespace string) {
+	t.Helper()
+
+	conf, err := os.ReadFile("testdata/nginx-e2e.conf")
+	require.NoError(t, err)
+
+	cm := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
+		"metadata": map[string]any{
+			"name":      "nginx-conf",
+			"namespace": namespace,
+		},
+		"data": map[string]any{
+			"nginx.conf": string(conf),
+		},
+	}}
+	created, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("configmaps")).Namespace(namespace).Create(context.Background(), cm, metav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = xk8stest.DeleteObject(k8sClient, created)
+	})
+}
+
 func stringSliceToAny(values []string) []any {
 	out := make([]any, 0, len(values))
 	for _, value := range values {
@@ -284,31 +455,132 @@ func waitForPodReady(t *testing.T, k8sClient *xk8stest.K8sClient, namespace, pod
 	}, 3*time.Minute, 2*time.Second, "pod %s/%s did not become ready", namespace, podName)
 }
 
-func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, namespace, deploymentName, excludedPodName string) *unstructured.Unstructured {
+func waitForDeploymentReadyPod(t *testing.T, k8sClient *xk8stest.K8sClient, namespace, deploymentName, excludedPodName string, timeout time.Duration) *unstructured.Unstructured {
 	t.Helper()
 
-	var readyPod *unstructured.Unstructured
-	require.Eventuallyf(t, func() bool {
+	if timeout == 0 {
+		timeout = 3 * time.Minute
+	}
+
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
 		pods, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(namespace).List(context.Background(), metav1.ListOptions{
 			LabelSelector: "app=" + deploymentName,
 		})
-		if err != nil {
-			return false
+		if err == nil {
+			for i := range pods.Items {
+				pod := &pods.Items[i]
+				if pod.GetName() == excludedPodName {
+					continue
+				}
+				if podIsReady(pod) {
+					return pod
+				}
+			}
 		}
-		for i := range pods.Items {
-			pod := &pods.Items[i]
-			if pod.GetName() == excludedPodName {
+		time.Sleep(2 * time.Second)
+	}
+
+	t.Fatalf("deployment %s/%s did not produce a ready pod\n%s", namespace, deploymentName, dumpDeploymentStatus(k8sClient, namespace, deploymentName, excludedPodName))
+	return nil
+}
+
+func dumpDeploymentStatus(k8sClient *xk8stest.K8sClient, namespace, deploymentName, excludedPodName string) string {
+	var b strings.Builder
+	pods, err := k8sClient.DynamicClient.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "app=" + deploymentName,
+	})
+	if err != nil {
+		fmt.Fprintf(&b, "list pods: %v\n", err)
+		return b.String()
+	}
+	if len(pods.Items) == 0 {
+		b.WriteString("no pods matched label app=" + deploymentName + "\n")
+	}
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		if pod.GetName() == excludedPodName {
+			fmt.Fprintf(&b, "pod %s excluded (previous replica)\n", pod.GetName())
+			continue
+		}
+		phase, _, _ := unstructured.NestedString(pod.Object, "status", "phase")
+		msg, _, _ := unstructured.NestedString(pod.Object, "status", "message")
+		fmt.Fprintf(&b, "pod %s phase=%s message=%s ready=%v\n", pod.GetName(), phase, msg, podIsReady(pod))
+		appendContainerStatusDump(&b, pod, "initContainerStatuses")
+		appendContainerStatusDump(&b, pod, "containerStatuses")
+		appendInitEnvDump(&b, pod)
+	}
+	rss, err := k8sClient.DynamicClient.Resource(appsV1ReplicaSets()).Namespace(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "app=" + deploymentName,
+	})
+	if err != nil {
+		fmt.Fprintf(&b, "list replicasets: %v\n", err)
+		return b.String()
+	}
+	for i := range rss.Items {
+		rs := rss.Items[i]
+		replicas, _, _ := unstructured.NestedInt64(rs.Object, "status", "replicas")
+		ready, _, _ := unstructured.NestedInt64(rs.Object, "status", "readyReplicas")
+		fmt.Fprintf(&b, "replicaset %s replicas=%d ready=%d\n", rs.GetName(), replicas, ready)
+		conds, found, _ := unstructured.NestedSlice(rs.Object, "status", "conditions")
+		if !found {
+			continue
+		}
+		for _, raw := range conds {
+			cond, ok := raw.(map[string]any)
+			if !ok {
 				continue
 			}
-			if podIsReady(pod) {
-				readyPod = pod
-				return true
-			}
+			fmt.Fprintf(&b, "  condition type=%v status=%v reason=%v message=%v\n", cond["type"], cond["status"], cond["reason"], cond["message"])
 		}
-		return false
-	}, 3*time.Minute, 2*time.Second, "deployment %s/%s did not produce a ready pod", namespace, deploymentName)
+	}
+	return b.String()
+}
 
-	return readyPod
+func appendContainerStatusDump(b *strings.Builder, pod *unstructured.Unstructured, field string) {
+	statuses, found, _ := unstructured.NestedSlice(pod.Object, "status", field)
+	if !found {
+		return
+	}
+	for _, raw := range statuses {
+		status, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		fmt.Fprintf(b, "  %s %v ready=%v state=%v lastState=%v\n", field, status["name"], status["ready"], status["state"], status["lastState"])
+	}
+}
+
+func appendInitEnvDump(b *strings.Builder, pod *unstructured.Unstructured) {
+	inits, found, _ := unstructured.NestedSlice(pod.Object, "spec", "initContainers")
+	if !found {
+		return
+	}
+	for _, raw := range inits {
+		container, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := container["name"].(string)
+		if !strings.Contains(name, "otel-agent-attach") {
+			continue
+		}
+		envs, _, _ := unstructured.NestedSlice(container, "env")
+		names := make([]string, 0, len(envs))
+		for _, envRaw := range envs {
+			env, ok := envRaw.(map[string]any)
+			if !ok {
+				continue
+			}
+			envName, _ := env["name"].(string)
+			names = append(names, envName)
+		}
+		fmt.Fprintf(b, "  attach env order=%v\n", names)
+	}
+}
+
+func appsV1ReplicaSets() schema.GroupVersionResource {
+	return schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "replicasets"}
 }
 
 func podIsReady(pod *unstructured.Unstructured) bool {
@@ -409,31 +681,75 @@ func requireNoTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink,
 	t.Helper()
 
 	require.Neverf(t, func() bool {
-		return tracesContainPod(tracesConsumer.AllTraces(), podName)
+		return tracesContainPod(tracesConsumer.AllTraces(), podName, "")
 	}, duration, time.Second, "received traces for uninstrumented pod %s", podName)
 }
 
-func requireTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink, podName string) {
+func requireTraceForPod(t *testing.T, tracesConsumer *consumertest.TracesSink, podName, workloadName string) {
 	t.Helper()
 
-	require.Eventuallyf(t, func() bool {
-		return tracesContainPod(tracesConsumer.AllTraces(), podName)
-	}, instrumentationWebhookTraceTimeout, 2*time.Second, "did not receive traces for instrumented pod %s", podName)
+	deadline := time.Now().Add(instrumentationWebhookTraceTimeout)
+	for time.Now().Before(deadline) {
+		if tracesContainPod(tracesConsumer.AllTraces(), podName, workloadName) {
+			return
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	t.Fatalf("did not receive traces for instrumented pod %s (workload %s); resources=%v", podName, workloadName, traceResourceSummaries(tracesConsumer.AllTraces()))
 }
 
-func tracesContainPod(batches []ptrace.Traces, podName string) bool {
+func tracesContainPod(batches []ptrace.Traces, podName, workloadName string) bool {
 	for _, batch := range batches {
 		for i := 0; i < batch.ResourceSpans().Len(); i++ {
-			resource := batch.ResourceSpans().At(i).Resource()
-			if attr, ok := resource.Attributes().Get("k8s.pod.name"); ok && attr.AsString() == podName {
-				return true
-			}
-			if attr, ok := resource.Attributes().Get("service.name"); ok && attr.AsString() == podName {
+			if resourceHasIdentity(batch.ResourceSpans().At(i).Resource().Attributes(), podName, workloadName) {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func resourceHasIdentity(attrs pcommon.Map, podName, workloadName string) bool {
+	matched := false
+	attrs.Range(func(_ string, v pcommon.Value) bool {
+		val := v.AsString()
+		if val == "" {
+			return true
+		}
+		if val == podName || strings.Contains(val, podName) {
+			matched = true
+			return false
+		}
+		if workloadName != "" && (val == workloadName || strings.Contains(val, workloadName)) {
+			matched = true
+			return false
+		}
+		return true
+	})
+	return matched
+}
+
+func traceResourceSummaries(batches []ptrace.Traces) []string {
+	var out []string
+	for _, batch := range batches {
+		for i := 0; i < batch.ResourceSpans().Len(); i++ {
+			attrs := batch.ResourceSpans().At(i).Resource().Attributes()
+			parts := make([]string, 0, attrs.Len())
+			attrs.Range(func(k string, v pcommon.Value) bool {
+				parts = append(parts, k+"="+v.AsString())
+				return true
+			})
+			if len(parts) == 0 {
+				parts = append(parts, "(empty resource)")
+			}
+			out = append(out, strings.Join(parts, ","))
+			if len(out) == 8 {
+				return out
+			}
+		}
+	}
+	return out
 }
 
 func hasContainer(obj *unstructured.Unstructured, field, name string) bool {
@@ -577,14 +893,14 @@ func TestE2E_SDKInjection(t *testing.T) {
 				_ = xk8stest.DeleteObject(k8sClient, created)
 			})
 
-			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "")
+			baselinePod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), "", 0)
 			curlPod(t, k8sClient, ns, baselinePod.GetName(), tc.port, tc.path)
 			requireNoTraceForPod(t, tracesConsumer, baselinePod.GetName(), 15*time.Second)
 
 			err = injectDeploymentInstrumentation(k8sClient, ns, created.GetName(), "instrumentation.opentelemetry.io/inject-sdk")
 			require.NoError(t, err)
 
-			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName())
+			instrumentedPod := waitForDeploymentReadyPod(t, k8sClient, ns, created.GetName(), baselinePod.GetName(), 0)
 
 			if tc.noExpectedInit {
 				initContainers, found, _ := unstructured.NestedSlice(instrumentedPod.Object, "spec", "initContainers")

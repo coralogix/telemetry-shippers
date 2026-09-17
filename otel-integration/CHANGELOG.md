@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.349 / 2026-09-15
+
+- [Fix] Pin the Apache HTTPD auto-instrumentation image as `apachehttpd` so no-CRD webhook config actually injects the attach init image (`yaml.v2` ignores `apacheHttpd`).
+
 ### v0.0.348 / 2026-09-11
 
 - [Chore] Bump autoinstrumentation images already published on GHCR (java `2.30.0` -> `2.31.1`, python `0.64b0` -> `0.65b0`). .NET `1.16.0` and Apache/nginx `1.0.4` are unchanged.
