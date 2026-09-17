@@ -2,6 +2,10 @@
 
 ## OpenTelemetry EKS-Fargate
 
+### v0.0.6 / 2026-06-16
+
+* [FEAT] Accept both `PRIVATE_KEY` and `CORALOGIX_PRIVATE_KEY` as secret key names in the `coralogix-keys` secret
+
 ### v0.0.5 / 2025-05-14
 * [FIX] Remove overwrite of k8s.node.name attribute
 
