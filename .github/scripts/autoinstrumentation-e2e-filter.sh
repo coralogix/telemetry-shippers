@@ -109,6 +109,24 @@ if [[ "$harness_changed" == "true" ]]; then
   exit 0
 fi
 
+# The operator Helm chart supplies the webhook manager this E2E exercises.
+operator_chart_version() {
+  local sha="$1"
+  git show "${sha}:otel-integration/k8s-helm/Chart.yaml" 2>/dev/null | awk '
+    /name: opentelemetry-operator/ {hit=1}
+    hit && /version:/ {
+      gsub(/"/, "", $2)
+      print $2
+      exit
+    }
+  '
+}
+
+if [[ "$(operator_chart_version "$BASE_SHA")" != "$(operator_chart_version "$HEAD_SHA")" ]]; then
+  emit_all
+  exit 0
+fi
+
 # Shared webhook settings (exporter, env, sampler, feature flags) are not
 # language pins. If that subtree changed besides image tags, run every language.
 autoinstr_config_without_images() {
