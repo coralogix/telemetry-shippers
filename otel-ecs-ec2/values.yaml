@@ -171,9 +171,6 @@ opentelemetry-agent:
           - net.host.port
           - telemetry.distro.name
           - telemetry.distro.version
-          - telemetry.sdk.language
-          - telemetry.sdk.name
-          - telemetry.sdk.version
           - aws.ecs.task.definition.version
           - aws.ecs.task.known.status
         traces:
@@ -226,9 +223,6 @@ opentelemetry-agent:
           - process.runtime.version
           - telemetry.distro.name
           - telemetry.distro.version
-          - telemetry.sdk.language
-          - telemetry.sdk.name
-          - telemetry.sdk.version
           - aws.ecs.task.definition.version
           - aws.ecs.task.known.status
         # Configures Host Metrics receiver to collect Entity Events.
