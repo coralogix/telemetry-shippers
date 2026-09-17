@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.58 / 2026-09-17
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.138.2
+
+#### Changes from opentelemetry-collector 0.138.2:
+- [Feat] Add an opt-in `hardenedMode` preset. On Linux, it replaces the `hostMetrics` preset's full host root mount with specific read-only mounts for `/dev`, `/proc`, `/run/udev/data`, and `/sys`. It disables the filesystem scraper by default to avoid reporting the container filesystem as the host root. Other host filesystems can be enabled through `extraVolumes`, `extraVolumeMounts`, and explicit scraper configuration. Existing behavior remains the default.
+
 ### v0.0.57 / 2026-09-08
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.138.1
