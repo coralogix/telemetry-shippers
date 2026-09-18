@@ -1,6 +1,6 @@
 # Bumps otel-integration autoinstrumentation image pins when OpenTelemetry
 # Operator ships a new versions.txt combo. Opens one PR and notifies #eco-system
-# (C07BXNTQVV3) when images actually change.
+# (C07BXNTQVV3) when images actually change, or when the job fails.
 #
 # Slack: set repo/org secret SLACK_ECOSYSTEM_WEBHOOK_URL to an incoming webhook
 # that posts to #eco-system. If the secret is missing, the notify step warns
@@ -152,6 +152,7 @@ jobs:
 
   notify:
     needs: [test, bump]
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -159,11 +160,14 @@ jobs:
       - name: Notify #eco-system
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ECOSYSTEM_WEBHOOK_URL }}
+          TEST_RESULT: ${{ needs.test.result }}
+          BUMP_RESULT: ${{ needs.bump.result }}
           CHANGED: ${{ needs.bump.outputs.changed }}
           DRY_RUN: ${{ needs.bump.outputs.dry_run }}
           OPERATOR_TAG: ${{ needs.bump.outputs.operator_tag }}
           PR_URL: ${{ needs.bump.outputs.pr_url }}
           DELTA: ${{ needs.bump.outputs.delta }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
@@ -171,13 +175,26 @@ jobs:
             exit 0
           fi
 
-          if [[ "$CHANGED" != "true" || "$DRY_RUN" == "true" ]]; then
+          failed=false
+          if [[ "$TEST_RESULT" == "failure" || "$BUMP_RESULT" == "failure" ]]; then
+            failed=true
+          fi
+          updated=false
+          if [[ "$failed" != "true" && "$CHANGED" == "true" && "$DRY_RUN" != "true" ]]; then
+            updated=true
+          fi
+          if [[ "$failed" != "true" && "$updated" != "true" ]]; then
             echo "No Slack notification (already up to date or dry-run)."
             exit 0
           fi
 
-          text="Autoinstrumentation images updated to OpenTelemetry Operator ${OPERATOR_TAG}."
-          extra="PR: ${PR_URL}"
+          if [[ "$failed" == "true" ]]; then
+            text="Autoinstrumentation image bump failed for ${GITHUB_REPOSITORY}."
+            extra="Run: ${RUN_URL}"
+          else
+            text="Autoinstrumentation images updated to OpenTelemetry Operator ${OPERATOR_TAG}."
+            extra="PR: ${PR_URL}"
+          fi
 
           export text extra
           python3 - <<'PY' >/tmp/slack-payload.json
