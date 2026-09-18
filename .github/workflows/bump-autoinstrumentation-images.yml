@@ -119,7 +119,7 @@ jobs:
         if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
         uses: planetscale/ghcommit-action@v0.1.43
         with:
-          commit_message: chore: bump autoinstrumentation images to operator ${{ steps.bump.outputs.operator_tag }}
+          commit_message: "chore: bump autoinstrumentation images to operator ${{ steps.bump.outputs.operator_tag }}"
           repo: ${{ github.repository }}
           branch: chore/bump-autoinstrumentation
           file_pattern: '*.yaml *.md **/*.yaml **/*.md'
@@ -152,7 +152,7 @@ jobs:
 
   notify:
     needs: [test, bump]
-    if: always() && !cancelled()
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
