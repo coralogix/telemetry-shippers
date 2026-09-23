@@ -2,6 +2,15 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.351 / 2026-09-23
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.27
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.27:
+- [Feature] Add a first-class `metrics.features` value, rendered as the top-level `metrics.features` in OBI's configuration (the modern key, applying to every metrics exporter — not the deprecated per-exporter `otel_metrics_export.features`). It defaults to `[]`, and the `stats.enabled` / `presets.runtimeMetrics` toggles append their features (`stats`, `application_runtime`) on top of it, so a default install exports `metrics.features: [application_runtime]`
+- [Change] **OBI application metrics are now disabled by default.** OBI's own default `application` feature (the HTTP/gRPC/database/messaging RED metrics plus the four `http.*.body.size` histograms) duplicates the information the collector's `presets.spanMetrics` preset derives from the very same OBI traces — different metric names and units, but the same requests measured and paid for twice. Traces and context propagation are unaffected; features gate the metrics exporters only. To keep exporting OBI's application metrics, set `metrics.features: [application]`. Installs that customized features through the `config.data.otel_metrics_export.features` passthrough (the only way before this version) are not affected: that deprecated key, when present, wins over `metrics.features` — mirroring OBI's own precedence — and renders exactly as before; migrate it to `metrics.features`
+- [Fix] The `stats.enabled` / `presets.runtimeMetrics` feature-merging now honors a `config.data.metrics.features` passthrough (OBI's modern key) as its base list and appends to that key; previously the merged list was always written to the deprecated `otel_metrics_export.features`, which OBI lets override the modern key, silently discarding such a passthrough. Configurations using the deprecated passthrough render exactly as before
+
 ### v0.0.350 / 2026-09-17
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.138.2
