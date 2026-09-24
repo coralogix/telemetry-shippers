@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.59 / 2026-09-24
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.138.3
+
+#### Changes from opentelemetry-collector 0.138.3:
+- [Feat] Enable Fleet Management restart commands by default for Supervisor-managed Collectors, and add the opt-in `presets.fleetManagement.acceptsRestartCommand` setting for direct Collector connections.
+
 ### v0.0.58 / 2026-09-17
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.138.2

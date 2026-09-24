@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.54 / 2026-09-24
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.138.3`.
+
+#### Changes from opentelemetry-collector 0.138.3:
+- [Feat] Enable Fleet Management restart commands by default for Supervisor-managed Collectors, and add the opt-in `presets.fleetManagement.acceptsRestartCommand` setting for direct Collector connections.
+
 ### v0.0.53 / 2026-09-17
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.138.2`.
