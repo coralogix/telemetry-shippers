@@ -31,6 +31,7 @@ COLLECTOR_VERSION=""
 SUPERVISOR_MODE=false
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_BASE_CONFIG_PATH=""
+OPAMP_ATTRIBUTES=()
 DETACHED=true
 
 MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
@@ -147,6 +148,8 @@ Options:
     --supervisor-base-config <path>  Path to base collector config for supervisor mode
                                       Merged with remote config from Fleet Manager
                                       (supervisor mode only)
+    --opamp-attribute <key=value>    Add a Supervisor non-identifying agent attribute.
+                                      Repeatable; cannot override service.name or cx.agent.type.
     -f, --foreground            Run in foreground (default: detached)
     --uninstall                 Stop and remove the container
     -h, --help                  Show this help message
@@ -170,6 +173,11 @@ Examples:
     # Supervisor mode (config managed remotely)
     CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" $0 -s
 
+    # Supervisor mode with Fleet Management selector attributes
+    CORALOGIX_DOMAIN="us1.coralogix.com" CORALOGIX_PRIVATE_KEY="your-key" $0 -s \\
+        --opamp-attribute fleet.test.id=fleet-demo \\
+        --opamp-attribute 'deployment.environment=staging blue'
+
     # Gateway mode with custom memory
     CORALOGIX_PRIVATE_KEY="your-key" $0 -c config.yaml --memory-limit 2048
 
@@ -183,6 +191,40 @@ Examples:
     $0 --stop
 EOF
     exit 0
+}
+
+add_opamp_attribute() {
+    local attribute="$1"
+    local key value existing
+
+    if [[ "$attribute" != *=* ]]; then
+        fail "--opamp-attribute must use KEY=VALUE"
+    fi
+    key="${attribute%%=*}"
+    value="${attribute#*=}"
+    if [ -z "$key" ] || [ -z "$value" ]; then
+        fail "--opamp-attribute must use non-empty KEY=VALUE"
+    fi
+    if [[ "$key" == *$'\n'* || "$key" == *$'\r'* || "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+        fail "--opamp-attribute keys and values cannot contain newlines"
+    fi
+    case "$key" in
+        service.name|cx.agent.type) fail "--opamp-attribute cannot override built-in attribute: $key" ;;
+    esac
+    for existing in "${OPAMP_ATTRIBUTES[@]}"; do
+        if [ "${existing%%=*}" = "$key" ]; then
+            fail "--opamp-attribute duplicate key: $key"
+        fi
+    done
+    OPAMP_ATTRIBUTES+=("$attribute")
+}
+
+yaml_quote() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    value="${value//$'\t'/\\t}"
+    printf '"%s"' "$value"
 }
 
 parse_args() {
@@ -233,6 +275,11 @@ parse_args() {
                 else
                     fail "Supervisor base config file not found: $2"
                 fi
+                shift 2
+                ;;
+            --opamp-attribute)
+                [ $# -ge 2 ] || fail "--opamp-attribute requires KEY=VALUE"
+                add_opamp_attribute "$2"
                 shift 2
                 ;;
             --stop|--uninstall)
@@ -447,6 +494,16 @@ agent:
     non_identifying_attributes:
       service.name: "opentelemetry-collector"
       cx.agent.type: "docker"
+EOF
+
+    local attribute key value
+    for attribute in "${OPAMP_ATTRIBUTES[@]}"; do
+        key="${attribute%%=*}"
+        value="${attribute#*=}"
+        printf '      %s: %s\n' "$(yaml_quote "$key")" "$(yaml_quote "$value")"
+    done
+
+    cat <<EOF
 
   config_files:
     - /etc/otelcol-contrib/config.yaml
@@ -571,6 +628,10 @@ main() {
     log "===================================================="
     
     parse_args "$@"
+
+    if [ "$SUPERVISOR_MODE" = false ] && [ "${#OPAMP_ATTRIBUTES[@]}" -gt 0 ]; then
+        fail "--opamp-attribute can only be used with -s/--supervisor"
+    fi
     
     if [ -z "${CORALOGIX_PRIVATE_KEY:-}" ]; then
         fail "CORALOGIX_PRIVATE_KEY is required"

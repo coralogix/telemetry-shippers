@@ -69,6 +69,7 @@ VERSION=""
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_MODE=false
 SUPERVISOR_BASE_CONFIG_PATH=""
+OPAMP_ATTRIBUTES=()
 UNINSTALL_MODE=false
 PURGE=false
 MACOS_INSTALL_TYPE="daemon"
@@ -242,6 +243,7 @@ Options:
                                   (default: same as --version)
     --collector-version <ver>     Collector version (supervisor mode only)
                                   (default: same as --version)
+    --opamp-attribute <key=value> Add a repeatable Supervisor non-identifying agent attribute
     --uninstall                   Uninstall the collector
                                   (use --purge to remove all data)
     --purge                       Remove all data when uninstalling
@@ -266,6 +268,11 @@ Examples:
 
     # Install with supervisor
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s
+
+    # Install with Fleet Management selector attributes
+    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" $0 -s \\
+        --opamp-attribute fleet.test.id=fleet-demo \\
+        --opamp-attribute 'deployment.environment=staging blue'
 
     # Install with supervisor using specific versions
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
@@ -1447,6 +1454,16 @@ agent:
     non_identifying_attributes:
       service.name: "opentelemetry-collector"
       cx.agent.type: "standalone"
+EOF
+
+    local attribute key value
+    for attribute in "${OPAMP_ATTRIBUTES[@]}"; do
+        key="${attribute%%=*}"
+        value="${attribute#*=}"
+        printf '      %s: %s\n' "$(yaml_quote "$key")" "$(yaml_quote "$value")" | $SUDO_CMD tee -a /etc/opampsupervisor/config.yaml >/dev/null
+    done
+
+    $SUDO_CMD tee -a /etc/opampsupervisor/config.yaml >/dev/null <<EOF
   config_files:
     - /etc/opampsupervisor/collector.yaml
   args: []
@@ -1534,6 +1551,30 @@ EOF
     log "Supervisor configured and started"
     
     verify_supervisor
+}
+
+add_opamp_attribute() {
+    local attribute="$1"
+    local key value existing
+
+    [[ "$attribute" == *=* ]] || fail "--opamp-attribute must use KEY=VALUE"
+    key="${attribute%%=*}"
+    value="${attribute#*=}"
+    [ -n "$key" ] && [ -n "$value" ] || fail "--opamp-attribute must use non-empty KEY=VALUE"
+    [[ "$key" != *$'\n'* && "$key" != *$'\r'* && "$value" != *$'\n'* && "$value" != *$'\r'* ]] || fail "--opamp-attribute keys and values cannot contain newlines"
+    case "$key" in service.name|cx.agent.type) fail "--opamp-attribute cannot override built-in attribute: $key" ;; esac
+    for existing in "${OPAMP_ATTRIBUTES[@]}"; do
+        [ "${existing%%=*}" != "$key" ] || fail "--opamp-attribute duplicate key: $key"
+    done
+    OPAMP_ATTRIBUTES+=("$attribute")
+}
+
+yaml_quote() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    value="${value//$'\t'/\\t}"
+    printf '"%s"' "$value"
 }
 
 verify_supervisor() {
@@ -1928,6 +1969,11 @@ parse_args() {
                 SUPERVISOR_BASE_CONFIG_PATH=$(cd "$(dirname "$SUPERVISOR_BASE_CONFIG_PATH")" 2>/dev/null && pwd)/$(basename "$SUPERVISOR_BASE_CONFIG_PATH") 2>/dev/null || SUPERVISOR_BASE_CONFIG_PATH="$2"
                 shift 2
                 ;;
+            --opamp-attribute)
+                [ $# -ge 2 ] || fail "--opamp-attribute requires KEY=VALUE"
+                add_opamp_attribute "$2"
+                shift 2
+                ;;
             --uninstall)
                 UNINSTALL_MODE=true
                 shift
@@ -2032,6 +2078,9 @@ main() {
         fi
         if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
             fail "--supervisor-base-config can only be used with -s/--supervisor"
+        fi
+        if [ "${#OPAMP_ATTRIBUTES[@]}" -gt 0 ]; then
+            fail "--opamp-attribute can only be used with -s/--supervisor"
         fi
     fi
     

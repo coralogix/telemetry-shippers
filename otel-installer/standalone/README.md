@@ -157,8 +157,12 @@ Supervisor mode enables remote configuration management through Coralogix [Fleet
 ```bash
 CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" \
-  -- --supervisor
+  -- --supervisor \
+  --opamp-attribute fleet.test.id=fleet-demo \
+  --opamp-attribute 'deployment.environment=staging blue'
 ```
+
+`--opamp-attribute` adds repeatable non-identifying agent attributes for Fleet Management selectors. Values may contain `=` and be shell-quoted. Duplicate keys and built-in `service.name` or `cx.agent.type` overrides fail; the option requires supervisor mode.
 
 ### Supervisor Mode Features
 
@@ -172,6 +176,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `-v, --version <version>`        | Install specific collector version                                                                                 |
 | `-c, --config <path>`            | Path to custom configuration file                                                                                  |
 | `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
+| `--opamp-attribute <key=value>`  | Add a repeatable Supervisor OpAMP non-identifying agent attribute (supervisor mode only)                           |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
 | `--disable-capabilities`         | Disable automatic Linux capabilities enablement (supervisor mode only, not recommended)                            |
