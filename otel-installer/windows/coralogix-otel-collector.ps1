@@ -1141,6 +1141,7 @@ capabilities:
   reports_own_traces: true
   reports_health: true
   accepts_remote_config: true
+  accepts_restart_command: true
   reports_remote_config: true
 
 agent:
