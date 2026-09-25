@@ -171,7 +171,11 @@ jobs:
           branch="bot/sync-fleet-manager-artifacts"
           if git -C "$repo_dir" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
             git -C "$repo_dir" fetch origin "$branch"
-            git -C "$repo_dir" restore --source=FETCH_HEAD -- integration_releases
+            merge_base="$(git -C "$repo_dir" merge-base HEAD FETCH_HEAD)"
+            if ! git -C "$repo_dir" diff --quiet "$merge_base" FETCH_HEAD -- integration_releases; then
+              git -C "$repo_dir" diff --binary "$merge_base" FETCH_HEAD -- integration_releases |
+                git -C "$repo_dir" apply --3way --index
+            fi
           fi
 
       - name: Update Fleet Manager collector chart mapping
