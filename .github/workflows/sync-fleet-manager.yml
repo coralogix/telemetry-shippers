@@ -114,7 +114,7 @@ jobs:
           APP_VERSION_OVERRIDE: ${{ (github.event_name == 'workflow_dispatch' && inputs.app_version) || '' }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
 
@@ -144,6 +144,17 @@ jobs:
         if: steps.detect.outputs.bumped == 'true'
         uses: azure/setup-helm@v4
 
+      - name: Create App token for Fleet Manager Helm Data
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: coralogix
+          repositories: fleet-manager-helm-data
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout Fleet Manager Helm Data
         uses: actions/checkout@v4
         with:
@@ -151,24 +162,16 @@ jobs:
           ref: master
           path: fleet-manager-helm-data
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Prepare Fleet Manager Helm Data branch
+      - name: Carry forward pending Fleet Manager Helm Data changes
         run: |
           set -euo pipefail
           repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
-          base_branch="master"
           branch="bot/sync-fleet-manager-artifacts"
-
-          git -C "$repo_dir" config user.name "github-actions[bot]"
-          git -C "$repo_dir" config user.email "github-actions[bot]@users.noreply.github.com"
-
           if git -C "$repo_dir" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
             git -C "$repo_dir" fetch origin "$branch"
-            git -C "$repo_dir" checkout "$branch"
-            git -C "$repo_dir" rebase "origin/$base_branch"
-          else
-            git -C "$repo_dir" checkout -b "$branch"
+            git -C "$repo_dir" restore --source=FETCH_HEAD -- integration_releases
           fi
 
       - name: Update Fleet Manager collector chart mapping
@@ -227,7 +230,6 @@ jobs:
             "$RUNNER_TEMP/otel_macos_standalone_chart_versions_map.json:$destination_dir/otel_macos_standalone_chart_versions_map.json"
           )
 
-          changed_files=()
           for mapping in "${mappings[@]}"; do
             src="${mapping%%:*}"
             dst_name="${mapping#*:}"
@@ -247,99 +249,53 @@ jobs:
 
           if [ "${#changed_files[@]}" -eq 0 ]; then
             echo "updated=false" >> "$GITHUB_OUTPUT"
-            echo "changed_files=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "updated=true" >> "$GITHUB_OUTPUT"
-          printf 'changed_files=%s\n' "${changed_files[*]}" >> "$GITHUB_OUTPUT"
 
-      - name: Commit, push, and create/update Fleet Manager Helm Data PR
-        if: steps.update_helm_data.outputs.updated == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CREATE_PR: ${{ github.event_name != 'workflow_dispatch' || inputs.create_pr }}
-          FLEET_MANAGER_HELM_DATA_REPO: coralogix/fleet-manager-helm-data
-          FLEET_MANAGER_HELM_DATA_REF: master
-          INTEGRATION_CHART_VERSION: ${{ steps.detect.outputs.integration_chart_version }}
-          COLLECTOR_CHART_VERSION: ${{ steps.detect.outputs.collector_chart_version }}
+      - name: Show Fleet Manager Helm Data changes
+        if: steps.update_helm_data.outputs.updated == 'true' && github.event_name == 'workflow_dispatch' && !inputs.create_pr
         run: |
           set -euo pipefail
-
           repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
-          branch="bot/sync-fleet-manager-artifacts"
-          changed_files="${{ steps.update_helm_data.outputs.changed_files }}"
-          destination_dir="${FLEET_MANAGER_HELM_DATA_DESTINATION_DIR#/}"
-          destination_dir="${destination_dir%/}"
+          git -C "$repo_dir" add -A -- "$FLEET_MANAGER_HELM_DATA_DESTINATION_DIR"
+          echo "CREATE_PR is false; skipping commit/push/PR. (Dry run complete.)"
+          git -C "$repo_dir" --no-pager diff --cached --stat
+          git -C "$repo_dir" --no-pager diff --cached
 
-          enable_auto_merge() {
-            local pr_number="$1"
-            local head_sha="$2"
+      - name: Create signed Fleet Manager Helm Data PR
+        if: steps.update_helm_data.outputs.updated == 'true' && (github.event_name != 'workflow_dispatch' || inputs.create_pr)
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: fleet-manager-helm-data
+          add-paths: integration_releases
+          sign-commits: true
+          base: master
+          branch: bot/sync-fleet-manager-artifacts
+          commit-message: Sync Fleet Manager artifacts from telemetry-shippers
+          title: Sync Fleet Manager Helm data from telemetry-shippers
+          body: |
+            Automated synchronization from telemetry-shippers.
 
-            echo "Enabling auto-merge with squash strategy for PR #$pr_number"
-            gh pr merge "$pr_number" \
-              -R "$FLEET_MANAGER_HELM_DATA_REPO" \
-              --auto \
-              --match-head-commit "$head_sha" \
-              --squash
-          }
+            ## Helm data artifacts
+            - Destination directory: `integration_releases`
+            - otel-integration chart: `${{ steps.detect.outputs.integration_chart_version }}`
+            - opentelemetry-collector chart: `${{ steps.detect.outputs.collector_chart_version }}`
 
-          read -r -a files <<< "$changed_files"
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No files to stage."
-            exit 0
-          fi
+            Dumb ticket reference to pass build: CX-39963.
 
-          git -C "$repo_dir" add "${files[@]}"
-          if git -C "$repo_dir" diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-
-          if [ "${CREATE_PR:-false}" != "true" ]; then
-            echo "CREATE_PR is false; skipping commit/push/PR. (Dry run complete.)"
-            echo ""
-            echo "Changed files in Fleet Manager Helm Data:"
-            git -C "$repo_dir" --no-pager diff --cached --stat
-            echo ""
-            echo "Full staged diff:"
-            git -C "$repo_dir" --no-pager diff --cached
-            exit 0
-          fi
-
-          if [ -z "${GH_TOKEN:-}" ]; then
-            echo "Missing GH_TOKEN secret"
-            exit 1
-          fi
-
-          git -C "$repo_dir" commit -m "Sync Fleet Manager artifacts from telemetry-shippers"
-          git -C "$repo_dir" push --force-with-lease -u origin "$branch"
-          pushed_head_sha="$(git -C "$repo_dir" rev-parse HEAD)"
-
-          existing_pr="$(gh pr list -R "$FLEET_MANAGER_HELM_DATA_REPO" --head "$branch" --state open --json number --jq '.[0].number')"
-          if [ -n "$existing_pr" ]; then
-            echo "PR already exists: #$existing_pr"
-            enable_auto_merge "$existing_pr" "$pushed_head_sha"
-            exit 0
-          fi
-
-          pr_body="$RUNNER_TEMP/fleet-manager-helm-data-sync-pr-body.md"
-          {
-            echo "Automated synchronization from telemetry-shippers."
-            echo ""
-            echo "## Helm data artifacts"
-            printf -- "- Destination directory: \`%s\`\n" "$destination_dir"
-            printf -- "- otel-integration chart: \`%s\`\n" "$INTEGRATION_CHART_VERSION"
-            printf -- "- opentelemetry-collector chart: \`%s\`\n" "$COLLECTOR_CHART_VERSION"
-            echo ""
-            echo "Dumb ticket reference to pass build: CX-39963."
-          } > "$pr_body"
-
-          created_pr_url="$(gh pr create \
-            -R "$FLEET_MANAGER_HELM_DATA_REPO" \
-            --base "$FLEET_MANAGER_HELM_DATA_REF" \
-            --head "$branch" \
-            --title "Sync Fleet Manager Helm data from telemetry-shippers" \
-            --body-file "$pr_body")"
-
-          enable_auto_merge "$created_pr_url" "$pushed_head_sha"
+      - name: Enable Fleet Manager Helm Data auto-merge
+        if: steps.create-pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
+          HEAD_SHA: ${{ steps.create-pr.outputs.pull-request-head-sha }}
+        run: |
+          gh pr merge "$PR_NUMBER" \
+            -R coralogix/fleet-manager-helm-data \
+            --auto \
+            --match-head-commit "$HEAD_SHA" \
+            --squash
