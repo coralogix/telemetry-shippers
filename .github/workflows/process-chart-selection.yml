@@ -9,7 +9,8 @@ jobs:
     if: |
       startsWith(github.event.label.name, 'chart:') &&
       contains(github.event.pull_request.labels.*.name, 'otel-collector-bump') &&
-      github.event.pull_request.user.login == 'github-actions[bot]'
+      (github.event.pull_request.user.login == 'github-actions[bot]' ||
+       github.event.pull_request.user.login == 'eco-system-automation[bot]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
