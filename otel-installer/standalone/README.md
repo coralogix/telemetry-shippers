@@ -175,7 +175,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | `-v, --version <version>`        | Install specific collector version                                                                                 |
 | `-c, --config <path>`            | Path to custom configuration file                                                                                  |
-| `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux only)                                                                    |
+| `-s, --supervisor`               | Install with OpAMP Supervisor mode (Linux systemd or macOS LaunchDaemon)                                           |
 | `--opamp-attribute <key=value>`  | Add a repeatable Supervisor OpAMP non-identifying agent attribute (supervisor mode only)                           |
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
@@ -353,7 +353,7 @@ receivers:
         endpoint: ${env:OTEL_LISTEN_INTERFACE:-127.0.0.1}:4317
 ```
 
-> **Note:** Supervisor mode is not supported on macOS.
+Supervisor mode is supported as a system-wide LaunchDaemon. It does not support the user-level LaunchAgent mode.
 
 ## macOS LaunchAgent (User-Level)
 

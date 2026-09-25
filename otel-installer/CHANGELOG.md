@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.2.4] - 2026-09-24
+
+### Added
+- Support macOS standalone OpAMP Supervisor installations using a LaunchDaemon.
+
 ## [0.2.3] - 2026-09-24
 
 ### Added
