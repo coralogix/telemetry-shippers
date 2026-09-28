@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.15.0`.
+
 ## ecs-ec2-integration
 
 ### 0.0.14 / 2026-09-04

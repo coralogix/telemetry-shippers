@@ -2,6 +2,21 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.2.4] - 2026-09-24
+
+### Added
+- Support macOS standalone OpAMP Supervisor installations using a LaunchDaemon.
+
+## [0.2.3] - 2026-09-24
+
+### Added
+- Docker and standalone Supervisor installations accept repeatable `--opamp-attribute key=value` options, and Windows accepts `-SupervisorOpampAttribute key=value`, for Fleet Management configuration-group selectors.
+
+## [0.2.2] - 2026-09-24
+
+### Added
+- Enable the OpAMP Supervisor restart-command capability by default in the standalone, Docker, and Windows installers.
+
 ## [0.2.1] - 2026-08-25
 
 ### Changed

@@ -62,6 +62,7 @@ CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-c
 
 LAUNCHD_PLIST_DAEMON="/Library/LaunchDaemons/com.coralogix.otelcol.plist"
 LAUNCHD_PLIST_AGENT="${HOME}/Library/LaunchAgents/com.coralogix.otelcol.plist"
+SUPERVISOR_LAUNCHD_PLIST="/Library/LaunchDaemons/com.coralogix.opampsupervisor.plist"
 LAUNCHD_PLIST=""
 
 
@@ -69,6 +70,7 @@ VERSION=""
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_MODE=false
 SUPERVISOR_BASE_CONFIG_PATH=""
+OPAMP_ATTRIBUTES=()
 UNINSTALL_MODE=false
 PURGE=false
 MACOS_INSTALL_TYPE="daemon"
@@ -242,6 +244,7 @@ Options:
                                   (default: same as --version)
     --collector-version <ver>     Collector version (supervisor mode only)
                                   (default: same as --version)
+    --opamp-attribute <key=value> Add a repeatable Supervisor non-identifying agent attribute
     --uninstall                   Uninstall the collector
                                   (use --purge to remove all data)
     --purge                       Remove all data when uninstalling
@@ -266,6 +269,11 @@ Examples:
 
     # Install with supervisor
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s
+
+    # Install with Fleet Management selector attributes
+    CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" $0 -s \\
+        --opamp-attribute fleet.test.id=fleet-demo \\
+        --opamp-attribute 'deployment.environment=staging blue'
 
     # Install with supervisor using specific versions
     CORALOGIX_DOMAIN="your-domain" CORALOGIX_PRIVATE_KEY="your-key" bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.sh)" -- -s --supervisor-version 0.140.1 --collector-version 0.140.0
@@ -1322,6 +1330,17 @@ install_supervisor() {
     local supervisor_ver="$1"
     local collector_ver="$2"
     local arch="$3"
+    if [ "$(detect_os)" = "darwin" ]; then
+        local name="opampsupervisor_${supervisor_ver}_darwin_${arch}"
+        local checksum
+        install_collector_darwin "$collector_ver" "$arch"
+        checksum=$(get_supervisor_checksum "$supervisor_ver" "$name")
+        download "$(get_supervisor_release_url_prefix "$supervisor_ver")/${name}" "$name" "$checksum"
+        $SUDO_CMD install -m 0755 "$name" /usr/local/bin/opampsupervisor
+        $SUDO_CMD mkdir -p /etc/opampsupervisor /var/lib/opampsupervisor /var/log/opampsupervisor
+        configure_supervisor
+        return
+    fi
     local pkg_type
     pkg_type=$(detect_pkg_type)
     
@@ -1436,6 +1455,7 @@ capabilities:
   reports_own_traces: true
   reports_health: true
   accepts_remote_config: true
+  accepts_restart_command: true
   reports_remote_config: true
 
 agent:
@@ -1446,6 +1466,18 @@ agent:
     non_identifying_attributes:
       service.name: "opentelemetry-collector"
       cx.agent.type: "standalone"
+EOF
+
+    local attribute key value
+    if [ "${#OPAMP_ATTRIBUTES[@]}" -gt 0 ]; then
+        for attribute in "${OPAMP_ATTRIBUTES[@]}"; do
+            key="${attribute%%=*}"
+            value="${attribute#*=}"
+            printf '      %s: %s\n' "$(yaml_quote "$key")" "$(yaml_quote "$value")" | $SUDO_CMD tee -a /etc/opampsupervisor/config.yaml >/dev/null
+        done
+    fi
+
+    $SUDO_CMD tee -a /etc/opampsupervisor/config.yaml >/dev/null <<EOF
   config_files:
     - /etc/opampsupervisor/collector.yaml
   args: []
@@ -1526,6 +1558,26 @@ EOF
         echo "ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD:-}"
     } | $SUDO_CMD tee -a /etc/opampsupervisor/opampsupervisor.conf >/dev/null
 
+    if [ "$(detect_os)" = "darwin" ]; then
+        local plist="$SUPERVISOR_LAUNCHD_PLIST"
+        $SUDO_CMD tee "$plist" >/dev/null <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Label</key><string>com.coralogix.opampsupervisor</string>
+<key>ProgramArguments</key><array><string>/usr/local/bin/opampsupervisor</string><string>--config</string><string>/etc/opampsupervisor/config.yaml</string></array>
+<key>EnvironmentVariables</key><dict><key>CORALOGIX_PRIVATE_KEY</key><string>${CORALOGIX_PRIVATE_KEY}</string><key>OTEL_MEMORY_LIMIT_MIB</key><string>${MEMORY_LIMIT_MIB}</string><key>OTEL_LISTEN_INTERFACE</key><string>${LISTEN_INTERFACE}</string></dict>
+<key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+<key>StandardOutPath</key><string>/var/log/opampsupervisor/opampsupervisor.log</string><key>StandardErrorPath</key><string>/var/log/opampsupervisor/opampsupervisor.log</string>
+</dict></plist>
+EOF
+        $SUDO_CMD chmod 644 "$plist"
+        $SUDO_CMD launchctl bootout system "$plist" 2>/dev/null || true
+        $SUDO_CMD launchctl bootstrap system "$plist"
+        $SUDO_CMD launchctl print system/com.coralogix.opampsupervisor >/dev/null || fail "Supervisor LaunchDaemon did not start"
+        log "Supervisor configured and started"
+        return
+    fi
     $SUDO_CMD systemctl daemon-reload
     $SUDO_CMD systemctl enable opampsupervisor
     $SUDO_CMD systemctl restart opampsupervisor
@@ -1533,6 +1585,32 @@ EOF
     log "Supervisor configured and started"
     
     verify_supervisor
+}
+
+add_opamp_attribute() {
+    local attribute="$1"
+    local key value existing
+
+    [[ "$attribute" == *=* ]] || fail "--opamp-attribute must use KEY=VALUE"
+    key="${attribute%%=*}"
+    value="${attribute#*=}"
+    [ -n "$key" ] && [ -n "$value" ] || fail "--opamp-attribute must use non-empty KEY=VALUE"
+    [[ "$key" != *$'\n'* && "$key" != *$'\r'* && "$value" != *$'\n'* && "$value" != *$'\r'* ]] || fail "--opamp-attribute keys and values cannot contain newlines"
+    case "$key" in service.name|cx.agent.type) fail "--opamp-attribute cannot override built-in attribute: $key" ;; esac
+    if [ "${#OPAMP_ATTRIBUTES[@]}" -gt 0 ]; then
+        for existing in "${OPAMP_ATTRIBUTES[@]}"; do
+            [ "${existing%%=*}" != "$key" ] || fail "--opamp-attribute duplicate key: $key"
+        done
+    fi
+    OPAMP_ATTRIBUTES+=("$attribute")
+}
+
+yaml_quote() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    value="${value//$'\t'/\\t}"
+    printf '"%s"' "$value"
 }
 
 verify_supervisor() {
@@ -1680,6 +1758,12 @@ detect_macos_install_type() {
 }
 
 stop_service_darwin() {
+    if [ -f "$SUPERVISOR_LAUNCHD_PLIST" ]; then
+        log "Stopping Supervisor LaunchDaemon..."
+        $SUDO_CMD launchctl bootout system "$SUPERVISOR_LAUNCHD_PLIST" 2>/dev/null || true
+        $SUDO_CMD rm -f "$SUPERVISOR_LAUNCHD_PLIST" /usr/local/bin/opampsupervisor
+        return
+    fi
     # Stop LaunchAgent (user-level) using modern bootout
     if [ -f "$LAUNCHD_PLIST_AGENT" ]; then
         log "Stopping LaunchAgent..."
@@ -1849,6 +1933,9 @@ uninstall_main() {
             ;;
         darwin)
             stop_service_darwin
+            if [ ! -f "$SUPERVISOR_LAUNCHD_PLIST" ] && [ -f /usr/local/bin/opampsupervisor ]; then
+                $SUDO_CMD rm -f /usr/local/bin/opampsupervisor
+            fi
             remove_launchd_plist
             remove_binary "$os"
             ;;
@@ -1925,6 +2012,11 @@ parse_args() {
                     SUPERVISOR_BASE_CONFIG_PATH="${PWD}/${SUPERVISOR_BASE_CONFIG_PATH}"
                 fi
                 SUPERVISOR_BASE_CONFIG_PATH=$(cd "$(dirname "$SUPERVISOR_BASE_CONFIG_PATH")" 2>/dev/null && pwd)/$(basename "$SUPERVISOR_BASE_CONFIG_PATH") 2>/dev/null || SUPERVISOR_BASE_CONFIG_PATH="$2"
+                shift 2
+                ;;
+            --opamp-attribute)
+                [ $# -ge 2 ] || fail "--opamp-attribute requires KEY=VALUE"
+                add_opamp_attribute "$2"
                 shift 2
                 ;;
             --uninstall)
@@ -2015,9 +2107,6 @@ main() {
     fi
     
     if [ "$SUPERVISOR_MODE" = true ]; then
-        if [ "$os" != "linux" ]; then
-            fail "Supervisor mode is currently only supported on Linux"
-        fi
         if [ -z "${CORALOGIX_DOMAIN:-}" ]; then
             fail "CORALOGIX_DOMAIN is required for supervisor mode"
         fi
@@ -2031,6 +2120,9 @@ main() {
         fi
         if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
             fail "--supervisor-base-config can only be used with -s/--supervisor"
+        fi
+        if [ "${#OPAMP_ATTRIBUTES[@]}" -gt 0 ]; then
+            fail "--opamp-attribute can only be used with -s/--supervisor"
         fi
     fi
     
