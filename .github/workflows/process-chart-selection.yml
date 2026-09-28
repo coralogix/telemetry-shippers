@@ -9,7 +9,8 @@ jobs:
     if: |
       startsWith(github.event.label.name, 'chart:') &&
       contains(github.event.pull_request.labels.*.name, 'otel-collector-bump') &&
-      github.event.pull_request.user.login == 'github-actions[bot]'
+      (github.event.pull_request.user.login == 'github-actions[bot]' ||
+       github.event.pull_request.user.login == 'eco-system-automation[bot]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,15 +40,28 @@ jobs:
           
           # Commit if changes exist
           if ! git diff --staged --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: skip $CHART from upgrade"
-            git push origin ${{ github.event.pull_request.head.ref }}
             echo "chart_name=$CHART" >> $GITHUB_ENV
           else
             echo "No changes to revert for $CHART"
             exit 0
           fi
+
+      - name: Create App token
+        if: env.chart_name != ''
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Push signed revert
+        if: env.chart_name != ''
+        uses: pgaskin/push-signed-commits@v1.2.1
+        with:
+          branch: ${{ github.event.pull_request.head.ref }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          commit-message: "chore: skip ${{ env.chart_name }} from upgrade"
 
       - name: Add comment
         if: env.chart_name != ''

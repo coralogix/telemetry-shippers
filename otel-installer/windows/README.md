@@ -131,6 +131,14 @@ Supervisor mode enables remote configuration management through Coralogix [Fleet
 $u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor
 ```
 
+### With Fleet Management Selector Attributes
+
+```powershell
+$u='https://github.com/coralogix/telemetry-shippers/releases/latest/download/coralogix-otel-collector.ps1'; $f="$env:TEMP\coralogix-otel-collector.ps1"; Invoke-WebRequest -Uri $u -OutFile $f -UseBasicParsing; $env:CORALOGIX_DOMAIN='<your-domain>'; $env:CORALOGIX_PRIVATE_KEY='<your-private-key>'; & $f -Supervisor -SupervisorOpampAttribute 'fleet.test.id=fleet-demo','deployment.environment=staging'
+```
+
+`-SupervisorOpampAttribute` is repeatable and adds non-identifying agent attributes for Fleet Management selectors. Duplicate keys and built-in `service.name` or `cx.agent.type` overrides fail. It cannot be combined with `-SupervisorOpampConfig`.
+
 > **Note:** Supervisor mode requires version **0.144.0 or higher** (Windows MSI is available from this version). If the detected version is lower, the script will automatically use 0.144.0.
 
 ### With Specific Versions
@@ -167,6 +175,7 @@ The base config is merged with remote configuration from Fleet Manager. The conf
 | `-SupervisorMsi <path>`                 | Path to local OpAMP Supervisor MSI file                          |
 | `-SupervisorCollectorBaseConfig <path>` | Path to base collector config for supervisor mode                |
 | `-SupervisorOpampConfig <path>`         | Path to custom OpAMP supervisor config file                      |
+| `-SupervisorOpampAttribute <key=value>` | Add repeatable Supervisor OpAMP non-identifying agent attribute  |
 | `-EnableDynamicIISParsing`              | Enable dynamic IIS log parsing with header-based field detection |
 | `-Uninstall`                            | Remove the collector (keeps config)                              |
 | `-Uninstall -Purge`                     | Remove the collector and all configuration                       |

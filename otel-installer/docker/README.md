@@ -39,8 +39,12 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 ```bash
 CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
   bash -c "$(curl -sSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" \
-  -- --supervisor
+  -- --supervisor \
+  --opamp-attribute fleet.test.id=fleet-demo \
+  --opamp-attribute 'deployment.environment=staging blue'
 ```
+
+`--opamp-attribute` adds a non-identifying **agent** attribute to the Supervisor's OpAMP configuration. Fleet Management can use these attributes in configuration-group selectors; they are not telemetry resource attributes. The option is repeatable and splits on the first `=`, so values can contain `=` and can be shell-quoted. Keys and values must be non-empty. Duplicate keys and attempts to override the built-in `service.name` or `cx.agent.type` attributes fail before the installer changes the container. The option is valid only with `--supervisor`.
 
 ## Environment Variables
 
@@ -93,19 +97,20 @@ extensions:
 
 ## Script Options
 
-| Option                           | Description                                                                                                  |
-|----------------------------------|--------------------------------------------------------------------------------------------------------------|
-| `-v, --version <version>`        | Local configuration mode: collector image tag (default: Helm chart `appVersion`)                             |
-| `--collector-version <version>`  | Collector image version (local configuration mode)                                                           |
-| `--supervisor-version <version>` | Supervised collector image tag (supervisor mode; default: `otel-supervised-collector/CURRENT_IMAGE_VERSION`) |
-| `-c, --config <path>`            | Path to custom configuration file                                                                            |
-| `-s, --supervisor`               | Use supervisor mode                                                                                          |
-| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)                                                         |
-|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}`                                                        |
-|                                  | (ignored in supervisor mode)                                                                                 |
-| `-f, --foreground`               | Run in foreground (default: detached)                                                                        |
-| `--uninstall`                    | Stop and remove the container                                                                                |
-| `-h, --help`                     | Show help message                                                                                            |
+| Option                           | Description                                                                                                                        |
+|----------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `-v, --version <version>`        | Local configuration mode: collector image tag (default: Helm chart `appVersion`)                                                   |
+| `--collector-version <version>`  | Collector image version (local configuration mode)                                                                                 |
+| `--supervisor-version <version>` | Supervised collector image tag (supervisor mode; default: `otel-supervised-collector/CURRENT_IMAGE_VERSION`)                       |
+| `-c, --config <path>`            | Path to custom configuration file                                                                                                  |
+| `-s, --supervisor`               | Use supervisor mode                                                                                                                |
+| `--opamp-attribute <key=value>`  | Add a repeatable Supervisor OpAMP non-identifying agent attribute; supervisor mode only. Duplicate and built-in keys are rejected. |
+| `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)                                                                               |
+|                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}`                                                                              |
+|                                  | (ignored in supervisor mode)                                                                                                       |
+| `-f, --foreground`               | Run in foreground (default: detached)                                                                                              |
+| `--uninstall`                    | Stop and remove the container                                                                                                      |
+| `-h, --help`                     | Show help message                                                                                                                  |
 
 ## Container Images
 
@@ -150,7 +155,9 @@ CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 # Supervisor mode
 CORALOGIX_DOMAIN="eu2.coralogix.com" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
-  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor
+  bash -c "$(curl -fsSL https://github.com/coralogix/telemetry-shippers/releases/latest/download/docker-install.sh)" -- --supervisor \
+  --opamp-attribute fleet.test.id=fleet-demo \
+  --opamp-attribute 'deployment.environment=staging=blue'
 
 # Run in foreground
 CORALOGIX_PRIVATE_KEY="<your-private-key>" \

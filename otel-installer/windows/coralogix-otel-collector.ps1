@@ -40,6 +40,10 @@
     The config can reference environment variables like ${env:CORALOGIX_PRIVATE_KEY}.
     (supervisor mode only)
 
+.PARAMETER SupervisorOpampAttribute
+    Repeatable Supervisor non-identifying agent attribute in KEY=VALUE form.
+    Cannot override service.name or cx.agent.type.
+
 .PARAMETER MemoryLimit
     Total memory in MiB to allocate to the collector (default: 512)
     Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
@@ -152,6 +156,9 @@ param(
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SupervisorOpampConfig = "",
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [string[]]$SupervisorOpampAttribute = @(),
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [int]$MemoryLimit = 512,
@@ -231,6 +238,31 @@ function Write-Error {
     exit 1
 }
 
+function Initialize-SupervisorOpampAttributes {
+    $seen = @{}
+    $lines = @()
+    foreach ($attribute in $SupervisorOpampAttribute) {
+        $separator = $attribute.IndexOf('=')
+        if ($separator -le 0 -or $separator -eq ($attribute.Length - 1)) {
+            Write-Error "-SupervisorOpampAttribute must use non-empty KEY=VALUE"
+        }
+        $key = $attribute.Substring(0, $separator)
+        $value = $attribute.Substring($separator + 1)
+        if ($key.Contains("`n") -or $key.Contains("`r") -or $value.Contains("`n") -or $value.Contains("`r")) {
+            Write-Error "-SupervisorOpampAttribute keys and values cannot contain newlines"
+        }
+        if ($key -eq 'service.name' -or $key -eq 'cx.agent.type') {
+            Write-Error "-SupervisorOpampAttribute cannot override built-in attribute: $key"
+        }
+        if ($seen.ContainsKey($key)) {
+            Write-Error "-SupervisorOpampAttribute duplicate key: $key"
+        }
+        $seen[$key] = $true
+        $lines += "      $($key | ConvertTo-Json -Compress): $($value | ConvertTo-Json -Compress)"
+    }
+    $script:SupervisorOpampAttributeYaml = $lines -join "`n"
+}
+
 function Show-Usage {
     $usage = @"
 Coralogix OpenTelemetry Collector Installer for Windows
@@ -257,6 +289,8 @@ Options:
     -SupervisorOpampConfig <path>   Path to custom OpAMP supervisor config file
                                     Uses this instead of auto-generated config
                                     (supervisor mode only)
+    -SupervisorOpampAttribute <key=value>
+                                    Add a repeatable Supervisor non-identifying agent attribute
     -MemoryLimit <MiB>              Total memory in MiB to allocate to the collector
                                     Sets OTEL_MEMORY_LIMIT_MIB environment variable
                                     Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}
@@ -1152,6 +1186,7 @@ agent:
     non_identifying_attributes:
       service.name: "opentelemetry-collector"
       cx.agent.type: "standalone"
+$($script:SupervisorOpampAttributeYaml)
   config_files:
     - $($SUPERVISOR_COLLECTOR_CONFIG_FILE -replace '\\', '/')
   args: $argsYaml
@@ -1175,6 +1210,7 @@ telemetry:
         Write-Log "Using custom OpAMP supervisor config from: $SupervisorOpampConfig"
         Copy-Item -Path $SupervisorOpampConfig -Destination $SUPERVISOR_CONFIG_FILE -Force
     }
+
     else {
         $supervisorOpampDefaultConfig | Out-File -FilePath $SUPERVISOR_CONFIG_FILE -Encoding utf8 -Force
     }
@@ -1912,6 +1948,16 @@ function Main {
         Write-Log "Using custom OpAMP supervisor config: $SupervisorOpampConfig"
         # Resolve to absolute path before any Set-Location calls
         $SupervisorOpampConfig = (Resolve-Path $SupervisorOpampConfig).Path
+    }
+
+    if ($SupervisorOpampAttribute.Count -gt 0) {
+        if (-not $Supervisor) {
+            Write-Error "-SupervisorOpampAttribute can only be used with -Supervisor"
+        }
+        if ($SupervisorOpampConfig) {
+            Write-Error "-SupervisorOpampAttribute cannot be used with -SupervisorOpampConfig"
+        }
+        Initialize-SupervisorOpampAttributes
     }
     
     if ($Supervisor) {
