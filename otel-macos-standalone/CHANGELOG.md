@@ -2,6 +2,10 @@
 
 ## otel-macos-standalone
 
+### v0.0.59 / 2026-09-24
+
+- [Fix] Parse macOS `/var/log/system.log` entries with the macOS-specific regex parser instead of the RFC3164 syslog parser.
+
 ### v0.0.58 / 2026-09-17
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.138.2

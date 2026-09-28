@@ -138,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.58
+        X-Coralogix-Distribution: helm-otel-macos/0.0.59
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.58
+        X-Coralogix-Distribution: helm-otel-macos/0.0.59
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.58
+        X-Coralogix-Distribution: helm-otel-macos/0.0.59
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -164,13 +164,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.58
+        X-Coralogix-Distribution: helm-otel-macos/0.0.59
   coralogix/resource_catalog:
     application_name: resource
     domain: eu1.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-macos/0.0.58
+        X-Coralogix-Distribution: helm-otel-macos/0.0.59
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -486,22 +486,29 @@ receivers:
     multiline:
       line_start_pattern: ^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}
     operators:
-    - allow_skip_pri_header: true
-      location: Local
-      protocol: rfc3164
-      type: syslog_parser
-    - from: attributes.message
-      to: body
-      type: move
-    - from: attributes.hostname
+    - regex: ^(?P<timestamp>[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<host>[^\s]+)\s+(?P<app>[A-Za-z0-9._-]+)(?:\[(?P<pid>\d+)\])?:\s+(?P<msg>[\s\S]*)$
+      type: regex_parser
+    - layout: Jan _2 15:04:05
+      layout_type: gotime
+      parse_from: attributes.timestamp
+      type: time_parser
+    - from: attributes.host
       to: resource["host.name"]
       type: move
-    - from: attributes.appname
+    - from: attributes.app
       to: resource["app"]
       type: move
     - from: resource["app"]
       to: resource["service.name"]
       type: copy
+    - from: attributes.pid
+      to: resource["process.pid"]
+      type: move
+    - field: attributes.timestamp
+      type: remove
+    - from: attributes.msg
+      to: body
+      type: move
     start_at: beginning
   hostmetrics:
     collection_interval: '30s'
