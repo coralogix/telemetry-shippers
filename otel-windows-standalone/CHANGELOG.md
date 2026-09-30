@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.60 / 2026-09-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.1
+
+#### Changes from opentelemetry-collector 0.139.1:
+- [Fix] Parse macOS `/var/log/system.log` multiline entries with `regex_parser` in the `macosSystemLogs` preset. `syslog_parser` rejected filelog-grouped stack-trace continuations.
+
 ### v0.0.59 / 2026-09-24
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.0
