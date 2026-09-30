@@ -615,6 +615,8 @@ exporters:
 extensions:
   health_check:
     endpoint: 127.0.0.1:13133
+  opamp:
+    reports_raw_config: true
 
 service:
   extensions:
@@ -1480,7 +1482,6 @@ EOF
     $SUDO_CMD tee -a /etc/opampsupervisor/config.yaml >/dev/null <<EOF
   config_files:
     - /etc/opampsupervisor/collector.yaml
-    - /etc/opampsupervisor/raw-config.yaml
   args: []
   env:
     CORALOGIX_PRIVATE_KEY: "\${env:CORALOGIX_PRIVATE_KEY}"
@@ -1519,12 +1520,6 @@ EOF
         log "Using default empty base config"
         get_empty_collector_config | $SUDO_CMD tee /etc/opampsupervisor/collector.yaml >/dev/null
     fi
-
-    $SUDO_CMD tee /etc/opampsupervisor/raw-config.yaml >/dev/null <<'EOF'
-extensions:
-  opamp:
-    reports_raw_config: true
-EOF
 
     if id opampsupervisor >/dev/null 2>&1; then
         log "Setting ownership for supervisor config directory..."
