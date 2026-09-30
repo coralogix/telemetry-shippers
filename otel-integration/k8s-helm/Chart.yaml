@@ -1,7 +1,7 @@
 apiVersion: v2
 name: otel-integration
 description: OpenTelemetry Integration
-version: 0.0.352
+version: 0.0.351
 keywords:
   - OpenTelemetry Collector
   - OpenTelemetry Agent

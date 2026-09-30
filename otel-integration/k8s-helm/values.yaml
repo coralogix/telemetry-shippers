@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.352"
+  version: "0.0.351"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -425,9 +425,6 @@ opentelemetry-agent:
     semconv:
       enabled: true
   config:
-    extensions:
-      opamp:
-        reports_raw_config: true
     # extensions:
     #   zpages:
     #     endpoint: localhost:55679
@@ -640,9 +637,6 @@ opentelemetry-cluster-collector:
   #         - otlp/3
   #         - spanmetrics/2
   config:
-    extensions:
-      opamp:
-        reports_raw_config: true
     # extensions: {}
     # receivers: {}
     # processors: {}
@@ -819,9 +813,6 @@ opentelemetry-gateway:
       agentType: "gateway"
 
   config:
-    extensions:
-      opamp:
-        reports_raw_config: true
     # extensions: {}
     # exporters: {}
     # processors: {}
@@ -923,9 +914,6 @@ opentelemetry-receiver:
       privateKey: ${env:CORALOGIX_PRIVATE_KEY}
       pipelines: ["none"]
   config:
-    extensions:
-      opamp:
-        reports_raw_config: true
     # exporters: {}
     # processors: {}
     # receivers: {}
@@ -1046,9 +1034,6 @@ opentelemetry-ebpf-profiler:
       disablePrometheusReceiver: true
 
   config:
-    extensions:
-      opamp:
-        reports_raw_config: true
     service:
       telemetry:
         resource:

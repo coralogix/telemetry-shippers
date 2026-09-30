@@ -2,10 +2,6 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.352 / 2026-09-30
-
-- [Feat] Enable raw configuration reporting by default for configured Fleet Management OpAMP extensions.
-
 ### v0.0.351 / 2026-09-24
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.0
