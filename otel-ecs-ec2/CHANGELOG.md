@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.55 / 2026-09-30
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.139.1`.
+
+#### Changes from opentelemetry-collector 0.139.1:
+- [Fix] Parse macOS `/var/log/system.log` multiline entries with `regex_parser` in the `macosSystemLogs` preset. `syslog_parser` rejected filelog-grouped stack-trace continuations.
+
 ### v0.0.54 / 2026-09-24
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.139.0`.
