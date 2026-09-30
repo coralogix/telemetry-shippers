@@ -2,6 +2,11 @@
 
 All notable changes to the OTel Installer scripts will be documented in this file.
 
+## [0.2.5] - 2026-09-30
+
+### Added
+- Enable raw configuration reporting by default in Docker, standalone, and Windows Supervisor installations.
+
 ## [0.2.4] - 2026-09-24
 
 ### Added

@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.352 / 2026-09-30
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.140.0.
+
+#### Changes from opentelemetry-collector 0.140.0:
+- [Feat] Enable raw configuration reporting by default for Fleet Management OpAMP connections, including Supervisor-managed Collectors.
+
 ### v0.0.351 / 2026-09-24
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.0

@@ -206,6 +206,7 @@ $SUPERVISOR_BINARY_NAME = "opampsupervisor.exe"
 $SUPERVISOR_BINARY_PATH = Join-Path $SUPERVISOR_INSTALL_DIR $SUPERVISOR_BINARY_NAME
 $SUPERVISOR_CONFIG_FILE = Join-Path $SUPERVISOR_INSTALL_DIR "config.yaml"
 $SUPERVISOR_COLLECTOR_CONFIG_FILE = Join-Path $SUPERVISOR_INSTALL_DIR "collector.yaml"
+$SUPERVISOR_RAW_CONFIG_FILE = Join-Path $SUPERVISOR_INSTALL_DIR "raw-config.yaml"
 $SUPERVISOR_DATA_DIR = "${env:ProgramData}\opampsupervisor"
 $SUPERVISOR_STATE_DIR = Join-Path $SUPERVISOR_DATA_DIR "state"
 $SUPERVISOR_LOG_DIR = Join-Path $SUPERVISOR_DATA_DIR "logs"
@@ -1189,6 +1190,7 @@ agent:
 $($script:SupervisorOpampAttributeYaml)
   config_files:
     - $($SUPERVISOR_COLLECTOR_CONFIG_FILE -replace '\\', '/')
+    - $($SUPERVISOR_RAW_CONFIG_FILE -replace '\\', '/')
   args: $argsYaml
   env:
     CORALOGIX_PRIVATE_KEY: "`${env:CORALOGIX_PRIVATE_KEY}"
@@ -1224,6 +1226,12 @@ telemetry:
     else {
         Get-EmptyCollectorConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
     }
+
+    @"
+extensions:
+  opamp:
+    reports_raw_config: true
+"@ | Out-File -FilePath $SUPERVISOR_RAW_CONFIG_FILE -Encoding utf8 -Force
     
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
     $serviceDescription = "OpenTelemetry Collector OpAMP Supervisor - Manages collector configuration remotely"

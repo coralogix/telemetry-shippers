@@ -507,6 +507,7 @@ EOF
 
   config_files:
     - /etc/otelcol-contrib/config.yaml
+    - /etc/otelcol-contrib/raw-config.yaml
 
   args: []
 
@@ -547,6 +548,12 @@ run_supervisor_mode() {
         log "Using default base config"
     fi
     log "Collector config at: ${CONFIG_HOST_DIR}/config.yaml"
+
+    cat > "${CONFIG_HOST_DIR}/raw-config.yaml" <<'EOF'
+extensions:
+  opamp:
+    reports_raw_config: true
+EOF
     
     log "Starting supervisor container..."
     
@@ -557,6 +564,7 @@ run_supervisor_mode() {
         -e "OTEL_MEMORY_LIMIT_MIB=${MEMORY_LIMIT_MIB}"
         -v "${CONFIG_HOST_DIR}/supervisor.yaml:${CONFIG_CONTAINER_DIR}/supervisor.yaml:ro"
         -v "${CONFIG_HOST_DIR}/config.yaml:${CONFIG_CONTAINER_DIR}/config.yaml:ro"
+        -v "${CONFIG_HOST_DIR}/raw-config.yaml:${CONFIG_CONTAINER_DIR}/raw-config.yaml:ro"
         -p "${OTLP_GRPC_PORT}:4317"
         -p "${OTLP_HTTP_PORT}:4318"
         -p "${HEALTH_CHECK_PORT}:13133"
