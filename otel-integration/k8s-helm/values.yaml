@@ -94,12 +94,17 @@ opentelemetry-autoinstrumentation:
                 value: http://$(OTEL_NODE_IP):4317
               - name: OTEL_EXPORTER_OTLP_PROTOCOL
                 value: grpc
+          # The Instrumentation CRD json tag is apacheHttpd. The no-CRD webhook
+          # loads this block with gopkg.in/yaml.v2, which ignores json tags and
+          # maps the Go field ApacheHttpd to apachehttpd. With only apacheHttpd,
+          # the attach init container is created with an empty image and kubelet
+          # fails the pod as FailedCreate (spec.containers[x].image: Required value).
+          # Keep both spellings until the operator adds yaml:"apacheHttpd" on the
+          # InstrumentationSpec field (that is an upstream fix, not a chart one).
           apacheHttpd:
             # Apache HTTPD and nginx share the same autoinstrumentation image.
             # Supported Nginx versions: 1.22.0, 1.23.0, and 1.23.1.
             image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4
-          # yaml.v2 (operator --config-file) lowercases the field to apachehttpd and
-          # does not honor the CRD json tag apacheHttpd. Keep both spellings in sync.
           apachehttpd:
             image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4
           nginx:
