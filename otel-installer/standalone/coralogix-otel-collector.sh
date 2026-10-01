@@ -605,6 +605,7 @@ is_installed() {
 }
 
 get_empty_collector_config() {
+    local reports_raw_config="${1:-false}"
     cat <<'EOF'
 receivers:
   nop:
@@ -615,8 +616,16 @@ exporters:
 extensions:
   health_check:
     endpoint: 127.0.0.1:13133
+EOF
+
+    if [ "$reports_raw_config" = true ]; then
+        cat <<'EOF'
   opamp:
     reports_raw_config: true
+EOF
+    fi
+
+    cat <<'EOF'
 
 service:
   extensions:
@@ -1518,7 +1527,11 @@ EOF
         log "Base config will be merged with remote configuration from Fleet Manager"
     else
         log "Using default empty base config"
-        get_empty_collector_config | $SUDO_CMD tee /etc/opampsupervisor/collector.yaml >/dev/null
+        local reports_raw_config=false
+        if version_at_least "$collector_ver" "0.161.0"; then
+            reports_raw_config=true
+        fi
+        get_empty_collector_config "$reports_raw_config" | $SUDO_CMD tee /etc/opampsupervisor/collector.yaml >/dev/null
     fi
 
     if id opampsupervisor >/dev/null 2>&1; then

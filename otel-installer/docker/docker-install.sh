@@ -370,6 +370,7 @@ stop_container() {
 }
 
 get_default_config() {
+    local reports_raw_config="${1:-false}"
     cat <<'EOF'
 receivers:
   nop:
@@ -380,8 +381,16 @@ exporters:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+EOF
+
+    if [ "$reports_raw_config" = true ]; then
+        cat <<'EOF'
   opamp:
     reports_raw_config: true
+EOF
+    fi
+
+    cat <<'EOF'
 
 processors:
   memory_limiter:
@@ -404,6 +413,32 @@ service:
       processors: [memory_limiter]
       exporters: [nop]
 EOF
+}
+
+version_at_least() {
+    local version minimum
+    version=${1#v}
+    minimum=${2#v}
+
+    awk -v version="$version" -v minimum="$minimum" '
+        BEGIN {
+            split(version, version_parts, ".")
+            split(minimum, minimum_parts, ".")
+            for (i = 1; i <= 3; i++) {
+                version_component = version_parts[i] + 0
+                minimum_component = minimum_parts[i] + 0
+                if (version_component > minimum_component) exit 0
+                if (version_component < minimum_component) exit 1
+            }
+            exit 0
+        }
+    '
+}
+
+get_collector_image_version() {
+    local image="$1" output
+    output=$(docker run --rm --entrypoint /otelcol-contrib "$image" --version 2>/dev/null) || return 1
+    printf '%s\n' "$output" | sed -nE 's/.*version ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' | head -n 1
 }
 
 create_config_dir() {
@@ -532,6 +567,16 @@ run_supervisor_mode() {
     
     log "Pulling image: ${image}"
     docker pull "$image"
+
+    local reports_raw_config=false collector_version
+    if collector_version=$(get_collector_image_version "$image") && [ -n "$collector_version" ]; then
+        log "Collector version in Supervisor image: ${collector_version}"
+        if version_at_least "$collector_version" "0.161.0"; then
+            reports_raw_config=true
+        fi
+    else
+        warn "Unable to detect Collector version in Supervisor image; raw config reporting will remain disabled"
+    fi
     
     # Create persistent config directory
     mkdir -p "$CONFIG_HOST_DIR"
@@ -545,7 +590,7 @@ run_supervisor_mode() {
         cp "$SUPERVISOR_BASE_CONFIG_PATH" "${CONFIG_HOST_DIR}/config.yaml"
         log "Using custom base config: $SUPERVISOR_BASE_CONFIG_PATH"
     else
-        get_default_config > "${CONFIG_HOST_DIR}/config.yaml"
+        get_default_config "$reports_raw_config" > "${CONFIG_HOST_DIR}/config.yaml"
         log "Using default base config"
     fi
     log "Collector config at: ${CONFIG_HOST_DIR}/config.yaml"

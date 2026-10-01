@@ -640,6 +640,15 @@ function Test-Installed {
 }
 
 function Get-EmptyCollectorConfig {
+    param([switch]$ReportsRawConfig)
+
+    $rawConfigExtension = if ($ReportsRawConfig) {
+        "  opamp:`n    reports_raw_config: true`n"
+    }
+    else {
+        ""
+    }
+
     return @"
 receivers:
   nop:
@@ -650,8 +659,7 @@ exporters:
 extensions:
   health_check:
     endpoint: 127.0.0.1:13133
-  opamp:
-    reports_raw_config: true
+$rawConfigExtension
 
 service:
   extensions:
@@ -1224,7 +1232,8 @@ telemetry:
         Write-Log "Base config will be merged with remote configuration from Fleet Manager"
     }
     else {
-        Get-EmptyCollectorConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
+        $reportsRawConfig = [version](Normalize-Version -Version $CollectorVer) -ge [version]"0.161.0"
+        Get-EmptyCollectorConfig -ReportsRawConfig:$reportsRawConfig | Out-File -FilePath $SUPERVISOR_COLLECTOR_CONFIG_FILE -Encoding utf8 -Force
     }
 
     $serviceDisplayName = "OpenTelemetry OpAMP Supervisor"
