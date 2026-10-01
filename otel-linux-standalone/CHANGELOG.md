@@ -2,6 +2,16 @@
 
 ## otel-linux-standalone
 
+### v0.0.61 / 2026-10-01
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.3
+
+#### Changes from opentelemetry-collector 0.139.3:
+- [Fix] Omit the external HTTP OpAMP server from the minimal Collector config used with Supervisor mode. Supervisor supplies the child Collector's local OpAMP server connection; keeping the external server here caused both `ws` and `http` to be configured.
+
+#### Changes from opentelemetry-collector 0.139.2:
+- [Feat] Enable raw configuration reporting by default in direct Fleet Management OpAMP extensions and in the minimal Collector config used by Supervisor mode.
+
 ### v0.0.60 / 2026-09-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.1
