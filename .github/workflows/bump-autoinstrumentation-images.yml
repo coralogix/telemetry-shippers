@@ -1,12 +1,12 @@
-# Bumps otel-integration autoinstrumentation image pins when OpenTelemetry
-# Operator ships a new versions.txt combo. Opens one PR and notifies #eco-system
-# (C07BXNTQVV3) when images actually change, or when the job fails.
+# Follows published OpenTelemetry Operator Helm charts, updating the dependency
+# and its appVersion's instrumentation image pins together. Opens one PR and
+# notifies #eco-system (C07BXNTQVV3) when versions change or the job fails.
 #
 # Slack: set repo/org secret SLACK_ECOSYSTEM_WEBHOOK_URL to an incoming webhook
 # that posts to #eco-system. If the secret is missing, the notify step warns
 # and the bump still succeeds.
 
-name: Bump autoinstrumentation images
+name: Bump operator chart and autoinstrumentation images
 
 on:
   schedule:
@@ -17,8 +17,8 @@ on:
         description: "Compute the delta without opening a PR"
         type: boolean
         default: false
-      operator_tag:
-        description: "Operator git tag (default: latest GitHub release)"
+      operator_chart_version:
+        description: "Operator Helm chart version (default: latest stable published chart)"
         type: string
         required: false
 
@@ -64,22 +64,28 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
-          INPUT_OPERATOR_TAG: ${{ github.event.inputs.operator_tag }}
+          INPUT_OPERATOR_CHART_VERSION: ${{ github.event.inputs.operator_chart_version }}
         run: |
           set -euo pipefail
           dry_run=false
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$INPUT_DRY_RUN" == "true" ]]; then
             dry_run=true
           fi
-          tag="${INPUT_OPERATOR_TAG:-}"
-          if [[ -n "$tag" && ! "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid operator_tag '$tag'"
+          version="${INPUT_OPERATOR_CHART_VERSION:-}"
+          if [[ -n "$version" && ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid operator_chart_version '$version'"
             exit 1
           fi
           echo "dry_run=$dry_run" >> "$GITHUB_OUTPUT"
-          echo "operator_tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "operator_chart_version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Bump images
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          # Match the Helm golden renders check in security-hygiene.yml.
+          version: v3.12.1
+
+      - name: Bump operator chart and images
         id: bump
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -87,13 +93,18 @@ jobs:
           set -euo pipefail
           chmod +x scripts/bump-autoinstrumentation-images.sh
           args=()
-          if [[ -n "${{ steps.flags.outputs.operator_tag }}" ]]; then
-            args+=(--operator-tag "${{ steps.flags.outputs.operator_tag }}")
+          if [[ -n "${{ steps.flags.outputs.operator_chart_version }}" ]]; then
+            args+=(--operator-chart-version "${{ steps.flags.outputs.operator_chart_version }}")
           fi
           if [[ "${{ steps.flags.outputs.dry_run }}" == "true" ]]; then
             args+=(--dry-run)
           fi
           scripts/bump-autoinstrumentation-images.sh "${args[@]}"
+
+      - name: Regenerate Helm golden renders
+        if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
+        # The chart version changes rendered config and its checksum annotations.
+        run: .github/scripts/check-helm-golden-renders.sh --update
 
       # Point the bot branch at current master without creating a commit.
       # The signed commit is created in the next step via GraphQL.
@@ -119,7 +130,7 @@ jobs:
         if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
         uses: planetscale/ghcommit-action@v0.1.43
         with:
-          commit_message: "chore: bump autoinstrumentation images to operator ${{ steps.bump.outputs.operator_tag }}"
+          commit_message: "chore: bump operator chart to ${{ steps.bump.outputs.operator_chart_version }} and instrumentation images"
           repo: ${{ github.repository }}
           branch: chore/bump-autoinstrumentation
           file_pattern: '*.yaml *.md **/*.yaml **/*.md'
@@ -131,11 +142,11 @@ jobs:
         if: steps.flags.outputs.dry_run != 'true' && steps.bump.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          OPERATOR_TAG: ${{ steps.bump.outputs.operator_tag }}
+          OPERATOR_CHART_VERSION: ${{ steps.bump.outputs.operator_chart_version }}
           BRANCH: chore/bump-autoinstrumentation
         run: |
           set -euo pipefail
-          title="chore: bump autoinstrumentation images to operator ${OPERATOR_TAG}"
+          title="chore: bump operator chart to ${OPERATOR_CHART_VERSION} and instrumentation images"
           existing=$(gh pr list --head "$BRANCH" --base master --json number --jq '.[0].number // empty')
           if [[ -n "$existing" ]]; then
             gh pr edit "$existing" --title "$title" --body-file /tmp/autoinstr-bump-summary.md
@@ -189,10 +200,10 @@ jobs:
           fi
 
           if [[ "$failed" == "true" ]]; then
-            text="Autoinstrumentation image bump failed for ${GITHUB_REPOSITORY}."
+            text="Operator chart and autoinstrumentation bump failed for ${GITHUB_REPOSITORY}."
             extra="Run: ${RUN_URL}"
           else
-            text="Autoinstrumentation images updated to OpenTelemetry Operator ${OPERATOR_TAG}."
+            text="Operator chart and autoinstrumentation images updated to OpenTelemetry Operator ${OPERATOR_TAG}."
             extra="PR: ${PR_URL}"
           fi
 
