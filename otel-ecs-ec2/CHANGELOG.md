@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.56 / 2026-10-01
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.139.2`.
+
+#### Changes from opentelemetry-collector 0.139.2:
+- [Feat] Enable raw configuration reporting by default in direct Fleet Management OpAMP extensions and in the minimal Collector config used by Supervisor mode.
+
 ### v0.0.55 / 2026-09-30
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.139.1`.

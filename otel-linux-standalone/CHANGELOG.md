@@ -2,6 +2,13 @@
 
 ## otel-linux-standalone
 
+### v0.0.61 / 2026-10-01
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.2
+
+#### Changes from opentelemetry-collector 0.139.2:
+- [Feat] Enable raw configuration reporting by default in direct Fleet Management OpAMP extensions and in the minimal Collector config used by Supervisor mode.
+
 ### v0.0.60 / 2026-09-30
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.1
