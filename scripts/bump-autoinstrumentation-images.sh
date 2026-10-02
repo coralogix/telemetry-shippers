@@ -2,13 +2,15 @@
 #
 # bump-autoinstrumentation-images.sh
 #
-# Aligns otel-integration autoinstrumentation image tags with an OpenTelemetry
-# Operator release's versions.txt. Updates values.yaml, Chart.yaml,
-# global.version, CHANGELOG.md, and golden distribution headers when tags change.
+# Follows published OpenTelemetry Operator Helm charts and aligns image tags
+# with the chart appVersion's versions.txt. Updates the operator dependency,
+# values.yaml, chart/global versions, changelog, and golden distribution headers.
+# The workflow then regenerates complete golden renders, including checksums.
 #
 # Options:
-#   --operator-tag TAG      Operator git tag (vX.Y.Z). Fetches versions.txt.
-#   --versions-file FILE    Local versions.txt (skips the network fetch)
+#   --operator-chart-version VERSION  Published chart version (default: latest stable)
+#   --operator-tag TAG      Expected operator tag; must match the selected chart
+#   --versions-file FILE    Local versions.txt (skips chart lookup and network fetch)
 #   --values-file FILE      Override values.yaml path
 #   --chart-yaml FILE       Override Chart.yaml path
 #   --changelog FILE        Override CHANGELOG.md path
@@ -24,6 +26,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 OPERATOR_TAG=""
+OPERATOR_CHART_VERSION=""
 VERSIONS_FILE=""
 VALUES_FILE="$REPO_ROOT/otel-integration/k8s-helm/values.yaml"
 CHART_YAML="$REPO_ROOT/otel-integration/k8s-helm/Chart.yaml"
@@ -55,6 +58,10 @@ usage() {
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    --operator-chart-version)
+      OPERATOR_CHART_VERSION="$2"
+      shift 2
+      ;;
     --operator-tag)
       OPERATOR_TAG="$2"
       shift 2
@@ -114,19 +121,27 @@ normalize_operator_tag() {
   fi
 }
 
-fetch_latest_operator_tag() {
-  local url="https://api.github.com/repos/${OPERATOR_REPO}/releases/latest"
-  local args=(-fsSL)
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    args+=(-H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json")
+resolve_operator_chart() {
+  local args=()
+  if [[ -n "$OPERATOR_CHART_VERSION" ]]; then
+    args+=(--version "$OPERATOR_CHART_VERSION")
   fi
-  local tag
-  tag=$(curl "${args[@]}" "$url" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1)
-  if [[ -z "$tag" ]]; then
-    log_error "Could not resolve the latest ${OPERATOR_REPO} release tag"
+  local metadata chart_tag
+  metadata=$(helm show chart opentelemetry-operator \
+    --repo https://open-telemetry.github.io/opentelemetry-helm-charts "${args[@]}")
+  OPERATOR_CHART_VERSION=$(printf '%s\n' "$metadata" | awk '/^version:/ {gsub(/["\047]/, "", $2); print $2}')
+  chart_tag=$(printf '%s\n' "$metadata" | awk '/^appVersion:/ {gsub(/["\047]/, "", $2); print $2}')
+  chart_tag=$(normalize_operator_tag "$chart_tag")
+  if [[ ! "$OPERATOR_CHART_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    log_error "Invalid operator chart version '$OPERATOR_CHART_VERSION'"
     exit 1
   fi
-  normalize_operator_tag "$tag"
+  if [[ -n "$OPERATOR_TAG" && "$(normalize_operator_tag "$OPERATOR_TAG")" != "$chart_tag" ]]; then
+    log_error "Operator tag $OPERATOR_TAG does not match chart $OPERATOR_CHART_VERSION ($chart_tag)"
+    exit 1
+  fi
+  OPERATOR_TAG="$chart_tag"
+  log_info "Operator chart ${OPERATOR_CHART_VERSION} uses ${OPERATOR_TAG}"
 }
 
 load_versions_file() {
@@ -136,11 +151,6 @@ load_versions_file() {
       exit 1
     fi
     return
-  fi
-  if [[ -z "$OPERATOR_TAG" ]]; then
-    OPERATOR_TAG=$(fetch_latest_operator_tag)
-  else
-    OPERATOR_TAG=$(normalize_operator_tag "$OPERATOR_TAG")
   fi
   VERSIONS_FILE=$(mktemp)
   trap 'rm -f "$VERSIONS_FILE"' EXIT
@@ -228,6 +238,10 @@ insert_changelog_entry() {
 
 main() {
   parse_args "$@"
+  if [[ -n "$OPERATOR_CHART_VERSION" && ! "$OPERATOR_CHART_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    log_error "Invalid operator chart version '$OPERATOR_CHART_VERSION'"
+    exit 1
+  fi
 
   for required in "$VALUES_FILE" "$CHART_YAML" "$CHANGELOG_FILE"; do
     if [[ ! -f "$required" ]]; then
@@ -235,6 +249,35 @@ main() {
       exit 1
     fi
   done
+
+  if [[ -z "$VERSIONS_FILE" ]]; then
+    resolve_operator_chart
+  fi
+  if [[ -n "$OPERATOR_CHART_VERSION" ]]; then
+    local current_operator_chart
+    current_operator_chart=$(awk '
+      /^  - name:/ {operator = ($3 == "opentelemetry-operator")}
+      operator && /^    version:/ {gsub(/["\047]/, "", $2); print $2}
+    ' "$CHART_YAML")
+    if [[ ! "$current_operator_chart" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      log_error "Missing or invalid opentelemetry-operator dependency in $CHART_YAML"
+      exit 1
+    fi
+    # A chart release is the only trigger; image drift alone must not open a PR.
+    if [[ "$current_operator_chart" == "$OPERATOR_CHART_VERSION" ]]; then
+      local unchanged_summary
+      unchanged_summary="Operator Helm chart ${OPERATOR_CHART_VERSION} is unchanged. Skipping instrumentation image checks; no PR needed."
+      printf '%s\n' "$unchanged_summary" >"$SUMMARY_FILE"
+      write_output "changed" "false"
+      write_output "operator_tag" "$OPERATOR_TAG"
+      write_output "operator_chart_version" "$OPERATOR_CHART_VERSION"
+      write_output "chart_version" "$(awk '/^version:/ {gsub(/"/, "", $2); print $2}' "$CHART_YAML")"
+      write_output "delta" ""
+      write_output "summary" "$unchanged_summary"
+      log_info "$unchanged_summary"
+      return
+    fi
+  fi
 
   load_versions_file
   if [[ -z "$OPERATOR_TAG" ]]; then
@@ -268,6 +311,18 @@ main() {
   local delta_lines=()
   local changelog_bits=()
 
+  if [[ -n "$OPERATOR_CHART_VERSION" ]]; then
+    if [[ "$current_operator_chart" != "$OPERATOR_CHART_VERSION" ]]; then
+      changed=true
+      delta_lines+=("operator chart: ${current_operator_chart} -> ${OPERATOR_CHART_VERSION}")
+      changelog_bits+=("operator chart \`${current_operator_chart}\` -> \`${OPERATOR_CHART_VERSION}\`")
+      if [[ "$DRY_RUN" != "true" ]]; then
+        sed -i.bak "/^  - name: opentelemetry-operator$/,/^  - name:/ s/^    version:.*/    version: \"${OPERATOR_CHART_VERSION}\"/" "$CHART_YAML"
+        rm -f "${CHART_YAML}.bak"
+      fi
+    fi
+  fi
+
   local pair key versions_key pkg current desired
   for pair in "${PACKAGES[@]}"; do
     key="${pair%%:*}"
@@ -296,7 +351,7 @@ main() {
 
   if [[ "$changed" == "true" ]]; then
     new_chart=$(increment_patch_version "$current_chart")
-    change_line="- [Chore] Bump autoinstrumentation images to match OpenTelemetry Operator ${OPERATOR_TAG} ($(IFS=', '; echo "${changelog_bits[*]}"))."
+    change_line="- [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator ${OPERATOR_TAG} ($(IFS=', '; echo "${changelog_bits[*]}"))."
     if [[ "$DRY_RUN" != "true" ]]; then
       sed -i.bak "s/^version: ${current_chart}$/version: ${new_chart}/" "$CHART_YAML"
       rm -f "${CHART_YAML}.bak"
@@ -314,9 +369,12 @@ main() {
   fi
 
   {
-    echo "## Autoinstrumentation image bump"
+    echo "## Operator chart and autoinstrumentation bump"
     echo ""
     echo "**Operator:** \`${OPERATOR_TAG}\`"
+    if [[ -n "$OPERATOR_CHART_VERSION" ]]; then
+      echo "**Operator Helm chart:** \`${OPERATOR_CHART_VERSION}\`"
+    fi
     echo ""
     if [[ "$changed" == "true" ]]; then
       echo "Chart \`${current_chart}\` -> \`${new_chart}\`"
@@ -336,6 +394,7 @@ main() {
   fi
   write_output "changed" "$changed"
   write_output "operator_tag" "$OPERATOR_TAG"
+  write_output "operator_chart_version" "$OPERATOR_CHART_VERSION"
   write_output "chart_version" "$new_chart"
   write_output "delta" "$delta_joined"
   write_output "summary" "$summary"
@@ -346,7 +405,7 @@ main() {
       log_info "Dry run; no files written"
     fi
   else
-    log_info "No image changes"
+    log_info "No operator chart or image changes"
   fi
 }
 
