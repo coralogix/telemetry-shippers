@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.354 / 2026-10-02
+
+- [Chore] Bump autoinstrumentation images to match OpenTelemetry Operator v0.160.0 (python `0.65b0` -> `0.66b0`,dotnet `1.16.0` -> `1.17.0`).
+
 ### v0.0.353 / 2026-10-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.3
