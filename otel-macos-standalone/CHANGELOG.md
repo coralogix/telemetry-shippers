@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.62 / 2026-10-02
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.4
+
+#### Changes from opentelemetry-collector 0.139.4:
+- [Feat] Add GCP/GKE support for Infra Explore by enabling the `gcp` detector in the host entity events pipeline when provider is GCP. On GKE this populates `host.type` (machine type) via the Compute API when the runtime identity has `compute.instances.get` (covered by `roles/compute.viewer`).
+
 ### v0.0.61 / 2026-10-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.3
