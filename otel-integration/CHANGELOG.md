@@ -2,6 +2,25 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.354 / 2026-10-05
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.28
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.28:
+- [Change] Bump OBI image to v0.14.0
+- [Feature] The image splits the `application` metrics feature into `application_red` (the HTTP/gRPC/database/messaging duration histograms) and `application_sizes` (the four `http.*.body.size` histograms); `application` keeps enabling both. `metrics.features: [application_red]` now exports the latency histograms without the body sizes, which previously required a collector filter
+- [Change] Note for upgraders: the `stats` feature now includes the new `obi.stat.tcp.successful.connections` counter, so installs with `stats.enabled: true` export an additional metric
+- [Change] Note for upgraders: OBI attaches uprobes and kprobes without `CAP_SYS_ADMIN`, falling back to tracefs when PMU access is blocked by security policy. Library-level Go context propagation still requires `CAP_SYS_ADMIN`; unprivileged installs (`privileged: false`) that need it must keep it in `extraCapabilities`
+- [Change] Note for upgraders: the pinned `traces_ctx_v1` map is no longer populated by default, so external trace-to-profile correlation (e.g. with the eBPF profiler) requires `config.data.ebpf.populate_trace_context: true`. The log enricher (`presets.logEnricher`) enables it automatically
+- [Change] Note for upgraders: `service.peer.name`, `http.request.body.size`, `http.response.body.size` and `obi.http.response.observed` are now opt-in span attributes. The chart's default `config.data.attributes.select.traces.include: ['*']` keeps selecting them; installs that override that selection must include them explicitly, e.g. `service.peer.name` for service-graph generation
+- [Change] Note for upgraders: with `metrics.features` including `application` or `application_red`, HTTP duration and body-size metrics now carry `error.type` on failed requests, which recreates the existing series in Prometheus. The `application_host` feature and its `traces_host_info` metric are removed
+- [Feature] The image adds GPU metrics, broader .NET runtime metrics, Node.js active-resource metrics and runtime metrics for stripped Go and Python binaries, HTTP route harvesting for Django, FastAPI, Flask, Rails, .NET, Symfony, Laravel and Slim, AWS SNS spans, MCP metrics, generic Python asyncio server support, `messaging.consumer.group.name` on Kafka consumer spans and metrics, and improved HTTP/2 and gRPC trace-context propagation
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.27:
+- [Feature] Add a first-class `metrics.features` value, rendered as the top-level `metrics.features` in OBI's configuration (the modern key, applying to every metrics exporter — not the deprecated per-exporter `otel_metrics_export.features`). It defaults to `[]`, and the `stats.enabled` / `presets.runtimeMetrics` toggles append their features (`stats`, `application_runtime`) on top of it, so a default install exports `metrics.features: [application_runtime]`
+- [Change] **OBI application metrics are now disabled by default.** OBI's own default `application` feature (the HTTP/gRPC/database/messaging RED metrics plus the four `http.*.body.size` histograms) duplicates the information the collector's `presets.spanMetrics` preset derives from the very same OBI traces — different metric names and units, but the same requests measured and paid for twice. Traces and context propagation are unaffected; features gate the metrics exporters only. To keep exporting OBI's application metrics, set `metrics.features: [application]`. Installs that customized features through the `config.data.otel_metrics_export.features` passthrough (the only way before this version) are not affected: that deprecated key, when present, wins over `metrics.features` — mirroring OBI's own precedence — and renders exactly as before; migrate it to `metrics.features`
+- [Fix] The `stats.enabled` / `presets.runtimeMetrics` feature-merging now honors a `config.data.metrics.features` passthrough (OBI's modern key) as its base list and appends to that key; previously the merged list was always written to the deprecated `otel_metrics_export.features`, which OBI lets override the modern key, silently discarding such a passthrough. Configurations using the deprecated passthrough render exactly as before
+
 ### v0.0.353 / 2026-10-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.3
