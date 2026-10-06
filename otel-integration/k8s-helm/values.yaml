@@ -700,6 +700,10 @@ opentelemetry-cluster-collector:
 
 opentelemetry-agent-windows:
   enabled: false
+  presets:
+    # Backfill missing DB attributes on application traces received by the Windows agent.
+    dbSemConv:
+      enabled: true
 opentelemetry-gateway:
   enabled: false
   mode: deployment
@@ -1102,6 +1106,10 @@ opentelemetry-agent-eks-fargate:
   distribution: "eks/fargate"
 
   presets:
+    # Backfill missing DB attributes on application traces received by the Fargate agent.
+    dbSemConv:
+      enabled: true
+
     # Configures metadata collection for EKS Fargate
     metadata:
       enabled: true

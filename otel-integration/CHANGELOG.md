@@ -5,7 +5,7 @@
 ### v0.0.354 / 2026-10-06
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.5
-- [Feat] Enable the `dbSemConv` preset by default on the Kubernetes agent to backfill missing database namespace, collection, and operation attributes before span export and DB metric generation.
+- [Feat] Enable the `dbSemConv` preset by default on the standard, Windows, and EKS Fargate Kubernetes agents to backfill missing database namespace, collection, and operation attributes before span export and DB metric generation.
 
 #### Changes from opentelemetry-collector 0.139.5:
 - [Feat] Add the standalone `dbSemConv` preset with independent `dbNamespace`, `dbCollection`, and `dbOperation` switches. Backfill missing database attributes on source spans before export and DB metric generation, preserving existing values and database-specific handling for Redis indexes, SQL Server instances, Elasticsearch clusters, DynamoDB single-table lists, and Cosmos DB containers. The preset is disabled by default; each DB transformation is enabled by default when the preset is enabled. The existing `semconv` preset remains independent.
