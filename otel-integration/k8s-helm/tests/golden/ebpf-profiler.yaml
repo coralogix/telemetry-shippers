@@ -15,7 +15,7 @@ metadata:
   name: coralogix-opentelemetry
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.139.3
+    helm.sh/chart: opentelemetry-agent-0.139.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -28,7 +28,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.139.3
+    helm.sh/chart: opentelemetry-cluster-collector-0.139.5
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -41,7 +41,7 @@ metadata:
   name: coralogix-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.139.3
+    helm.sh/chart: opentelemetry-agent-0.139.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -188,14 +188,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -217,13 +217,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -250,7 +250,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: 'golden-render'
-            helm.chart.opentelemetry-agent.version: 0.139.3
+            helm.chart.opentelemetry-agent.version: 0.139.5
         capabilities:
           accepts_restart_command: false
         reports_raw_config: true
@@ -480,6 +480,56 @@ data:
           - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
             != nil and attributes["db.system"] == nil
           - keep_keys(span.attributes, ["db.namespace", "db.system"])
+      transform/db_semconv:
+        error_mode: ignore
+        trace_statements:
+        - context: span
+          statements:
+          - set(attributes["db.namespace"], String(attributes["db.redis.database_index"]))
+            where attributes["db.namespace"] == nil and attributes["db.redis.database_index"]
+            != nil
+          - set(attributes["db.namespace"], Concat([attributes["db.mssql.instance_name"],
+            attributes["db.name"]], "|")) where attributes["db.namespace"] == nil and
+            IsString(attributes["db.mssql.instance_name"]) and attributes["db.mssql.instance_name"]
+            != "" and ConvertCase(attributes["db.mssql.instance_name"], "upper") != "MSSQLSERVER"
+            and IsString(attributes["db.name"]) and attributes["db.name"] != ""
+          - set(attributes["db.namespace"], attributes["db.mssql.instance_name"]) where
+            attributes["db.namespace"] == nil and IsString(attributes["db.mssql.instance_name"])
+            and attributes["db.mssql.instance_name"] != "" and ConvertCase(attributes["db.mssql.instance_name"],
+            "upper") != "MSSQLSERVER"
+          - set(attributes["db.namespace"], attributes["db.elasticsearch.cluster.name"])
+            where attributes["db.namespace"] == nil and IsString(attributes["db.elasticsearch.cluster.name"])
+            and attributes["db.elasticsearch.cluster.name"] != ""
+          - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"]
+            == nil
+          - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"]
+            == nil and (attributes["db.system"] != nil or attributes["db.system.name"]
+            != nil)
+          - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"]
+            == nil and (attributes["db.system"] != nil or attributes["db.system.name"]
+            != nil)
+          - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"]
+            == nil and (attributes["db.system"] != nil or attributes["db.system.name"]
+            != nil)
+          - set(attributes["db.namespace"], attributes["db.system.name"]) where attributes["db.namespace"]
+            == nil and attributes["db.system.name"] != nil
+          - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"]
+            == nil and attributes["db.system"] != nil
+          - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"]
+            == nil
+          - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where
+            attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["db.mongodb.collection"])
+            where attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"])
+            where attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"])
+            where attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["aws.dynamodb.table_names"][0])
+            where attributes["db.collection.name"] == nil and IsList(attributes["aws.dynamodb.table_names"])
+            and Len(attributes["aws.dynamodb.table_names"]) == 1
+          - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"]
+            == nil
       transform/entity-event:
         error_mode: silent
         log_statements:
@@ -998,6 +1048,7 @@ data:
           - transform/spanmetrics
           - redaction/spanname
           - transform/semconv
+          - transform/db_semconv
           - groupbytrace/transactions
           - coralogix
           - batch
@@ -1060,7 +1111,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.139.3
+    helm.sh/chart: opentelemetry-cluster-collector-0.139.5
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -1082,14 +1133,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -1111,13 +1162,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.353
+            X-Coralogix-Distribution: helm-otel-integration/0.0.354
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -1145,7 +1196,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: cluster-collector
             cx.cluster.name: 'golden-render'
-            helm.chart.opentelemetry-cluster-collector.version: 0.139.3
+            helm.chart.opentelemetry-cluster-collector.version: 0.139.5
         capabilities:
           accepts_restart_command: false
         reports_raw_config: true
@@ -1769,7 +1820,7 @@ kind: ClusterRole
 metadata:
   name: coralogix-opentelemetry-agent
   labels:
-    helm.sh/chart: opentelemetry-agent-0.139.3
+    helm.sh/chart: opentelemetry-agent-0.139.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -1797,7 +1848,7 @@ kind: ClusterRole
 metadata:
   name: coralogix-opentelemetry-collector
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.139.3
+    helm.sh/chart: opentelemetry-cluster-collector-0.139.5
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -1891,7 +1942,7 @@ kind: ClusterRoleBinding
 metadata:
   name: coralogix-opentelemetry-agent
   labels:
-    helm.sh/chart: opentelemetry-agent-0.139.3
+    helm.sh/chart: opentelemetry-agent-0.139.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -1911,7 +1962,7 @@ kind: ClusterRoleBinding
 metadata:
   name: coralogix-opentelemetry-collector
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.139.3
+    helm.sh/chart: opentelemetry-cluster-collector-0.139.5
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -1932,7 +1983,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.139.3
+    helm.sh/chart: opentelemetry-cluster-collector-0.139.5
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -2058,7 +2109,7 @@ metadata:
   name: coralogix-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.139.3
+    helm.sh/chart: opentelemetry-agent-0.139.5
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -2074,7 +2125,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 922b5b67307e7b6017d9da3fbd39b8b84e76527bdf46e100a45a11b9517f9a22
+        checksum/config: 295e3a84275f0496c8e575c4294023be66be29c8f4ae38530a181ebf709d2f53
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -2248,7 +2299,7 @@ metadata:
   name: coralogix-opentelemetry-collector
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-cluster-collector-0.139.3
+    helm.sh/chart: opentelemetry-cluster-collector-0.139.5
     app.kubernetes.io/name: opentelemetry-cluster-collector
     app.kubernetes.io/instance: render-check
     app.kubernetes.io/version: "0.161.0"
@@ -2266,7 +2317,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5578b1f79ee074a5f892cecc355111c3b5a36c597b51cbcd6b31c8503643debf
+        checksum/config: d8a5556830dbbc4d79ee2c0bc372414c8d83a1349336ba9b5f04f4207b2212ad
 
       labels:
         app.kubernetes.io/name: opentelemetry-cluster-collector

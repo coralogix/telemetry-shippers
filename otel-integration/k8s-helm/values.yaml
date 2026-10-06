@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.353"
+  version: "0.0.354"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -424,6 +424,9 @@ opentelemetry-agent:
     # Applies semantic convention transformations.
     semconv:
       enabled: true
+    # Backfill missing DB attributes before exporting spans and generating metrics.
+    dbSemConv:
+      enabled: true
   config:
     # extensions:
     #   zpages:
@@ -697,6 +700,10 @@ opentelemetry-cluster-collector:
 
 opentelemetry-agent-windows:
   enabled: false
+  presets:
+    # Backfill missing DB attributes on application traces received by the Windows agent.
+    dbSemConv:
+      enabled: true
 opentelemetry-gateway:
   enabled: false
   mode: deployment
@@ -1099,6 +1106,10 @@ opentelemetry-agent-eks-fargate:
   distribution: "eks/fargate"
 
   presets:
+    # Backfill missing DB attributes on application traces received by the Fargate agent.
+    dbSemConv:
+      enabled: true
+
     # Configures metadata collection for EKS Fargate
     metadata:
       enabled: true
