@@ -2,6 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.354 / 2026-10-06
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.5
+
+#### Changes from opentelemetry-collector 0.139.5:
+- [Feat] Add the standalone `dbSemConv` preset with independent `dbNamespace`, `dbCollection`, and `dbOperation` switches. Backfill missing database attributes on source spans before export and DB metric generation, preserving existing values and database-specific handling for Redis indexes, SQL Server instances, Elasticsearch clusters, DynamoDB single-table lists, and Cosmos DB containers. The preset is disabled by default; each DB transformation is enabled by default when the preset is enabled. The existing `semconv` preset remains independent.
+
+#### Changes from opentelemetry-collector 0.139.4:
+- [Feat] Add GCP/GKE support for Infra Explore by enabling the `gcp` detector in the host entity events pipeline when provider is GCP. On GKE this populates `host.type` (machine type) via the Compute API when the runtime identity has `compute.instances.get` (covered by `roles/compute.viewer`).
+
 ### v0.0.353 / 2026-10-01
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.3
