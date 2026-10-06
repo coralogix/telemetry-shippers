@@ -480,6 +480,56 @@ data:
           - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
             != nil and attributes["db.system"] == nil
           - keep_keys(span.attributes, ["db.namespace", "db.system"])
+      transform/db_semconv:
+        error_mode: ignore
+        trace_statements:
+        - context: span
+          statements:
+          - set(attributes["db.namespace"], String(attributes["db.redis.database_index"]))
+            where attributes["db.namespace"] == nil and attributes["db.redis.database_index"]
+            != nil
+          - set(attributes["db.namespace"], Concat([attributes["db.mssql.instance_name"],
+            attributes["db.name"]], "|")) where attributes["db.namespace"] == nil and
+            IsString(attributes["db.mssql.instance_name"]) and attributes["db.mssql.instance_name"]
+            != "" and ConvertCase(attributes["db.mssql.instance_name"], "upper") != "MSSQLSERVER"
+            and IsString(attributes["db.name"]) and attributes["db.name"] != ""
+          - set(attributes["db.namespace"], attributes["db.mssql.instance_name"]) where
+            attributes["db.namespace"] == nil and IsString(attributes["db.mssql.instance_name"])
+            and attributes["db.mssql.instance_name"] != "" and ConvertCase(attributes["db.mssql.instance_name"],
+            "upper") != "MSSQLSERVER"
+          - set(attributes["db.namespace"], attributes["db.elasticsearch.cluster.name"])
+            where attributes["db.namespace"] == nil and IsString(attributes["db.elasticsearch.cluster.name"])
+            and attributes["db.elasticsearch.cluster.name"] != ""
+          - set(attributes["db.namespace"], attributes["db.name"]) where attributes["db.namespace"]
+            == nil
+          - set(attributes["db.namespace"], attributes["server.address"]) where attributes["db.namespace"]
+            == nil and (attributes["db.system"] != nil or attributes["db.system.name"]
+            != nil)
+          - set(attributes["db.namespace"], attributes["network.peer.name"]) where attributes["db.namespace"]
+            == nil and (attributes["db.system"] != nil or attributes["db.system.name"]
+            != nil)
+          - set(attributes["db.namespace"], attributes["net.peer.name"]) where attributes["db.namespace"]
+            == nil and (attributes["db.system"] != nil or attributes["db.system.name"]
+            != nil)
+          - set(attributes["db.namespace"], attributes["db.system.name"]) where attributes["db.namespace"]
+            == nil and attributes["db.system.name"] != nil
+          - set(attributes["db.namespace"], attributes["db.system"]) where attributes["db.namespace"]
+            == nil and attributes["db.system"] != nil
+          - set(attributes["db.collection.name"], attributes["db.sql.table"]) where attributes["db.collection.name"]
+            == nil
+          - set(attributes["db.collection.name"], attributes["db.cassandra.table"]) where
+            attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["db.mongodb.collection"])
+            where attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["db.elasticsearch.path_parts.index"])
+            where attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["db.cosmosdb.container"])
+            where attributes["db.collection.name"] == nil
+          - set(attributes["db.collection.name"], attributes["aws.dynamodb.table_names"][0])
+            where attributes["db.collection.name"] == nil and IsList(attributes["aws.dynamodb.table_names"])
+            and Len(attributes["aws.dynamodb.table_names"]) == 1
+          - set(attributes["db.operation.name"], attributes["db.operation"]) where attributes["db.operation.name"]
+            == nil
       transform/entity-event:
         error_mode: silent
         log_statements:
@@ -998,6 +1048,7 @@ data:
           - transform/spanmetrics
           - redaction/spanname
           - transform/semconv
+          - transform/db_semconv
           - groupbytrace/transactions
           - coralogix
           - batch
@@ -2074,7 +2125,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2c1e1823e69fc00318405d236162ecb27de30c63f37e2f2cb1556cd07e48e42b
+        checksum/config: 295e3a84275f0496c8e575c4294023be66be29c8f4ae38530a181ebf709d2f53
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent

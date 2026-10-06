@@ -424,6 +424,9 @@ opentelemetry-agent:
     # Applies semantic convention transformations.
     semconv:
       enabled: true
+    # Backfill missing DB attributes before exporting spans and generating metrics.
+    dbSemConv:
+      enabled: true
   config:
     # extensions:
     #   zpages:
