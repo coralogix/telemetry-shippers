@@ -260,6 +260,14 @@ opentelemetry-agent:
       perNode: true
       scrapeAll: false
 
+    # Scrapes the kubelet's own /metrics endpoint on the local node.
+    kubeletPrometheusMetrics:
+      enabled: false
+      # When false, keeps a curated set of kubelet health metrics. When true, keeps all kubelet metrics.
+      scrapeAll: false
+      # When true, maps kubelet labels to OpenTelemetry semantic conventions (e.g. pod -> k8s.pod.name).
+      semconv: true
+
     # deltaToCumulative:
     #   enabled: false
 

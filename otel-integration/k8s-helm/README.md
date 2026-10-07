@@ -529,6 +529,21 @@ receivers:
       node: true
 ```
 
+To also collect the kubelet's own Prometheus metrics (`/metrics`), such as running pods and containers, PLEG and runtime operation latencies, evictions, certificate TTLs and volume stats, enable the `kubeletPrometheusMetrics` preset. It is disabled by default.
+
+```yaml
+opentelemetry-agent:
+  presets:
+    kubeletPrometheusMetrics:
+      enabled: true
+      # false: keep a curated set of kubelet health metrics; true: keep all kubelet metrics
+      scrapeAll: false
+      # Rename kubelet labels to OpenTelemetry names, e.g. pod -> k8s.pod.name
+      semconv: true
+```
+
+Each agent scrapes the kubelet on its own node, and `k8s.node.name` is always added.
+
 ### Receivers
 
 Once configured, you will be able to send logs, metrics, and traces to be collected in the **OpenTelemetry Agent** pods before exporting them to Coralogix.
