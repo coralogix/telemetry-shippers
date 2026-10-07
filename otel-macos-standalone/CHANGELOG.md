@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.63 / 2026-10-07
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.6
+
+#### Changes from opentelemetry-collector 0.139.6:
+- [Feat] Add the `kubeletPrometheusMetrics` preset to scrape the kubelet `/metrics` endpoint on the local node. By default a curated allowlist of kubelet health metrics is kept; set `scrapeAll: true` to keep all kubelet metrics. Kubelet labels are mapped to OpenTelemetry semantic conventions (`namespace` → `k8s.namespace.name`, `pod` → `k8s.pod.name`, `uid` → `k8s.pod.uid`, `container` → `k8s.container.name`, `persistentvolumeclaim` → `k8s.persistentvolumeclaim.name`, `node` → `k8s.node.name`) ; set `semconv: false` to keep raw Prometheus labels. `k8s.node.name` is always set on the resource. The preset is disabled by default.
+
 ### v0.0.62 / 2026-10-06
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.5
