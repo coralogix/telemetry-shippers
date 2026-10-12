@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.59 / 2026-10-12
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.139.7`.
+
+#### Changes from opentelemetry-collector 0.139.7:
+- [Feat] Add optional `presets.spanMetrics.dbMetrics.histogramBuckets` (and `presets.spanMetricsMulti.dbMetrics.histogramBuckets`) to set separate histogram buckets for DB span metrics (`spanmetrics/db` and `spanmetrics/db_compact`). When empty (default), DB span metrics keep using the shared span metrics buckets, so existing behavior is unchanged.
+
 ### v0.0.58 / 2026-10-07
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.139.6`.
