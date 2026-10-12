@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.355"
+  version: "0.0.356"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -287,6 +287,9 @@ opentelemetry-agent:
       metricsExpiration: 5m
       # histogramBuckets:
       #   [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+      # Optional separate buckets for DB span metrics. Empty uses histogramBuckets above.
+      # dbMetrics:
+      #   histogramBuckets: [100us, 1ms, 2ms, 5ms, 10ms, 50ms, 100ms, 250ms]
     transactions:
       enabled: true
       waitDuration: 30s

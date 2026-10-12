@@ -1882,6 +1882,17 @@ presets:
       - set(attributes["span.duration_ns"], span.end_time_unix_nano - span.start_time_unix_nano) # stores the span duration in ns in an attribute
 ```
 
+DB calls are usually much faster than HTTP calls, so you can give DB span metrics their own histogram buckets. When `dbMetrics.histogramBuckets` is empty (the default), DB span metrics use `spanMetrics.histogramBuckets`:
+
+```yaml
+presets:
+  spanMetrics:
+    enabled: true
+    histogramBuckets: [10ms, 20ms, 50ms, 100ms, 200ms, 500ms]
+    dbMetrics:
+      histogramBuckets: [100us, 1ms, 2ms, 5ms, 10ms, 50ms, 100ms, 250ms]
+```
+
 ##### Note on Semantic Conventions for old OTEL SDKs
 
 The `dbMetrics` preset only works with OpenTelemetry SDKs that support OpenTelemetry Semantic conventions v1.26.0.

@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.64 / 2026-10-12
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.139.7
+
+#### Changes from opentelemetry-collector 0.139.7:
+- [Feat] Add optional `presets.spanMetrics.dbMetrics.histogramBuckets` (and `presets.spanMetricsMulti.dbMetrics.histogramBuckets`) to set separate histogram buckets for DB span metrics (`spanmetrics/db` and `spanmetrics/db_compact`). When empty (default), DB span metrics keep using the shared span metrics buckets, so existing behavior is unchanged.
+
 ### v0.0.63 / 2026-10-07
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.139.6
