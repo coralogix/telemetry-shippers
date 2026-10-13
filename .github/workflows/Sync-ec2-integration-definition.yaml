@@ -150,7 +150,7 @@ jobs:
           
           echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Commit change
         if: env.exists == 'false'
