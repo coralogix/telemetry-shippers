@@ -27,18 +27,27 @@ jobs:
     runs-on: ubuntu-latest
     needs: Get_version
     steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: coralogix
+          repositories: integration-definitions
+
       - name: Checkout destination repository
         uses: actions/checkout@v4
         with:
           repository: coralogix/integration-definitions
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Check if version exists
         id: version_exist
         run: | 
           git fetch origin
           template_version=${{ needs.Get_version.outputs.Chart_version }}
-          if [ -d "./integrations/otel-agent-k8s/v$template_version" ]; then
+          if ls -d ./integrations/otel-agent-k8s/v*+"$template_version" >/dev/null 2>&1; then
             echo "version exist"
             echo "new_version_exist=true" >> $GITHUB_ENV
           else
@@ -92,7 +101,7 @@ jobs:
           fi
           echo "commit_message=$merged_pr_from_telemetry_shipper" >> $GITHUB_ENV
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: commit change
         if: "${{env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch'}}"
@@ -103,7 +112,7 @@ jobs:
           branch: ${{ env.branch_name }}
           file_pattern: '*.yaml *.md'
         env:
-          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Create pull request
         if: "${{ env.new_version_exist == 'false' || github.event_name == 'workflow_dispatch' }}"
@@ -137,7 +146,7 @@ jobs:
           # Create the new pull request with the title and body
           gh pr create --base master --head "${{ env.branch_name }}" --title "${Pr_name}" --body "$pr_body"
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
 
       - name: Merge pull request
@@ -179,4 +188,4 @@ jobs:
           gh pr merge --delete-branch --admin --squash ${{ env.branch_name }}
 
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
