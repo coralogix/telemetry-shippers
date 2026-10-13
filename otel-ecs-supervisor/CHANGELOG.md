@@ -1,10 +1,14 @@
 # Changelog
 
-## Unreleased
-
-* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.15.0`.
-
 ## ecs-ec2-integration
+
+### 0.0.16 / 2026-10-13
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.16.0`. (PR pending)
+
+### 0.0.15 / 2026-09-23
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.15.0`. ([#1027](https://github.com/coralogix/telemetry-shippers/pull/1027))
 
 ### 0.0.14 / 2026-09-04
 
