@@ -54,14 +54,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -86,7 +86,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
       debug: {}
     extensions:
       health_check:
@@ -347,14 +347,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -379,7 +379,7 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.357
+            X-Coralogix-Distribution: helm-otel-integration/0.0.358
       debug: {}
     extensions:
       health_check:
@@ -885,7 +885,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 02f6f171787c81ef2f3742b6c2844c3aaa39a70b5ebbc5905394fce9271b96ae
+        checksum/config: b19d016d83e501c934c7d4078cd4641848bbfd027335864c36764c550ad37c89
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-eks-fargate-monitoring
@@ -999,7 +999,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 961097c0dc95c3ef94243f0c243644f196f62210b671cede0baaa3f4626d9706
+        checksum/config: 2c0758ea347c6db4400de09be613e3130dcff6cff037e3c55139e56c47fff1b1
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent-eks-fargate
