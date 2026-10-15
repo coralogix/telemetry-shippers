@@ -2,13 +2,9 @@
 
 ## ecs-ec2-integration
 
-### 0.0.17 / 2026-10-14
-
-* [FIX] Use the public JFrog supervised CDOT image by default so ECS tasks can pull it without Docker Hub credentials.
-
 ### 0.0.16 / 2026-10-13
 
-* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.16.0`. ([#1063](https://github.com/coralogix/telemetry-shippers/pull/1063))
+* [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.16.0`. (PR pending)
 
 ### 0.0.15 / 2026-09-23
 
