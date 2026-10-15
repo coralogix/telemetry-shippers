@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.359 / 2026-10-15
+
+- [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.161.0 (operator chart `0.124.1` -> `0.126.0`,java `2.31.1` -> `2.32.0`,python `0.66b0` -> `0.66b1`).
+
 ### v0.0.358 / 2026-10-13
 
 - [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.28
