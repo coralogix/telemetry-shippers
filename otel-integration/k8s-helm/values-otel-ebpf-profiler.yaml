@@ -1,0 +1,24 @@
+# Profiling via the otelcol-ebpf-profiler distribution (`opentelemetry-ebpf-profiler`
+# sub-chart), i.e. the configuration the Coralogix wizard generates today.
+# The legacy `coralogix-ebpf-profiler` path is covered by values-ebpf-profiler.yaml.
+opentelemetry-agent:
+  enabled: true
+
+opentelemetry-ebpf-profiler:
+  enabled: true
+  presets:
+    otlpExporter:
+      enabled: true
+      endpoint: ${env:K8S_NODE_IP}:4317
+      pipelines:
+        - profiles
+      tls:
+        insecure: true
+    resourceDetection:
+      enabled: true
+    fleetManagement:
+      enabled: true
+      supervisor:
+        enabled: false
+    ebpfProfiler:
+      samplesPerSecond: 20
