@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.361 / 2026-10-20
+
+- [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.161.0 (operator chart `0.126.0` -> `0.126.1`).
+
 ### v0.0.360 / 2026-10-16
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.140.0
