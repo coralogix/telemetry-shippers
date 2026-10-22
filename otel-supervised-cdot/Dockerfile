@@ -3,7 +3,7 @@ ARG COLLECTOR_VERSION=v0.5.7
 ARG SUPERVISOR_VERSION=0.142.0
 
 FROM alpine:3.22 AS certs
-RUN apk add --no-cache ca-certificates=20260909-r0 \
+RUN apk add --no-cache 'ca-certificates>=20261020-r0' \
     && mkdir -p /etc/otelcol-contrib/supervisor-data
 
 # DL3006: Always tag the version of an image explicitly.
@@ -13,6 +13,9 @@ FROM cgx.jfrog.io/coralogix-docker-images/cx-opampsupervisor:${SUPERVISOR_VERSIO
 # DL3006: Always tag the version of an image explicitly.
 # hadolint ignore=DL3006
 FROM coralogixrepo/coralogix-otel-collector:${COLLECTOR_VERSION}
+
+# Refresh individual trust-store certificates as well as the bundle copied below.
+RUN apk add --no-cache 'ca-certificates>=20261020-r0'
 
 USER 10001:10001
 

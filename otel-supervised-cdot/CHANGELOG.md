@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.17.0 - 2026-10-22
+
+- [chore] Bump supervised CDOT image to version 0.17.0.
+
 ## v0.16.0 - 2026-10-13
 
 - [chore] Bump supervised CDOT image to version 0.16.0.

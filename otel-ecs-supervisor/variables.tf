@@ -44,7 +44,7 @@ variable "subsystem_name" {
 variable "container_image" {
   description = "Container image for the supervisor"
   type        = string
-  default     = "cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.16.0"
+  default     = "cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.17.0"
 }
 
 variable "use_entrypoint_script" {
