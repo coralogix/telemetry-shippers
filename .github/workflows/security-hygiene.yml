@@ -91,3 +91,6 @@ jobs:
 
       - name: Check high-risk preset renders
         run: .github/scripts/check-helm-golden-renders.sh
+
+      - name: Validate rendered collector configs against the pinned image
+        run: .github/scripts/check-collector-config-validity.sh
