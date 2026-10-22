@@ -1,4 +1,8 @@
+# CVE-2026-111943: copy in a fixed ca-certificates bundle (drops the compromised eMudhra roots).
+FROM prom/prometheus:v3.13.5 AS certs
+
 FROM prom/prometheus:v2.37.1
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY prometheus.yml /etc/prometheus/
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 # DL3002: Last USER should not be root.

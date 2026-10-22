@@ -17,9 +17,13 @@ LABEL Description="Multi-Arch FluentD image for Coralogix integration" \
 USER root
 
 # Installing dependencies and plugins
+# CVE-2026-111943: take Debian's fixed ca-certificates (drops the compromised eMudhra roots).
 # DL3028: Pin versions in gem install.
 # hadolint ignore=DL3028
-RUN gem install elasticsearch -v 8.11 \
+RUN apt-get update \
+      && apt-get install -y --no-install-recommends ca-certificates=20250419~deb12u2 \
+      && rm -rf /var/lib/apt/lists/* \
+      && gem install elasticsearch -v 8.11 \
       && gem install fluent-plugin-coralogix \
         fluent-plugin-parser-cri \
         fluent-plugin-sampling-filter \
