@@ -2,6 +2,11 @@
 
 ## ecs-ec2-integration
 
+### 0.0.17 / 2026-10-22
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.17.0`.
+* [FIX] Removed the deprecated `reports_remote_config` setting for compatibility with the updated Supervisor.
+
 ### 0.0.16 / 2026-10-13
 
 * [IMPROVEMENT] Updated the default supervised CDOT image to `coralogixrepo/coralogix-otel-supervised-cdot:v0.16.0`. (PR pending)
