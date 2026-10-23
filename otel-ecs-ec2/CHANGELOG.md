@@ -1,6 +1,6 @@
 # Changelog
 
-### 0.0.62 / 2026-10-23
+### v0.0.62 / 2026-10-23
 
 * [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.18` (aligned in Helm values, example manifest, Terraform `image_version` default, and Makefile `CDOT_IMAGE` default).
 
