@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.18 / 2026-10-23
+
+* [FIX] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.17.1`, which bundles CDOT v0.5.18 (built with Go 1.26.10 and Alpine `ca-certificates` 20261020-r0) so the collector rejects the compromised eMudhra intermediates (CVE-2026-111943).
+
 ### 0.0.17 / 2026-10-22
 
 * [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.17.0`.
