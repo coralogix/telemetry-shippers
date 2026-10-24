@@ -33,7 +33,7 @@ opentelemetry-agent:
       provider: "on-prem"
     # Removes a subset of attributes to be sent to Coralogix. It uses a denylist policy.
     reduceResourceAttributes:
-      enabled: true
+      enabled: false
       pipelines: ["all"]
       provider: "on-prem"
     macosSystemLogs:
