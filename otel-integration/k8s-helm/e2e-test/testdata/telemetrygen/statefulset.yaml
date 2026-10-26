@@ -21,7 +21,7 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       containers:
-      - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+      - image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.163.0
         name: telemetrygen
         env:
         - name: K8S_NODE_IP
