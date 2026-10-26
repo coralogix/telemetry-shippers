@@ -7,7 +7,7 @@ ARG WIN_BASE_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
 # Build stage: cross-compile telemetrygen for Windows
 # DL3029: Do not use --platform= with FROM.
 # hadolint ignore=DL3029
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
 RUN apk add --no-cache git=2.54.0-r0
 ARG TELEMETRYGEN_VERSION
 WORKDIR /src
