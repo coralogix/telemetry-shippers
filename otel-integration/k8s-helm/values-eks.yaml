@@ -1,0 +1,22 @@
+# EKS on EC2: use with IRSA or EKS Pod Identity granting ec2:DescribeInstances.
+# See README.md, "EKS metadata without IMDS access".
+opentelemetry-cluster-collector:
+  config:
+    processors:
+      resourcedetection/region:
+        eks:
+          resource_attributes:
+            host.id:
+              enabled: true
+            host.name:
+              enabled: true
+            host.type:
+              enabled: true
+            host.image.id:
+              enabled: true
+            cloud.account.id:
+              enabled: true
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true

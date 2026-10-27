@@ -70,6 +70,34 @@ The OpenTelemetry Cluster Collector retrieves data from the cluster level, inclu
 
 - [Integration Presets](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm#integration-presets). This chart provides support to integrate with various applications (e.g. mysql) running on your cluster to monitor them out of the box.
 
+## EKS metadata without IMDS access
+
+On EKS EC2 nodes, the cluster Collector deployment can use the EKS resource detector to retrieve its node's EC2 metadata through the AWS API when IMDS is unavailable at hop limit 1. Apply `values-eks.yaml` alongside your installation values:
+
+```bash
+helm upgrade --install otel-coralogix-integration ./otel-integration/k8s-helm \
+  --namespace coralogix --create-namespace \
+  -f ./otel-integration/k8s-helm/values-eks.yaml \
+  -f ./values.yaml
+```
+
+Keep your existing Coralogix domain, cluster name, secret and other settings in `values.yaml`. Later values files take precedence.
+
+Assign the cluster Collector ServiceAccount an IAM role with `ec2:DescribeInstances` using EKS Pod Identity or IRSA. The default ServiceAccount is `coralogix-opentelemetry-collector`; use your configured name and namespace if different. The overlay enables `host.id`, `host.name`, `host.type`, `host.image.id`, `cloud.account.id`, `cloud.region` and `cloud.availability_zone`. Assigning a role alone does not enable these fields. `DescribeInstances` requires `Resource: "*"`; restrict the role's trust to the intended cluster workload. Allow network access to the EC2 API and the selected identity service.
+
+For IRSA, add the role annotation to your installation values:
+
+```yaml
+opentelemetry-cluster-collector:
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/coralogix-cluster-metadata
+```
+
+For Pod Identity, install the EKS Pod Identity Agent and create an association for the cluster Collector ServiceAccount. No role annotation is needed. See the AWS setup instructions for [Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-association.html) or [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html).
+
+This configuration targets EKS on EC2, not ECS or Fargate. It preserves the default DaemonSet-to-Coralogix application flow and the cluster deployment's pipelines. The detector identifies the node running the cluster Collector; it does not identify every node represented in cluster-wide data. No additional Kubernetes attributes processor or host transformation is required for this lookup. The detected `host.name` is the EC2 private DNS name, including when the operating system hostname was baked into an AMI.
+
 ## Next steps
 
 View our **basic configuration** instructions [here](https://coralogix.com/docs/opentelemetry/kubernetes-observability/kubernetes-complete-observability-basic-configuration/).
