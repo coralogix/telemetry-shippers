@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.18.0 - 2026-10-27
+
+- [chore] Bump Collector and Supervisor to version 0.164.0.
+
 ## v0.17.0 - 2026-10-22
 
 - [chore] Bump supervised collector image to version 0.17.0.
