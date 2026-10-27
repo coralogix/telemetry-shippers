@@ -4,7 +4,7 @@
 
 ### 0.0.19 / 2026-10-27
 
-* [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.18.0`, which bundles Supervisor 0.164.0. (PR pending)
+* [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.18.0`, which bundles Supervisor 0.164.0. ([#1084](https://github.com/coralogix/telemetry-shippers/pull/1084))
 
 ### 0.0.18 / 2026-10-23
 
