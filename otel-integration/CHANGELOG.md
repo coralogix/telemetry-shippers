@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.365 / 2026-10-27
+
+- [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.162.0 (operator chart `0.126.2` -> `0.127.0`).
+
 ### v0.0.364 / 2026-10-26
 
 - [Fix] Remove misleading `hostNetwork` / `dnsPolicy` keys from the Windows values files (`values-windows.yaml`, `values-windows-tailsampling.yaml`). The Windows agent DaemonSet template renders `hostNetwork` only when `isWindows` is false and the Windows values set `isWindows: true`, so `hostNetwork: true` never rendered for Windows; `dnsPolicy: "ClusterFirstWithHostNet"` did render, but on a non-host-network pod it behaves identically to the default `ClusterFirst`. Removing it changes the rendered Windows DaemonSet and triggers a rolling restart of the Windows agent pods on upgrade, with no DNS behavior change (CDS-3201).
