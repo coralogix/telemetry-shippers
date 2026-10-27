@@ -1,0 +1,39 @@
+dependencies:
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-operator
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: 0.127.0
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: coralogix-ebpf-profiler
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts
+  version: 0.0.16
+- name: opentelemetry-collector
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 0.142.0
+- name: opentelemetry-ebpf-instrumentation
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts
+  version: 0.1.29
+- name: coralogix-operator
+  repository: https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+  version: 2.1.0
+digest: sha256:370a9e62c0e034af77b38b5dda0f4f5ea9594ff5544fb8f811b636e0c0c46168
+generated: "2026-10-27T15:07:59.413966+01:00"
