@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.63 / 2026-10-27
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.142.0`.
+
+#### Changes from opentelemetry-collector 0.142.0:
+- [Feat] Bump the OpenTelemetry Collector image to v0.164.0.
+
 ### v0.0.62 / 2026-10-23
 
 * [CHANGE] Bump Coralogix OTEL collector image to `coralogixrepo/coralogix-otel-collector:v0.5.18` (aligned in Helm values, example manifest, Terraform `image_version` default, and Makefile `CDOT_IMAGE` default).
