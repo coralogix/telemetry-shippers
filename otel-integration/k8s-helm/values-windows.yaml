@@ -78,8 +78,6 @@ opentelemetry-agent-windows:
     name: ""
     # Sets the priority value of the priority class.
     priorityValue: 1000000000
-  hostNetwork: true
-  dnsPolicy: "ClusterFirstWithHostNet"
 
   presets:
     metadata:
