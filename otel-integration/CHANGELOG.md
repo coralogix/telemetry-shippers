@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.368 / 2026-10-27
+
+- [Feature] Add `values-eks.yaml` to enable EC2 resource metadata lookup for the cluster Collector on EKS at IMDS hop limit 1, using IRSA or EKS Pod Identity with `ec2:DescribeInstances` permission (CX-63817).
+
 ### v0.0.366 / 2026-10-27
 
 - [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.29
