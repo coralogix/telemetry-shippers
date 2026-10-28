@@ -85,6 +85,8 @@ Keep your existing Coralogix domain, cluster name, secret and other settings in 
 
 Assign the cluster Collector ServiceAccount an IAM role with `ec2:DescribeInstances` using EKS Pod Identity or IRSA. The default ServiceAccount is `coralogix-opentelemetry-collector`; use your configured name and namespace if different. The overlay enables `host.id`, `host.name`, `host.type`, `host.image.id`, `cloud.account.id`, `cloud.region` and `cloud.availability_zone`. Assigning a role alone does not enable these fields. `DescribeInstances` requires `Resource: "*"`; restrict the role's trust to the intended cluster workload. Allow network access to the EC2 API and the selected identity service.
 
+The overlay sets `resourcedetection/region.timeout` to `15s` to allow time for Kubernetes and EC2 API requests. Increase this value if the detector reports deadline errors.
+
 For IRSA, add the role annotation to your installation values:
 
 ```yaml

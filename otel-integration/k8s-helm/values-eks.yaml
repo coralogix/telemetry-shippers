@@ -4,6 +4,7 @@ opentelemetry-cluster-collector:
   config:
     processors:
       resourcedetection/region:
+        timeout: 15s
         eks:
           resource_attributes:
             host.id:
