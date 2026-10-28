@@ -198,6 +198,27 @@ head=$(git -C "$workdir/readme" rev-parse HEAD)
 out=$(run_filter "$workdir/readme" "$base" "$head")
 assert_eq "readme.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "false"
 
+# Operator bump on master after the PR branched does not run an unrelated PR.
+init_repo "$workdir/stale"
+git -C "$workdir/stale" checkout -q -b pr
+echo "docs" >>"$workdir/stale/otel-integration/k8s-helm/README.md"
+(
+  cd "$workdir/stale"
+  git_commit "readme"
+)
+head=$(git -C "$workdir/stale" rev-parse HEAD)
+git -C "$workdir/stale" checkout -q master
+sed -i.bak 's/version: "0.122.0"/version: "0.123.0"/' \
+  "$workdir/stale/otel-integration/k8s-helm/Chart.yaml"
+rm -f "$workdir/stale/otel-integration/k8s-helm/Chart.yaml.bak"
+(
+  cd "$workdir/stale"
+  git_commit "operator chart on master"
+)
+base=$(git -C "$workdir/stale" rev-parse HEAD)
+out=$(run_filter "$workdir/stale" "$base" "$head")
+assert_eq "stale.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "false"
+
 if [[ "$FAILS" -ne 0 ]]; then
   echo "${FAILS} assertion(s) failed" >&2
   exit 1

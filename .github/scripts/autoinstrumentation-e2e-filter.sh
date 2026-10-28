@@ -92,6 +92,10 @@ fi
 
 cd "$REPO_ROOT"
 
+# Compare snapshots from the common ancestor, like the three-dot diffs below,
+# so base-branch changes after the PR diverged do not count as PR changes.
+MERGE_BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+
 changed_files=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
 harness_changed=false
 while IFS= read -r path; do
@@ -122,7 +126,7 @@ operator_chart_version() {
   '
 }
 
-if [[ "$(operator_chart_version "$BASE_SHA")" != "$(operator_chart_version "$HEAD_SHA")" ]]; then
+if [[ "$(operator_chart_version "$MERGE_BASE")" != "$(operator_chart_version "$HEAD_SHA")" ]]; then
   emit_all
   exit 0
 fi
@@ -139,7 +143,7 @@ autoinstr_config_without_images() {
   '
 }
 
-if [[ "$(autoinstr_config_without_images "$BASE_SHA")" != "$(autoinstr_config_without_images "$HEAD_SHA")" ]]; then
+if [[ "$(autoinstr_config_without_images "$MERGE_BASE")" != "$(autoinstr_config_without_images "$HEAD_SHA")" ]]; then
   emit_all
   exit 0
 fi
