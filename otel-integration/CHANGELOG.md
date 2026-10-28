@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.370 / 2026-10-28
+
+- [Chore] Bump the `coralogix-operator` subchart dependency from `2.1.0` to `2.17.0` (operator v2.17.0, chart published to coralogix-charts-virtual) [CDS-3286]. e2e render/upgrade testing in staging is still pending due to possible CRD/schema changes between 2.1.0 and 2.17.0.
+
 ### v0.0.369 / 2026-10-28
 
 - [Fix] Remove the duplicate lowercase `apachehttpd` image pin from the autoinstrumentation webhook config. Since OpenTelemetry Operator v0.160.0 ([#5619](https://github.com/open-telemetry/opentelemetry-operator/pull/5619)) `--config-file` honors the Instrumentation json tags, so `apacheHttpd` and the `OTEL_NODE_IP` `valueFrom` env are loaded as written.
