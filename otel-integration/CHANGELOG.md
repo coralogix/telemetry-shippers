@@ -2,9 +2,13 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.368 / 2026-10-27
+### v0.0.369 / 2026-10-28
 
 - [Feature] Add `values-eks.yaml` to enable EC2 resource metadata lookup for the cluster Collector on EKS at IMDS hop limit 1, using IRSA or EKS Pod Identity with `ec2:DescribeInstances` permission (CX-63817).
+
+### v0.0.368 / 2026-10-28
+
+- [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.162.0 (operator chart `0.127.0` -> `0.127.1`).
 
 ### v0.0.367 / 2026-10-27
 
