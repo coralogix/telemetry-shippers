@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.369"
+  version: "0.0.370"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -45,7 +45,7 @@ opentelemetry-autoinstrumentation:
       instrumentations:
         spec:
           # Common exporter endpoint. Language-specific env below can override it.
-          # Apache and nginx also use this endpoint (expanded via Spec env on the attach init container).
+          # Apache and nginx also use this endpoint (expanded on the attach init container).
           exporter:
             endpoint: http://$(OTEL_NODE_IP):4317
           propagators:
@@ -54,18 +54,14 @@ opentelemetry-autoinstrumentation:
           sampler:
             type: parentbased_traceidratio
             argument: "1.0"
-          # OTEL_NODE_IP sends telemetry to the agent DaemonSet on the same node as the workload pod.
+          # $(OTEL_NODE_IP) sends telemetry to the agent DaemonSet on the same node as the workload pod.
+          # The operator sets OTEL_NODE_IP (status.hostIP) on every instrumented container, and on the
+          # Apache/nginx attach init container so the endpoint is expanded before the agent config is written.
           # These environment variables are injected into all auto-instrumented pods, including
           # SDK-only injection (instrumentation.opentelemetry.io/inject-sdk: "true").
           # SDK-only injection uses only these common env vars plus the exporter/sampler config above,
           # without adding init containers or language-specific agents.
-          # For Apache/nginx, Spec env is also forwarded to the attach init container so kubelet can
-          # expand $(OTEL_NODE_IP) in the exporter endpoint before the agent config is written.
           env:
-            - name: OTEL_NODE_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
             - name: OTEL_TRACES_SAMPLER
               value: always_on
             - name: OTEL_LOGS_EXPORTER
@@ -97,10 +93,6 @@ opentelemetry-autoinstrumentation:
           apacheHttpd:
             # Apache HTTPD and nginx share the same autoinstrumentation image.
             # Supported Nginx versions: 1.22.0, 1.23.0, and 1.23.1.
-            image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4
-          # yaml.v2 (operator --config-file) lowercases the field to apachehttpd and
-          # does not honor the CRD json tag apacheHttpd. Keep both spellings in sync.
-          apachehttpd:
             image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:1.0.4
           nginx:
             # Uses the Apache HTTPD autoinstrumentation image by design.

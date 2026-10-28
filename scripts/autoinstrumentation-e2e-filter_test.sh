@@ -48,6 +48,15 @@ EOF
   echo "run" >"$dir/otel-integration/k8s-helm/e2e-test/run-all.sh"
   echo "filter" >"$dir/.github/scripts/autoinstrumentation-e2e-filter.sh"
   echo "wf" >"$dir/.github/workflows/otel-integration-e2e-test.yml"
+  cat >"$dir/otel-integration/k8s-helm/Chart.yaml" <<'EOF'
+dependencies:
+  - name: opentelemetry-collector
+    alias: opentelemetry-agent
+    version: "0.138.1"
+  - name: opentelemetry-operator
+    alias: opentelemetry-autoinstrumentation
+    version: "0.122.0"
+EOF
   git -C "$dir" init -q
   git -C "$dir" checkout -q -b master
   (
@@ -147,6 +156,36 @@ assert_eq "exporter.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "true"
 assert_eq "exporter.go_run" "$(echo "$out" | awk -F= '/^go_run=/{print $2}')" \
   "^TestE2E_InstrumentationWebhookNoCRDs$"
 
+# Operator Helm chart version change runs every language.
+init_repo "$workdir/operator"
+base=$(git -C "$workdir/operator" rev-parse HEAD)
+sed -i.bak 's/version: "0.122.0"/version: "0.123.0"/' \
+  "$workdir/operator/otel-integration/k8s-helm/Chart.yaml"
+rm -f "$workdir/operator/otel-integration/k8s-helm/Chart.yaml.bak"
+(
+  cd "$workdir/operator"
+  git_commit "operator chart"
+)
+head=$(git -C "$workdir/operator" rev-parse HEAD)
+out=$(run_filter "$workdir/operator" "$base" "$head")
+assert_eq "operator.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "true"
+assert_eq "operator.go_run" "$(echo "$out" | awk -F= '/^go_run=/{print $2}')" \
+  "^TestE2E_InstrumentationWebhookNoCRDs$"
+
+# Collector subchart bump does not run the webhook E2E.
+init_repo "$workdir/collector"
+base=$(git -C "$workdir/collector" rev-parse HEAD)
+sed -i.bak 's/version: "0.138.1"/version: "0.138.2"/' \
+  "$workdir/collector/otel-integration/k8s-helm/Chart.yaml"
+rm -f "$workdir/collector/otel-integration/k8s-helm/Chart.yaml.bak"
+(
+  cd "$workdir/collector"
+  git_commit "collector chart"
+)
+head=$(git -C "$workdir/collector" rev-parse HEAD)
+out=$(run_filter "$workdir/collector" "$base" "$head")
+assert_eq "collector.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "false"
+
 # README-only does not run.
 init_repo "$workdir/readme"
 base=$(git -C "$workdir/readme" rev-parse HEAD)
@@ -158,6 +197,27 @@ echo "docs" >>"$workdir/readme/otel-integration/k8s-helm/README.md"
 head=$(git -C "$workdir/readme" rev-parse HEAD)
 out=$(run_filter "$workdir/readme" "$base" "$head")
 assert_eq "readme.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "false"
+
+# Operator bump on master after the PR branched does not run an unrelated PR.
+init_repo "$workdir/stale"
+git -C "$workdir/stale" checkout -q -b pr
+echo "docs" >>"$workdir/stale/otel-integration/k8s-helm/README.md"
+(
+  cd "$workdir/stale"
+  git_commit "readme"
+)
+head=$(git -C "$workdir/stale" rev-parse HEAD)
+git -C "$workdir/stale" checkout -q master
+sed -i.bak 's/version: "0.122.0"/version: "0.123.0"/' \
+  "$workdir/stale/otel-integration/k8s-helm/Chart.yaml"
+rm -f "$workdir/stale/otel-integration/k8s-helm/Chart.yaml.bak"
+(
+  cd "$workdir/stale"
+  git_commit "operator chart on master"
+)
+base=$(git -C "$workdir/stale" rev-parse HEAD)
+out=$(run_filter "$workdir/stale" "$base" "$head")
+assert_eq "stale.run" "$(echo "$out" | awk -F= '/^run=/{print $2}')" "false"
 
 if [[ "$FAILS" -ne 0 ]]; then
   echo "${FAILS} assertion(s) failed" >&2
