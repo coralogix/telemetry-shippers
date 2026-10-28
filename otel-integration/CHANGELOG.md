@@ -2,6 +2,11 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.369 / 2026-10-28
+
+- [Fix] Remove the duplicate lowercase `apachehttpd` image pin from the autoinstrumentation webhook config. Since OpenTelemetry Operator v0.160.0 ([#5619](https://github.com/open-telemetry/opentelemetry-operator/pull/5619)) `--config-file` honors the Instrumentation json tags, so `apacheHttpd` and the `OTEL_NODE_IP` `valueFrom` env are loaded as written.
+- [Chore] Remove the `OTEL_NODE_IP` (`status.hostIP`) entry from the autoinstrumentation webhook `env`. The operator already sets `OTEL_NODE_IP` on every instrumented container and on the Apache/nginx attach init container, so `http://$(OTEL_NODE_IP):4317` keeps resolving to the node's agent.
+
 ### v0.0.368 / 2026-10-28
 
 - [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.162.0 (operator chart `0.127.0` -> `0.127.1`).
