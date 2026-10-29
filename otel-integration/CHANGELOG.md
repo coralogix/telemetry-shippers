@@ -2,6 +2,16 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.371 / 2026-10-29
+
+- [Chore] Bump `coralogix-operator` subchart from `2.1.0` to `2.17.0` (operator [v2.17.0](https://github.com/coralogix/coralogix-operator/releases/tag/v2.17.0)). The subchart stays disabled by default (`coralogix-operator.enabled: false`). New CRDs and RBAC rules ship with it: `AlertSet`, `TCORumPolicies`, `QuotaAllocationRuleSet`, `ConfigurationGroup`, `AIEvaluation` and `AICustomEvaluation`. There is also an optional FIPS image (`coralogix-operator.coralogixOperator.image.fips: true`). See the [operator docs](https://github.com/coralogix/coralogix-operator#readme) and the [full changelog](https://github.com/coralogix/coralogix-operator/compare/v2.1.0...v2.17.0).
+  - Potentially breaking for users who enable the operator:
+    - `TCOLogsPolicies` / `TCOTracesPolicies` targets must now set `priority` ([#549](https://github.com/coralogix/coralogix-operator/pull/549)), and policy-level `priority` is mutually exclusive with `targets`.
+    - `Alert` resources that set a notification group on a phantom alert are now rejected ([#539](https://github.com/coralogix/coralogix-operator/pull/539)).
+    - `Group` members are resolved through the Users OpenAPI instead of SCIM ([#588](https://github.com/coralogix/coralogix-operator/pull/588)). The operator API key needs permission to read users.
+    - The operator no longer uses gRPC and talks to the Coralogix REST APIs only ([#548](https://github.com/coralogix/coralogix-operator/pull/548)). Egress rules that only allowed the gRPC endpoints must allow the REST API endpoints instead.
+    - The `90d` SLO `timeFrame` is deprecated ([#511](https://github.com/coralogix/coralogix-operator/pull/511)).
+
 ### v0.0.370 / 2026-10-29
 
 - [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.162.0 (operator chart `0.127.1` -> `0.128.0`).
