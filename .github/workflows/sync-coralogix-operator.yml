@@ -1,0 +1,188 @@
+# Bumps the coralogix-operator subchart of otel-integration when a new
+# coralogix-operator version is released.
+#
+# Trigger contract: after each release, the coralogix/coralogix-operator
+# Release workflow sends a repository_dispatch with
+#   event_type:     coralogix-operator-release
+#   client_payload: {version: "X.Y.Z", release_url: "https://github.com/coralogix/coralogix-operator/releases/tag/vX.Y.Z"}
+# workflow_dispatch takes the same fields as inputs for manual runs.
+name: Sync Coralogix Operator Version
+
+on:
+  repository_dispatch:
+    types: [coralogix-operator-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New coralogix-operator chart version (e.g. 2.17.0)'
+        required: true
+        type: string
+      release_url:
+        description: 'Release notes URL (default: the GitHub release for the version)'
+        required: false
+        type: string
+
+concurrency:
+  group: sync-coralogix-operator
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          # Match the Helm golden renders check in security-hygiene.yml.
+          version: v3.12.1
+
+      - name: Get version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_RELEASE_URL: ${{ inputs.release_url }}
+          PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
+          PAYLOAD_RELEASE_URL: ${{ github.event.client_payload.release_url }}
+        run: |
+          if [[ "$EVENT_NAME" == "repository_dispatch" ]]; then
+            VERSION="$PAYLOAD_VERSION"
+            RELEASE_URL="$PAYLOAD_RELEASE_URL"
+          else
+            VERSION="$INPUT_VERSION"
+            RELEASE_URL="$INPUT_RELEASE_URL"
+          fi
+          # Validate untrusted fields at this single trust boundary. The strict
+          # patterns also forbid newlines, so a payload cannot forge extra
+          # $GITHUB_OUTPUT lines nor inject into the downstream run: steps.
+          SEMVER_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
+          if [[ ! "$VERSION" =~ $SEMVER_RE ]]; then
+            echo "::error::Invalid version '$VERSION' - expected semver like 1.2.3"
+            exit 1
+          fi
+          EXPECTED_URL="https://github.com/coralogix/coralogix-operator/releases/tag/v${VERSION}"
+          if [[ -z "$RELEASE_URL" ]]; then
+            RELEASE_URL="$EXPECTED_URL"
+          elif [[ "$RELEASE_URL" != "$EXPECTED_URL" ]]; then
+            echo "::error::Invalid release URL '$RELEASE_URL' - expected $EXPECTED_URL"
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Check pinned version
+        id: current
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          CURRENT=$(yq '.dependencies[] | select(.name == "coralogix-operator") | .version' otel-integration/k8s-helm/Chart.yaml | head -1 | tr -d '"')
+          echo "Pinned coralogix-operator: $CURRENT, target: $VERSION"
+          echo "value=$CURRENT" >> "$GITHUB_OUTPUT"
+          HIGHEST=$(printf '%s\n' "$CURRENT" "$VERSION" | sort -V | tail -1)
+          if [[ "$HIGHEST" == "$CURRENT" ]]; then
+            echo "::notice::coralogix-operator is already at $CURRENT (>= $VERSION) - skipping"
+            echo "status=skip" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=bump" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The dispatch arrives right after the JFrog upload, so give the virtual
+      # repository index a few minutes to pick the new chart up.
+      - name: Verify chart is published
+        if: steps.current.outputs.status == 'bump'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          helm repo add coralogix-charts-virtual https://cgx.jfrog.io/artifactory/coralogix-charts-virtual
+          for attempt in 1 2 3 4 5 6; do
+            helm repo update coralogix-charts-virtual >/dev/null
+            if helm show chart coralogix-charts-virtual/coralogix-operator --version "$VERSION"; then
+              exit 0
+            fi
+            echo "coralogix-operator $VERSION not found (attempt $attempt/6), retrying in 30s..."
+            sleep 30
+          done
+          echo "::error::coralogix-operator chart $VERSION is not published in coralogix-charts-virtual"
+          exit 1
+
+      - name: Close stale bump PRs
+        if: steps.current.outputs.status == 'bump'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          # Find and close PRs for OLDER versions only (semver comparison)
+          gh pr list --label coralogix-operator-bump --state open --json number,title | jq -c '.[]' | while read -r row; do
+            PR_NUM=$(echo "$row" | jq -r '.number')
+            PR_VERSION=$(echo "$row" | jq -r '.title' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+$' || true)
+
+            [[ -z "$PR_VERSION" || "$PR_VERSION" == "$VERSION" ]] && continue
+
+            HIGHEST=$(printf '%s\n' "$PR_VERSION" "$VERSION" | sort -V | tail -1)
+            if [[ "$HIGHEST" == "$VERSION" ]]; then
+              echo "Closing stale PR #$PR_NUM (v$PR_VERSION < v$VERSION)"
+              gh pr close "$PR_NUM" --comment "🔄 Superseded by v${VERSION}." || true
+            fi
+          done
+
+      - name: Run bump script
+        if: steps.current.outputs.status == 'bump'
+        id: bump
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          RELEASE_URL: ${{ steps.version.outputs.release_url }}
+        run: |
+          ./scripts/bump-coralogix-operator-version.sh \
+            --version "$VERSION" \
+            --release-url "$RELEASE_URL" \
+            --summary-file /tmp/pr-body.md
+
+      - name: Build PR body
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          RELEASE_URL: ${{ steps.version.outputs.release_url }}
+        run: |
+          {
+            echo ""
+            echo "**Source:** $RELEASE_URL"
+            echo ""
+            echo "---"
+            echo "The \`otel-integration\` chart version was bumped from \`master\` at the time of this run. If another \`otel-integration\` PR merges first, rebase and re-run this workflow (or re-bump the chart version, \`global.version\`, CHANGELOG and golden renders by hand)."
+          } >> /tmp/pr-body.md
+
+      - name: Ensure label exists
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create coralogix-operator-bump --description "Auto-created for coralogix-operator sync" --color "0E8A16" 2>/dev/null || true
+
+      - name: Create App token
+        if: steps.bump.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Create signed pull request
+        if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          sign-commits: true
+          base: master
+          branch: chore/bump-coralogix-operator-${{ steps.version.outputs.value }}
+          commit-message: "chore: bump coralogix-operator to ${{ steps.version.outputs.value }}"
+          title: "chore: bump coralogix-operator to ${{ steps.version.outputs.value }}"
+          body-path: /tmp/pr-body.md
+          labels: coralogix-operator-bump
