@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.372 / 2026-11-02
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.142.1
+
+#### Changes from opentelemetry-collector 0.142.1:
+- [Feat] `presets.semconv` now backfills `rpc.grpc.status_code` (int) from the string gRPC status in `rpc.response.status_code` or `rpc.status_code` for gRPC spans, so APM error tracking works with newer RPC semantic conventions.
+
 ### v0.0.371 / 2026-10-29
 
 - [Chore] Bump `coralogix-operator` subchart from `2.1.0` to `2.17.0` (operator [v2.17.0](https://github.com/coralogix/coralogix-operator/releases/tag/v2.17.0)). The subchart stays disabled by default (`coralogix-operator.enabled: false`). New CRDs and RBAC rules ship with it: `AlertSet`, `TCORumPolicies`, `QuotaAllocationRuleSet`, `ConfigurationGroup`, `AIEvaluation` and `AICustomEvaluation`. There is also an optional FIPS image (`coralogix-operator.coralogixOperator.image.fips: true`). See the [operator docs](https://github.com/coralogix/coralogix-operator#readme) and the [full changelog](https://github.com/coralogix/coralogix-operator/compare/v2.1.0...v2.17.0).
