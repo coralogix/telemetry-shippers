@@ -6,7 +6,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.142.1
+    helm.sh/chart: opentelemetry-agent-0.142.2
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.164.0"
@@ -19,7 +19,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.142.1
+    helm.sh/chart: opentelemetry-agent-0.142.2
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.164.0"
@@ -166,14 +166,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.64
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.65
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.64
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.65
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.64
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.65
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -193,13 +193,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.64
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.65
       coralogix/resource_catalog:
         application_name: resource
         domain: eu1.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.64
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.65
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -224,7 +224,7 @@ data:
           non_identifying_attributes:
             cx.agent.type: agent
             cx.cluster.name: ''
-            helm.chart.opentelemetry-agent.version: 0.142.1
+            helm.chart.opentelemetry-agent.version: 0.142.2
         capabilities:
           accepts_restart_command: false
         reports_raw_config: true
@@ -324,8 +324,7 @@ data:
         trace_statements:
         - context: resource
           statements:
-          - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
-            "deployment.environment.name"])
+          - keep_keys(resource.attributes, ["service.name","service.namespace","cx.cluster.name","k8s.cluster.name","host.name","deployment.environment.name","deployment.environment.type"])
       transform/db:
         error_mode: silent
         trace_statements:
@@ -337,8 +336,7 @@ data:
         trace_statements:
         - context: resource
           statements:
-          - keep_keys(resource.attributes, ["service.name", "k8s.cluster.name", "host.name",
-            "deployment.environment.name"])
+          - keep_keys(resource.attributes, ["service.name","service.namespace","cx.cluster.name","k8s.cluster.name","host.name","deployment.environment.name","deployment.environment.type"])
         - context: span
           statements:
           - set(attributes["db.system"], attributes["db.system.name"]) where attributes["db.system.name"]
@@ -574,6 +572,21 @@ data:
           - set(datapoint.attributes["status.code"], "STATUS_CODE_UNSET") where datapoint.attributes["status.code"]
             == nil and instrumentation_scope.name == "spanmetricsconnector" and (datapoint.attributes["otel.status_code"]
             == "UNSET" or datapoint.attributes["otel.status_code"] == nil)
+        trace_statements:
+        - context: resource
+          statements:
+          - set(resource.attributes["service.namespace"], resource.attributes["k8s.namespace.name"])
+            where resource.attributes["service.namespace"] == nil and resource.attributes["k8s.namespace.name"]
+            != nil
+          - set(resource.attributes["cx.cluster.name"], resource.attributes["k8s.cluster.name"])
+            where resource.attributes["cx.cluster.name"] == nil and resource.attributes["k8s.cluster.name"]
+            != nil
+          - set(resource.attributes["cx.cluster.name"], resource.attributes["aws.ecs.cluster.name"])
+            where resource.attributes["cx.cluster.name"] == nil and resource.attributes["aws.ecs.cluster.name"]
+            != nil
+          - set(resource.attributes["cx.cluster.name"], resource.attributes["aws.ecs.cluster.arn"])
+            where resource.attributes["cx.cluster.name"] == nil and resource.attributes["aws.ecs.cluster.arn"]
+            != nil
     receivers:
       awsecscontainermetricsd: {}
       filelog:
@@ -853,7 +866,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.142.1
+    helm.sh/chart: opentelemetry-agent-0.142.2
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.164.0"
@@ -869,7 +882,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6e65445c1ee2329e5cf4e7aa5b71dca26a509327bda9f46b2307aad69bdeea0a
+        checksum/config: 616f611c8bf287323a56995bc90a98df8a86054baed52cd3ef0c18712eee439b
         
       labels:
         app.kubernetes.io/name: opentelemetry-agent

@@ -259,6 +259,8 @@ var expectedResourceAttributesSpanmetricsconnector = map[string]string{
 	"k8s.deployment.name":         "",
 	"k8s.job.name":                "",
 	"k8s.statefulset.name":        "",
+	"service.namespace":           "",
+	"cx.cluster.name":             "otel-integration-agent-e2e",
 }
 var expectedResourceAttributesLoadscraper = map[string]string{
 	"k8s.cluster.name":            "otel-integration-agent-e2e",
