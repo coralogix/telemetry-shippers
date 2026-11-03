@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.64 / 2026-11-02
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.142.1`.
+
+#### Changes from opentelemetry-collector 0.142.1:
+- [Feat] `presets.semconv` now backfills `rpc.grpc.status_code` (int) from the string gRPC status in `rpc.response.status_code` or `rpc.status_code` for gRPC spans, so APM error tracking works with newer RPC semantic conventions.
+
 ### v0.0.63 / 2026-10-27
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.142.0`.
