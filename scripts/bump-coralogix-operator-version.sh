@@ -105,7 +105,7 @@ main() {
   local changelog="$REPO_ROOT/otel-integration/CHANGELOG.md"
 
   local current_dep_version
-  current_dep_version=$(yq ".dependencies[] | select(.name == \"$DEPENDENCY_NAME\") | .version" "$chart_yaml" | head -1 | tr -d '"')
+  current_dep_version=$(yq "[.dependencies[] | select(.name == \"$DEPENDENCY_NAME\") | .version][0] // \"\"" "$chart_yaml" | tr -d '"')
   if [[ -z "$current_dep_version" ]]; then
     log_error "No $DEPENDENCY_NAME dependency in $chart_yaml"
     exit 1
@@ -147,7 +147,8 @@ main() {
     echo "- [Chore] Bump the ${DEPENDENCY_NAME} subchart from ${current_dep_version} to ${NEW_VERSION} ([release notes](${RELEASE_URL}))."
     echo ""
   } >"$entry_file"
-  first_version_line=$(grep -En "^### v?[0-9]" "$changelog" | head -1 | cut -d: -f1)
+  # grep -m 1 stops by itself: head closing the pipe early can kill grep with SIGPIPE under pipefail.
+  first_version_line=$(grep -m 1 -En "^### v?[0-9]" "$changelog" | cut -d: -f1)
   if [[ -z "$first_version_line" ]]; then
     log_error "No version header found in $changelog"
     exit 1

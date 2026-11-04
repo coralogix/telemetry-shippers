@@ -82,7 +82,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.value }}
         run: |
-          CURRENT=$(yq '.dependencies[] | select(.name == "coralogix-operator") | .version' otel-integration/k8s-helm/Chart.yaml | head -1 | tr -d '"')
+          CURRENT=$(yq '[.dependencies[] | select(.name == "coralogix-operator") | .version][0] // ""' otel-integration/k8s-helm/Chart.yaml | tr -d '"')
           echo "Pinned coralogix-operator: $CURRENT, target: $VERSION"
           echo "value=$CURRENT" >> "$GITHUB_OUTPUT"
           HIGHEST=$(printf '%s\n' "$CURRENT" "$VERSION" | sort -V | tail -1)
