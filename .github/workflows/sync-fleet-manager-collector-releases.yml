@@ -1,0 +1,177 @@
+name: Sync Fleet Manager Collector releases
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - otel-integration/k8s-helm/Chart.yaml
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Ref before the chart update (defaults to HEAD^)
+        type: string
+        required: false
+      create_pr:
+        description: Create or update the Helm Data PR (false shows a dry run)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-fleet-manager-collector-releases
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      collector_version: ${{ steps.collector_release.outputs.version }}
+    steps:
+      - name: Checkout telemetry-shippers
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Detect Collector chart version change
+        id: chart
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          BASE_REF: ${{ inputs.base_ref }}
+        run: |
+          set -euo pipefail
+          file="otel-integration/k8s-helm/Chart.yaml"
+          base_ref="${GITHUB_EVENT_BEFORE:-${BASE_REF:-HEAD^}}"
+          old_file="$(mktemp)"
+          trap 'rm -f "$old_file"' EXIT
+          git show "$base_ref:$file" > "$old_file"
+          old_version="$(scripts/resolve-collector-chart-version.sh "$old_file")"
+          version="$(scripts/resolve-collector-chart-version.sh "$file")"
+          if [ "$old_version" != "$version" ]; then
+            {
+              echo "old_version=$old_version"
+              echo "version=$version"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Helm
+        if: steps.chart.outputs.version != ''
+        uses: azure/setup-helm@v4
+
+      - name: Detect Collector binary version change
+        id: collector_release
+        if: steps.chart.outputs.version != ''
+        env:
+          OLD_COLLECTOR_CHART_VERSION: ${{ steps.chart.outputs.old_version }}
+          COLLECTOR_CHART_VERSION: ${{ steps.chart.outputs.version }}
+        run: |
+          set -euo pipefail
+          app_version() {
+            helm show chart opentelemetry-collector \
+              --repo https://cgx.jfrog.io/artifactory/coralogix-charts-virtual \
+              --version "$1" | yq -r '.appVersion'
+          }
+          old_version="$(app_version "$OLD_COLLECTOR_CHART_VERSION")"
+          version="$(app_version "$COLLECTOR_CHART_VERSION")"
+          if [ "${old_version#v}" != "${version#v}" ]; then
+            echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+  sync-collector-releases:
+    needs: detect
+    if: needs.detect.outputs.collector_version != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout telemetry-shippers
+        uses: actions/checkout@v4
+
+      - name: Install jq and xxd
+        run: sudo apt-get update && sudo apt-get install -y jq xxd
+
+      - name: Create App token for Fleet Manager Helm Data
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.ECO_SYSTEM_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: coralogix
+          repositories: fleet-manager-helm-data
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout Fleet Manager Helm Data
+        uses: actions/checkout@v4
+        with:
+          repository: coralogix/fleet-manager-helm-data
+          ref: master
+          path: fleet-manager-helm-data
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Carry forward pending Collector releases
+        run: |
+          set -euo pipefail
+          repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
+          branch="bot/sync-fleet-manager-collector-releases"
+          if git -C "$repo_dir" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            git -C "$repo_dir" fetch origin "$branch"
+            merge_base="$(git -C "$repo_dir" merge-base HEAD FETCH_HEAD)"
+            if ! git -C "$repo_dir" diff --quiet "$merge_base" FETCH_HEAD -- collector_releases; then
+              git -C "$repo_dir" diff --binary "$merge_base" FETCH_HEAD -- collector_releases |
+                git -C "$repo_dir" apply --3way --index
+            fi
+          fi
+
+      - name: Fetch Collector release data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COLLECTOR_VERSION: ${{ needs.detect.outputs.collector_version }}
+        run: |
+          scripts/update-fleet-manager-collector-releases.sh \
+            "$COLLECTOR_VERSION" "$GITHUB_WORKSPACE/fleet-manager-helm-data/collector_releases"
+
+      - name: Show Collector release changes
+        if: github.event_name == 'workflow_dispatch' && !inputs.create_pr
+        run: |
+          set -euo pipefail
+          repo_dir="$GITHUB_WORKSPACE/fleet-manager-helm-data"
+          git -C "$repo_dir" add -- collector_releases
+          git -C "$repo_dir" --no-pager diff --cached --stat
+          git -C "$repo_dir" --no-pager diff --cached
+
+      - name: Create signed Collector releases PR
+        if: github.event_name != 'workflow_dispatch' || inputs.create_pr
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: fleet-manager-helm-data
+          add-paths: collector_releases
+          sign-commits: true
+          base: master
+          branch: bot/sync-fleet-manager-collector-releases
+          commit-message: Sync Collector release data from telemetry-shippers
+          title: Sync Fleet Manager Collector releases
+          body: |
+            Fetch Collector `${{ needs.detect.outputs.collector_version }}` after a Collector chart update.
+            Update only `collector_releases` using upstream checksum and Sigstore bundle assets.
+
+            Refs CX-66874.
+
+      - name: Enable Collector releases auto-merge
+        if: steps.create-pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
+          HEAD_SHA: ${{ steps.create-pr.outputs.pull-request-head-sha }}
+        run: |
+          gh pr merge "$PR_NUMBER" \
+            -R coralogix/fleet-manager-helm-data \
+            --auto \
+            --match-head-commit "$HEAD_SHA" \
+            --squash
