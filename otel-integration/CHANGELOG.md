@@ -2,7 +2,7 @@
 
 ## OpenTelemetry-Integration
 
-### v0.0.374 / 2026-11-05
+### v0.0.375 / 2026-11-05
 
 - [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.30
 
@@ -14,6 +14,10 @@
 - [Change] Note for upgraders: GraphQL, MCP and JSON-RPC server spans no longer carry HTTP method/status/route, URL, body-size and user-agent attributes; AWS SNS spans drop `rpc.system.name` and `rpc.method`; MQTT SUBSCRIBE spans report the filter as `messaging.destination.subscription.name`
 - [Feature] The image captures manual spans from the Go Auto SDK embedded in the OTel Go trace API, adds `url.template` on HTTP client spans, `db.operation.parameter.<key>` on Elasticsearch spans, .NET CPU and heap runtime metrics, broader .NET route harvesting, AWS Route53 endpoint name resolution and ring-buffer write/failure internal metrics
 - [Fix] The image stops injecting trace context into sockets misclassified as HTTP/2, keeps distinct metric label tuples from colliding, fixes duplicate `target.info` counts when a process moves to an existing service, and sends JSON for OTLP traces when the protocol is `http/json`
+
+### v0.0.374 / 2026-11-05
+
+- [Chore] Bump operator chart and autoinstrumentation images to match OpenTelemetry Operator v0.162.0 (operator chart `0.128.0` -> `0.129.0`).
 
 ### v0.0.373 / 2026-11-03
 
