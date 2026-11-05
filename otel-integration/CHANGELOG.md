@@ -2,6 +2,19 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.374 / 2026-11-05
+
+- [Chore] Bump chart dependency to opentelemetry-ebpf-instrumentation 0.1.30
+
+#### Changes from opentelemetry-ebpf-instrumentation 0.1.30:
+- [Change] Bump OBI image to v1.0.0, OBI's first stable release. It includes the changes of the v0.15.2 release; the chart's configuration renders unchanged (Config v1 stays supported but frozen)
+- [Change] Note for upgraders: span names follow semantic conventions, which also changes the span-name label of span-derived metrics (`presets.spanMetrics` on the collector) and may break dashboards, alerts and processors keyed on them. gRPC span names and `rpc.method` drop the leading slash (unreadable paths use `grpc` / `_OTHER`, the raw path moves to `rpc.method_original`); database spans without an operation are named after their target or system; GenAI spans use `{operation} {model}` (Anthropic `message` becomes `chat`); GraphQL server names drop `GraphQL`; AWS S3/SQS names use `S3.` / `SQS.` prefixes
+- [Change] Note for upgraders: `server.address` on HTTP client spans and `http.client.*` metrics drops the `Host` header's port (`server.port` and `url.full` keep it), and Kubernetes Service hosts with ports resolve to the service, which can change peer and service-graph names
+- [Change] Note for upgraders: new default metric attributes split existing series: `db.collection.name` on database duration metrics, `server.port` on RPC client duration, `error.type` on failed RPC server duration, and `messaging.operation.type` / subscription name on messaging duration metrics. Elasticsearch/OpenSearch index names may increase cardinality; exclude `db.collection.name` through `config.data.attributes.select` if needed
+- [Change] Note for upgraders: GraphQL, MCP and JSON-RPC server spans no longer carry HTTP method/status/route, URL, body-size and user-agent attributes; AWS SNS spans drop `rpc.system.name` and `rpc.method`; MQTT SUBSCRIBE spans report the filter as `messaging.destination.subscription.name`
+- [Feature] The image captures manual spans from the Go Auto SDK embedded in the OTel Go trace API, adds `url.template` on HTTP client spans, `db.operation.parameter.<key>` on Elasticsearch spans, .NET CPU and heap runtime metrics, broader .NET route harvesting, AWS Route53 endpoint name resolution and ring-buffer write/failure internal metrics
+- [Fix] The image stops injecting trace context into sockets misclassified as HTTP/2, keeps distinct metric label tuples from colliding, fixes duplicate `target.info` counts when a process moves to an existing service, and sends JSON for OTLP traces when the protocol is `http/json`
+
 ### v0.0.373 / 2026-11-03
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.142.2
