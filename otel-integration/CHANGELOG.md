@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.377 / 2026-11-06
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.142.3
+
+#### Changes from opentelemetry-collector 0.142.3:
+- [Feat] Add `cx.provider.name` to the non-identifying attributes reported by the Collector and Supervisor when the provider is configured or inferred from the distribution.
+
 ### v0.0.376 / 2026-11-05
 
 - [Chore] Bump the coralogix-operator subchart from 2.17.0 to 2.18.0 ([release notes](https://github.com/coralogix/coralogix-operator/releases/tag/v2.18.0)).
