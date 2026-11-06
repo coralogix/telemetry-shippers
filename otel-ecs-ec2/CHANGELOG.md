@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.66 / 2026-11-06
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.142.3`.
+
+#### Changes from opentelemetry-collector 0.142.3:
+- [Feat] Add `cx.provider.name` to the non-identifying attributes reported by the Collector and Supervisor when the provider is configured or inferred from the distribution.
+
 ### v0.0.65 / 2026-11-03
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.142.2`.

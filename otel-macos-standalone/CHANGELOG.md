@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.70 / 2026-11-06
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.142.3
+
+#### Changes from opentelemetry-collector 0.142.3:
+- [Feat] Add `cx.provider.name` to the non-identifying attributes reported by the Collector and Supervisor when the provider is configured or inferred from the distribution.
+
 ### v0.0.69 / 2026-11-03
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.142.2
