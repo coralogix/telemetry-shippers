@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.20 / 2026-11-11
+
+* [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.19.0`. (PR pending)
+
 ### 0.0.19 / 2026-10-27
 
 * [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.18.0`, which bundles Supervisor 0.164.0. ([#1084](https://github.com/coralogix/telemetry-shippers/pull/1084))
