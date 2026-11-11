@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.67 / 2026-11-11
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.0`.
+
+#### Changes from opentelemetry-collector 0.143.0:
+- [Feat] Bump the OpenTelemetry Collector image to v0.165.0.
+
 ### v0.0.66 / 2026-11-06
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.142.3`.
