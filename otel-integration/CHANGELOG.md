@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.378 / 2026-11-11
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.0
+
+#### Changes from opentelemetry-collector 0.143.0:
+- [Feat] Bump the OpenTelemetry Collector image to v0.165.0.
+
 ### v0.0.377 / 2026-11-06
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.142.3
