@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.19.0 - 2026-11-11
+
+- [chore] Bump supervised eBPF profiler image to version 0.19.0.
+
 ## v0.18.0 - 2026-10-27
 
 - [chore] Bump Collector and Supervisor to version 0.164.0.
