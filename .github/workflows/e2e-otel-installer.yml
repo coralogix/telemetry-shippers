@@ -477,6 +477,10 @@ jobs:
     needs: changes
     if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
+    env:
+      # Keep the validation-failure signature in one place; grep with -E
+      # everywhere it is used.
+      SUPERVISOR_ERROR_RE: "failed to create supervisor|error validating config|reports_remote_config"
     steps:
       - uses: actions/checkout@v4
       
@@ -519,7 +523,7 @@ jobs:
             STATUS=$(docker inspect -f '{{.State.Status}}' coralogix-otel-collector)
             if [ "$STATUS" != "running" ]; then
               echo "Supervisor container is not running (state: $STATUS)" >&2
-              docker logs coralogix-otel-collector 2>&1 | grep -E "failed to create supervisor|error validating config|reports_remote_config" | head -5 >&2 || true
+              docker logs coralogix-otel-collector 2>&1 | grep -E "$SUPERVISOR_ERROR_RE" | head -5 >&2 || true
               exit 1
             fi
           done
@@ -529,12 +533,15 @@ jobs:
             echo "Supervisor restarted ${RESTARTS} time(s) during startup - config validation or runtime failure" >&2
             exit 1
           fi
-          # Marker line comes from upstream opampsupervisor; a rewording there
-          # would turn this red with no change in this repo (accepted risk).
-          # Capture into a variable first so grep -q cannot SIGPIPE docker
-          # logs under a pipefail shell (GH runner default bash -e has none).
+          # 12x5s = 60s window: long enough to include the first crash-restart
+          # cycle of a validation-failing supervisor (deliberate, do not
+          # shorten). Capture logs into a variable so grep -q cannot SIGPIPE
+          # docker logs under a pipefail shell (GH runner default bash -e has
+          # none); here-string keeps the grep pipe-free. The marker line comes
+          # from upstream opampsupervisor; a rewording there turns this red
+          # with no change in this repo (accepted risk).
           LOGS=$(docker logs coralogix-otel-collector 2>&1)
-          if echo "$LOGS" | grep -q "Supervisor starting"; then
+          if grep -q "Supervisor starting" <<<"$LOGS"; then
             echo "Supervisor startup confirmed"
           else
             echo "Supervisor startup message not found in container logs" >&2
@@ -544,9 +551,9 @@ jobs:
       - name: Reject supervisor config validation failures
         run: |
           LOGS=$(docker logs coralogix-otel-collector 2>&1)
-          if echo "$LOGS" | grep -qE "failed to create supervisor|error validating config|reports_remote_config"; then
+          if grep -qE "$SUPERVISOR_ERROR_RE" <<<"$LOGS"; then
             echo "Supervisor config validation failure detected:" >&2
-            echo "$LOGS" | grep -E "failed to create supervisor|error validating config|reports_remote_config" | head -5 >&2
+            grep -E "$SUPERVISOR_ERROR_RE" <<<"$LOGS" | head -5 >&2
             exit 1
           fi
           echo "No supervisor config validation errors in logs"
