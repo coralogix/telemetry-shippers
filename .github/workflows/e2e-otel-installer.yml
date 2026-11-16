@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'otel-installer/**'
+      - '.github/workflows/e2e-otel-installer.yml'
   workflow_dispatch:
 
 permissions:
@@ -32,7 +33,7 @@ jobs:
         id: readme-check
         if: github.event_name == 'pull_request'
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' || true)
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' '.github/workflows/e2e-otel-installer.yml' || true)
           if [ -z "$CHANGED" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
@@ -52,6 +53,7 @@ jobs:
               - 'otel-installer/standalone/**'
             docker:
               - 'otel-installer/docker/**'
+              - '.github/workflows/e2e-otel-installer.yml'
             windows:
               - 'otel-installer/windows/**'
       - id: set-outputs
@@ -502,15 +504,51 @@ jobs:
             exit 1
           fi
         
-      - name: Verify container running
+      - name: Wait for supervisor startup and assert it stays up
         run: |
-          sleep 5
-          docker ps | grep coralogix-otel-collector
-          
+          # A supervisor that fails config validation exits and Docker restarts
+          # it (restart-unless-stopped), while `docker ps` still lists the
+          # restart-looping container. Liveness must therefore be asserted via
+          # container state + restart count, not merely presence in docker ps.
+          # This is the regression that shipped the deprecated
+          # reports_remote_config capability in PR #1103 (CX-69000).
+          for i in $(seq 1 12); do
+            sleep 5
+            STATUS=$(docker inspect -f '{{.State.Status}}' coralogix-otel-collector)
+            if [ "$STATUS" != "running" ]; then
+              echo "Supervisor container is not running (state: $STATUS)" >&2
+              exit 1
+            fi
+          done
+          RESTARTS=$(docker inspect -f '{{.RestartCount}}' coralogix-otel-collector)
+          echo "RestartCount after grace period: ${RESTARTS}"
+          if [ "$RESTARTS" -ne 0 ]; then
+            echo "Supervisor restarted ${RESTARTS} time(s) during startup - config validation or runtime failure" >&2
+            exit 1
+          fi
+          if docker logs coralogix-otel-collector 2>&1 | grep -q "Supervisor starting"; then
+            echo "Supervisor startup confirmed"
+          else
+            echo "Supervisor startup message not found in container logs" >&2
+            exit 1
+          fi
+
+      - name: Reject supervisor config validation failures
+        run: |
+          LOGS=$(docker logs coralogix-otel-collector 2>&1)
+          if echo "$LOGS" | grep -qE "failed to create supervisor|error validating config|reports_remote_config"; then
+            echo "Supervisor config validation failure detected:" >&2
+            echo "$LOGS" | grep -E "failed to create supervisor|error validating config|reports_remote_config" | head -5 >&2
+            exit 1
+          fi
+          echo "No supervisor config validation errors in logs"
+        
       - name: View logs
         if: always()
-        run: docker logs coralogix-otel-collector 2>&1 | tail -20
-          
+        run: |
+          docker inspect -f 'State={{.State.Status}} ExitCode={{.State.ExitCode}} Restarts={{.RestartCount}}' coralogix-otel-collector || true
+          docker logs coralogix-otel-collector 2>&1 | tail -30
+        
       - name: Uninstall
         run: bash ./otel-installer/docker/docker-install.sh --uninstall
 
