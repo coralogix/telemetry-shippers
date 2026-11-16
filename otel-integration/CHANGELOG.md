@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.380 / 2026-11-16
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.1
+
+#### Changes from opentelemetry-collector 0.143.1:
+- [Fix] Bump the supervised image to 0.20.0 with Supervisor 0.165.1 to apply package and configuration updates together.
+
 ### v0.0.379 / 2026-11-11
 
 - [Chore] Bump the coralogix-operator subchart from 2.18.0 to 2.19.0 ([release notes](https://github.com/coralogix/coralogix-operator/releases/tag/v2.19.0)).
