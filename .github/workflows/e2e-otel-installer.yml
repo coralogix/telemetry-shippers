@@ -51,11 +51,13 @@ jobs:
           filters: |
             standalone:
               - 'otel-installer/standalone/**'
+              - '.github/workflows/e2e-otel-installer.yml'
             docker:
               - 'otel-installer/docker/**'
               - '.github/workflows/e2e-otel-installer.yml'
             windows:
               - 'otel-installer/windows/**'
+              - '.github/workflows/e2e-otel-installer.yml'
       - id: set-outputs
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -512,11 +514,12 @@ jobs:
           # container state + restart count, not merely presence in docker ps.
           # This is the regression that shipped the deprecated
           # reports_remote_config capability in PR #1103 (CX-69000).
-          for i in $(seq 1 12); do
+          for _ in $(seq 1 12); do
             sleep 5
             STATUS=$(docker inspect -f '{{.State.Status}}' coralogix-otel-collector)
             if [ "$STATUS" != "running" ]; then
               echo "Supervisor container is not running (state: $STATUS)" >&2
+              docker logs coralogix-otel-collector 2>&1 | grep -E "failed to create supervisor|error validating config|reports_remote_config" | head -5 >&2 || true
               exit 1
             fi
           done
@@ -526,7 +529,12 @@ jobs:
             echo "Supervisor restarted ${RESTARTS} time(s) during startup - config validation or runtime failure" >&2
             exit 1
           fi
-          if docker logs coralogix-otel-collector 2>&1 | grep -q "Supervisor starting"; then
+          # Marker line comes from upstream opampsupervisor; a rewording there
+          # would turn this red with no change in this repo (accepted risk).
+          # Capture into a variable first so grep -q cannot SIGPIPE docker
+          # logs under a pipefail shell (GH runner default bash -e has none).
+          LOGS=$(docker logs coralogix-otel-collector 2>&1)
+          if echo "$LOGS" | grep -q "Supervisor starting"; then
             echo "Supervisor startup confirmed"
           else
             echo "Supervisor startup message not found in container logs" >&2
@@ -542,13 +550,13 @@ jobs:
             exit 1
           fi
           echo "No supervisor config validation errors in logs"
-        
+
       - name: View logs
         if: always()
         run: |
           docker inspect -f 'State={{.State.Status}} ExitCode={{.State.ExitCode}} Restarts={{.RestartCount}}' coralogix-otel-collector || true
           docker logs coralogix-otel-collector 2>&1 | tail -30
-        
+
       - name: Uninstall
         run: bash ./otel-installer/docker/docker-install.sh --uninstall
 
