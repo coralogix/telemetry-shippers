@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.20.0 - 2026-11-16
+
+- [fix] Bump Supervisor to 0.165.1 to apply package and configuration updates together and preserve the previous configuration if an upgrade fails.
+
 ## v0.19.0 - 2026-11-11
 
 - [chore] Bump supervised collector image to version 0.19.0.
