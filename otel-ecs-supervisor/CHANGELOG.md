@@ -2,6 +2,10 @@
 
 ## ecs-ec2-integration
 
+### 0.0.21 / 2026-11-16
+
+* [FIX] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.20.0`, which bundles Supervisor 0.165.1 to apply package and configuration updates together. (PR pending)
+
 ### 0.0.20 / 2026-11-11
 
 * [IMPROVEMENT] Updated the default supervised CDOT image to `cgx.jfrog.io/coralogix-docker-images/coralogix-otel-supervised-cdot:v0.19.0`. (PR pending)
