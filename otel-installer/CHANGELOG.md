@@ -5,6 +5,7 @@ All notable changes to the OTel Installer scripts will be documented in this fil
 ## [Unreleased]
 
 ### Added
+- Docker installer supervisor mode accepts an `OPAMP_ENDPOINT` environment variable to point the supervisor at a custom OpAMP server (testing/air-gapped setups; default remains the Coralogix ingress).
 - CI smoke test asserting the Docker installer's Supervisor mode starts and stays healthy: verifies container liveness and zero restarts over a grace period instead of trusting installer exit status (`docker ps` also lists restart-looping containers).
 
 ### Fixed
