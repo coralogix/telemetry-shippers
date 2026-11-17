@@ -516,8 +516,11 @@ jobs:
           # it (restart-unless-stopped), while `docker ps` still lists the
           # restart-looping container. Liveness must therefore be asserted via
           # container state + restart count, not merely presence in docker ps.
-          # This is the regression that shipped the deprecated
-          # reports_remote_config capability in PR #1103 (CX-69000).
+          # The CX-69000 incident: supervised image 0.164.0 (#1084) rejected
+          # the deprecated reports_remote_config capability that installers
+          # still shipped; fix in PR #1103 removed it from the generated
+          # configs. Note: this suite only re-runs when installer files or
+          # this workflow change - image-bump PRs are a known follow-up gap.
           for _ in $(seq 1 12); do
             sleep 5
             STATUS=$(docker inspect -f '{{.State.Status}}' coralogix-otel-collector)
@@ -550,6 +553,12 @@ jobs:
 
       - name: Reject supervisor config validation failures
         run: |
+          # Diagnostic only: the liveness assertions above are the real
+          # regression signal (a validation failure crashes the supervisor and
+          # trips them). This step additionally catches matching log lines
+          # from a run that stayed up. It must not gate OpAMP-server-side
+          # problems; if remote-config validation errors ever appear under a
+          # real server, revisit the pattern.
           LOGS=$(docker logs coralogix-otel-collector 2>&1)
           if grep -qE "$SUPERVISOR_ERROR_RE" <<<"$LOGS"; then
             echo "Supervisor config validation failure detected:" >&2
