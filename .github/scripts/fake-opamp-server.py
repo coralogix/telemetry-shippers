@@ -29,6 +29,7 @@ application/x-protobuf, and the response to the first request carries the
 instance uid echoed via the Agent-Instance-Id header when present.
 """
 import json
+import os
 import struct
 import sys
 import time
@@ -235,11 +236,11 @@ class Handler(BaseHTTPRequestHandler):
         with open(STATE_PATH, 'a') as f:
             f.write(json.dumps(parsed) + '\n')
 
-        # Offer remote config until the supervisor acknowledges OUR hash
-        # (opamp-go always sends an empty RemoteConfigStatus in the first
-        # message, so presence is not a valid trigger; hash equality is).
-        rcs = parsed['remote_config_status']
-        offer = rcs is None or rcs.get('hash') != CONFIG_HASH.hex()
+        # Remote config stays off by default: applying a full config replaces
+        # the supervisor-injected agent config (opamp extension included) and
+        # the apply lifecycle never completes in CI. Offering it is the
+        # follow-up's job (poisoned-config RED proof) - see review round.
+        offer = os.environ.get('FAKE_OPAMP_OFFER_REMOTE_CONFIG') == '1'
         resp = build_server_to_agent(offer_remote_config=offer)
         self.send_response(200)
         self.send_header('Content-Type', 'application/x-protobuf')

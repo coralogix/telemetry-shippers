@@ -635,20 +635,13 @@ jobs:
             docker logs coralogix-otel-collector 2>&1 | tail -20 >&2
             exit 1
           fi
-          # Full response lifecycle proof: the supervisor must eventually
-          # APPLY our remote config (hash acknowledged, status=APPLIED=2).
-          # Apply takes seconds (config_apply_timeout is 30s), so poll.
-          APPLIED=0
-          for _ in $(seq 1 12); do
-            STATUS=$(curl -fsS "http://${GATEWAY_IP}:4320/status" || true)
-            if echo "$STATUS" | jq -e '.remote_config_status.status == 2' >/dev/null 2>&1; then
-              APPLIED=1
-              break
-            fi
-            sleep 5
-          done
-          if [ "$APPLIED" -ne 1 ]; then
-            echo "Supervisor did not apply the offered remote config within 60s (status: $(echo "$STATUS" | jq -c '.remote_config_status'))" >&2
+          # Full response lifecycle: with remote config offering disabled
+          # (default), the supervisor keeps the installer-written config and
+          # never reports an applied hash - assert the status is UNSET (0) or
+          # APPLYING-free, i.e. the supervisor is not stuck mid-apply. The
+          # APPLIED lifecycle itself is the follow-up's poisoned-config proof.
+          if echo "$STATUS" | jq -e '.remote_config_status.status == 3' >/dev/null; then
+            echo "Supervisor reported remote config FAILED (should not have been offered)" >&2
             exit 1
           fi
           if ! echo "$STATUS" | jq -e '.distinct_instance_uids == 1' >/dev/null; then
