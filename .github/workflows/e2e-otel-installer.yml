@@ -511,7 +511,10 @@ jobs:
             fi
           done
           curl -fsS "http://${GATEWAY_IP}:4320/status"
-          echo "OPAMP_ENDPOINT=http://${GATEWAY_IP}:4320/opamp/v1" >> "$GITHUB_ENV"
+          {
+            echo "OPAMP_ENDPOINT=http://${GATEWAY_IP}:4320/opamp/v1"
+            echo "GATEWAY_IP=${GATEWAY_IP}"
+          } >> "$GITHUB_ENV"
 
       - name: Install supervisor mode
         run: |
