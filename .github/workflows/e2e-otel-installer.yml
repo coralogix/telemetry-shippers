@@ -489,21 +489,11 @@ jobs:
           # Protocol-grade liveness signal (review ask, CX-69000 thread): the
           # supervisor reports AgentHealth over OpAMP; this server records
           # every report so the assertion steps can check them. Runs as a
-          # docker sidecar so the supervisor reaches it over the bridge
-          # network; state is exchanged via a mounted volume, not the network.
-          docker run -d --name fake-opamp \
-            -v "$PWD/.github/scripts:/srv:ro" \
-            -v /tmp/fake-opamp:/state \
-            -w /state \
-            python:3.12-alpine \
-            python /srv/fake-opamp-server.py 4320 /state/reports.jsonl
-          for _ in $(seq 1 10); do
-            sleep 1
-            if curl -fsS http://127.0.0.1:4320/status >/dev/null 2>&1; then break; fi
-          done
-          docker port fake-opamp 4320 || true
-          # Publish the port for both the supervisor container and local checks.
-          docker rm -f fake-opamp >/dev/null
+          # docker sidecar; the supervisor reaches it at host.docker.internal
+          # (the installer's OPAMP_ENDPOINT override), CI asserts via the
+          # published port, state flows through the mounted volume.
+          docker rm -f fake-opamp >/dev/null 2>&1 || true
+          rm -rf /tmp/fake-opamp && mkdir -p /tmp/fake-opamp
           docker run -d --name fake-opamp \
             -p 127.0.0.1:4320:4320 \
             -v "$PWD/.github/scripts:/srv:ro" \
@@ -511,6 +501,13 @@ jobs:
             -w /state \
             python:3.12-alpine \
             python /srv/fake-opamp-server.py 4320 /state/reports.jsonl
+          for _ in $(seq 1 10); do
+            sleep 1
+            if curl -fsS http://127.0.0.1:4320/status >/dev/null 2>&1; then
+              echo "fake OpAMP server is up"
+              break
+            fi
+          done
           curl -fsS http://127.0.0.1:4320/status
 
       - name: Install supervisor mode

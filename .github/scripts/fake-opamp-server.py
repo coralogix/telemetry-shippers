@@ -163,6 +163,11 @@ def varint_bytes(n: int) -> bytes:
             return out + bytes([b])
 
 
+class DualStackServer(ThreadingHTTPServer):
+    address_family = __import__('socket').AF_INET6
+    daemon_threads = True
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     server_version = 'FakeOpAMP/1.0'
@@ -221,4 +226,6 @@ if __name__ == '__main__':
         STATE_PATH = f'/tmp/fake-opamp-{port}.jsonl'
     open(STATE_PATH, 'w').close()  # truncate per-run state
     print(f'fake OpAMP server on :{port}, state at {STATE_PATH}', flush=True)
-    ThreadingHTTPServer(('0.0.0.0', port), Handler).serve_forever()
+    # Dual-stack: docker's published ports accept v4 and v6; an AF_INET-only
+    # bind leaves the v6 side resetting connections (curl "connection reset").
+    DualStackServer(('::', port), Handler).serve_forever()
