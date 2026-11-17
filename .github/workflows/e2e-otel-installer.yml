@@ -488,14 +488,16 @@ jobs:
         run: |
           # Protocol-grade liveness signal (review ask, CX-69000 thread): the
           # supervisor reports AgentHealth over OpAMP; this server records
-          # every report so the assertion steps can check them. Runs as a
-          # docker sidecar; the supervisor reaches it at host.docker.internal
-          # (the installer's OPAMP_ENDPOINT override), CI asserts via the
-          # published port, state flows through the mounted volume.
+          # every report so the assertion steps can check them. Runs with host
+          # networking (Linux runners have no host.docker.internal alias); the
+          # supervisor reaches it via the docker0 bridge gateway IP, which we
+          # discover dynamically and export for the install step.
           docker rm -f fake-opamp >/dev/null 2>&1 || true
           rm -rf /tmp/fake-opamp && mkdir -p /tmp/fake-opamp
+          GATEWAY_IP=$(docker network inspect bridge -f '{{(index .IPAM.Config 0).Gateway}}')
+          echo "docker bridge gateway: ${GATEWAY_IP}"
           docker run -d --name fake-opamp \
-            -p 127.0.0.1:4320:4320 \
+            --network host \
             -v "$PWD/.github/scripts:/srv:ro" \
             -v /tmp/fake-opamp:/state \
             -w /state \
@@ -503,16 +505,15 @@ jobs:
             python /srv/fake-opamp-server.py 4320 /state/reports.jsonl
           for _ in $(seq 1 10); do
             sleep 1
-            if curl -fsS http://127.0.0.1:4320/status >/dev/null 2>&1; then
-              echo "fake OpAMP server is up"
+            if curl -fsS "http://${GATEWAY_IP}:4320/status" >/dev/null 2>&1; then
+              echo "fake OpAMP server is up at ${GATEWAY_IP}:4320"
               break
             fi
           done
-          curl -fsS http://127.0.0.1:4320/status
+          curl -fsS "http://${GATEWAY_IP}:4320/status"
+          echo "OPAMP_ENDPOINT=http://${GATEWAY_IP}:4320/opamp/v1" >> "$GITHUB_ENV"
 
       - name: Install supervisor mode
-        env:
-          OPAMP_ENDPOINT: http://host.docker.internal:4320/opamp/v1
         run: |
           CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
             bash ./otel-installer/docker/docker-install.sh -s \
@@ -525,8 +526,8 @@ jobs:
           grep -Fx '      service.name: "opentelemetry-collector"' /tmp/supervisor.yaml
           grep -Fx '      cx.agent.type: "docker"' /tmp/supervisor.yaml
           grep -Fx '      "fleet.test.id": "fleet-demo"' /tmp/supervisor.yaml
-          grep -Fx '      "deployment.environment": "staging=blue"' /tmp/supervisor.yaml
-          grep -F 'endpoint: "http://host.docker.internal:4320/opamp/v1"' /tmp/supervisor.yaml
+          grep -F '      "deployment.environment": "staging=blue"' /tmp/supervisor.yaml
+          grep -F "endpoint: \"http://${GATEWAY_IP}:4320/opamp/v1\"" /tmp/supervisor.yaml
 
       - name: Reject invalid Supervisor attributes before installation
         run: |
@@ -604,7 +605,7 @@ jobs:
           # crash-loops inside the supervisor (invisible to RestartCount)
           # shows up here as unhealthy reports or missing reports.
           for _ in $(seq 1 12); do
-            STATUS=$(curl -fsS http://127.0.0.1:4320/status || true)
+            STATUS=$(curl -fsS "http://${GATEWAY_IP}:4320/status" || true)
             if echo "$STATUS" | grep -q '"health_reports": 0'; then
               echo "No AgentHealth reports yet; waiting..." >&2
               sleep 5
