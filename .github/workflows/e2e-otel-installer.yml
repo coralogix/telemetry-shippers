@@ -483,8 +483,39 @@ jobs:
       SUPERVISOR_ERROR_RE: "failed to create supervisor|error validating config|reports_remote_config"
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Start fake OpAMP server
+        run: |
+          # Protocol-grade liveness signal (review ask, CX-69000 thread): the
+          # supervisor reports AgentHealth over OpAMP; this server records
+          # every report so the assertion steps can check them. Runs as a
+          # docker sidecar so the supervisor reaches it over the bridge
+          # network; state is exchanged via a mounted volume, not the network.
+          docker run -d --name fake-opamp \
+            -v "$PWD/.github/scripts:/srv:ro" \
+            -v /tmp/fake-opamp:/state \
+            -w /state \
+            python:3.12-alpine \
+            python /srv/fake-opamp-server.py 4320 /state/reports.jsonl
+          for _ in $(seq 1 10); do
+            sleep 1
+            if curl -fsS http://127.0.0.1:4320/status >/dev/null 2>&1; then break; fi
+          done
+          docker port fake-opamp 4320 || true
+          # Publish the port for both the supervisor container and local checks.
+          docker rm -f fake-opamp >/dev/null
+          docker run -d --name fake-opamp \
+            -p 127.0.0.1:4320:4320 \
+            -v "$PWD/.github/scripts:/srv:ro" \
+            -v /tmp/fake-opamp:/state \
+            -w /state \
+            python:3.12-alpine \
+            python /srv/fake-opamp-server.py 4320 /state/reports.jsonl
+          curl -fsS http://127.0.0.1:4320/status
+
       - name: Install supervisor mode
+        env:
+          OPAMP_ENDPOINT: http://host.docker.internal:4320/opamp/v1
         run: |
           CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
             bash ./otel-installer/docker/docker-install.sh -s \
@@ -498,6 +529,7 @@ jobs:
           grep -Fx '      cx.agent.type: "docker"' /tmp/supervisor.yaml
           grep -Fx '      "fleet.test.id": "fleet-demo"' /tmp/supervisor.yaml
           grep -Fx '      "deployment.environment": "staging=blue"' /tmp/supervisor.yaml
+          grep -F 'endpoint: "http://host.docker.internal:4320/opamp/v1"' /tmp/supervisor.yaml
 
       - name: Reject invalid Supervisor attributes before installation
         run: |
@@ -553,12 +585,10 @@ jobs:
 
       - name: Reject supervisor config validation failures
         run: |
-          # Diagnostic only: the liveness assertions above are the real
-          # regression signal (a validation failure crashes the supervisor and
-          # trips them). This step additionally catches matching log lines
-          # from a run that stayed up. It must not gate OpAMP-server-side
-          # problems; if remote-config validation errors ever appear under a
-          # real server, revisit the pattern.
+          # Diagnostic only: the liveness + OpAMP health assertions are the
+          # real regression signal (a validation failure crashes the
+          # supervisor and trips them). This step additionally catches
+          # matching log lines from a run that stayed up.
           LOGS=$(docker logs coralogix-otel-collector 2>&1)
           if grep -qE "$SUPERVISOR_ERROR_RE" <<<"$LOGS"; then
             echo "Supervisor config validation failure detected:" >&2
@@ -567,11 +597,54 @@ jobs:
           fi
           echo "No supervisor config validation errors in logs"
 
+      - name: Assert agent health reports arrived over OpAMP
+        run: |
+          # Protocol-grade signal (replaces log greps as the primary agent
+          # check): the supervisor itself reports AgentHealth for the managed
+          # collector via OpAMP AgentToServer messages. The fake server
+          # records every report; healthy install => reports exist, latest is
+          # healthy, and health never flipped unhealthy. A collector that
+          # crash-loops inside the supervisor (invisible to RestartCount)
+          # shows up here as unhealthy reports or missing reports.
+          for _ in $(seq 1 12); do
+            STATUS=$(curl -fsS http://127.0.0.1:4320/status || true)
+            if echo "$STATUS" | grep -q '"health_reports": 0'; then
+              echo "No AgentHealth reports yet; waiting..." >&2
+              sleep 5
+            else
+              break
+            fi
+          done
+          echo "Fake OpAMP status: $STATUS"
+          if ! echo "$STATUS" | grep -q '"health_reports": [1-9]'; then
+            echo "Supervisor never reported agent health over OpAMP" >&2
+            docker logs coralogix-otel-collector 2>&1 | grep -iE "opamp|connect" | tail -10 >&2 || true
+            exit 1
+          fi
+          if ! echo "$STATUS" | grep -q '"healthy_reports": [1-9]'; then
+            echo "Supervisor reported agent as UNHEALTHY over OpAMP" >&2
+            docker logs coralogix-otel-collector 2>&1 | tail -20 >&2
+            exit 1
+          fi
+          if echo "$STATUS" | grep -q '"ever_unhealthy": true'; then
+            echo "Agent health flipped unhealthy during the grace window" >&2
+            docker logs coralogix-otel-collector 2>&1 | tail -20 >&2
+            exit 1
+          fi
+          echo "OpAMP AgentHealth reports: healthy, never degraded"
+
       - name: View logs
         if: always()
         run: |
           docker inspect -f 'State={{.State.Status}} ExitCode={{.State.ExitCode}} Restarts={{.RestartCount}}' coralogix-otel-collector || true
+          echo "--- fake OpAMP reports ---"
+          tail -5 /tmp/fake-opamp/reports.jsonl 2>/dev/null || echo "(no reports recorded)"
+          echo "--- supervisor logs ---"
           docker logs coralogix-otel-collector 2>&1 | tail -30
+
+      - name: Stop fake OpAMP server
+        if: always()
+        run: docker rm -f fake-opamp || true
 
       - name: Uninstall
         run: bash ./otel-installer/docker/docker-install.sh --uninstall

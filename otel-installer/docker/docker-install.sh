@@ -504,9 +504,15 @@ run_regular_mode() {
 
 get_supervisor_config() {
     local domain="$1"
+    # OPAMP_ENDPOINT lets tests and air-gapped setups point the supervisor at
+    # a custom OpAMP server; production default remains the Coralogix ingress.
+    local opamp_endpoint="https://ingress.${domain}/opamp/v1"
+    if [ -n "${OPAMP_ENDPOINT:-}" ]; then
+        opamp_endpoint="${OPAMP_ENDPOINT}"
+    fi
     cat <<EOF
 server:
-  endpoint: "https://ingress.${domain}/opamp/v1"
+  endpoint: "${opamp_endpoint}"
   headers:
     Authorization: "Bearer \${env:CORALOGIX_PRIVATE_KEY}"
   tls:
