@@ -614,22 +614,39 @@ jobs:
             fi
           done
           echo "Fake OpAMP status: $STATUS"
-          if ! echo "$STATUS" | grep -q '"health_reports": [1-9]'; then
+          if ! echo "$STATUS" | jq -e '.health_reports >= 1' >/dev/null; then
             echo "Supervisor never reported agent health over OpAMP" >&2
             docker logs coralogix-otel-collector 2>&1 | grep -iE "opamp|connect" | tail -10 >&2 || true
             exit 1
           fi
-          if ! echo "$STATUS" | grep -q '"healthy_reports": [1-9]'; then
+          if ! echo "$STATUS" | jq -e '.healthy_reports >= 1' >/dev/null; then
             echo "Supervisor reported agent as UNHEALTHY over OpAMP" >&2
             docker logs coralogix-otel-collector 2>&1 | tail -20 >&2
             exit 1
           fi
-          if echo "$STATUS" | grep -q '"ever_unhealthy": true'; then
-            echo "Agent health flipped unhealthy during the grace window" >&2
+          # The supervisor publishes healthy=false by design before the
+          # collector's first health report lands, so only flips AFTER the
+          # first healthy report count as regressions (server-side logic).
+          if echo "$STATUS" | jq -e '.ever_unhealthy == true' >/dev/null; then
+            echo "Agent health flipped unhealthy after first healthy report" >&2
             docker logs coralogix-otel-collector 2>&1 | tail -20 >&2
             exit 1
           fi
-          echo "OpAMP AgentHealth reports: healthy, never degraded"
+          # Full response lifecycle proof: the supervisor must have APPLIED
+          # our remote config (hash acknowledged), and identify consistently.
+          if ! echo "$STATUS" | jq -e '.remote_config_status.status == 2' >/dev/null; then
+            echo "Supervisor did not apply the offered remote config (status != APPLIED)" >&2
+            exit 1
+          fi
+          if ! echo "$STATUS" | jq -e '.distinct_instance_uids == 1' >/dev/null; then
+            echo "Supervisor re-registered with multiple instance uids (storage churn?)" >&2
+            exit 1
+          fi
+          if ! echo "$STATUS" | jq -e '.parse_errors == 0' >/dev/null; then
+            echo "Fake server failed to parse one or more AgentToServer messages" >&2
+            exit 1
+          fi
+          echo "OpAMP protocol assertions passed: health reported, healthy, config applied"
 
       - name: View logs
         if: always()

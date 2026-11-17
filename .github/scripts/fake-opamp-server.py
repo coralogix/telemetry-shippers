@@ -104,52 +104,91 @@ def iter_fields(msg: bytes):
 
 
 def parse_agent_to_server(body: bytes) -> dict:
-    out = {'agent_health': None, 'instance_uid': None,
-           'remote_config_status': False, 'effective_config': False,
-           'package_statuses': False, 'agent_description': False}
+    # Field numbers verified against opamp-go (opamp.proto) and validated
+    # against the real opamp-go client (see PR #1112 review round):
+    # AgentToServer: 1 instance_uid, 2 sequence_num, 3 agent_description,
+    # 4 capabilities, 5 agent_health, 6 effective_config,
+    # 7 remote_config_status, 8 package_statuses, 9 agent_disconnect.
+    out = {'agent_health': None, 'instance_uid': None, 'sequence_num': None,
+           'capabilities': None, 'remote_config_status': None,
+           'effective_config': False, 'package_statuses': False,
+           'agent_description': False, 'agent_disconnect': False,
+           'parse_error': None}
     try:
         for field, _wtype, val in iter_fields(body):
             if field == 1 and isinstance(val, bytes):
                 out['instance_uid'] = val.hex()
+            elif field == 2 and not isinstance(val, bytes):
+                out['sequence_num'] = val
             elif field == 3 and isinstance(val, bytes):
-                health = {}
-                for f2, _wt2, v2 in iter_fields(val):
+                out['agent_description'] = True
+            elif field == 4 and isinstance(val, bytes):
+                out['capabilities'] = True
+            elif field == 5 and isinstance(val, bytes):
+                # AgentHealth: 1 healthy, 2 start_time_unix_nano (fixed64),
+                # 3 last_error, 4 status (string), 6 component health list.
+                health: dict = {'healthy': False}
+                for f2, _w2, v2 in iter_fields(val):
                     if f2 == 1 and not isinstance(v2, bytes):
                         health['healthy'] = bool(v2)
                     elif f2 == 3 and isinstance(v2, bytes):
                         health['last_error'] = v2.decode('utf-8', 'replace')[:500]
                     elif f2 == 4 and isinstance(v2, bytes):
-                        # ComponentHealth: field 1 = component name, 2=healthy, 3=error
-                        comps = []
-                        for f3, _wt3, v3 in iter_fields(v2):
+                        health['status'] = v2.decode('utf-8', 'replace')
+                    elif f2 == 6 and isinstance(v2, bytes):
+                        # ComponentHealth: field 1 = component id
+                        for f3, _w3, v3 in iter_fields(v2):
                             if f3 == 1 and isinstance(v3, bytes):
-                                comps.append(v3.decode('utf-8', 'replace'))
-                        health['components_reporting'] = comps
+                                health.setdefault('components', []).append(
+                                    v3.decode('utf-8', 'replace'))
                 out['agent_health'] = health
             elif field == 6:
                 out['effective_config'] = True
-            elif field == 7:
-                out['remote_config_status'] = True
+            elif field == 7 and isinstance(val, bytes):
+                # RemoteConfigStatus: 1 last_remote_config_hash, 2 status,
+                # 3 error_message. Status: UNSET=0 APPLYING=1 APPLIED=2 FAILED=3.
+                hash_ = b''
+                status = 0
+                for f2, _w2, v2 in iter_fields(val):
+                    if f2 == 1 and isinstance(v2, bytes):
+                        hash_ = v2
+                    elif f2 == 2 and not isinstance(v2, bytes):
+                        status = v2
+                out['remote_config_status'] = {'hash': hash_.hex(), 'status': status}
             elif field == 8:
                 out['package_statuses'] = True
             elif field == 9:
-                out['agent_description'] = True
-    except Exception as exc:  # noqa: BLE001 - record and keep serving
+                out['agent_disconnect'] = True
+    except Exception as exc:  # noqa: BLE001 - record loudly in /status
         out['parse_error'] = str(exc)
     return out
 
 
+def ld(field: int, payload: bytes) -> bytes:
+    """Length-delimited protobuf field: tag + varint length + payload."""
+    return varint_bytes((field << 3) | 2) + varint_bytes(len(payload)) + payload
+
+
 def build_server_to_agent(offer_remote_config: bool) -> bytes:
-    """ServerToAgent with an optional remote_config offering."""
-    inner = b''
-    if offer_remote_config:
-        # config_map: field 2 -> config_file (field 1) -> body (field 2)
-        cfg_file = b'\x12' + varint_bytes(len(REMOTE_CONFIG_BODY)) + REMOTE_CONFIG_BODY
-        config_map = b'\x0a' + varint_bytes(len(cfg_file)) + cfg_file
-        remote_cfg = b'\x0a' + varint_bytes(len(CONFIG_HASH)) + CONFIG_HASH
-        remote_cfg += b'\x12' + varint_bytes(len(config_map)) + config_map
-        inner = b'\x1a' + varint_bytes(len(remote_cfg)) + remote_cfg
-    return inner
+    """ServerToAgent with an optional remote_config offering.
+
+    Encoding validated against the real opamp-go client (the naive
+    AgentConfigMap layout of a first draft failed proto.Unmarshal; this one
+    reaches OnMessage with the right body and gets remote_config_status
+    echoed with our hash):
+      ServerToAgent.remote_config (3) -> AgentRemoteConfig:
+        config (1) -> AgentConfigMap:
+          config_map (1) -> map entry: key (1, empty) -> AgentConfigObject:
+            body (1), content_type (2)
+        config_hash (2)
+    """
+    if not offer_remote_config:
+        return b''
+    obj = ld(1, REMOTE_CONFIG_BODY) + ld(2, b'text/yaml')
+    entry = ld(1, b'') + ld(2, obj)
+    config = ld(1, entry)
+    remote = ld(1, config) + ld(2, CONFIG_HASH)
+    return ld(3, remote)
 
 
 def varint_bytes(n: int) -> bytes:
@@ -172,18 +211,35 @@ class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     server_version = 'FakeOpAMP/1.0'
 
-    def do_POST(self):
+    def read_body(self):
+        # opamp-go may send chunked request bodies; BaseHTTPRequestHandler
+        # does not decode them.
+        if 'chunked' in self.headers.get('Transfer-Encoding', '').lower():
+            out = b''
+            while True:
+                size = int(self.rfile.readline().split(b';')[0].strip() or b'0', 16)
+                if size == 0:
+                    while self.rfile.readline().strip():
+                        pass  # trailing headers
+                    return out
+                out += self.rfile.read(size)
+                self.rfile.read(2)  # CRLF after each chunk
         length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(length) if length else b''
+        return self.rfile.read(length) if length else b''
+
+    def do_POST(self):
+        body = self.read_body()
         parsed = parse_agent_to_server(body)
         parsed['ts'] = time.time()
         parsed['path'] = self.path
         with open(STATE_PATH, 'a') as f:
             f.write(json.dumps(parsed) + '\n')
 
-        # Offer remote config on the first report from each connection so the
-        # full lifecycle (status reporting incl. remote_config_status) runs.
-        offer = parsed['remote_config_status'] is False
+        # Offer remote config until the supervisor acknowledges OUR hash
+        # (opamp-go always sends an empty RemoteConfigStatus in the first
+        # message, so presence is not a valid trigger; hash equality is).
+        rcs = parsed['remote_config_status']
+        offer = rcs is None or rcs.get('hash') != CONFIG_HASH.hex()
         resp = build_server_to_agent(offer_remote_config=offer)
         self.send_response(200)
         self.send_header('Content-Type', 'application/x-protobuf')
@@ -200,14 +256,26 @@ class Handler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             pass
         healths = [r['agent_health'] for r in reports if r.get('agent_health')]
+        # ever_unhealthy ignores pre-first-healthy reports: the supervisor
+        # publishes healthy=false by design before the collector's first
+        # health report lands (publishLastReportedHealth, supervisor.go).
+        uids = {r.get('instance_uid') for r in reports if r.get('instance_uid')}
+        rcs_list = [r['remote_config_status'] for r in reports
+                    if isinstance(r.get('remote_config_status'), dict)]
         payload = {
             'connections': len(reports),
+            'distinct_instance_uids': len(uids),
             'health_reports': len(healths),
             'healthy_reports': sum(1 for h in healths if h.get('healthy')),
-            'ever_unhealthy': any(not h.get('healthy') for h in healths),
+            'ever_unhealthy': any(not h.get('healthy')
+                                  for h in healths[healths.index(next(
+                                      h for h in healths if h.get('healthy'))):])
+            if any(h.get('healthy') for h in healths) else False,
             'last_agent_health': healths[-1] if healths else None,
             'agent_description_seen': any(r.get('agent_description') for r in reports),
             'effective_config_seen': any(r.get('effective_config') for r in reports),
+            'remote_config_status': rcs_list[-1] if rcs_list else None,
+            'parse_errors': sum(1 for r in reports if r.get('parse_error')),
         }
         body = json.dumps(payload).encode()
         self.send_response(200)
