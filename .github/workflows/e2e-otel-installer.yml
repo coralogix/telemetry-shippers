@@ -52,6 +52,7 @@ jobs:
               - 'otel-installer/standalone/**'
             docker:
               - 'otel-installer/docker/**'
+              - 'otel-installer/docker/e2e-test/**'
             windows:
               - 'otel-installer/windows/**'
       - id: set-outputs
@@ -475,23 +476,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install supervisor mode
-        run: |
-          CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
-            bash ./otel-installer/docker/docker-install.sh -s \
-            --opamp-attribute fleet.test.id=fleet-demo \
-            --opamp-attribute 'deployment.environment=staging=blue'
 
-      - name: Verify Supervisor attributes
-        run: |
-          docker cp coralogix-otel-collector:/etc/otelcol-contrib/supervisor.yaml /tmp/supervisor.yaml
-          grep -Fx '      service.name: "opentelemetry-collector"' /tmp/supervisor.yaml
-          grep -Fx '      cx.agent.type: "docker"' /tmp/supervisor.yaml
-          grep -Fx '      "fleet.test.id": "fleet-demo"' /tmp/supervisor.yaml
-          grep -Fx '      "deployment.environment": "staging=blue"' /tmp/supervisor.yaml
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: otel-installer/docker/e2e-test/go.mod
+          cache-dependency-path: otel-installer/docker/e2e-test/go.sum
 
-      - name: Reject invalid Supervisor attributes before installation
+      - name: Run supervisor OpAMP e2e test
+        # Installs Supervisor mode against an in-process opamp-go server and
+        # asserts rendered attributes, container liveness, and AgentHealth
+        # reported over OpAMP (see supervisor_test.go).
+        working-directory: otel-installer/docker/e2e-test
+        run: go test -v -timeout 15m ./...
+
+      - name: Reject invalid Supervisor flags before installation
         run: |
           if CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh --opamp-attribute invalid; then
             echo "malformed attribute unexpectedly succeeded" >&2
@@ -501,18 +499,10 @@ jobs:
             echo "attribute outside supervisor mode unexpectedly succeeded" >&2
             exit 1
           fi
-        
-      - name: Verify container running
-        run: |
-          sleep 5
-          docker ps | grep coralogix-otel-collector
-          
-      - name: View logs
-        if: always()
-        run: docker logs coralogix-otel-collector 2>&1 | tail -20
-          
-      - name: Uninstall
-        run: bash ./otel-installer/docker/docker-install.sh --uninstall
+          if CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" bash ./otel-installer/docker/docker-install.sh --opamp-endpoint http://127.0.0.1:4320/opamp/v1; then
+            echo "OpAMP endpoint outside supervisor mode unexpectedly succeeded" >&2
+            exit 1
+          fi
 
   #############################################
   # Windows Script Tests
