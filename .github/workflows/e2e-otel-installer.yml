@@ -487,7 +487,10 @@ jobs:
         # asserts rendered attributes, container liveness, and AgentHealth
         # reported over OpAMP (see supervisor_test.go).
         working-directory: otel-installer/docker/e2e-test
-        run: go test -v -timeout 15m ./...
+        # -count=1 defeats the go test result cache: these tests shell out to
+        # otel-installer/docker/docker-install.sh, which the cache does not
+        # track - a change to the installer must re-run the tests.
+        run: go test -count=1 -v -timeout 15m ./...
 
       - name: Reject invalid Supervisor flags before installation
         run: |
