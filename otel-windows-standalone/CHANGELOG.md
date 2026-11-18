@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.74 / 2026-11-18
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.3
+
+#### Changes from opentelemetry-collector 0.143.3:
+- [Fix] Grant the target allocator ClusterRole `watch` on secrets when `targetAllocator.prometheusCR.enabled` is true, so it can watch secrets referenced by ServiceMonitor, PodMonitor and Probe auth settings without RBAC errors.
+
 ### v0.0.73 / 2026-11-18
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.2
