@@ -32,6 +32,7 @@ SUPERVISOR_MODE=false
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_BASE_CONFIG_PATH=""
 OPAMP_ATTRIBUTES=()
+OPAMP_ENDPOINT_OVERRIDE=""
 DETACHED=true
 
 MEMORY_LIMIT_MIB="${MEMORY_LIMIT_MIB:-512}"
@@ -140,6 +141,7 @@ Options:
     -v, --version <version>     Collector image version in local configuration mode (default: Helm chart appVersion)
     --collector-version <ver>   Collector image version (local configuration mode)
     --supervisor-version <ver>  Supervised collector image version (supervisor mode; default: CURRENT_IMAGE_VERSION)
+    --opamp-endpoint <url>      OpAMP server endpoint override (supervisor mode; testing only - the private key is sent as Bearer to this endpoint)
     -c, --config <path>         Path to custom configuration file
     -s, --supervisor            Use supervisor mode (requires CORALOGIX_DOMAIN)
     --memory-limit <MiB>        Total memory in MiB to allocate to the collector (default: 512)
@@ -240,6 +242,10 @@ parse_args() {
                 ;;
             --supervisor-version)
                 SUPERVISOR_VERSION="$2"
+                shift 2
+                ;;
+            --opamp-endpoint)
+                OPAMP_ENDPOINT_OVERRIDE="$2"
                 shift 2
                 ;;
             -c|--config)
@@ -504,9 +510,16 @@ run_regular_mode() {
 
 get_supervisor_config() {
     local domain="$1"
+    # --opamp-endpoint lets CI tests point the supervisor at a fake OpAMP
+    # server; production default remains the Coralogix ingress. The private
+    # key is sent as Bearer to this endpoint.
+    local opamp_endpoint="https://ingress.${domain}/opamp/v1"
+    if [ -n "$OPAMP_ENDPOINT_OVERRIDE" ]; then
+        opamp_endpoint="${OPAMP_ENDPOINT_OVERRIDE}"
+    fi
     cat <<EOF
 server:
-  endpoint: "https://ingress.${domain}/opamp/v1"
+  endpoint: $(yaml_quote "$opamp_endpoint")
   headers:
     Authorization: "Bearer \${env:CORALOGIX_PRIVATE_KEY}"
   tls:
@@ -696,6 +709,9 @@ main() {
     else
         if [ -n "$SUPERVISOR_VERSION" ]; then
             fail "--supervisor-version can only be used with -s/--supervisor"
+        fi
+        if [ -n "$OPAMP_ENDPOINT_OVERRIDE" ]; then
+            fail "--opamp-endpoint can only be used with -s/--supervisor"
         fi
         if [ -n "$SUPERVISOR_BASE_CONFIG_PATH" ]; then
             fail "--supervisor-base-config can only be used with -s/--supervisor"
