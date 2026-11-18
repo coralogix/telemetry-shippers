@@ -50,11 +50,14 @@ jobs:
           filters: |
             standalone:
               - 'otel-installer/standalone/**'
+              - '.github/workflows/e2e-otel-installer.yml'
             docker:
               - 'otel-installer/docker/**'
               - 'otel-installer/docker/e2e-test/**'
+              - '.github/workflows/e2e-otel-installer.yml'
             windows:
               - 'otel-installer/windows/**'
+              - '.github/workflows/e2e-otel-installer.yml'
       - id: set-outputs
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
