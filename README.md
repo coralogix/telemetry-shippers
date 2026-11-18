@@ -69,7 +69,7 @@ In order to get the updated helm charts from the added repository, please run:
 helm repo update
 ```
 
-For installation of each integration, please go inside each intergation's directory:
+For installation of each integration, please go inside each integration's directory:
 - [Fluentd-HTTP chart](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/k8s-helm/http/README.md)
 - [Fluent-bit-HTTP chart](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/k8s-helm/http/README.md)
 - [Prometheus operator chart](https://github.com/coralogix/telemetry-shippers/blob/master/metrics/prometheus/operator/README.md)
@@ -79,7 +79,7 @@ For installation of each integration, please go inside each intergation's direct
 
 Our k8s manifests integration allow you to install without the use of Helm, specifically for those times were using helm is impossible.
 
-For installation of each integration, please go inside each intergation's directory:
+For installation of each integration, please go inside each integration's directory:
 - [Fluentd-HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluentd/k8s-manifest/README.md)
 - [Fluent-bit-HTTP](https://github.com/coralogix/telemetry-shippers/blob/master/logs/fluent-bit/k8s-manifest/README.md)
 
