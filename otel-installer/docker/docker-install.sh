@@ -519,7 +519,7 @@ get_supervisor_config() {
     fi
     cat <<EOF
 server:
-  endpoint: "$(yaml_quote "$opamp_endpoint")"
+  endpoint: $(yaml_quote "$opamp_endpoint")
   headers:
     Authorization: "Bearer \${env:CORALOGIX_PRIVATE_KEY}"
   tls:
