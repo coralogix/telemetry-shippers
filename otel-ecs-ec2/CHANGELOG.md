@@ -1,5 +1,15 @@
 # Changelog
 
+### v0.0.70 / 2026-11-18
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.4`.
+
+#### Changes from opentelemetry-collector 0.143.4:
+- [Fix] Collect active and rotated Kubernetes container logs on Linux and Windows, preserving file-path metadata for timestamped rotations. Exclude compressed and temporary files and respect `presets.logsCollection.includeCollectorLogs` for active and rotated collector logs.
+
+#### Changes from opentelemetry-collector 0.143.3:
+- [Fix] Grant the target allocator ClusterRole `watch` on secrets when `targetAllocator.prometheusCR.enabled` is true, so it can watch secrets referenced by ServiceMonitor, PodMonitor and Probe auth settings without RBAC errors.
+
 ### v0.0.69 / 2026-11-18
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.2`.
