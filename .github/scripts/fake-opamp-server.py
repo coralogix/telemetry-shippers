@@ -1,32 +1,18 @@
 #!/usr/bin/env python3
 """Fake OpAMP server for the supervisor-mode CI smoke test.
 
-Speaks the HTTP OpAMP protocol well enough for the supervisor to connect and
-report agent status, and records every AgentHealth report it receives so the
-CI job can assert on them (protocol-grade liveness signal instead of log
-greps).
+Speaks the HTTP OpAMP transport (raw protobuf request/response bodies, no
+length-delimited framing) so the real supervisor connects and reports agent
+status; records every AgentToServer message for CI assertions.
 
-Wire format, decoded by hand (no protobuf dependency):
-  AgentToServer (message type 1, length-delimited):
-    field 1: instance_uid  (bytes)
-    field 3: agent_health  (message AgentHealth):
-      field 1: healthy            (varint)
-      field 2: start_time_unix_nano (fixed64)
-      field 3: last_error         (string)
-      field 4: status             (message ComponentHealth)
-    field 6: effective_config    (message)
-    field 7: remote_config_status(message)
-    field 8: package_statuses    (message)
-    field 9: agent_description   (message)
-
-  ServerToAgent (message type 2, length-delimited):
-    field 3: remote_config (message): field 1 = config_hash (bytes),
-      field 2 = config_map (message): field 1 = config_file (message):
-      field 2 = body (bytes)
-Responses are wrapped per the OpAMP HTTP transport: response body is a
-length-delimited ServerToAgent message; Content-Type is
-application/x-protobuf, and the response to the first request carries the
-instance uid echoed via the Agent-Instance-Id header when present.
+Field numbers per opamp.proto (verified against the real opamp-go client):
+  AgentToServer: 1 instance_uid, 2 sequence_num, 3 agent_description,
+    4 capabilities, 5 agent_health, 6 effective_config, 7 remote_config_status,
+    8 package_statuses, 9 agent_disconnect
+  AgentHealth: 1 healthy, 2 start_time_unix_nano, 3 last_error,
+    4 status (string), 6 component entries
+  RemoteConfigStatus: 1 last_remote_config_hash, 2 status
+    (UNSET=0, APPLIED=1, APPLYING=2, FAILED=3), 3 error_message
 """
 import json
 import os
@@ -95,6 +81,8 @@ def iter_fields(msg: bytes):
             pos += 8
         elif wtype == 2:  # length-delimited
             ln, pos = read_varint(msg, pos)
+            if pos + ln > len(msg):
+                raise ValueError('truncated length-delimited field')
             yield field, wtype, msg[pos:pos + ln]
             pos += ln
         elif wtype == 5:  # fixed32
@@ -123,8 +111,8 @@ def parse_agent_to_server(body: bytes) -> dict:
                 out['sequence_num'] = val
             elif field == 3 and isinstance(val, bytes):
                 out['agent_description'] = True
-            elif field == 4 and isinstance(val, bytes):
-                out['capabilities'] = True
+            elif field == 4 and not isinstance(val, bytes):
+                out['capabilities'] = val
             elif field == 5 and isinstance(val, bytes):
                 # AgentHealth: 1 healthy, 2 start_time_unix_nano (fixed64),
                 # 3 last_error, 4 status (string), 6 component health list.
@@ -147,7 +135,7 @@ def parse_agent_to_server(body: bytes) -> dict:
                 out['effective_config'] = True
             elif field == 7 and isinstance(val, bytes):
                 # RemoteConfigStatus: 1 last_remote_config_hash, 2 status,
-                # 3 error_message. Status: UNSET=0 APPLYING=1 APPLIED=2 FAILED=3.
+                # 3 error_message. RemoteConfigStatuses: UNSET=0, APPLIED=1, APPLYING=2, FAILED=3.
                 hash_ = b''
                 status = 0
                 for f2, _w2, v2 in iter_fields(val):
@@ -253,7 +241,11 @@ class Handler(BaseHTTPRequestHandler):
         reports = []
         try:
             with open(STATE_PATH) as f:
-                reports = [json.loads(line) for line in f if line.strip()]
+                for line in f:
+                    try:
+                        reports.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue  # half-written line
         except FileNotFoundError:
             pass
         healths = [r['agent_health'] for r in reports if r.get('agent_health')]
@@ -263,15 +255,21 @@ class Handler(BaseHTTPRequestHandler):
         uids = {r.get('instance_uid') for r in reports if r.get('instance_uid')}
         rcs_list = [r['remote_config_status'] for r in reports
                     if isinstance(r.get('remote_config_status'), dict)]
+        # ever_unhealthy counts only flips AFTER the first healthy report:
+        # the supervisor publishes healthy=false by design before the
+        # collector's first report lands (publishLastReportedHealth).
+        ever_unhealthy = False
+        first_healthy = next((i for i, h in enumerate(healths)
+                              if h.get('healthy')), None)
+        if first_healthy is not None:
+            ever_unhealthy = any(not h.get('healthy')
+                                 for h in healths[first_healthy + 1:])
         payload = {
             'connections': len(reports),
             'distinct_instance_uids': len(uids),
             'health_reports': len(healths),
             'healthy_reports': sum(1 for h in healths if h.get('healthy')),
-            'ever_unhealthy': any(not h.get('healthy')
-                                  for h in healths[healths.index(next(
-                                      h for h in healths if h.get('healthy'))):])
-            if any(h.get('healthy') for h in healths) else False,
+            'ever_unhealthy': ever_unhealthy,
             'last_agent_health': healths[-1] if healths else None,
             'agent_description_seen': any(r.get('agent_description') for r in reports),
             'effective_config_seen': any(r.get('effective_config') for r in reports),

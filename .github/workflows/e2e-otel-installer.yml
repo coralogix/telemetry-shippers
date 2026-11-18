@@ -511,15 +511,13 @@ jobs:
             fi
           done
           curl -fsS "http://${GATEWAY_IP}:4320/status"
-          {
-            echo "OPAMP_ENDPOINT=http://${GATEWAY_IP}:4320/opamp/v1"
-            echo "GATEWAY_IP=${GATEWAY_IP}"
-          } >> "$GITHUB_ENV"
+          echo "GATEWAY_IP=${GATEWAY_IP}" >> "$GITHUB_ENV"
 
       - name: Install supervisor mode
         run: |
           CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
             bash ./otel-installer/docker/docker-install.sh -s \
+            --opamp-endpoint "http://${GATEWAY_IP}:4320/opamp/v1" \
             --opamp-attribute fleet.test.id=fleet-demo \
             --opamp-attribute 'deployment.environment=staging=blue'
 
@@ -602,20 +600,23 @@ jobs:
         run: |
           # Protocol-grade signal (replaces log greps as the primary agent
           # check): the supervisor itself reports AgentHealth for the managed
-          # collector via OpAMP AgentToServer messages. The fake server
-          # records every report; healthy install => reports exist, latest is
-          # healthy, and health never flipped unhealthy. A collector that
-          # crash-loops inside the supervisor (invisible to RestartCount)
-          # shows up here as unhealthy reports or missing reports.
+          # collector via OpAMP AgentToServer messages. Poll until a HEALTHY
+          # report lands (the supervisor deliberately sends healthy=false
+          # before the collector's first real report, so waiting for any
+          # report is not enough), then assert the full battery.
+          STATUS=""
           for _ in $(seq 1 12); do
-            STATUS=$(curl -fsS "http://${GATEWAY_IP}:4320/status" || true)
-            if echo "$STATUS" | grep -q '"health_reports": 0'; then
-              echo "No AgentHealth reports yet; waiting..." >&2
-              sleep 5
-            else
+            STATUS=$(curl -fsS --retry 3 --retry-delay 2 "http://${GATEWAY_IP}:4320/status" 2>/dev/null || true)
+            if echo "$STATUS" | jq -e '.healthy_reports >= 1' >/dev/null 2>&1; then
               break
             fi
+            echo "waiting for a healthy agent report..." >&2
+            sleep 5
           done
+          if [ -z "$STATUS" ]; then
+            echo "Fake OpAMP server unreachable" >&2
+            exit 1
+          fi
           echo "Fake OpAMP status: $STATUS"
           if ! echo "$STATUS" | jq -e '.health_reports >= 1' >/dev/null; then
             echo "Supervisor never reported agent health over OpAMP" >&2
@@ -635,11 +636,9 @@ jobs:
             docker logs coralogix-otel-collector 2>&1 | tail -20 >&2
             exit 1
           fi
-          # Full response lifecycle: with remote config offering disabled
-          # (default), the supervisor keeps the installer-written config and
-          # never reports an applied hash - assert the status is UNSET (0) or
-          # APPLYING-free, i.e. the supervisor is not stuck mid-apply. The
-          # APPLIED lifecycle itself is the follow-up's poisoned-config proof.
+          # Remote config offering is disabled by default (the offer would
+          # replace the supervisor-injected agent config and stall APPLYING);
+          # the offer path exists for the follow-up's poisoned-config proof.
           if echo "$STATUS" | jq -e '.remote_config_status.status == 3' >/dev/null; then
             echo "Supervisor reported remote config FAILED (should not have been offered)" >&2
             exit 1
@@ -652,14 +651,14 @@ jobs:
             echo "Fake server failed to parse one or more AgentToServer messages" >&2
             exit 1
           fi
-          echo "OpAMP protocol assertions passed: health reported, healthy, config applied"
+          echo "OpAMP protocol assertions passed: health reported, healthy, stable identity"
 
       - name: View logs
         if: always()
         run: |
           docker inspect -f 'State={{.State.Status}} ExitCode={{.State.ExitCode}} Restarts={{.RestartCount}}' coralogix-otel-collector || true
           echo "--- fake OpAMP reports ---"
-          tail -5 /tmp/fake-opamp/reports.jsonl 2>/dev/null || echo "(no reports recorded)"
+          cat /tmp/fake-opamp/reports.jsonl 2>/dev/null || echo "(no reports recorded)"
           echo "--- supervisor logs ---"
           docker logs coralogix-otel-collector 2>&1 | tail -30
 
