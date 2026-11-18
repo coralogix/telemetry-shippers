@@ -2,6 +2,13 @@
 
 ## otel-macos-standalone
 
+### v0.0.73 / 2026-11-18
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.2
+
+#### Changes from opentelemetry-collector 0.143.2:
+- [Feat] Add `presets.fleetManagement.supervisor.collectorUpgrades`, enabled by default, to enable the `AcceptsPackages` and `ReportsPackageStatuses` OpAMP capabilities in the Supervisor.
+
 ### v0.0.72 / 2026-11-16
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.1

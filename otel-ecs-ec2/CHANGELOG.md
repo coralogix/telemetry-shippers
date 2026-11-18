@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.69 / 2026-11-18
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.2`.
+
+#### Changes from opentelemetry-collector 0.143.2:
+- [Feat] Add `presets.fleetManagement.supervisor.collectorUpgrades`, enabled by default, to enable the `AcceptsPackages` and `ReportsPackageStatuses` OpAMP capabilities in the Supervisor.
+
 ### v0.0.68 / 2026-11-16
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.1`.
