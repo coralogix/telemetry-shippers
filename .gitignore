@@ -14,3 +14,4 @@ logs/fluent-bit/k8s-manifest/fluentbit-env-cm.yaml
 .terraform
 
 .envrc
+__pycache__/
