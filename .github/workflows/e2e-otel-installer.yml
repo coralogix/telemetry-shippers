@@ -528,8 +528,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: install
       attempt: 1
@@ -540,8 +540,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-install-a1.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: install
       attempt: 2
@@ -552,8 +552,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-install-a1.result == 'failure' && needs.windows-install-a2.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: install
       attempt: 3
@@ -564,8 +564,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-install-a1.result == 'failure' && needs.windows-install-a2.result == 'failure' && needs.windows-install-a3.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: install
       attempt: 4
@@ -576,8 +576,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-install-a1.result == 'failure' && needs.windows-install-a2.result == 'failure' && needs.windows-install-a3.result == 'failure' && needs.windows-install-a4.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: install
       attempt: 5
@@ -588,8 +588,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: version
       attempt: 1
@@ -600,8 +600,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-version-a1.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: version
       attempt: 2
@@ -612,8 +612,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-version-a1.result == 'failure' && needs.windows-version-a2.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: version
       attempt: 3
@@ -624,8 +624,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-version-a1.result == 'failure' && needs.windows-version-a2.result == 'failure' && needs.windows-version-a3.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: version
       attempt: 4
@@ -636,8 +636,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-version-a1.result == 'failure' && needs.windows-version-a2.result == 'failure' && needs.windows-version-a3.result == 'failure' && needs.windows-version-a4.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: version
       attempt: 5
@@ -648,8 +648,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: config
       attempt: 1
@@ -660,8 +660,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-config-a1.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: config
       attempt: 2
@@ -672,8 +672,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-config-a1.result == 'failure' && needs.windows-config-a2.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: config
       attempt: 3
@@ -684,8 +684,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-config-a1.result == 'failure' && needs.windows-config-a2.result == 'failure' && needs.windows-config-a3.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: config
       attempt: 4
@@ -696,8 +696,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-config-a1.result == 'failure' && needs.windows-config-a2.result == 'failure' && needs.windows-config-a3.result == 'failure' && needs.windows-config-a4.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: config
       attempt: 5
@@ -708,8 +708,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: supervisor
       attempt: 1
@@ -720,8 +720,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-supervisor-a1.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: supervisor
       attempt: 2
@@ -732,8 +732,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-supervisor-a1.result == 'failure' && needs.windows-supervisor-a2.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: supervisor
       attempt: 3
@@ -744,8 +744,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-supervisor-a1.result == 'failure' && needs.windows-supervisor-a2.result == 'failure' && needs.windows-supervisor-a3.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: supervisor
       attempt: 4
@@ -756,8 +756,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-supervisor-a1.result == 'failure' && needs.windows-supervisor-a2.result == 'failure' && needs.windows-supervisor-a3.result == 'failure' && needs.windows-supervisor-a4.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: supervisor
       attempt: 5
@@ -768,8 +768,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: purge
       attempt: 1
@@ -780,8 +780,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-purge-a1.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: purge
       attempt: 2
@@ -792,8 +792,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-purge-a1.result == 'failure' && needs.windows-purge-a2.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: purge
       attempt: 3
@@ -804,8 +804,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-purge-a1.result == 'failure' && needs.windows-purge-a2.result == 'failure' && needs.windows-purge-a3.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: purge
       attempt: 4
@@ -816,8 +816,8 @@ jobs:
     if: needs.changes.outputs.windows == 'true' && needs.windows-purge-a1.result == 'failure' && needs.windows-purge-a2.result == 'failure' && needs.windows-purge-a3.result == 'failure' && needs.windows-purge-a4.result == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
-      CORALOGIX_PRIVATE_KEY: ${{ env.CORALOGIX_PRIVATE_KEY }}
-      CORALOGIX_DOMAIN: ${{ env.CORALOGIX_DOMAIN }}
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
     with:
       scenario: purge
       attempt: 5
