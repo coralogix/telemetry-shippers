@@ -665,6 +665,37 @@ The cluster collector is best suited to enable [presets](https://github.com/open
 
 For example, if you enable the `kubernetesEvents` preset, the [Kubernetes objects receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver) configuration will be added dynamically during the Helm installation. This configuration enables the collection of `events.k8s.io` objects from the Kubernetes API server.
 
+### Prometheus annotation discovery
+
+The `prometheusAnnotationDiscovery` preset collects Prometheus metrics from workloads annotated with `prometheus.io/scrape: "true"`, without requiring the Prometheus Operator or its CRDs. It adds a `k8s_observer` extension that watches the cluster for annotated pods (and optionally Services), and a `receiver_creator` that starts a scrape receiver for each match. The port and path come from the `prometheus.io/port` (default `9090`) and `prometheus.io/path` (default `/metrics`) annotations.
+
+```yaml
+opentelemetry-cluster-collector:
+  presets:
+    prometheusAnnotationDiscovery:
+      enabled: true
+      scrapeInterval: "30s"
+      observePods: true
+      observeServices: false
+      enableServiceRule: false
+```
+
+**Pods (default).** With `observePods: true`, each annotated pod is scraped at its own pod IP, so every replica of a multi-replica workload is collected. Annotate the pod template (`spec.template.metadata`), not the Service. This is the recommended mode.
+
+**Services.** With `observeServices: true` and `enableServiceRule: true`, each annotated Service is scraped once, at its cluster DNS/VIP address. Kubernetes load-balances each scrape to a single backing pod, so on a multi-replica workload every scrape returns metrics from one random replica. Use this mode only to probe a Service as a single endpoint — for per-replica metrics, annotate the pods or use the [Target Allocator with a PodMonitor](#target-allocator-and-prometheus-operator-with-opentelemetry).
+
+> [!IMPORTANT]
+>
+> Run this preset on the **cluster-collector** (a single-replica deployment), which must be enabled separately (`opentelemetry-cluster-collector.enabled: true`). The `k8s_observer` watches pods cluster-wide: on the agent DaemonSet, **every agent creates scrape receivers for every annotated pod in the cluster**, so on a 10-node cluster each annotated pod is scraped 10 times — multiplied scrape load and duplicated series.
+>
+> The Service rule is also cluster-generic: with `observeServices: true` and `enableServiceRule: true`, *any* Service carrying `prometheus.io/scrape: "true"` in any namespace gets a VIP scrape receiver — including system Services such as `kube-dns`/CoreDNS, which carry that annotation on EKS and several other distributions.
+
+**Migrating from Prometheus or Datadog Service annotations?** The common pattern of annotating the *Service* behaves differently here: by default the preset ignores Service annotations entirely, and with the Service rule enabled it scrapes the Service's ClusterIP rather than every pod behind it. Symptom: some replicas are missing or series have gaps. Move the annotations to the pod template, or use the [Target Allocator with a PodMonitor or ServiceMonitor](#podmonitor-vs-servicemonitor-vs-the-annotation-preset).
+
+For a side-by-side comparison of this preset against `PodMonitor`/`ServiceMonitor` with the Target Allocator, see [PodMonitor vs ServiceMonitor vs the annotation preset](#podmonitor-vs-servicemonitor-vs-the-annotation-preset).
+
+Enable this preset through the values above instead of adding a hand-written `receiver_creator` block, to avoid double-scraping.
+
 ## Kubernetes events: reducing the amount of collected data
 
 When collecting Kubernetes events using the cluster collector, it is common for the number of events to reach millions, especially in large clusters with numerous nodes and constantly scaling applications. To collect only the relevant data, you can use the following settings.
@@ -1374,6 +1405,10 @@ You can customize the scrape interval for Prometheus Custom Resources by configu
 
 For more details on Prometheus custom resources and target allocator see the documentation [here](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#discovery-of-prometheus-custom-resources).
 
+> [!NOTE]
+>
+> The Target Allocator and the [Prometheus annotation discovery](#prometheus-annotation-discovery) preset are alternative ways to discover scrape targets — see [PodMonitor vs ServiceMonitor vs the annotation preset](#podmonitor-vs-servicemonitor-vs-the-annotation-preset) to choose between them.
+
 ### Discovery
 
 The Target Allocator discovers [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator/tree/main) Custom Resources, namely the ServiceMonitor and PodMonitor as Metrics Targets. These metrics targets detail the endpoints of exportable metrics available on the Kubernetes cluster as "jobs."
@@ -1400,7 +1435,7 @@ Both ServiceMonitor and PodMonitor use selectors to detect pods or services to m
 
 #### ServiceMonitor
 
-A ServiceMonitor provides metrics from the service itself and each of its endpoints. This means each pod implementing the service will be discovered and scraped.
+A ServiceMonitor selects Services by label, then scrapes each address in the Service's Endpoints on the named port. For a selector-backed Service that means every backing pod, each at its own pod IP. The Service's cluster IP is never scraped, so there is no load-balancing across replicas.
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -1434,7 +1469,7 @@ More details on writing the ServiceMonitor can be found in the [ServiceMonitor S
 
 #### PodMonitor
 
-For workloads that cannot be exposed behind a service, a PodMonitor is used instead.
+A PodMonitor selects **pods directly by label** and scrapes each matching pod at its own pod IP — no Service involved, so every replica of a multi-replica workload is collected. It is also used for workloads that cannot be exposed behind a Service.
 
 This includes:
 
@@ -1463,6 +1498,24 @@ spec:
 Details:
 
 - `podMetricsEndpoints` : Similar to `endpoint`, this defines the pod endpoint serving Prometheus metrics. See [PodMetricsEndpoint spec](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.PodMetricsEndpoint).
+
+- `podMetricsEndpoints[].port` selects a **named container port** (e.g. `port: metrics`), while `targetPort` references a port number directly; `path` sets the metrics path (default `/metrics`).
+
+#### PodMonitor vs ServiceMonitor vs the annotation preset
+
+|                                                            | Target                                                                              | Per-replica safe                                                       | Discovery source                      | Requires                                   | Runs on                            |
+|------------------------------------------------------------|-------------------------------------------------------------------------------------|------------------------------------------------------------------------|---------------------------------------|--------------------------------------------|------------------------------------|
+| `PodMonitor` (Target Allocator)                            | Every pod matching a label selector, at its pod IP                                  | Yes                                                                    | `monitoring.coreos.com` CRDs          | CRDs installed + `targetAllocator.enabled` | agent DaemonSet, sharded per node  |
+| `ServiceMonitor`                                           | Every Endpoints address of selected Services, at pod IPs (selector-backed Services) | Yes (for selector-backed Services)                                     | `monitoring.coreos.com` CRDs          | CRDs installed + `targetAllocator.enabled` | agent DaemonSet, sharded per node  |
+| Annotation preset, `observePods` (default)                 | Each annotated pod, at its pod IP                                                   | Yes                                                                    | `prometheus.io/*` pod annotations     | nothing extra                              | cluster-collector (single replica) |
+| Annotation preset, `observeServices` + `enableServiceRule` | Each annotated **Service** once, at its cluster DNS/VIP                             | **No** — kube-proxy sends each scrape to one random pod (probing only) | `prometheus.io/*` Service annotations | nothing extra                              | cluster-collector (single replica) |
+
+Notes:
+
+- Use a `PodMonitor` when the pods themselves are the scrape units (every replica must be collected), and a `ServiceMonitor` when you want discovery to follow the Service's Endpoints (for example, workloads already exposing metrics through a Service, or externally managed Endpoints).
+- Use the annotation preset when you do not want to maintain Prometheus Operator CRDs at all; annotations live directly in the pod template. For small clusters with modest scrape counts this is the simplest option; for large clusters or heavy pod churn, the Target Allocator's per-node sharding scales better.
+- Do not enable the preset and the Target Allocator over the same targets — both would scrape them, doubling the data.
+- With the preset, annotate the pod template (via the Deployment/StatefulSet `spec.template.metadata`), not the Service.
 
 ### Prerequisites
 
@@ -1518,17 +1571,23 @@ helm upgrade --install otel-coralogix-integration coralogix-charts-virtual/otel-
 
 ![Target Allocator Pods](./static/target-allocator-pods.png)
 
+**STEP 3.** Create a `PodMonitor` or `ServiceMonitor` for your workloads (see the [examples above](#monitoring-crds-servicemonitor--podmonitor)) and apply it with `kubectl apply -f`. The chart does not create these resources for you — the Target Allocator only discovers the ones you define. With the default empty selectors it picks up all PodMonitors and ServiceMonitors in the cluster. Verify the target assignment through the `/jobs` endpoint as described in the Target Allocator troubleshooting section below.
+
 ## Troubleshooting
 
-To check if the jobs and scrape configs generated by the Target Allocator are correct and ServiceMonitors and PodMonitors are successfully detected, port-forward to the Target Allocator's exposed service. The information will be available under the `/jobs` and `/scrape_configs` HTTP paths.
+To check if the jobs and scrape configs generated by the Target Allocator are correct and ServiceMonitors and PodMonitors are successfully detected, port-forward directly to the Target Allocator pod. The information will be available under the `/jobs` and `/scrape_configs` HTTP paths.
 
-The Target Allocator’s service can be located with the following command: `kubectl get svc -n <namespace>`
+The Target Allocator's pod can be located with the following command: `kubectl get pods -n <namespace> -l app.kubernetes.io/name=opentelemetry-agent-target-allocator`
 
 Port forward to the target allocator pod with the following `kubectl` command:
 
 ```
-kubectl port-forward -n <namespace> svc/coralogix-opentelemetry-targetallocator 8080:8080
+kubectl port-forward -n <namespace> pod/<target-allocator-pod-name> 8080:8080
 ```
+
+> [!NOTE]
+>
+> Older chart versions documented port-forwarding the `svc/coralogix-opentelemetry-targetallocator` Service. That stopped working after the default Target Allocator image was bumped (recent Target Allocator images, `v0.111.0` and later): these images authenticate their HTTP endpoints, and the collector authenticates with its service-account token. An unauthenticated `curl` to `/jobs` returns `401 Access not authorized`; port-forwarding the pod with the command above serves the endpoints without authentication and was verified working on the current chart.
 
 You can browse or curl the `/jobs` and `/scrape_configs` endpoints for the detected PodMonitor & ServiceMonitor resources and the generated scrape configs.
 
@@ -1604,24 +1663,7 @@ See the base [opentelemetry-collector chart](https://github.com/coralogix/opente
 
 ### eBPF profiler metrics scrape via cluster-collector annotation discovery
 
-Enable the `prometheusAnnotationDiscovery` preset on the cluster-collector to discover pods (and optionally services) annotated with `prometheus.io/*`.
-
-```yaml
-opentelemetry-cluster-collector:
-  presets:
-    prometheusAnnotationDiscovery:
-      enabled: true
-      scrapeInterval: "30s"
-      observePods: true
-      observeServices: false
-      enableServiceRule: false
-```
-
-Notes:
-
-- To discover services via annotations, set `observeServices: true` and `enableServiceRule: true`.
-- Pod discovery uses `prometheus.io/scrape`, `prometheus.io/path`, and `prometheus.io/port` annotations.
-- Use the `prometheusAnnotationDiscovery` preset on the cluster-collector instead of adding a custom receiver_creator block to avoid double-scraping.
+Expose the profiler's metrics through the cluster collector's [Prometheus annotation discovery](#prometheus-annotation-discovery) preset in pod mode (the defaults shown in the example above). The profiler pods carry the `prometheus.io/*` annotations, so each profiler pod is scraped at its own pod IP.
 
 ## Opentelemetry EBPF Instrumentation
 
