@@ -34,7 +34,7 @@ jobs:
         id: readme-check
         if: github.event_name == 'pull_request'
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' || true)
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' '.github/workflows/e2e-otel-installer.yml' '.github/workflows/windows-standalone-e2e.yml' || true)
           if [ -z "$CHANGED" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
