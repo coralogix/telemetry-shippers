@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'otel-installer/**'
+      - '.github/workflows/e2e-otel-installer.yml'
+      - '.github/workflows/windows-standalone-e2e.yml'
   workflow_dispatch:
 
 permissions:
