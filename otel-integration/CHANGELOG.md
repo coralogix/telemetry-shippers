@@ -2,6 +2,13 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.385 / 2026-11-20
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.5
+
+#### Changes from opentelemetry-collector 0.143.5:
+- [Feat] Add the opt-in `dbMonitoring` preset for named PostgreSQL targets. Collect performance, health, and table metrics, with optional query samples, top queries, and catalog events. Support password environment variables, TLS, and database resource attributes. Collect schemas through direct database connections without `dblink`. Support dedicated DB collectors with OTLP disabled and include a single-replica example with `Recreate` updates.
+
 ### v0.0.384 / 2026-11-18
 
 - [Chore] Bump the coralogix-operator subchart from 2.19.0 to 2.20.0 ([release notes](https://github.com/coralogix/coralogix-operator/releases/tag/v2.20.0)).
