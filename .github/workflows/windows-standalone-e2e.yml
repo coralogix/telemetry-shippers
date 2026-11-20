@@ -27,6 +27,10 @@ on:
         required: true
       CORALOGIX_DOMAIN:
         required: true
+    outputs:
+      outcome:
+        description: 'success or failure for the caller retry gate'
+        value: ${{ jobs.windows-standalone.outputs.outcome }}
 
 permissions:
   contents: read
@@ -40,6 +44,7 @@ jobs:
     name: Standalone - Windows (${{ inputs.scenario }}, attempt ${{ inputs.attempt }})
     runs-on: windows-latest
     timeout-minutes: 35
+    continue-on-error: true
     outputs:
       outcome: ${{ steps.set-outcome.outputs.outcome }}
     steps:
