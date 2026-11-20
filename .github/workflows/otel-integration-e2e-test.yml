@@ -80,7 +80,8 @@ jobs:
           --set global.hostedEndpoint=$HOSTENDPOINT \
           -f ./values.yaml \
           -f ./e2e-test/testdata/values-e2e-test.yaml \
-          -f ./e2e-test/testdata/values-e2e-cluster-collector.yaml
+          -f ./e2e-test/testdata/values-e2e-cluster-collector.yaml \
+          -f ./e2e-test/testdata/values-e2e-db-monitoring.yaml
           kubectl -n default rollout status daemonset/coralogix-opentelemetry-agent --timeout=300s
       - name: Run E2E test
         env:

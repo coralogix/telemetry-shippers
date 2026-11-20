@@ -665,6 +665,45 @@ The cluster collector is best suited to enable [presets](https://github.com/open
 
 For example, if you enable the `kubernetesEvents` preset, the [Kubernetes objects receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver) configuration will be added dynamically during the Helm installation. This configuration enables the collection of `events.k8s.io` objects from the Kubernetes API server.
 
+## Database monitoring
+
+Set `opentelemetry-db-monitoring.enabled: true` to deploy a dedicated PostgreSQL collector.
+It runs one replica and uses `Recreate` updates to avoid duplicate polling during upgrades.
+Updates cause a short collection gap. Keep autoscaling disabled.
+The collector has its own ServiceAccount. Static database targets do not need cluster-wide RBAC.
+It has no OTLP listener, Service, host network, or host ports.
+
+Use [values-db-monitoring.yaml](values-db-monitoring.yaml) with your normal values:
+
+```sh
+helm upgrade --install otel-coralogix-integration coralogix/otel-integration \
+  --namespace <namespace> \
+  -f custom-values.yaml \
+  -f values-db-monitoring.yaml
+```
+
+Edit the example's host, database names, and `instanceId` first.
+Create the `db-monitoring` Secret with an `orders-password` key in the release namespace.
+The example keeps the existing `coralogix-keys` Secret reference for Coralogix export.
+Helm replaces the `extraEnvs` list when you override it, so include both Secret references.
+
+Configure targets under `opentelemetry-db-monitoring.presets.dbMonitoring.postgresql`.
+Each target needs a unique `name`, connection credentials, and a stable `instanceId`.
+TLS is enabled by default. Mount a CA file and set `tls.ca_file` if your server uses a private CA.
+Use `resourceAttributes` for database metadata. Collector host metadata is not added to database records.
+
+Metrics are enabled by default. Query samples, top queries, and catalog collection are optional.
+Grant the monitoring user `pg_monitor`. Top queries also need `pg_stat_statements`.
+See the [PostgreSQL receiver setup](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.165.0/receiver/postgresqlreceiver/README.md).
+Catalog records use the Coralogix resource catalog exporter routing.
+If you enable Fleet Management with Supervisor, set `presets.fleetManagement.supervisor.minimalCollectorConfig: false` to keep the DB pipelines.
+
+Run the live PostgreSQL test from `otel-integration/k8s-helm/e2e-test`:
+
+```sh
+bash ./run-all.sh --test TestE2E_DBMonitoring
+```
+
 ## Kubernetes events: reducing the amount of collected data
 
 When collecting Kubernetes events using the cluster collector, it is common for the number of events to reach millions, especially in large clusters with numerous nodes and constantly scaling applications. To collect only the relevant data, you can use the following settings.

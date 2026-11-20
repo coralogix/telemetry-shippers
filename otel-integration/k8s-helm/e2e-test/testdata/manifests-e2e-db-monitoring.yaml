@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: db-monitoring-e2e
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbm-postgresql
+  namespace: default
+stringData:
+  password: dbm-test-password
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbm-postgresql-init
+  namespace: db-monitoring-e2e
+data:
+  init.sql: |
+    CREATE EXTENSION pg_stat_statements;
+    CREATE USER otel WITH PASSWORD 'dbm-test-password';
+    GRANT pg_monitor TO otel;
+    CREATE USER app WITH PASSWORD 'app-test-password';
+    CREATE TABLE widgets (id integer PRIMARY KEY, name text);
+    INSERT INTO widgets VALUES (1, 'first'), (2, 'second'), (3, 'third');
+    GRANT SELECT ON widgets TO app, otel;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dbm-postgresql
+  namespace: db-monitoring-e2e
+spec:
+  selector:
+    app: dbm-postgresql
+  ports:
+    - port: 5432
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dbm-postgresql
+  namespace: db-monitoring-e2e
+  labels:
+    app: dbm-postgresql
+spec:
+  containers:
+    - name: postgres
+      image: postgres:17.2
+      args: ["-c", "shared_preload_libraries=pg_stat_statements"]
+      env:
+        - name: POSTGRES_PASSWORD
+          value: postgres-test-password
+        - name: POSTGRES_DB
+          value: orders
+      volumeMounts:
+        - name: init
+          mountPath: /docker-entrypoint-initdb.d
+      readinessProbe:
+        exec:
+          command: [pg_isready, -U, postgres, -d, orders]
+    - name: queries
+      image: postgres:17.2
+      env:
+        - name: PGPASSWORD
+          value: app-test-password
+      command: [sh, -c]
+      args:
+        - |
+          until pg_isready -h 127.0.0.1 -U app -d orders; do sleep 1; done
+          while true; do
+            psql -h 127.0.0.1 -U app -d orders -c 'SELECT count(*) FROM widgets, pg_sleep(2)'
+          done
+  volumes:
+    - name: init
+      configMap:
+        name: dbm-postgresql-init

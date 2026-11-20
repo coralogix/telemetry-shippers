@@ -5,7 +5,7 @@ global:
   defaultSubsystemName: "integration"
   logLevel: "info"
   collectionInterval: "30s"
-  version: "0.0.384"
+  version: "0.0.385"
   deploymentEnvironmentName: ""
 
   extensions:
@@ -494,6 +494,65 @@ opentelemetry-agent:
   #   enabled: true
   #   defaultRules:
   #     enabled: true
+
+# Dedicated collector for database monitoring. Configure PostgreSQL targets in
+# presets.dbMonitoring.postgresql. See values-db-monitoring.yaml for an example.
+opentelemetry-db-monitoring:
+  enabled: false
+  mode: deployment
+  fullnameOverride: coralogix-opentelemetry-db-monitoring
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  rollout:
+    strategy: Recreate
+  hostNetwork: false
+  service:
+    enabled: false
+  ports:
+    otlp:
+      enabled: false
+    otlp-http:
+      enabled: false
+  presets:
+    dbMonitoring:
+      enabled: true
+      postgresql: []
+    otlpReceiver:
+      enabled: false
+    coralogixExporter:
+      enabled: true
+      privateKey: ${env:CORALOGIX_PRIVATE_KEY}
+    metadata:
+      enabled: true
+      clusterName: "{{.Values.global.clusterName}}"
+      integrationName: coralogix-integration-helm
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+  config:
+    service:
+      telemetry:
+        resource:
+          service.name: opentelemetry-db-monitoring
+          cx.agent.type: db-monitoring
+        logs:
+          level: "{{.Values.global.logLevel}}"
+      pipelines:
+        logs:
+          exporters: []
+        metrics:
+          exporters: []
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 2G
 
 opentelemetry-cluster-collector:
   enabled: true

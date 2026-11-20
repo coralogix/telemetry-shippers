@@ -1,0 +1,58 @@
+opentelemetry-db-monitoring:
+  enabled: true
+  presets:
+    dbMonitoring:
+      postgresql:
+        - name: orders
+          host: dbm-postgresql.db-monitoring-e2e.svc.cluster.local
+          username: otel
+          password: ${env:DB_PASSWORD}
+          instanceId: e2e/orders
+          connectDatabase: orders
+          databases: [orders]
+          collectionInterval: 1s
+          tls:
+            insecure: true
+          resourceAttributes:
+            k8s.namespace.name: db-monitoring-e2e
+          querySamples:
+            enabled: true
+          topQueries:
+            enabled: true
+          catalog:
+            enabled: true
+    coralogixExporter:
+      enabled: false
+  extraEnvs:
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: dbm-postgresql
+          key: password
+  config:
+    exporters:
+      otlp/dbm-metrics:
+        endpoint: "{{.Values.global.hostedEndpoint}}:5347"
+        tls:
+          insecure: true
+      otlp/dbm-logs:
+        endpoint: "{{.Values.global.hostedEndpoint}}:5349"
+        tls:
+          insecure: true
+    # Shorten the catalog and top-query intervals for this test.
+    receivers:
+      postgresql/db_monitoring_postgresql_orders_queries:
+        top_query_collection:
+          collection_interval: 1s
+      sql_query/db_monitoring_postgresql_orders_details:
+        initial_delay: 1s
+        collection_interval: 1s
+      sql_query/db_monitoring_postgresql_orders_schema_orders:
+        initial_delay: 1s
+        collection_interval: 1s
+    service:
+      pipelines:
+        metrics:
+          exporters: [otlp/dbm-metrics]
+        logs:
+          exporters: [otlp/dbm-logs]
