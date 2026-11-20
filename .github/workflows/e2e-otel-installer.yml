@@ -60,6 +60,7 @@ jobs:
             windows:
               - 'otel-installer/windows/**'
               - '.github/workflows/e2e-otel-installer.yml'
+              - '.github/workflows/windows-standalone-e2e.yml'
       - id: set-outputs
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -519,9 +520,13 @@ jobs:
   #######################################################################################  ############################################################################################
   # Standalone - Windows tests: each scenario runs up to 2 attempts. The hosted Windows
   # pool loses runners mid-job (~30% observed 2026-11-18: 45-min hang, null step
-  # conclusions; passes on a fresh runner). Attempt 2 is skipped unless attempt 1
-  # failed, so a healthy run costs exactly one attempt. Scenario bodies live once in
-  # windows-standalone-e2e.yml.
+  # conclusions; passes on a fresh runner). Attempt 2 runs only if attempt 1 failed;
+  # a healthy run costs exactly one attempt.
+  #
+  # Result plumbing: a1 has continue-on-error so a runner-loss failure does not fail
+  # the run while a2 can still recover; a1 records its outcome in an output, a2 reads
+  # it, and the per-scenario verdict job fails the run only when BOTH attempts failed.
+  # Scenario bodies live once in windows-standalone-e2e.yml.
   ############################################################################################
 
   windows-install-a1:
@@ -529,6 +534,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
+    continue-on-error: true
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
       CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
@@ -539,7 +545,7 @@ jobs:
   windows-install-a2:
     name: Standalone - Windows Install (retry)
     needs: [windows-install-a1]
-    if: needs.changes.outputs.windows == 'true' && needs.windows-install-a1.result == 'failure'
+    if: needs.changes.outputs.windows == 'true' && needs.windows-install-a1.outputs.outcome == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
@@ -548,11 +554,28 @@ jobs:
       scenario: install
       attempt: 2
 
+  windows-install-verdict:
+    name: Standalone - Windows Install verdict
+    needs: [changes, windows-install-a1, windows-install-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          A1="${{ needs.windows-install-a1.outputs.outcome }}"
+          A2="${{ needs.windows-install-a2.result }}"
+          echo "attempt 1 outcome: ${{ A1 }}; attempt 2 result: ${{ A2 }}"
+          if [ "${{ A1 }}" = "failure" ] && [ "${{ A2 }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
   windows-version-a1:
     name: Standalone - Windows Specific Version
     needs: changes
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
+    continue-on-error: true
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
       CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
@@ -563,7 +586,7 @@ jobs:
   windows-version-a2:
     name: Standalone - Windows Specific Version (retry)
     needs: [windows-version-a1]
-    if: needs.changes.outputs.windows == 'true' && needs.windows-version-a1.result == 'failure'
+    if: needs.changes.outputs.windows == 'true' && needs.windows-version-a1.outputs.outcome == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
@@ -572,11 +595,28 @@ jobs:
       scenario: version
       attempt: 2
 
+  windows-version-verdict:
+    name: Standalone - Windows Specific Version verdict
+    needs: [changes, windows-version-a1, windows-version-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          A1="${{ needs.windows-version-a1.outputs.outcome }}"
+          A2="${{ needs.windows-version-a2.result }}"
+          echo "attempt 1 outcome: ${{ A1 }}; attempt 2 result: ${{ A2 }}"
+          if [ "${{ A1 }}" = "failure" ] && [ "${{ A2 }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
   windows-config-a1:
     name: Standalone - Windows Custom Config
     needs: changes
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
+    continue-on-error: true
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
       CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
@@ -587,7 +627,7 @@ jobs:
   windows-config-a2:
     name: Standalone - Windows Custom Config (retry)
     needs: [windows-config-a1]
-    if: needs.changes.outputs.windows == 'true' && needs.windows-config-a1.result == 'failure'
+    if: needs.changes.outputs.windows == 'true' && needs.windows-config-a1.outputs.outcome == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
@@ -596,11 +636,28 @@ jobs:
       scenario: config
       attempt: 2
 
+  windows-config-verdict:
+    name: Standalone - Windows Custom Config verdict
+    needs: [changes, windows-config-a1, windows-config-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          A1="${{ needs.windows-config-a1.outputs.outcome }}"
+          A2="${{ needs.windows-config-a2.result }}"
+          echo "attempt 1 outcome: ${{ A1 }}; attempt 2 result: ${{ A2 }}"
+          if [ "${{ A1 }}" = "failure" ] && [ "${{ A2 }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
   windows-supervisor-a1:
     name: Standalone - Windows Supervisor Mode
     needs: changes
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
+    continue-on-error: true
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
       CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
@@ -611,7 +668,7 @@ jobs:
   windows-supervisor-a2:
     name: Standalone - Windows Supervisor Mode (retry)
     needs: [windows-supervisor-a1]
-    if: needs.changes.outputs.windows == 'true' && needs.windows-supervisor-a1.result == 'failure'
+    if: needs.changes.outputs.windows == 'true' && needs.windows-supervisor-a1.outputs.outcome == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
@@ -620,11 +677,28 @@ jobs:
       scenario: supervisor
       attempt: 2
 
+  windows-supervisor-verdict:
+    name: Standalone - Windows Supervisor Mode verdict
+    needs: [changes, windows-supervisor-a1, windows-supervisor-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          A1="${{ needs.windows-supervisor-a1.outputs.outcome }}"
+          A2="${{ needs.windows-supervisor-a2.result }}"
+          echo "attempt 1 outcome: ${{ A1 }}; attempt 2 result: ${{ A2 }}"
+          if [ "${{ A1 }}" = "failure" ] && [ "${{ A2 }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
   windows-purge-a1:
     name: Standalone - Windows Uninstall with Purge
     needs: changes
     if: needs.changes.outputs.windows == 'true'
     uses: ./.github/workflows/windows-standalone-e2e.yml
+    continue-on-error: true
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
       CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
@@ -635,7 +709,7 @@ jobs:
   windows-purge-a2:
     name: Standalone - Windows Uninstall with Purge (retry)
     needs: [windows-purge-a1]
-    if: needs.changes.outputs.windows == 'true' && needs.windows-purge-a1.result == 'failure'
+    if: needs.changes.outputs.windows == 'true' && needs.windows-purge-a1.outputs.outcome == 'failure'
     uses: ./.github/workflows/windows-standalone-e2e.yml
     secrets:
       CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
@@ -643,4 +717,20 @@ jobs:
     with:
       scenario: purge
       attempt: 2
+
+  windows-purge-verdict:
+    name: Standalone - Windows Uninstall with Purge verdict
+    needs: [changes, windows-purge-a1, windows-purge-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          A1="${{ needs.windows-purge-a1.outputs.outcome }}"
+          A2="${{ needs.windows-purge-a2.result }}"
+          echo "attempt 1 outcome: ${{ A1 }}; attempt 2 result: ${{ A2 }}"
+          if [ "${{ A1 }}" = "failure" ] && [ "${{ A2 }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
 

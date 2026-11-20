@@ -19,7 +19,7 @@ on:
         required: true
         type: string
       attempt:
-        description: 'Attempt number (1-5), for the job name only'
+        description: 'Attempt number (1-2), for the job name only'
         required: true
         type: number
     secrets:
@@ -31,13 +31,29 @@ on:
 permissions:
   contents: read
 
+env:
+  CORALOGIX_PRIVATE_KEY: 'test-key-12345'
+  CORALOGIX_DOMAIN: 'us1.coralogix.com'
+
 jobs:
   windows-standalone:
     name: Standalone - Windows (${{ inputs.scenario }}, attempt ${{ inputs.attempt }})
     runs-on: windows-latest
     timeout-minutes: 35
+    outputs:
+      outcome: ${{ steps.set-outcome.outputs.outcome }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Init outcome sentinel
+        shell: pwsh
+        run: |
+          # steps below append 'ok' only when their scenario completes successfully;
+          # the Report outcome step converts the sentinel into the job output the
+          # caller's retry gate reads (needs context exposes outputs, not outcomes,
+          # when the caller sets continue-on-error).
+          Remove-Item -Path "$env:TEMP\scenario-ok" -Force -ErrorAction SilentlyContinue
+          "pending" | Out-File -FilePath "$env:TEMP\scenario-ok" -Encoding utf8
 
       # ---- Install (default) ----
       - name: Install (default)
@@ -162,3 +178,19 @@ jobs:
           if (Test-Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml") {
             Write-Host "Config still exists!" ; exit 1
           }
+
+      - name: Mark scenario success
+        shell: pwsh
+        run: |
+          # Reached only if every earlier step of this scenario exited 0 (failures
+          # stop the job before this step). Report success to the caller.
+          "ok" | Out-File -FilePath "$env:TEMP\scenario-ok" -Encoding utf8
+
+      - name: Report outcome
+        id: set-outcome
+        if: always()
+        shell: pwsh
+        run: |
+          $sentinel = Get-Content "$env:TEMP\scenario-ok" -Raw -ErrorAction SilentlyContinue
+          if ($sentinel -match 'ok') { "outcome=success" >> $env:GITHUB_OUTPUT }
+          else { "outcome=failure" >> $env:GITHUB_OUTPUT }
