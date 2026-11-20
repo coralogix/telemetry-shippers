@@ -1,0 +1,35 @@
+# Install with values.yaml and this file. Create the db-monitoring Secret first.
+opentelemetry-db-monitoring:
+  enabled: true
+  presets:
+    dbMonitoring:
+      postgresql:
+        - name: orders
+          host: orders-db.databases.svc.cluster.local
+          username: otel
+          password: ${env:ORDERS_DB_PASSWORD}
+          instanceId: production/orders
+          databases: [orders]
+          # TLS is enabled by default. Set ca_file and mount your CA if needed.
+          resourceAttributes:
+            k8s.cluster.name: production
+            k8s.namespace.name: databases
+            k8s.statefulset.name: orders-db
+          querySamples:
+            enabled: true
+          topQueries:
+            enabled: true
+          catalog:
+            enabled: true
+  # extraEnvs replaces the default list. Keep the Coralogix key reference.
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-keys
+          key: PRIVATE_KEY
+    - name: ORDERS_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: db-monitoring
+          key: orders-password
