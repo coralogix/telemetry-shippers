@@ -13,6 +13,7 @@ cases=(
   "windows:values-windows.yaml"
   "eks-fargate:values-eks-fargate.yaml"
   "ebpf-profiler:values-ebpf-profiler.yaml"
+  "otel-ebpf-profiler:values-otel-ebpf-profiler.yaml"
 )
 
 usage() {
