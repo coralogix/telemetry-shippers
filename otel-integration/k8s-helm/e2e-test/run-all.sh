@@ -80,6 +80,7 @@ TestE2E_Agent|linux|component=agent-collector||./values.yaml ./e2e-test/testdata
 TestE2E_Agent|windows|app.kubernetes.io/name=opentelemetry-agent-windows||./values.yaml ./values-windows.yaml ./e2e-test/testdata/values-e2e-windows-test.yaml
 TestE2E_WindowsLogCollection|windows|app.kubernetes.io/name=opentelemetry-agent-windows||./values.yaml ./values-windows.yaml ./e2e-test/testdata/values-e2e-windows-test.yaml
 TestE2E_ClusterCollector_Metrics|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml
+TestE2E_DBMonitoring|linux|component=agent-collector||./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml ./e2e-test/testdata/values-e2e-db-monitoring.yaml
 TestE2E_TailSampling_Simple|linux|app.kubernetes.io/instance=otel-integration-agent-e2e|RUN_TAIL_SAMPLING_E2E=1|./values.yaml ./tail-sampling-values.yaml ./e2e-test/testdata/values-e2e-tail-sampling.yaml
 TestE2E_TargetAllocator_ServiceMonitorMetrics|linux|component=agent-collector|RUN_TARGET_ALLOCATOR_E2E=1|./values.yaml ./e2e-test/testdata/values-e2e-target-allocator-servicemonitor.yaml
 # TestE2E_HeadSampling_Simple|linux|component=agent-collector|RUN_HEAD_SAMPLING_E2E=1|./values.yaml ./e2e-test/testdata/values-e2e-head-sampling.yaml
@@ -369,8 +370,8 @@ build_custom_image() {
 
     echo -e "${GREEN}Custom image built and loaded successfully${NC}"
 
-    # Set helm args to use the custom image for both agent and cluster collector
-    HELM_IMAGE_ARGS="--set opentelemetry-agent.image.repository=${CUSTOM_IMAGE_REPOSITORY} --set opentelemetry-agent.image.tag=${CUSTOM_IMAGE_TAG} --set opentelemetry-agent.image.pullPolicy=Never --set opentelemetry-cluster-collector.image.repository=${CUSTOM_IMAGE_REPOSITORY} --set opentelemetry-cluster-collector.image.tag=${CUSTOM_IMAGE_TAG} --set opentelemetry-cluster-collector.image.pullPolicy=Never"
+    # Use the custom image for each collector covered by these tests.
+    HELM_IMAGE_ARGS="--set opentelemetry-agent.image.repository=${CUSTOM_IMAGE_REPOSITORY} --set opentelemetry-agent.image.tag=${CUSTOM_IMAGE_TAG} --set opentelemetry-agent.image.pullPolicy=Never --set opentelemetry-cluster-collector.image.repository=${CUSTOM_IMAGE_REPOSITORY} --set opentelemetry-cluster-collector.image.tag=${CUSTOM_IMAGE_TAG} --set opentelemetry-cluster-collector.image.pullPolicy=Never --set opentelemetry-db-monitoring.image.repository=${CUSTOM_IMAGE_REPOSITORY} --set opentelemetry-db-monitoring.image.tag=${CUSTOM_IMAGE_TAG} --set opentelemetry-db-monitoring.image.pullPolicy=Never"
     echo "Will use custom image: ${CUSTOM_IMAGE_REPOSITORY}:${CUSTOM_IMAGE_TAG}"
 }
 
@@ -764,7 +765,7 @@ run_workflow_mode() {
     uninstall_chart
     build_helm_dependencies
 
-    local workflow_values="./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml"
+    local workflow_values="./values.yaml ./e2e-test/testdata/values-e2e-test.yaml ./e2e-test/testdata/values-e2e-cluster-collector.yaml ./e2e-test/testdata/values-e2e-db-monitoring.yaml"
     if ! install_chart "$workflow_values" "component=agent-collector"; then
         log_error "Failed to install chart during workflow mode setup."
         return 1
