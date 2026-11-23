@@ -667,6 +667,9 @@ For example, if you enable the `kubernetesEvents` preset, the [Kubernetes object
 
 ## Database monitoring
 
+> [!WARNING]
+> This feature is highly experimental. It may introduce breaking changes, stop working, or be removed at any time.
+
 Set `opentelemetry-db-monitoring.enabled: true` to deploy a dedicated PostgreSQL collector.
 It runs one replica and uses `Recreate` updates to avoid duplicate polling during upgrades.
 Updates cause a short collection gap. Keep autoscaling disabled.
