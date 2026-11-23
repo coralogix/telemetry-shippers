@@ -24,3 +24,9 @@ coralogix-ebpf-profiler:
         exporter:
         # configure the opentelemetry collector endpoint here
           endpoint: "[$(HOST_IP)]:4317"
+
+opentelemetry-ebpf-profiler:
+  networkMode: ipv6
+  presets:
+    otlpExporter:
+      endpoint: "[${env:K8S_NODE_IP}]:4317"
