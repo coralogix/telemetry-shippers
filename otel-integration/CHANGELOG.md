@@ -2,6 +2,10 @@
 
 ## OpenTelemetry-Integration
 
+### v0.0.386 / 2026-11-23
+
+- [Fix] Make `opentelemetry-ebpf-profiler` work on IPv6-only clusters: `ipv6-values.yaml` now sets `networkMode: ipv6` and brackets the OTLP exporter endpoint (`[${env:K8S_NODE_IP}]:4317`).
+
 ### v0.0.385 / 2026-11-20
 
 - [Feat] Add the optional `opentelemetry-db-monitoring` Deployment for PostgreSQL metrics, query events, and catalog collection. Use one replica, `Recreate` updates, Secret-backed credentials, and no OTLP listener or Service. Add an example and a live PostgreSQL E2E test.
