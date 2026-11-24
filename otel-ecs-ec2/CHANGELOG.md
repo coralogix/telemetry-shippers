@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.0.73 / 2026-11-24
+
+- [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.7`.
+
+#### Changes from opentelemetry-collector 0.143.7:
+- [Feat] Add `rewriteDeprecatedComponentNames` (default `true`), which automatically rewrites deprecated component names in the generated config: `k8sattributes` -> `k8s_attributes` processors, `filelog` -> `file_log` and `hostmetrics` -> `host_metrics` receivers, `otlp` -> `otlp_grpc` and `otlphttp` -> `otlp_http` exporters, and `k8snode` -> `k8s_api` resourcedetection detectors (including the `k8snode:` config block and pipeline references across all signal pipelines). Deprecation warnings in the helm notes flag every deprecated name found in your `values.yaml` so it can be updated before the auto-rewrite is removed in a future release (chart-managed preset output is rewritten silently; nothing to update there). Each new name has its own minimum Collector version (`otlp_grpc`/`otlp_http` v0.144.0, `k8s_attributes` v0.146.0, `file_log` v0.149.0, `host_metrics` v0.151.0, `k8s_api` v0.154.0); set the value to `false` when using Collector images older than v0.154.0. Config you set under a new name now takes precedence over content merged from a deprecated name (including preset output), and null bodies on deprecated keys no longer fail the render.
+
 ### v0.0.72 / 2026-11-24
 
 - [Change] Update Helm dependency `opentelemetry-agent` to chart version `0.143.6`.
