@@ -29,6 +29,7 @@ VERSION=""
 SUPERVISOR_VERSION=""
 COLLECTOR_VERSION=""
 SUPERVISOR_MODE=false
+DISABLE_PACKAGE_UPGRADES=false
 CUSTOM_CONFIG_PATH=""
 SUPERVISOR_BASE_CONFIG_PATH=""
 OPAMP_ATTRIBUTES=()
@@ -144,6 +145,7 @@ Options:
     --opamp-endpoint <url>      OpAMP server endpoint override (supervisor mode; testing only - the private key is sent as Bearer to this endpoint)
     -c, --config <path>         Path to custom configuration file
     -s, --supervisor            Use supervisor mode (requires CORALOGIX_DOMAIN)
+    --disable-package-upgrades  Disable Collector package upgrades in supervisor mode
     --memory-limit <MiB>        Total memory in MiB to allocate to the collector (default: 512)
                                 Config must reference: \${env:OTEL_MEMORY_LIMIT_MIB}
                                 (ignored in supervisor mode)
@@ -213,7 +215,7 @@ add_opamp_attribute() {
     case "$key" in
         service.name|cx.agent.type) fail "--opamp-attribute cannot override built-in attribute: $key" ;;
     esac
-    for existing in "${OPAMP_ATTRIBUTES[@]}"; do
+    for existing in ${OPAMP_ATTRIBUTES[@]+"${OPAMP_ATTRIBUTES[@]}"}; do
         if [ "${existing%%=*}" = "$key" ]; then
             fail "--opamp-attribute duplicate key: $key"
         fi
@@ -264,6 +266,10 @@ parse_args() {
                     fail "--supervisor cannot be used with --config. Supervisor mode uses default config and receives configuration from the OpAMP server."
                 fi
                 SUPERVISOR_MODE=true
+                shift
+                ;;
+            --disable-package-upgrades)
+                DISABLE_PACKAGE_UPGRADES=true
                 shift
                 ;;
             --memory-limit)
@@ -510,6 +516,11 @@ run_regular_mode() {
 
 get_supervisor_config() {
     local domain="$1"
+    local collector_path="$2"
+    local package_capability=""
+    if [ "$3" = true ]; then
+        package_capability=$'\n  accepts_packages: true'
+    fi
     # --opamp-endpoint lets CI tests point the supervisor at a fake OpAMP
     # server; production default remains the Coralogix ingress. The private
     # key is sent as Bearer to this endpoint.
@@ -532,10 +543,10 @@ capabilities:
   reports_own_traces: true
   reports_health: true
   accepts_remote_config: true
-  accepts_restart_command: true
+  accepts_restart_command: true${package_capability}
 
 agent:
-  executable: /otelcol-contrib
+  executable: ${collector_path}
   passthrough_logs: true
   config_apply_timeout: 30s
 
@@ -546,7 +557,7 @@ agent:
 EOF
 
     local attribute key value
-    for attribute in "${OPAMP_ATTRIBUTES[@]}"; do
+    for attribute in ${OPAMP_ATTRIBUTES[@]+"${OPAMP_ATTRIBUTES[@]}"}; do
         key="${attribute%%=*}"
         value="${attribute#*=}"
         printf '      %s: %s\n' "$(yaml_quote "$key")" "$(yaml_quote "$value")"
@@ -572,6 +583,20 @@ telemetry:
 EOF
 }
 
+prepare_supervisor_collector() (
+    local image="$1" data_mount="$2" collector_path="$3"
+    if docker run --rm -v "${data_mount}:ro" --entrypoint "$collector_path" "$image" --version >/dev/null 2>&1; then
+        return
+    fi
+
+    # Copy between containers so the Docker archive requests do not block each other.
+    local source_container seed_container
+    source_container=$(docker create "$image")
+    trap 'docker rm "$source_container" ${seed_container:+"$seed_container"} >/dev/null' EXIT
+    seed_container=$(docker create -v "$data_mount" "$image")
+    docker cp "$source_container:/otelcol-contrib" - | docker cp - "$seed_container:${collector_path%/*}"
+)
+
 run_supervisor_mode() {
     local image_tag
     image_tag=$(get_supervisor_image_version)
@@ -579,6 +604,13 @@ run_supervisor_mode() {
     
     log "Pulling image: ${image}"
     docker pull "$image"
+
+    local accepts_packages=false collector_path=/otelcol-contrib data_mount=""
+    if [ "$DISABLE_PACKAGE_UPGRADES" = false ] && version_at_least "$image_tag" "0.16.0"; then
+        accepts_packages=true
+        collector_path="${CONFIG_CONTAINER_DIR}/supervisor-data/otelcol-contrib"
+        data_mount="${CONTAINER_NAME}-supervisor-data-${image_tag}:${collector_path%/*}"
+    fi
 
     local reports_raw_config=false collector_version
     if collector_version=$(get_collector_image_version "$image") && [ -n "$collector_version" ]; then
@@ -594,7 +626,7 @@ run_supervisor_mode() {
     mkdir -p "$CONFIG_HOST_DIR"
     
     # Create supervisor config
-    get_supervisor_config "${CORALOGIX_DOMAIN}" > "${CONFIG_HOST_DIR}/supervisor.yaml"
+    get_supervisor_config "${CORALOGIX_DOMAIN}" "$collector_path" "$accepts_packages" > "${CONFIG_HOST_DIR}/supervisor.yaml"
     log "Supervisor config at: ${CONFIG_HOST_DIR}/supervisor.yaml"
     
     # Create collector config
@@ -627,7 +659,12 @@ run_supervisor_mode() {
     
     # Remove existing container if present
     docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
-    
+
+    if [ "$accepts_packages" = true ]; then
+        prepare_supervisor_collector "$image" "$data_mount" "$collector_path"
+        docker_args+=(-v "$data_mount")
+    fi
+
     docker run "${docker_args[@]}" "$image" --config ${CONFIG_CONTAINER_DIR}/supervisor.yaml
     
     if [ "$DETACHED" = true ]; then
@@ -709,6 +746,9 @@ main() {
     else
         if [ -n "$SUPERVISOR_VERSION" ]; then
             fail "--supervisor-version can only be used with -s/--supervisor"
+        fi
+        if [ "$DISABLE_PACKAGE_UPGRADES" = true ]; then
+            fail "--disable-package-upgrades can only be used with -s/--supervisor"
         fi
         if [ -n "$OPAMP_ENDPOINT_OVERRIDE" ]; then
             fail "--opamp-endpoint can only be used with -s/--supervisor"
