@@ -2,6 +2,13 @@
 
 ## otel-windows-standalone
 
+### v0.0.76 / 2026-11-24
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.6
+
+#### Changes from opentelemetry-collector 0.143.6:
+- [Feat] Add PostgreSQL multixact age to database health metrics and server start time to catalog events. Include table options in schema snapshots and report zero variants for empty databases.
+
 ### v0.0.75 / 2026-11-23
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.5
