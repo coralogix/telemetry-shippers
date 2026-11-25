@@ -5,6 +5,7 @@
 ### v0.0.388 / 2026-11-25
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.9
+- [Change] Move each PostgreSQL target's `password` to `auth.password` when upgrading the `dbMonitoring` preset.
 
 #### Changes from opentelemetry-collector 0.143.9:
 - [Feat] Add per-receiver monitoring interval configuration to the DB monitoring preset.

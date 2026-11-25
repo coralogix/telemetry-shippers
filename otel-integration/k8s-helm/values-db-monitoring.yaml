@@ -7,7 +7,8 @@ opentelemetry-db-monitoring:
         - name: orders
           host: orders-db.databases.svc.cluster.local
           username: otel
-          password: ${env:ORDERS_DB_PASSWORD}
+          auth:
+            password: ${env:ORDERS_DB_PASSWORD}
           instanceId: production/orders
           databases: [orders]
           # TLS is enabled by default. Set ca_file and mount your CA if needed.
