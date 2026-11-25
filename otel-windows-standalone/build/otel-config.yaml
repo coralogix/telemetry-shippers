@@ -272,7 +272,7 @@ processors:
         != nil and (span.attributes["rpc.system"] == "grpc" or span.attributes["rpc.system.name"]
         == "grpc") and span.cache["grpc_codes"][span.cache["rpc_status"]] != nil
 receivers:
-  filelog/iis:
+  file_log/iis:
     header:
       metadata_operators:
       - if: body matches "^#Fields:"
@@ -293,7 +293,7 @@ receivers:
       type: csv_parser
     start_at: beginning
     storage: file_storage
-  hostmetrics:
+  host_metrics:
     collection_interval: 10s
     scrapers:
       cpu:
@@ -373,7 +373,7 @@ service:
       - windowseventlog/system
       - windowseventlog/application
       - windowseventlog/security
-      - filelog/iis
+      - file_log/iis
       - otlp
     logs/resource_catalog:
       exporters:
@@ -385,7 +385,7 @@ service:
       - resourcedetection/region
       - transform/entity-event
       receivers:
-      - hostmetrics
+      - host_metrics
     metrics:
       exporters:
       - coralogix
@@ -397,7 +397,7 @@ service:
       - transform/prometheus
       - batch
       receivers:
-      - hostmetrics
+      - host_metrics
       - prometheus
       - iis
       - otlp

@@ -12,7 +12,7 @@ variable "otel_config_path" {
 variable "otel_deb_url" {
   description = "URL of the OpenTelemetry collector .deb package."
   type        = string
-  default     = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.137.0/otelcol-contrib_0.137.0_linux_amd64.deb"
+  default     = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.165.0/otelcol-contrib_0.165.0_linux_amd64.deb"
 }
 
 variable "instance_type" {

@@ -5,6 +5,7 @@
 ### v0.0.77 / 2026-11-25
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.9
+- [Fix] Install Collector v0.165.0 to support the generated config.
 
 #### Changes from opentelemetry-collector 0.143.9:
 - [Feat] Add per-receiver monitoring interval configuration to the DB monitoring preset.

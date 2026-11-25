@@ -40,7 +40,7 @@ make deploy SSH_PUBLIC_KEY_PATH=~/.ssh/another-key.pub SSH_PRIVATE_KEY_PATH=~/.s
 
 ## Deployment details
 - Ubuntu Jammy (22.04) EC2 instance in `eu-west-1`
-- Collector installed from the `.deb` package: `v0.137.0`
+- Collector installed from the `.deb` package: `v0.165.0`
 - Service managed by systemd (`otelcol-contrib.service`)
 - Bootstrap script refuses to finish unless `systemctl is-active` reports success
 - All AWS resource names include the `eco-system` prefix for traceability

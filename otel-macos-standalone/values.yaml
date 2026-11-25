@@ -9,8 +9,6 @@ global:
 opentelemetry-agent:
   enabled: true
   distribution: "macos"
-  # The macOS installer uses a collector that needs the original component names.
-  rewriteDeprecatedComponentNames: false
   presets:
     metadata:
       enabled: true

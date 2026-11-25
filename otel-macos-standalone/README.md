@@ -14,7 +14,7 @@ make otel-config  # writes build/otel-config.yaml using helm + yq
 ```bash
 cd otel-macos-standalone
 sudo CORALOGIX_PRIVATE_KEY=<YOUR_CORALOGIX_PRIVATE_KEY> \
-  OTELCOL_VERSION=0.141.0 INSTALL_PREFIX=/opt/otelcol PLIST_LABEL=com.coralogix.otelcol \
+  INSTALL_PREFIX=/opt/otelcol PLIST_LABEL=com.coralogix.otelcol \
   ./scripts/install-macos.sh build/otel-config.yaml
 ```
 
@@ -26,10 +26,10 @@ Render your config (with Coralogix exporter enabled) to `build/otel-config.yaml`
 cd otel-macos-standalone
 make otel-config
 sudo CORALOGIX_PRIVATE_KEY=<YOUR_CORALOGIX_PRIVATE_KEY> \
-  OTELCOL_VERSION=0.141.0 INSTALL_PREFIX=/opt/otelcol PLIST_LABEL=com.coralogix.otelcol \
+  INSTALL_PREFIX=/opt/otelcol PLIST_LABEL=com.coralogix.otelcol \
   ./scripts/install-macos.sh build/otel-config.yaml
 sudo launchctl print system/com.coralogix.otelcol
 tail -n 50 /var/log/otelcol.log /var/log/otelcol.err
 ```
 
-Options (env): `OTEL_VERSION` (default 0.141.0), `INSTALL_PREFIX` (default /opt/otelcol), `PLIST_LABEL` (default com.coralogix.otelcol).
+Options (env): `OTELCOL_VERSION` (default 0.165.0), `INSTALL_PREFIX` (default /opt/otelcol), `PLIST_LABEL` (default com.coralogix.otelcol).
