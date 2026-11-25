@@ -248,10 +248,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install supervisor mode
+      - name: Install supervisor mode with /tmp mounted noexec
         run: |
           sudo CORALOGIX_DOMAIN="${CORALOGIX_DOMAIN}" CORALOGIX_PRIVATE_KEY="${CORALOGIX_PRIVATE_KEY}" \
-            bash ./otel-installer/standalone/coralogix-otel-collector.sh -s \
+            unshare --mount -- bash -ec '
+              mount --bind /tmp /tmp
+              mount -o remount,bind,noexec /tmp
+              exec bash "$@"
+            ' bash ./otel-installer/standalone/coralogix-otel-collector.sh -s \
             --opamp-attribute fleet.test.id=fleet-demo \
             --opamp-attribute 'deployment.environment=staging=blue'
 

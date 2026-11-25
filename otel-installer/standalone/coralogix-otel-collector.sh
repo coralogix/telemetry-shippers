@@ -1381,8 +1381,6 @@ install_supervisor() {
     
     log "Extracting Collector..."
     tar -xzf "$tar_name" >/dev/null 2>&1 || fail "Extraction failed for $tar_name"
-    
-    ./otelcol-contrib --version >/dev/null 2>&1 || fail "Could not run the extracted Collector binary"
 
     log "Creating required directories for supervisor..."
     $SUDO_CMD mkdir -p /etc/opampsupervisor
@@ -1456,6 +1454,8 @@ EOF
     fi
 
     configure_supervisor "$accepts_packages"
+    $SUDO_CMD runuser -u opampsupervisor -- "$SUPERVISOR_COLLECTOR_PATH" --version >/dev/null 2>&1 ||
+        fail "Could not run the installed Collector at $SUPERVISOR_COLLECTOR_PATH"
 }
 
 configure_supervisor() {
