@@ -125,6 +125,8 @@ This option creates a storage directory at `C:\ProgramData\OpenTelemetry\Collect
 
 Supervisor mode enables remote configuration management through Coralogix [Fleet Management](https://coralogix.com/docs/user-guides/fleet-management/overview/).
 
+The generated config enables Collector package upgrades by default for Coralogix Supervisor 0.162.0 or later downloaded by the installer. Use `-DisablePackageUpgrades` to opt out. With a local Supervisor MSI, you can set `accepts_packages: true` under `capabilities` in a custom config passed to `-SupervisorOpampConfig`.
+
 ### Basic Installation
 
 ```powershell
@@ -170,6 +172,7 @@ The base config is merged with remote configuration from Fleet Manager. The conf
 | `-MemoryLimit <MiB>`                    | Total memory in MiB to allocate (default: 512)                   |
 | `-ListenInterface <ip>`                 | Network interface for receivers (default: 127.0.0.1)             |
 | `-Supervisor`                           | Install with OpAMP Supervisor mode                               |
+| `-DisablePackageUpgrades`               | Disable Collector package upgrades in Supervisor mode            |
 | `-SupervisorVersion <version>`          | Supervisor version (supervisor mode only)                        |
 | `-CollectorVersion <version>`           | Collector version (supervisor mode only)                         |
 | `-SupervisorMsi <path>`                 | Path to local OpAMP Supervisor MSI file                          |

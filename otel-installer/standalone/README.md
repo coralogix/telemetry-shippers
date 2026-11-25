@@ -166,6 +166,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Supervisor Mode Features
 
+- **Collector upgrades**: Coralogix Supervisor 0.162.0 and later accept Collector packages from Fleet Management by default. Use `--disable-package-upgrades` to opt out.
 - **Automatic capabilities**: Linux capabilities are enabled by default to support process metrics when added via Fleet Manager (use `--disable-capabilities` to opt-out)
 - **Installation summary**: View installation details and useful commands in `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt`
 
@@ -180,6 +181,7 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 | `--memory-limit <MiB>`           | Total memory in MiB to allocate to the collector (default: 512) (ignored in supervisor mode)                       |
 | `--listen-interface <ip>`        | Network interface for receivers to listen on (default: 127.0.0.1). Use `0.0.0.0` for all interfaces (gateway mode) |
 | `--disable-capabilities`         | Disable automatic Linux capabilities enablement (supervisor mode only, not recommended)                            |
+| `--disable-package-upgrades`     | Disable Collector package upgrades in Supervisor mode                                                              |
 | `--supervisor-version <version>` | Supervisor version (supervisor mode only)                                                                          |
 | `--collector-version <version>`  | Collector version (supervisor mode only)                                                                           |
 | `--uninstall`                    | Remove the collector (keeps config)                                                                                |
@@ -204,15 +206,15 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Supervisor Mode
 
-| Component            | Location                                        |
-|----------------------|-------------------------------------------------|
-| Collector Binary     | `/usr/local/bin/otelcol-contrib`                |
-| Supervisor Config    | `/etc/opampsupervisor/config.yaml`              |
-| Collector Config     | `/etc/opampsupervisor/collector.yaml`           |
-| Effective Config     | `/var/lib/opampsupervisor/effective.yaml`       |
-| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
-| Service              | `opampsupervisor.service` (systemd)             |
-| Logs                 | `/var/log/opampsupervisor/opampsupervisor.log`  |
+| Component            | Location                                                                                                                        |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| Collector Binary     | `/var/lib/opampsupervisor/otelcol-contrib` on Linux with package upgrades enabled. Otherwise, `/usr/local/bin/otelcol-contrib`. |
+| Supervisor Config    | `/etc/opampsupervisor/config.yaml`                                                                                              |
+| Collector Config     | `/etc/opampsupervisor/collector.yaml`                                                                                           |
+| Effective Config     | `/var/lib/opampsupervisor/effective.yaml`                                                                                       |
+| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt`                                                                                 |
+| Service              | `opampsupervisor.service` (systemd)                                                                                             |
+| Logs                 | `/var/log/opampsupervisor/opampsupervisor.log`                                                                                  |
 
 ## Service Management
 

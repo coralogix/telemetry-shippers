@@ -17,6 +17,9 @@
     
 .PARAMETER Supervisor
     Install with OpAMP Supervisor mode (config is managed by the OpAMP server)
+
+.PARAMETER DisablePackageUpgrades
+    Disable Collector package upgrades in the generated Supervisor config.
     
 .PARAMETER SupervisorVersion
     Supervisor version (supervisor mode only, default: same as Version)
@@ -141,6 +144,9 @@ param(
     [Parameter(ValueFromPipelineByPropertyName)]
     [Alias("s")]
     [switch]$Supervisor = $false,
+
+    [Parameter(ValueFromPipelineByPropertyName)]
+    [switch]$DisablePackageUpgrades,
     
     [Parameter(ValueFromPipelineByPropertyName)]
     [string]$SupervisorVersion = "",
@@ -216,6 +222,7 @@ $OTEL_COLLECTOR_CHECKSUMS_FILE = "opentelemetry-collector-releases_otelcol-contr
 $OTEL_SUPERVISOR_CHECKSUMS_FILE = "checksums.txt"
 $OTEL_SUPERVISOR_MSI_CHECKSUMS_FILE = "checksums.txt"
 $OTEL_SUPERVISOR_CORALOGIX_MIN_VERSION = "0.146.0"
+$OTEL_SUPERVISOR_PACKAGE_UPGRADES_MIN_VERSION = "0.162.0"
 
 # Global variables
 $script:UserSetMemoryLimit = $false
@@ -277,6 +284,7 @@ Options:
                                     (not available with -Supervisor)
     -Supervisor                     Install with OpAMP Supervisor mode
                                     (config is managed by the OpAMP server)
+    -DisablePackageUpgrades         Disable Collector package upgrades in Supervisor mode
     -SupervisorVersion <ver>        Supervisor version (supervisor mode only)
                                     (default: same as -Version)
     -CollectorVersion <ver>         Collector version (supervisor mode only)
@@ -1121,7 +1129,9 @@ function Install-Supervisor {
             Stop-Service -Name $SUPERVISOR_SERVICE_NAME -Force -ErrorAction SilentlyContinue
         }
         
-        Configure-Supervisor
+        $acceptsPackages = -not $DisablePackageUpgrades -and -not $MsiPath -and
+            ([version](Normalize-Version -Version $SupervisorVer) -ge [version]$OTEL_SUPERVISOR_PACKAGE_UPGRADES_MIN_VERSION)
+        Configure-Supervisor -AcceptsPackages:$acceptsPackages
         
         Set-Location $originalLocation
     }
@@ -1137,6 +1147,8 @@ function Install-Supervisor {
 }
 
 function Configure-Supervisor {
+    param([switch]$AcceptsPackages)
+
     Write-Log "Configuring OpAMP Supervisor..."
     
     # Use the found binary path or fall back to default
@@ -1170,6 +1182,7 @@ function Configure-Supervisor {
         "[]" 
     }
     
+    $packageCapability = if ($AcceptsPackages) { "`n  accepts_packages: true" }
     $supervisorOpampDefaultConfig = @"
 server:
   endpoint: "${endpointUrl}"
@@ -1185,7 +1198,7 @@ capabilities:
   reports_own_traces: true
   reports_health: true
   accepts_remote_config: true
-  accepts_restart_command: true
+  accepts_restart_command: true${packageCapability}
 
 agent:
   executable: $($BINARY_PATH -replace '\\', '/')
@@ -1978,6 +1991,9 @@ function Main {
     else {
         if ($SupervisorVersion) {
             Write-Error "-SupervisorVersion can only be used with -Supervisor"
+        }
+        if ($DisablePackageUpgrades) {
+            Write-Error "-DisablePackageUpgrades can only be used with -Supervisor"
         }
         if ($CollectorVersion) {
             Write-Error "-CollectorVersion can only be used with -Supervisor"

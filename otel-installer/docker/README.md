@@ -46,6 +46,8 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 `--opamp-attribute` adds a non-identifying **agent** attribute to the Supervisor's OpAMP configuration. Fleet Management can use these attributes in configuration-group selectors; they are not telemetry resource attributes. The option is repeatable and splits on the first `=`, so values can contain `=` and can be shell-quoted. Keys and values must be non-empty. Duplicate keys and attempts to override the built-in `service.name` or `cx.agent.type` attributes fail before the installer changes the container. The option is valid only with `--supervisor`.
 
+Supervised image tags `0.16.0` and later accept Collector upgrades from Fleet Management by default. The Collector binary and Supervisor state stay in a Docker volume when you reinstall with the same image tag. Each tag uses its own volume. Use `--disable-package-upgrades` to run the Collector bundled with the image.
+
 ## Environment Variables
 
 ### Required Variables
@@ -104,6 +106,7 @@ extensions:
 | `--supervisor-version <version>` | Supervised collector image tag (supervisor mode; default: `otel-supervised-collector/CURRENT_IMAGE_VERSION`)                       |
 | `-c, --config <path>`            | Path to custom configuration file                                                                                                  |
 | `-s, --supervisor`               | Use supervisor mode                                                                                                                |
+| `--disable-package-upgrades`     | Disable Collector package upgrades in Supervisor mode                                                                              |
 | `--opamp-attribute <key=value>`  | Add a repeatable Supervisor OpAMP non-identifying agent attribute; supervisor mode only. Duplicate and built-in keys are rejected. |
 | `--memory-limit <MiB>`           | Memory limit in MiB for the collector (default: 512)                                                                               |
 |                                  | Config must reference: `${env:OTEL_MEMORY_LIMIT_MIB}`                                                                              |

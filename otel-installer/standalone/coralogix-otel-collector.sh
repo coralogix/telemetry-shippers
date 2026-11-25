@@ -13,6 +13,7 @@
 #   -v, --version <version>       OTEL Collector version (default: latest from Coralogix Helm chart)
 #   -c, --config <path>           Path to custom configuration file (disabled with --supervisor)
 #   -s, --supervisor              Install with OpAMP Supervisor mode
+#   --disable-package-upgrades    Disable Collector package upgrades in Supervisor mode
 #   --memory-limit <MiB>          Total memory in MiB to allocate to the collector (default: 512)
 #                                  Config must reference: ${env:OTEL_MEMORY_LIMIT_MIB}
 #                                  (ignored in supervisor mode)
@@ -49,6 +50,9 @@ BINARY_NAME="otelcol-contrib"
 BINARY_PATH_LINUX="/usr/bin/${BINARY_NAME}"
 
 BINARY_PATH_DARWIN="/usr/local/bin/${BINARY_NAME}"
+MANAGED_COLLECTOR_PATH="/var/lib/opampsupervisor/${BINARY_NAME}"
+SUPERVISOR_COLLECTOR_PATH="$BINARY_PATH_DARWIN"
+SUPERVISOR_CAPABILITIES_FILE="/etc/systemd/system/opampsupervisor.service.d/collector-capabilities.conf"
 CONFIG_DIR="/etc/otelcol-contrib"
 CONFIG_FILE="${CONFIG_DIR}/config.yaml"
 LOG_DIR="/var/log/otel-collector"
@@ -58,6 +62,7 @@ OTEL_SUPERVISOR_RELEASES_BASE_URL="https://github.com/coralogix/opentelemetry-co
 OTEL_COLLECTOR_CHECKSUMS_FILE="opentelemetry-collector-releases_otelcol-contrib_checksums.txt"
 OTEL_SUPERVISOR_CHECKSUMS_FILE="checksums.txt"
 OTEL_SUPERVISOR_CORALOGIX_MIN_VERSION="0.146.0"
+OTEL_SUPERVISOR_PACKAGE_UPGRADES_MIN_VERSION="0.162.0"
 CHART_YAML_URL="https://raw.githubusercontent.com/coralogix/opentelemetry-helm-charts/main/charts/opentelemetry-collector/Chart.yaml"
 
 LAUNCHD_PLIST_DAEMON="/Library/LaunchDaemons/com.coralogix.otelcol.plist"
@@ -82,6 +87,7 @@ USER_SET_MEMORY_LIMIT=false
 USER_SET_LISTEN_INTERFACE=false
 ENABLE_CAPABILITIES=false
 DISABLE_CAPABILITIES_FLAG=false
+DISABLE_PACKAGE_UPGRADES=false
 
 if [ "$UID" = "0" ] || [ "$(id -u)" -eq 0 ]; then
     SUDO_CMD=""
@@ -223,6 +229,7 @@ Options:
     -c, --config <path>           Path to custom configuration file
                                   (not available with -s/--supervisor)
     -s, --supervisor              Install with OpAMP Supervisor mode
+    --disable-package-upgrades     Disable Collector package upgrades in Supervisor mode
                                   (config is managed by the OpAMP server)
     --memory-limit <MiB>          Total memory in MiB to allocate to the collector
                                   Sets OTEL_MEMORY_LIMIT_MIB environment variable
@@ -585,7 +592,7 @@ is_installed() {
             if [ -f "$BINARY_PATH_LINUX" ]; then
                 return 0
             fi
-            if [ -f "/usr/local/bin/otelcol-contrib" ]; then
+            if [ -f "$SUPERVISOR_COLLECTOR_PATH" ] || $SUDO_CMD test -f "$MANAGED_COLLECTOR_PATH"; then
                 return 0
             fi
             ;;
@@ -865,7 +872,7 @@ create_installation_summary() {
         
         if [ "$mode" = "supervisor" ]; then
             echo "Supervisor Service: opampsupervisor"
-            echo "Collector Binary: /usr/local/bin/otelcol-contrib"
+            echo "Collector Binary: $SUPERVISOR_COLLECTOR_PATH"
             echo "Supervisor Config: /etc/opampsupervisor/config.yaml"
             echo "Collector Config: /etc/opampsupervisor/collector.yaml"
             echo "Effective Config: /var/lib/opampsupervisor/effective.yaml"
@@ -880,10 +887,12 @@ create_installation_summary() {
                 echo ""
                 # Check if capabilities are actually set
                 local caps_enabled=false
-                if command -v getcap >/dev/null 2>&1; then
-                    if getcap /usr/local/bin/otelcol-contrib 2>/dev/null | grep -q "cap_sys_ptrace\|cap_dac_read_search"; then
-                        caps_enabled=true
-                    fi
+                local caps_check=(getcap "$SUPERVISOR_COLLECTOR_PATH")
+                if [ "$SUPERVISOR_COLLECTOR_PATH" = "$MANAGED_COLLECTOR_PATH" ]; then
+                    caps_check=(systemctl show -p AmbientCapabilities opampsupervisor)
+                fi
+                if "${caps_check[@]}" 2>/dev/null | grep -qi 'cap_sys_ptrace'; then
+                    caps_enabled=true
                 fi
                 
                 if [ "$caps_enabled" = true ]; then
@@ -901,7 +910,7 @@ create_installation_summary() {
                 echo "  - CAP_DAC_READ_SEARCH (for reading process information)"
                 echo ""
                 echo "To verify capabilities:"
-                echo "  getcap /usr/local/bin/otelcol-contrib"
+                echo "  ${caps_check[*]}"
                 echo ""
                 echo "To disable capabilities (not recommended):"
                 echo "  Reinstall with: --disable-capabilities flag"
@@ -1341,6 +1350,7 @@ install_supervisor() {
     local supervisor_ver="$1"
     local collector_ver="$2"
     local arch="$3"
+    local accepts_packages="$4"
     if [ "$(detect_os)" = "darwin" ]; then
         local name="opampsupervisor_${supervisor_ver}_darwin_${arch}"
         local checksum
@@ -1349,7 +1359,7 @@ install_supervisor() {
         download "$(get_supervisor_release_url_prefix "$supervisor_ver")/${name}" "$name" "$checksum"
         $SUDO_CMD install -m 0755 "$name" /usr/local/bin/opampsupervisor
         $SUDO_CMD mkdir -p /etc/opampsupervisor /var/lib/opampsupervisor /var/log/opampsupervisor
-        configure_supervisor
+        configure_supervisor "$accepts_packages"
         return
     fi
     local pkg_type
@@ -1371,21 +1381,6 @@ install_supervisor() {
     
     log "Extracting Collector..."
     tar -xzf "$tar_name" >/dev/null 2>&1 || fail "Extraction failed for $tar_name"
-    
-    if [ ! -x ./otelcol-contrib ]; then
-        fail "Expected otelcol-contrib binary after extraction."
-    fi
-    
-    log "Placing Collector binary into /usr/local/bin..."
-    $SUDO_CMD install -m 0755 ./otelcol-contrib /usr/local/bin/otelcol-contrib || fail "Failed to install Collector binary"
-    
-    if ! /usr/local/bin/otelcol-contrib --version >/dev/null 2>&1; then
-        fail "Installation verification failed: The binary at /usr/local/bin/otelcol-contrib exists but cannot be executed."
-    fi
-
-    if [ "$ENABLE_CAPABILITIES" = true ]; then
-        configure_process_metrics_permissions "/usr/local/bin/otelcol-contrib" "capabilities" || true
-    fi
 
     log "Creating required directories for supervisor..."
     $SUDO_CMD mkdir -p /etc/opampsupervisor
@@ -1439,13 +1434,36 @@ install_supervisor() {
         fi
     fi
     
-    $SUDO_CMD systemctl stop opampsupervisor 2>/dev/null || true
-    
-    configure_supervisor
+    $SUDO_CMD systemctl stop opampsupervisor
+
+    # The systemd service sets ownership of its state directory on startup.
+    log "Installing Collector binary at $SUPERVISOR_COLLECTOR_PATH..."
+    $SUDO_CMD install -D -T -m 0755 ./otelcol-contrib "$SUPERVISOR_COLLECTOR_PATH"
+
+    if [ "$accepts_packages" = true ] && [ "$ENABLE_CAPABILITIES" = true ]; then
+        # File capabilities are lost when the Supervisor replaces the Collector.
+        $SUDO_CMD install -D -T -m 0644 /dev/stdin "$SUPERVISOR_CAPABILITIES_FILE" <<'EOF'
+[Service]
+AmbientCapabilities=CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+EOF
+    else
+        $SUDO_CMD rm -f "$SUPERVISOR_CAPABILITIES_FILE"
+        if [ "$ENABLE_CAPABILITIES" = true ]; then
+            configure_process_metrics_permissions "$SUPERVISOR_COLLECTOR_PATH" "capabilities" || true
+        fi
+    fi
+
+    configure_supervisor "$accepts_packages"
+    $SUDO_CMD runuser -u opampsupervisor -- "$SUPERVISOR_COLLECTOR_PATH" --version >/dev/null 2>&1 ||
+        fail "Could not run the installed Collector at $SUPERVISOR_COLLECTOR_PATH"
 }
 
 configure_supervisor() {
     log "Configuring OpAMP Supervisor..."
+    local package_capability=""
+    if [ "$1" = true ]; then
+        package_capability=$'\n  accepts_packages: true'
+    fi
     
     local domain="${CORALOGIX_DOMAIN}"
     
@@ -1466,10 +1484,10 @@ capabilities:
   reports_own_traces: true
   reports_health: true
   accepts_remote_config: true
-  accepts_restart_command: true
+  accepts_restart_command: true${package_capability}
 
 agent:
-  executable: /usr/local/bin/otelcol-contrib
+  executable: $SUPERVISOR_COLLECTOR_PATH
   passthrough_logs: true
   config_apply_timeout: 30s
   description:
@@ -1651,7 +1669,7 @@ verify_supervisor() {
     
     attempt=0
     while [ $attempt -lt $max_attempts ]; do
-        if pgrep -f "/usr/local/bin/otelcol-contrib.*effective.yaml" >/dev/null 2>&1; then
+        if pgrep -f "$SUPERVISOR_COLLECTOR_PATH.*effective.yaml" >/dev/null 2>&1; then
             log "Collector process is running (managed by supervisor)"
             break
         fi
@@ -1809,10 +1827,7 @@ remove_package_linux() {
             ;;
     esac
     
-    if [ -f "/usr/local/bin/otelcol-contrib" ]; then
-        log "Removing supervisor binary: /usr/local/bin/otelcol-contrib"
-        $SUDO_CMD rm -f "/usr/local/bin/otelcol-contrib"
-    fi
+    $SUDO_CMD rm -f "$SUPERVISOR_COLLECTOR_PATH" "$MANAGED_COLLECTOR_PATH"
     
     if [ -d "/etc/systemd/system/opampsupervisor.service.d" ]; then
         log "Removing supervisor systemd override directory"
@@ -2012,6 +2027,10 @@ parse_args() {
                 DISABLE_CAPABILITIES_FLAG=true
                 shift
                 ;;
+            --disable-package-upgrades)
+                DISABLE_PACKAGE_UPGRADES=true
+                shift
+                ;;
             --supervisor-version)
                 SUPERVISOR_VERSION_FLAG="$2"
                 shift 2
@@ -2129,6 +2148,9 @@ main() {
         if [ -n "$SUPERVISOR_VERSION_FLAG" ]; then
             fail "--supervisor-version can only be used with -s/--supervisor"
         fi
+        if [ "$DISABLE_PACKAGE_UPGRADES" = true ]; then
+            fail "--disable-package-upgrades can only be used with -s/--supervisor"
+        fi
         if [ -n "$COLLECTOR_VERSION_FLAG" ]; then
             fail "--collector-version can only be used with -s/--supervisor"
         fi
@@ -2169,7 +2191,7 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
         
         # Prevent mode switching between regular and supervisor
         if command -v systemctl >/dev/null 2>&1; then
-            if [ "$SUPERVISOR_MODE" != true ] && [ -f "/usr/local/bin/otelcol-contrib" ]; then
+            if [ "$SUPERVISOR_MODE" != true ] && { [ -f "$SUPERVISOR_COLLECTOR_PATH" ] || $SUDO_CMD test -f "$MANAGED_COLLECTOR_PATH"; }; then
                 fail "Cannot upgrade: Supervisor mode is installed. Please uninstall first, then install regular mode."
             fi
             
@@ -2214,7 +2236,14 @@ Remove the 'opamp' extension from your config file: $SUPERVISOR_BASE_CONFIG_PATH
         log "Supervisor version: $supervisor_ver"
         log "Collector version: $collector_ver"
         
-        install_supervisor "$supervisor_ver" "$collector_ver" "$arch"
+        local accepts_packages=false
+        if [ "$DISABLE_PACKAGE_UPGRADES" != true ] && version_at_least "$supervisor_ver" "$OTEL_SUPERVISOR_PACKAGE_UPGRADES_MIN_VERSION"; then
+            accepts_packages=true
+            if [ "$os" = "linux" ]; then
+                SUPERVISOR_COLLECTOR_PATH="$MANAGED_COLLECTOR_PATH"
+            fi
+        fi
+        install_supervisor "$supervisor_ver" "$collector_ver" "$arch" "$accepts_packages"
         
         # Wait for effective config to be generated (with timeout)
         local max_wait=10
@@ -2261,7 +2290,7 @@ Installation complete with supervisor mode!
 Supervisor Version: $supervisor_ver
 Collector Version: $collector_ver
 Supervisor Service: opampsupervisor
-Collector Binary: /usr/local/bin/otelcol-contrib
+Collector Binary: $SUPERVISOR_COLLECTOR_PATH
 Supervisor Config: /etc/opampsupervisor/config.yaml
 Collector Config: /etc/opampsupervisor/collector.yaml
 Effective Config: /var/lib/opampsupervisor/effective.yaml
