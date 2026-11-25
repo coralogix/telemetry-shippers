@@ -188,14 +188,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -217,13 +217,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -1164,14 +1164,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
         metrics:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -1193,13 +1193,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
       coralogix/resource_catalog:
         application_name: resource
         domain: eu2.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: helm-otel-integration/0.0.387
+            X-Coralogix-Distribution: helm-otel-integration/0.0.388
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -2156,7 +2156,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 574a7982de69bd80522cca181ad6f0a95cd8829727ab76154070a0bfe6107c32
+        checksum/config: 8596b27683fd2767f053c22afe77e7fc885bfb78355f670a34c7fb4e65f17761
 
       labels:
         app.kubernetes.io/name: opentelemetry-agent
@@ -2348,7 +2348,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2f9f1ded7d1aa80462eb1fc7c8473c403002910867b74c79df837fcf560a245c
+        checksum/config: 6d79a1f7ff384dadd01d3fcc5f89519a3c216df3f42607a6a8d8cd6dd8149325
 
       labels:
         app.kubernetes.io/name: opentelemetry-cluster-collector
