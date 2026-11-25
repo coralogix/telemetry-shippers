@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'otel-installer/**'
+      - '.github/workflows/e2e-otel-installer.yml'
+      - '.github/workflows/windows-standalone-e2e.yml'
   workflow_dispatch:
 
 permissions:
@@ -32,7 +34,7 @@ jobs:
         id: readme-check
         if: github.event_name == 'pull_request'
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' || true)
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'otel-installer/' '.github/workflows/e2e-otel-installer.yml' '.github/workflows/windows-standalone-e2e.yml' || true)
           if [ -z "$CHANGED" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
@@ -58,6 +60,7 @@ jobs:
             windows:
               - 'otel-installer/windows/**'
               - '.github/workflows/e2e-otel-installer.yml'
+              - '.github/workflows/windows-standalone-e2e.yml'
       - id: set-outputs
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -514,166 +517,205 @@ jobs:
   # Windows Script Tests
   #############################################
 
-  standalone-windows-install:
+  #######################################################################################  ############################################################################################
+  # Standalone - Windows tests: each scenario runs up to 2 attempts. The hosted Windows
+  # pool loses runners mid-job (~30% observed 2026-11-18: 45-min hang, null step
+  # conclusions; passes on a fresh runner). Attempt 2 runs only if attempt 1 failed;
+  # a healthy run costs exactly one attempt.
+  #
+  # Result plumbing: a1 has continue-on-error so a runner-loss failure does not fail
+  # the run while a2 can still recover; a1 records its outcome in an output, a2 reads
+  # it, and the per-scenario verdict job fails the run only when BOTH attempts failed.
+  # Scenario bodies live once in windows-standalone-e2e.yml.
+  ############################################################################################
+
+  windows-install-a1:
     name: Standalone - Windows Install
     needs: changes
     if: needs.changes.outputs.windows == 'true'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install (default)
-        shell: pwsh
-        run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1
-        
-      - name: Verify service running
-        shell: pwsh
-        run: |
-          if ((Get-Service -Name "otelcol-contrib").Status -ne 'Running') { exit 1 }
-        
-      - name: Uninstall
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: install
+      attempt: 1
 
-  standalone-windows-version:
+  windows-install-a2:
+    name: Standalone - Windows Install (retry)
+    needs: [windows-install-a1]
+    if: needs.windows-install-a1.outputs.outcome == 'failure'
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: install
+      attempt: 2
+
+  windows-install-verdict:
+    name: Standalone - Windows Install verdict
+    needs: [changes, windows-install-a1, windows-install-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          echo "attempt 1 outcome: ${{ needs.windows-install-a1.outputs.outcome }}; attempt 2 result: ${{ needs.windows-install-a2.result }}"
+          if [ "${{ needs.windows-install-a1.outputs.outcome }}" = "failure" ] && [ "${{ needs.windows-install-a2.result }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
+  windows-version-a1:
     name: Standalone - Windows Specific Version
     needs: changes
     if: needs.changes.outputs.windows == 'true'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install specific version
-        shell: pwsh
-        run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1 -Version 0.140.1
-        
-      - name: Verify version
-        shell: pwsh
-        run: |
-          $versionOutput = & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version
-          $versionMatch = $versionOutput | Select-String -Pattern "0.140.1" -Quiet
-          if (-not $versionMatch) {
-            Write-Error "Version mismatch: Expected 0.140.1, but got: $versionOutput"
-            exit 1
-          }
-        
-      - name: Uninstall
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: version
+      attempt: 1
 
-  standalone-windows-config:
+  windows-version-a2:
+    name: Standalone - Windows Specific Version (retry)
+    needs: [windows-version-a1]
+    if: needs.windows-version-a1.outputs.outcome == 'failure'
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: version
+      attempt: 2
+
+  windows-version-verdict:
+    name: Standalone - Windows Specific Version verdict
+    needs: [changes, windows-version-a1, windows-version-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          echo "attempt 1 outcome: ${{ needs.windows-version-a1.outputs.outcome }}; attempt 2 result: ${{ needs.windows-version-a2.result }}"
+          if [ "${{ needs.windows-version-a1.outputs.outcome }}" = "failure" ] && [ "${{ needs.windows-version-a2.result }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
+  windows-config-a1:
     name: Standalone - Windows Custom Config
     needs: changes
     if: needs.changes.outputs.windows == 'true'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Create test config with unique marker
-        shell: pwsh
-        run: |
-          @"
-          # CUSTOM_CONFIG_MARKER_E2E_TEST
-          receivers:
-            otlp:
-              protocols:
-                grpc:
-                  endpoint: 0.0.0.0:4317
-          exporters:
-            debug:
-              verbosity: basic
-          extensions:
-            health_check:
-              endpoint: 127.0.0.1:13133
-          service:
-            extensions: [health_check]
-            pipelines:
-              logs:
-                receivers: [otlp]
-                exporters: [debug]
-          "@ | Out-File -FilePath "$env:TEMP\test-config.yaml" -Encoding utf8
-          
-      - name: Install with custom config
-        shell: pwsh
-        run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1 -Config "$env:TEMP\test-config.yaml"
-        
-      - name: Verify custom config loaded
-        shell: pwsh
-        run: |
-          $configPath = "${env:ProgramData}\OpenTelemetry\Collector\config.yaml"
-          Get-Content $configPath
-          if (-not (Select-String -Path $configPath -Pattern "CUSTOM_CONFIG_MARKER_E2E_TEST" -Quiet)) {
-            Write-Error "Custom config marker not found in $configPath"
-            exit 1
-          }
-          if (-not (Select-String -Path $configPath -Pattern "otlp:" -Quiet)) {
-            Write-Error "otlp: pattern not found in $configPath"
-            exit 1
-          }
-        
-      - name: Uninstall
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: config
+      attempt: 1
 
-  standalone-windows-supervisor:
+  windows-config-a2:
+    name: Standalone - Windows Custom Config (retry)
+    needs: [windows-config-a1]
+    if: needs.windows-config-a1.outputs.outcome == 'failure'
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: config
+      attempt: 2
+
+  windows-config-verdict:
+    name: Standalone - Windows Custom Config verdict
+    needs: [changes, windows-config-a1, windows-config-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scenario verdict
+        run: |
+          echo "attempt 1 outcome: ${{ needs.windows-config-a1.outputs.outcome }}; attempt 2 result: ${{ needs.windows-config-a2.result }}"
+          if [ "${{ needs.windows-config-a1.outputs.outcome }}" = "failure" ] && [ "${{ needs.windows-config-a2.result }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+
+  windows-supervisor-a1:
     name: Standalone - Windows Supervisor Mode
     needs: changes
     if: needs.changes.outputs.windows == 'true'
-    runs-on: windows-latest
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: supervisor
+      attempt: 1
+
+  windows-supervisor-a2:
+    name: Standalone - Windows Supervisor Mode (retry)
+    needs: [windows-supervisor-a1]
+    if: needs.windows-supervisor-a1.outputs.outcome == 'failure'
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: supervisor
+      attempt: 2
+
+  windows-supervisor-verdict:
+    name: Standalone - Windows Supervisor Mode verdict
+    needs: [changes, windows-supervisor-a1, windows-supervisor-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install supervisor mode
-        shell: pwsh
+      - name: Scenario verdict
         run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          $env:CORALOGIX_DOMAIN = "${{ env.CORALOGIX_DOMAIN }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1 -Supervisor -SupervisorOpampAttribute 'fleet.test.id=fleet-demo','deployment.environment=staging=blue'
+          echo "attempt 1 outcome: ${{ needs.windows-supervisor-a1.outputs.outcome }}; attempt 2 result: ${{ needs.windows-supervisor-a2.result }}"
+          if [ "${{ needs.windows-supervisor-a1.outputs.outcome }}" = "failure" ] && [ "${{ needs.windows-supervisor-a2.result }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
 
-      - name: Verify Supervisor attributes
-        shell: pwsh
-        run: |
-          $configPath = "${env:ProgramFiles}\OpenTelemetry OpAMP Supervisor\config.yaml"
-          foreach ($attribute in @('service.name: "opentelemetry-collector"', 'cx.agent.type: "standalone"', '"fleet.test.id": "fleet-demo"', '"deployment.environment": "staging=blue"')) {
-            if (-not (Select-String -Path $configPath -SimpleMatch $attribute -Quiet)) { Write-Error "Missing $attribute"; exit 1 }
-          }
-        
-      - name: Verify supervisor running
-        shell: pwsh
-        run: |
-          if ((Get-Service -Name "opampsupervisor").Status -ne 'Running') { exit 1 }
-        
-      - name: Uninstall
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
-
-  standalone-windows-purge:
+  windows-purge-a1:
     name: Standalone - Windows Uninstall with Purge
     needs: changes
     if: needs.changes.outputs.windows == 'true'
-    runs-on: windows-latest
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: purge
+      attempt: 1
+
+  windows-purge-a2:
+    name: Standalone - Windows Uninstall with Purge (retry)
+    needs: [windows-purge-a1]
+    if: needs.windows-purge-a1.outputs.outcome == 'failure'
+    uses: ./.github/workflows/windows-standalone-e2e.yml
+    secrets:
+      CORALOGIX_PRIVATE_KEY: ${{ secrets.E2E_CORALOGIX_PRIVATE_KEY || 'test-key-12345' }}
+      CORALOGIX_DOMAIN: ${{ secrets.E2E_CORALOGIX_DOMAIN || 'us1.coralogix.com' }}
+    with:
+      scenario: purge
+      attempt: 2
+
+  windows-purge-verdict:
+    name: Standalone - Windows Uninstall with Purge verdict
+    needs: [changes, windows-purge-a1, windows-purge-a2]
+    if: always() && needs.changes.outputs.windows == 'true'
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install
-        shell: pwsh
+      - name: Scenario verdict
         run: |
-          $env:CORALOGIX_PRIVATE_KEY = "${{ env.CORALOGIX_PRIVATE_KEY }}"
-          .\otel-installer\windows\coralogix-otel-collector.ps1
-        
-      - name: Uninstall with purge
-        shell: pwsh
-        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall -Purge
-        
-      - name: Verify config removed
-        shell: pwsh
-        run: |
-          if (Test-Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml") {
-            Write-Host "Config still exists!" ; exit 1
-          }
+          echo "attempt 1 outcome: ${{ needs.windows-purge-a1.outputs.outcome }}; attempt 2 result: ${{ needs.windows-purge-a2.result }}"
+          if [ "${{ needs.windows-purge-a1.outputs.outcome }}" = "failure" ] && [ "${{ needs.windows-purge-a2.result }}" != "success" ]; then
+            echo "Both attempts failed (or retry did not run to success)"; exit 1
+          fi
+          echo "Scenario recovered" # a1 success or a2 success
+

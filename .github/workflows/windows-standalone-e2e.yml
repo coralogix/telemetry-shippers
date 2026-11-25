@@ -1,0 +1,201 @@
+# Windows standalone installer e2e tests (reusable) — CX runner-loss remedy.
+#
+# The GitHub-hosted Windows pool loses runners mid-job (~30% of runs observed
+# 2026-11-18: 45-min hangs, null step conclusions, dead in Post-checkout;
+# passes on a fresh runner). Callers run each scenario up to 5 times, gating
+# every attempt after the first on ALL earlier attempts having failed, so the
+# flake is absorbed automatically and a green run costs exactly one attempt.
+#
+# Each scenario is a job here, selected via `scenario`. Bodies are the original
+# e2e-otel-installer.yml Windows jobs, moved verbatim.
+
+name: Windows standalone e2e (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      scenario:
+        description: 'Which scenario job to run'
+        required: true
+        type: string
+      attempt:
+        description: 'Attempt number (1-2), for the job name only'
+        required: true
+        type: number
+    secrets:
+      CORALOGIX_PRIVATE_KEY:
+        required: true
+      CORALOGIX_DOMAIN:
+        required: true
+    outputs:
+      outcome:
+        description: 'success or failure for the caller retry gate'
+        value: ${{ jobs.windows-standalone.outputs.outcome }}
+
+permissions:
+  contents: read
+
+env:
+  CORALOGIX_PRIVATE_KEY: 'test-key-12345'
+  CORALOGIX_DOMAIN: 'us1.coralogix.com'
+
+jobs:
+  windows-standalone:
+    name: Standalone - Windows (${{ inputs.scenario }}, attempt ${{ inputs.attempt }})
+    runs-on: windows-latest
+    timeout-minutes: 35
+    continue-on-error: true
+    outputs:
+      outcome: ${{ steps.set-outcome.outputs.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Init outcome sentinel
+        shell: pwsh
+        run: |
+          # steps below append 'ok' only when their scenario completes successfully;
+          # the Report outcome step converts the sentinel into the job output the
+          # caller's retry gate reads (needs context exposes outputs, not outcomes,
+          # when the caller sets continue-on-error).
+          Remove-Item -Path "$env:TEMP\scenario-ok" -Force -ErrorAction SilentlyContinue
+          "pending" | Out-File -FilePath "$env:TEMP\scenario-ok" -Encoding utf8
+
+      # ---- Install (default) ----
+      - name: Install (default)
+        if: inputs.scenario == 'install' || inputs.scenario == 'purge'
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ secrets.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1
+
+      # ---- Install specific version ----
+      - name: Install specific version
+        if: inputs.scenario == 'version'
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ secrets.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Version 0.140.1
+
+      - name: Verify version
+        if: inputs.scenario == 'version'
+        shell: pwsh
+        run: |
+          $versionOutput = & "${env:ProgramFiles}\OpenTelemetry Collector\otelcol-contrib.exe" --version
+          $versionMatch = $versionOutput | Select-String -Pattern "0.140.1" -Quiet
+          if (-not $versionMatch) {
+            Write-Error "Version mismatch: Expected 0.140.1, but got: $versionOutput"
+            exit 1
+          }
+
+      # ---- Custom config ----
+      - name: Create test config with unique marker
+        if: inputs.scenario == 'config'
+        shell: pwsh
+        run: |
+          @"
+          # CUSTOM_CONFIG_MARKER_E2E_TEST
+          receivers:
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: 0.0.0.0:4317
+          exporters:
+            debug:
+              verbosity: basic
+          extensions:
+            health_check:
+              endpoint: 127.0.0.1:13133
+          service:
+            extensions: [health_check]
+            pipelines:
+              logs:
+                receivers: [otlp]
+                exporters: [debug]
+          "@ | Out-File -FilePath "$env:TEMP\test-config.yaml" -Encoding utf8
+
+      - name: Install with custom config
+        if: inputs.scenario == 'config'
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ secrets.CORALOGIX_PRIVATE_KEY }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Config "$env:TEMP\test-config.yaml"
+
+      - name: Verify custom config loaded
+        if: inputs.scenario == 'config'
+        shell: pwsh
+        run: |
+          $configPath = "${env:ProgramData}\OpenTelemetry\Collector\config.yaml"
+          Get-Content $configPath
+          if (-not (Select-String -Path $configPath -Pattern "CUSTOM_CONFIG_MARKER_E2E_TEST" -Quiet)) {
+            Write-Error "Custom config marker not found in $configPath"
+            exit 1
+          }
+          if (-not (Select-String -Path $configPath -Pattern "otlp:" -Quiet)) {
+            Write-Error "otlp: pattern not found in $configPath"
+            exit 1
+          }
+
+      # ---- Supervisor mode ----
+      - name: Install supervisor mode
+        if: inputs.scenario == 'supervisor'
+        shell: pwsh
+        run: |
+          $env:CORALOGIX_PRIVATE_KEY = "${{ secrets.CORALOGIX_PRIVATE_KEY }}"
+          $env:CORALOGIX_DOMAIN = "${{ secrets.CORALOGIX_DOMAIN }}"
+          .\otel-installer\windows\coralogix-otel-collector.ps1 -Supervisor -SupervisorOpampAttribute 'fleet.test.id=fleet-demo','deployment.environment=staging=blue'
+
+      - name: Verify Supervisor attributes
+        if: inputs.scenario == 'supervisor'
+        shell: pwsh
+        run: |
+          $configPath = "${env:ProgramFiles}\OpenTelemetry OpAMP Supervisor\config.yaml"
+          foreach ($attribute in @('service.name: "opentelemetry-collector"', 'cx.agent.type: "standalone"', '"fleet.test.id": "fleet-demo"', '"deployment.environment": "staging=blue"')) {
+            if (-not (Select-String -Path $configPath -SimpleMatch $attribute -Quiet)) { Write-Error "Missing $attribute"; exit 1 }
+          }
+
+      - name: Verify supervisor running
+        if: inputs.scenario == 'supervisor'
+        shell: pwsh
+        run: |
+          if ((Get-Service -Name "opampsupervisor").Status -ne 'Running') { exit 1 }
+
+      # ---- Shared assertions ----
+      - name: Verify service running
+        if: inputs.scenario == 'install' || inputs.scenario == 'version' || inputs.scenario == 'config'
+        shell: pwsh
+        run: |
+          if ((Get-Service -Name "otelcol-contrib").Status -ne 'Running') { exit 1 }
+
+      - name: Uninstall
+        if: inputs.scenario != 'purge'
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall
+
+      - name: Uninstall with purge
+        if: inputs.scenario == 'purge'
+        shell: pwsh
+        run: .\otel-installer\windows\coralogix-otel-collector.ps1 -Uninstall -Purge
+
+      - name: Verify config removed
+        if: inputs.scenario == 'purge'
+        shell: pwsh
+        run: |
+          if (Test-Path "${env:ProgramData}\OpenTelemetry\Collector\config.yaml") {
+            Write-Host "Config still exists!" ; exit 1
+          }
+
+      - name: Mark scenario success
+        shell: pwsh
+        run: |
+          # Reached only if every earlier step of this scenario exited 0 (failures
+          # stop the job before this step). Report success to the caller.
+          "ok" | Out-File -FilePath "$env:TEMP\scenario-ok" -Encoding utf8
+
+      - name: Report outcome
+        id: set-outcome
+        if: always()
+        shell: pwsh
+        run: |
+          $sentinel = Get-Content "$env:TEMP\scenario-ok" -Raw -ErrorAction SilentlyContinue
+          if ($sentinel -match 'ok') { "outcome=success" >> $env:GITHUB_OUTPUT }
+          else { "outcome=failure" >> $env:GITHUB_OUTPUT }
