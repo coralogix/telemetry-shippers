@@ -623,7 +623,7 @@ processors:
         where resource.attributes["cx.cluster.name"] == nil and resource.attributes["aws.ecs.cluster.arn"]
         != nil
 receivers:
-  host_metrics:
+  hostmetrics:
     collection_interval: 10s
     root_path: /
     scrapers:
@@ -733,7 +733,7 @@ service:
       - resourcedetection/region
       - transform/entity-event
       receivers:
-      - host_metrics
+      - hostmetrics
     metrics:
       exporters:
       - coralogix
@@ -747,7 +747,7 @@ service:
       - transform/prometheus
       - batch
       receivers:
-      - host_metrics
+      - hostmetrics
       - spanmetrics
       - spanmetrics/db
       - prometheus

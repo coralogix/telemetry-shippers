@@ -10,6 +10,8 @@ global:
 opentelemetry-agent:
   enabled: true
   distribution: "standalone"
+  # The Terraform deployment uses a collector that needs the original component names.
+  rewriteDeprecatedComponentNames: false
   presets:
     metadata:
       enabled: true

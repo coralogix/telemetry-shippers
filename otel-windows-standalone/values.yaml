@@ -10,6 +10,8 @@ opentelemetry-agent:
   enabled: true
   distribution: "standalone"
   isWindows: true
+  # Keep the example compatible with older collector versions supported by the installer.
+  rewriteDeprecatedComponentNames: false
 
   presets:
     metadata:
