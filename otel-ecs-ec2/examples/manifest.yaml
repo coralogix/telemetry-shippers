@@ -6,7 +6,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.143.6
+    helm.sh/chart: opentelemetry-agent-0.143.8
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.165.0"
@@ -19,7 +19,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.143.6
+    helm.sh/chart: opentelemetry-agent-0.143.8
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.165.0"
@@ -166,14 +166,14 @@ data:
             timeout: 10s
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
         metrics:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
         private_key: ${env:CORALOGIX_PRIVATE_KEY}
         profiles:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
             x-coralogix-ingress: otlp/v1.10.0
         sending_queue:
           batch:
@@ -193,13 +193,13 @@ data:
         timeout: 30s
         traces:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
       coralogix/resource_catalog:
         application_name: resource
         domain: eu1.coralogix.com
         logs:
           headers:
-            X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+            X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
             x-coralogix-ingress: metadata-as-otlp-logs/v1
         private_key: ${CORALOGIX_PRIVATE_KEY}
         sending_queue:
@@ -225,7 +225,7 @@ data:
             cx.agent.type: agent
             cx.cluster.name: ''
             cx.provider.name: aws
-            helm.chart.opentelemetry-agent.version: 0.143.6
+            helm.chart.opentelemetry-agent.version: 0.143.8
         capabilities:
           accepts_restart_command: false
         reports_raw_config: true
@@ -590,7 +590,7 @@ data:
             != nil
     receivers:
       awsecscontainermetricsd: {}
-      filelog:
+      file_log:
         force_flush_period: 0
         include:
         - /hostfs/var/lib/docker/containers/*/*.log
@@ -624,7 +624,7 @@ data:
           to: resource["log.file.path"]
           type: move
         start_at: end
-      hostmetrics:
+      host_metrics:
         collection_interval: '30s'
         root_path: /
         scrapers:
@@ -743,7 +743,7 @@ data:
           - transform/reduce
           - batch
           receivers:
-          - filelog
+          - file_log
           - otlp
         logs/resource_catalog:
           exporters:
@@ -755,7 +755,7 @@ data:
           - resourcedetection/region
           - transform/entity-event
           receivers:
-          - hostmetrics
+          - host_metrics
         metrics:
           exporters:
           - coralogix
@@ -769,7 +769,7 @@ data:
           - transform/prometheus
           - batch
           receivers:
-          - hostmetrics
+          - host_metrics
           - spanmetrics
           - spanmetrics/db
           - prometheus
@@ -867,7 +867,7 @@ metadata:
   name: ecs-ec2-example-opentelemetry-agent-agent
   namespace: default
   labels:
-    helm.sh/chart: opentelemetry-agent-0.143.6
+    helm.sh/chart: opentelemetry-agent-0.143.8
     app.kubernetes.io/name: opentelemetry-agent
     app.kubernetes.io/instance: ecs-ec2-example
     app.kubernetes.io/version: "0.165.0"
@@ -883,15 +883,12 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 93763918e074b4212793d0033d3274ccc6f84ad3df819fec4c0174d88253dca9
-        
+        checksum/config: 62c4ddfd244e5e002b72c89e5b75ebff39761781084c907648d1985412901371
       labels:
         app.kubernetes.io/name: opentelemetry-agent
         app.kubernetes.io/instance: ecs-ec2-example
         component: agent-collector
-        
     spec:
-      
       serviceAccountName: ecs-ec2-example-opentelemetry-agent
       securityContext:
         {}
