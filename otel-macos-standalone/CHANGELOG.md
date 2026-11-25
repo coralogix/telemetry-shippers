@@ -2,6 +2,32 @@
 
 ## otel-macos-standalone
 
+### v0.0.77 / 2026-11-25
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.9
+
+#### Changes from opentelemetry-collector 0.143.9:
+- [Feat] Add per-receiver monitoring interval configuration to the DB monitoring preset.
+- [Feat] Configure password or AWS IAM authentication once per PostgreSQL target.
+- [Feat] Add configurable query user exclusions.
+- [Feat] Send query samples, top queries, and plans to the `postgresql-slow-queries` subsystem.
+- [Feat] Add opt-in CloudWatch collection of PostgreSQL `auto_explain` plans per RDS or Aurora target.
+- [Change] Collect up to 200 PostgreSQL top queries every 60 seconds by default.
+- [Feat] Add PostgreSQL activity snapshots every 10 seconds by default.
+- [Fix] Report the configured collection interval on PostgreSQL catalog events.
+- [Fix] Exclude the `rdsadmin` database on RDS and Aurora targets.
+
+#### Changes from opentelemetry-collector 0.143.8:
+- [Feat] Add `presets.k8sControlPlaneMetrics` (CX-41498), a sibling of `kubernetesApiServerMetrics`, that scrapes the self-managed Kubernetes control plane from a `hostNetwork` daemonset: kube-controller-manager, kube-scheduler, kube-proxy, DNS (CoreDNS, plus the NodeLocal DNSCache addon with `dns.nodeLocal.enabled`) and, opt-in, etcd (plain http on `127.0.0.1:2381`, or mTLS on `:2379` with a client certificate from an existing Secret via `etcd.secret`; the chart never creates Secrets). The receivers are static, literal template blocks under a dedicated `k8s_observer/control_plane` and `receiver_creator/control_plane` scoped to the agent's node. The values surface is `enabled`, `scrapeInterval`, per-component `enabled` and the etcd `port`/`skipVerify`/`secret` keys; targets, ports and label rules are overridden by deep-merging the receivers through `config`. The preset fails at render time (also when `configMap.create` is false) unless `mode: daemonset`, at least one component is enabled and, for loopback targets, `hostNetwork: true`; `dns.nodeLocal.enabled` without `dns.enabled` and incomplete etcd `secret` settings are rejected too. The ClusterRole grants the `/metrics` nonResourceURL only when `controllerManager` or `scheduler` is enabled, the only components that authorize through delegated SubjectAccessReview. No metric filtering: every metric a component exposes is shipped. `NOTES.txt` warns that controller-manager, scheduler and etcd stay silent on EKS, GKE and AKS, that dns needs `dns.enabled: false` on GKE, that GKE Autopilot cannot run the preset, and that the preset stays silent on standalone, macos, ecs, eks/fargate and `isWindows`. On OpenShift the preset finds nothing; API server coverage is `kubernetesApiServerMetrics`. The etcd mTLS docs warn that the kubeadm `healthcheck-client` certificate is cluster-admin equivalent. Adds a `daemonset-control-plane-metrics` example and a `ci/preset-k8scontrolplanemetrics-values.yaml` test values file.
+- [Fix] The `ClusterRoleBinding` is now also rendered when only `presets.prometheusAnnotationDiscovery` or `presets.pprofReceiver.pull` is enabled, matching the `ClusterRole`.
+- [Fix] The daemonset template no longer renders whitespace-only lines for empty pod annotations, pod labels and the pod spec header (rendered example manifests only).
+
+#### Changes from opentelemetry-collector 0.143.7:
+- [Feat] Add `rewriteDeprecatedComponentNames` (default `true`), which automatically rewrites deprecated component names in the generated config: `k8sattributes` -> `k8s_attributes` processors, `filelog` -> `file_log` and `hostmetrics` -> `host_metrics` receivers, `otlp` -> `otlp_grpc` and `otlphttp` -> `otlp_http` exporters, and `k8snode` -> `k8s_api` resourcedetection detectors (including the `k8snode:` config block and pipeline references across all signal pipelines). Deprecation warnings in the helm notes flag every deprecated name found in your `values.yaml` so it can be updated before the auto-rewrite is removed in a future release (chart-managed preset output is rewritten silently; nothing to update there). Each new name has its own minimum Collector version (`otlp_grpc`/`otlp_http` v0.144.0, `k8s_attributes` v0.146.0, `file_log` v0.149.0, `host_metrics` v0.151.0, `k8s_api` v0.154.0); set the value to `false` when using Collector images older than v0.154.0. Config you set under a new name now takes precedence over content merged from a deprecated name (including preset output), and null bodies on deprecated keys no longer fail the render.
+
+#### Changes from opentelemetry-collector 0.143.7:
+- [Feat] Add `rewriteDeprecatedComponentNames` (default `true`), which automatically rewrites deprecated component names in the generated config: `k8sattributes` -> `k8s_attributes` processors, `filelog` -> `file_log` and `hostmetrics` -> `host_metrics` receivers, `otlp` -> `otlp_grpc` and `otlphttp` -> `otlp_http` exporters, and `k8snode` -> `k8s_api` resourcedetection detectors (including the `k8snode:` config block and pipeline references across all signal pipelines). Deprecation warnings in the helm notes flag every deprecated name found in your `values.yaml` so it can be updated before the auto-rewrite is removed in a future release (chart-managed preset output is rewritten silently; nothing to update there). Each new name has its own minimum Collector version (`otlp_grpc`/`otlp_http` v0.144.0, `k8s_attributes` v0.146.0, `file_log` v0.149.0, `host_metrics` v0.151.0, `k8s_api` v0.154.0); set the value to `false` when using Collector images older than v0.154.0. Config you set under a new name now takes precedence over content merged from a deprecated name (including preset output), and null bodies on deprecated keys no longer fail the render.
+
 ### v0.0.76 / 2026-11-24
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.6

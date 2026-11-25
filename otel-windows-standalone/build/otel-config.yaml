@@ -13,14 +13,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.76
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.77
     metrics:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.76
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.77
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.76
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.77
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -39,13 +39,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.76
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.77
   coralogix/resource_catalog:
     application_name: resource
     domain: eu2.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: helm-otel-standalone/0.0.76
+        X-Coralogix-Distribution: helm-otel-standalone/0.0.77
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -72,7 +72,7 @@ extensions:
       include_resource_attributes: true
       non_identifying_attributes:
         cx.agent.type: standalone
-        helm.chart.opentelemetry-agent.version: 0.143.6
+        helm.chart.opentelemetry-agent.version: 0.143.9
     capabilities:
       accepts_restart_command: false
     reports_raw_config: true
@@ -272,7 +272,7 @@ processors:
         != nil and (span.attributes["rpc.system"] == "grpc" or span.attributes["rpc.system.name"]
         == "grpc") and span.cache["grpc_codes"][span.cache["rpc_status"]] != nil
 receivers:
-  filelog/iis:
+  file_log/iis:
     header:
       metadata_operators:
       - if: body matches "^#Fields:"
@@ -293,7 +293,7 @@ receivers:
       type: csv_parser
     start_at: beginning
     storage: file_storage
-  hostmetrics:
+  host_metrics:
     collection_interval: 10s
     scrapers:
       cpu:
@@ -373,7 +373,7 @@ service:
       - windowseventlog/system
       - windowseventlog/application
       - windowseventlog/security
-      - filelog/iis
+      - file_log/iis
       - otlp
     logs/resource_catalog:
       exporters:
@@ -385,7 +385,7 @@ service:
       - resourcedetection/region
       - transform/entity-event
       receivers:
-      - hostmetrics
+      - host_metrics
     metrics:
       exporters:
       - coralogix
@@ -397,7 +397,7 @@ service:
       - transform/prometheus
       - batch
       receivers:
-      - hostmetrics
+      - host_metrics
       - prometheus
       - iis
       - otlp
