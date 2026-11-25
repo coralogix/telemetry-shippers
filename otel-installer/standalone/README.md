@@ -206,15 +206,15 @@ CORALOGIX_DOMAIN="<your-domain>" CORALOGIX_PRIVATE_KEY="<your-private-key>" \
 
 ### Supervisor Mode
 
-| Component            | Location                                        |
-|----------------------|-------------------------------------------------|
+| Component            | Location                                                                                                                        |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------|
 | Collector Binary     | `/var/lib/opampsupervisor/otelcol-contrib` on Linux with package upgrades enabled. Otherwise, `/usr/local/bin/otelcol-contrib`. |
-| Supervisor Config    | `/etc/opampsupervisor/config.yaml`              |
-| Collector Config     | `/etc/opampsupervisor/collector.yaml`           |
-| Effective Config     | `/var/lib/opampsupervisor/effective.yaml`       |
-| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt` |
-| Service              | `opampsupervisor.service` (systemd)             |
-| Logs                 | `/var/log/opampsupervisor/opampsupervisor.log`  |
+| Supervisor Config    | `/etc/opampsupervisor/config.yaml`                                                                                              |
+| Collector Config     | `/etc/opampsupervisor/collector.yaml`                                                                                           |
+| Effective Config     | `/var/lib/opampsupervisor/effective.yaml`                                                                                       |
+| Installation Summary | `/etc/opampsupervisor/INSTALLATION_SUMMARY.txt`                                                                                 |
+| Service              | `opampsupervisor.service` (systemd)                                                                                             |
+| Logs                 | `/var/log/opampsupervisor/opampsupervisor.log`                                                                                  |
 
 ## Service Management
 
