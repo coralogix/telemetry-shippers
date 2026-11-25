@@ -117,7 +117,7 @@ func TestE2E_DBMonitoring(t *testing.T) {
 					records := rl.ScopeLogs().At(j).LogRecords()
 					for k := 0; k < records.Len(); k++ {
 						record := records.At(k)
-						if event, ok := record.Attributes().Get("db.event.kind"); ok {
+						if event, ok := record.Attributes().Get("event.name"); ok {
 							foundEvents[event.Str()] = true
 							for _, key := range []string{"user.name", "postgresql.rolname"} {
 								user, _ := record.Attributes().Get(key)
