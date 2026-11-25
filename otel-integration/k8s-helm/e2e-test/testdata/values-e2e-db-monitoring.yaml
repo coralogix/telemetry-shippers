@@ -6,11 +6,21 @@ opentelemetry-db-monitoring:
         - name: orders
           host: dbm-postgresql.db-monitoring-e2e.svc.cluster.local
           username: otel
-          password: ${env:DB_PASSWORD}
+          auth:
+            password: ${env:DB_PASSWORD}
           instanceId: e2e/orders
           connectDatabase: orders
           databases: [orders]
           collectionInterval: 1s
+          receivers:
+            topQueries:
+              collectionInterval: 1s
+            details:
+              initialDelay: 1s
+              collectionInterval: 1s
+            schema:
+              initialDelay: 1s
+              collectionInterval: 1s
           tls:
             insecure: true
           resourceAttributes:
@@ -39,17 +49,6 @@ opentelemetry-db-monitoring:
         endpoint: "{{.Values.global.hostedEndpoint}}:5349"
         tls:
           insecure: true
-    # Shorten the catalog and top-query intervals for this test.
-    receivers:
-      postgresql/db_monitoring_postgresql_orders_queries:
-        top_query_collection:
-          collection_interval: 1s
-      sql_query/db_monitoring_postgresql_orders_details:
-        initial_delay: 1s
-        collection_interval: 1s
-      sql_query/db_monitoring_postgresql_orders_schema_orders:
-        initial_delay: 1s
-        collection_interval: 1s
     service:
       pipelines:
         metrics:

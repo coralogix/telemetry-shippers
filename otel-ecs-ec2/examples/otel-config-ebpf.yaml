@@ -138,14 +138,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -165,13 +165,13 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
   coralogix/resource_catalog:
     application_name: resource
     domain: eu1.coralogix.com
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
         x-coralogix-ingress: metadata-as-otlp-logs/v1
     private_key: ${CORALOGIX_PRIVATE_KEY}
     sending_queue:
@@ -197,7 +197,7 @@ extensions:
         cx.agent.type: agent
         cx.cluster.name: ''
         cx.provider.name: aws
-        helm.chart.opentelemetry-agent.version: 0.143.6
+        helm.chart.opentelemetry-agent.version: 0.143.9
     capabilities:
       accepts_restart_command: false
     reports_raw_config: true
@@ -562,7 +562,7 @@ processors:
         != nil
 receivers:
   awsecscontainermetricsd: {}
-  filelog:
+  file_log:
     force_flush_period: 0
     include:
     - /hostfs/var/lib/docker/containers/*/*.log
@@ -596,7 +596,7 @@ receivers:
       to: resource["log.file.path"]
       type: move
     start_at: end
-  hostmetrics:
+  host_metrics:
     collection_interval: '30s'
     root_path: /
     scrapers:
@@ -715,7 +715,7 @@ service:
       - transform/reduce
       - batch
       receivers:
-      - filelog
+      - file_log
       - otlp
     logs/resource_catalog:
       exporters:
@@ -727,7 +727,7 @@ service:
       - resourcedetection/region
       - transform/entity-event
       receivers:
-      - hostmetrics
+      - host_metrics
     metrics:
       exporters:
       - coralogix
@@ -741,7 +741,7 @@ service:
       - transform/prometheus
       - batch
       receivers:
-      - hostmetrics
+      - host_metrics
       - spanmetrics
       - spanmetrics/db
       - prometheus
@@ -848,14 +848,14 @@ exporters:
         timeout: 10s
     logs:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
     metrics:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
     private_key: ${env:CORALOGIX_PRIVATE_KEY}
     profiles:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
         x-coralogix-ingress: otlp/v1.10.0
     sending_queue:
       batch:
@@ -875,7 +875,7 @@ exporters:
     timeout: 30s
     traces:
       headers:
-        X-Coralogix-Distribution: ecs-ec2-integration/0.0.72
+        X-Coralogix-Distribution: ecs-ec2-integration/0.0.73
 extensions:
   health_check:
     endpoint: ${env:MY_POD_IP}:13133
@@ -886,7 +886,7 @@ extensions:
         cx.agent.type: agent
         cx.cluster.name: ''
         cx.provider.name: aws
-        helm.chart.opentelemetry-ebpf-profiler.version: 0.143.6
+        helm.chart.opentelemetry-ebpf-profiler.version: 0.143.9
     capabilities:
       accepts_restart_command: false
     reports_raw_config: true

@@ -3,10 +3,10 @@ set -euo pipefail
 
 # macOS installer for otelcol-contrib as a launchd daemon with Coralogix key injection.
 # Usage: sudo CORALOGIX_PRIVATE_KEY=... ./install-macos.sh /path/to/rendered/otel-config.yaml
-# Env vars: OTELCOL_VERSION (default 0.141.0), INSTALL_PREFIX (default /opt/otelcol), PLIST_LABEL (default com.coralogix.otelcol)
+# Env vars: OTELCOL_VERSION (default 0.165.0), INSTALL_PREFIX (default /opt/otelcol), PLIST_LABEL (default com.coralogix.otelcol)
 
 CONFIG_PATH="${1:-}"
-OTELCOL_VERSION="${OTELCOL_VERSION:-0.141.0}"
+OTELCOL_VERSION="${OTELCOL_VERSION:-0.165.0}"
 ARCH="$(uname -m)"
 OTEL_ARCH="${ARCH/x86_64/amd64}"
 INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/otelcol}"
