@@ -2,6 +2,16 @@
 
 ## otel-windows-standalone
 
+### v0.0.78 / 2026-11-26
+
+- [Chore] Bump chart dependency to opentelemetry-collector 0.143.10
+
+#### Changes from opentelemetry-collector 0.143.10:
+- [Feat] Add MySQL targets to the DB monitoring preset for engine metrics, table health, and catalog snapshots.
+- [Feat] Add MySQL top queries, samples, optional estimated-plan events, and self-hosted server logs.
+- [Fix] Preserve the MySQL hash that links query events to separate execution plans.
+- [Feat] Support AWS IAM for native MySQL receivers and separate password credentials for MySQL SQL receivers.
+
 ### v0.0.77 / 2026-11-25
 
 - [Chore] Bump chart dependency to opentelemetry-collector 0.143.9
