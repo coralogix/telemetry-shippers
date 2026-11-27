@@ -4,6 +4,8 @@ All notable changes to the OTel Installer scripts will be documented in this fil
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-27
+
 ### Added
 - Enable Collector package upgrades by default in Linux, macOS, and Windows Supervisor installs that use Coralogix Supervisor 0.162.0 or later. Use `--disable-package-upgrades` or `-DisablePackageUpgrades` to opt out.
 - Enable Collector package upgrades in Docker Supervisor mode with image tag 0.16.0 or later. Use `--disable-package-upgrades` to opt out.
