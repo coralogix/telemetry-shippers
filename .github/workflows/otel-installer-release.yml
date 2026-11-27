@@ -6,6 +6,7 @@ on:
     paths:
       - 'otel-installer/**'
       - '!otel-installer/**/*.md'
+      - 'otel-installer/CHANGELOG.md'
   workflow_dispatch:
 
 permissions:
